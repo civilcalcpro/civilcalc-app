@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, Info, Loader2, Calculator, Check, AlertTriangle, FileDown, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 import { generateCalculationPDF } from '@/lib/pdf-generator'
 import { useAuth } from '@/lib/auth-context'
 
@@ -126,12 +128,29 @@ export function Row({ k, v, highlight }) {
 
 export function DownloadPDFButton({ type, inputs, result, calculationId }) {
   const { user } = useAuth()
-  const onClick = () => {
-    generateCalculationPDF({ type, inputs, result, user, calculationId })
+  const [generating, setGenerating] = useState(false)
+  const onClick = async () => {
+    if (generating) return
+    setGenerating(true)
+    try {
+      // Small async tick so React paints the "Generating…" state
+      await new Promise((r) => setTimeout(r, 50))
+      generateCalculationPDF({ type, inputs, result, user, calculationId })
+      toast.success('PDF downloaded')
+    } catch (err) {
+      console.error('PDF generation failed:', err)
+      toast.error(err?.message || 'Could not generate PDF. Please try again.')
+    } finally {
+      setGenerating(false)
+    }
   }
   return (
-    <Button onClick={onClick} variant="outline" className="border-slate-700 bg-slate-900/40 hover:bg-slate-800 text-white">
-      <FileDown className="h-4 w-4 mr-2" /> Download PDF Report
+    <Button onClick={onClick} disabled={generating} variant="outline" className="border-slate-700 bg-slate-900/40 hover:bg-slate-800 text-white disabled:opacity-60">
+      {generating ? (
+        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Downloading…</>
+      ) : (
+        <><FileDown className="h-4 w-4 mr-2" /> Generate PDF</>
+      )}
     </Button>
   )
 }
