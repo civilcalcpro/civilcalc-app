@@ -19,6 +19,7 @@ import {
   Boxes,
   HardHat,
   ChevronRight,
+  Shield,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
@@ -34,26 +35,29 @@ const navGroups = [
     label: 'Calculators',
     items: [
       { href: '/dashboard/calculators/beam', label: 'RCC Beam Design', icon: Ruler },
-      { href: '/dashboard/calculators/column', label: 'Column Design', icon: Building2, soon: true },
-      { href: '/dashboard/calculators/slab', label: 'One-Way Slab', icon: HardHat, soon: true },
-      { href: '/dashboard/calculators/concrete', label: 'Concrete Volume', icon: Boxes, soon: true },
+      { href: '/dashboard/calculators/column', label: 'Column Design', icon: Building2 },
+      { href: '/dashboard/calculators/slab', label: 'One-Way Slab', icon: HardHat },
+      { href: '/dashboard/calculators/concrete-volume', label: 'Concrete Volume', icon: Boxes },
+      { href: '/dashboard/calculators/steel-weight', label: 'Steel Weight', icon: Ruler },
     ],
   },
   {
     label: 'Intelligence',
     items: [
       { href: '/dashboard/ai-assistant', label: 'AI Assistant', icon: Bot, badge: 'Claude' },
-      { href: '/dashboard/is-codes', label: 'IS Code Library', icon: BookOpen, soon: true },
+      { href: '/dashboard/is-codes', label: 'IS Code Library', icon: BookOpen },
     ],
   },
   {
     label: 'Account',
     items: [
       { href: '/pricing', label: 'Plans & Billing', icon: CreditCard },
-      { href: '/dashboard/settings', label: 'Settings', icon: Settings, soon: true },
+      { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     ],
   },
 ]
+
+const adminItem = { href: '/dashboard/admin', label: 'Admin Panel', icon: Shield, badge: 'ADMIN' }
 
 export default function DashboardLayout({ children }) {
   const { user, loading, logout } = useAuth()
@@ -133,6 +137,34 @@ export default function DashboardLayout({ children }) {
             </div>
           </div>
         ))}
+
+        {/* Admin section — only visible to admin role */}
+        {user?.role === 'admin' && (
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-red-400 px-3 mb-2">
+              Admin
+            </div>
+            <div className="space-y-1">
+              <Link
+                href={adminItem.href}
+                onClick={() => setMobileOpen(false)}
+                className={`group flex items-center justify-between px-3 py-2 rounded-lg text-sm transition ${
+                  pathname === adminItem.href
+                    ? 'bg-red-500/10 text-red-300 border border-red-500/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
+                }`}
+              >
+                <span className="flex items-center">
+                  <adminItem.icon className="h-4 w-4 mr-3" />
+                  {adminItem.label}
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/15 text-red-300">
+                  {adminItem.badge}
+                </span>
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       <div className="p-3 border-t border-slate-800">

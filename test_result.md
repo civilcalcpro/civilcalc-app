@@ -233,6 +233,97 @@ backend:
         agent: "testing"
         comment: "Backend API test passed. POST /api/payments/create-order returns {orderId, key, amount, currency: 'INR', mocked: true}. POST /api/payments/verify returns {success: true, plan: 'pro', mocked: true} and updates user.plan in DB. Verified GET /api/auth/me after payment shows plan: 'pro'. Complete mocked payment flow working correctly."
 
+
+  - task: "Auth — update profile"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "POST /api/auth/update-profile allows authenticated users to update name and email. Validates email uniqueness (400 if taken by another user). Returns {success: true} on success."
+      - working: true
+        agent: "testing"
+        comment: "Backend API test passed (4 tests). Success case returns 200 with {success: true}. Correctly rejects: 401 without auth, 400 for missing fields, 400 with 'Email already in use' when email taken by another user. All validation working correctly."
+
+  - task: "Auth — change password"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "POST /api/auth/change-password validates currentPassword via bcrypt, enforces newPassword length >= 6. Returns {success: true} on success."
+      - working: true
+        agent: "testing"
+        comment: "Backend API test passed (6 tests). Password change successful, verified by login with new password (200) and rejection of old password (401). Correctly rejects: 401 for wrong currentPassword with 'Current password is incorrect', 400 for newPassword < 6 chars, 400 for missing fields. All validation working correctly."
+
+  - task: "Admin — stats endpoint"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/admin/stats requires admin role. Returns {totalUsers, totalCalculations, totalAISessions, totalProjects, planBreakdown: {free, pro, enterprise}}."
+      - working: true
+        agent: "testing"
+        comment: "Backend API test passed (3 tests). Admin access returns 200 with all required fields including planBreakdown with free/pro/enterprise counts. Correctly rejects: 403 for non-admin user, 401 without auth. Role-based access control working correctly."
+
+  - task: "Admin — users list endpoint"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/admin/users requires admin role. Returns {users: [...]} with password field excluded via projection."
+      - working: true
+        agent: "testing"
+        comment: "Backend API test passed (3 tests). Admin access returns 200 with users array, password field correctly excluded from all users. Correctly rejects: 403 for non-admin user, 401 without auth. Security and role-based access working correctly."
+
+  - task: "Admin — update user plan endpoint"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "POST /api/admin/users/{userId}/plan requires admin role. Validates plan in ['free', 'pro', 'enterprise']. Returns {success: true, plan} on success, 404 if userId not found."
+      - working: true
+        agent: "testing"
+        comment: "Backend API test passed (5 tests). Admin can update user plan, verified by GET /api/auth/me showing updated plan. Correctly rejects: 400 for invalid plan, 404 for non-existent userId, 403 for non-admin user. All validation and role-based access working correctly."
+
+  - task: "Auth — role field in signup/login responses"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Signup and login responses now include user.role field. Admin emails (admin@civilcalc.in) get role='admin', others get role='user'."
+      - working: true
+        agent: "testing"
+        comment: "Backend API test passed (2 tests). Signup returns user.role='user' for regular users. Login with admin@civilcalc.in returns user.role='admin'. Role assignment working correctly based on ADMIN_EMAILS allowlist."
+
 frontend:
   - task: "Landing page — premium dark SaaS"
     implemented: true
@@ -295,6 +386,31 @@ frontend:
         comment: "Sessions sidebar, suggested prompts grid, typewriter streaming effect, typing dots, message bubbles, mock-indicator badge when fallback active. Verified live with Claude — formatted IS code response rendered correctly."
 
   - task: "Pricing page + mocked Razorpay checkout dialog"
+
+  - agent: "testing"
+    message: |
+      ✅ ROUND 2 BACKEND TESTING COMPLETE — ALL 23 TESTS PASSED (100% success rate)
+
+      Comprehensive backend API testing completed via /app/backend_test_round2.py against https://civil-ai.preview.emergentagent.com/api
+
+      Test Results Summary:
+      1. ✅ POST /api/auth/update-profile (4 tests) — success, no auth (401), missing fields (400), email taken (400 "Email already in use")
+      2. ✅ POST /api/auth/change-password (6 tests) — success, login with new password works, login with old password fails (401), wrong currentPassword (401 "Current password is incorrect"), newPassword < 6 chars (400), missing fields (400)
+      3. ✅ GET /api/admin/stats (3 tests) — admin access returns all fields {totalUsers, totalCalculations, totalAISessions, totalProjects, planBreakdown: {free, pro, enterprise}}, non-admin rejected (403), no auth (401)
+      4. ✅ GET /api/admin/users (3 tests) — admin access returns users array with password field excluded, non-admin rejected (403), no auth (401)
+      5. ✅ POST /api/admin/users/{userId}/plan (5 tests) — success, verified plan update via /api/auth/me, invalid plan (400), user not found (404), non-admin rejected (403)
+      6. ✅ Role field verification (2 tests) — signup returns role='user', admin login returns role='admin'
+
+      All NEW Round 2 endpoints:
+      - Return correct HTTP status codes (200, 400, 401, 403, 404 as expected)
+      - Return proper response structures with required fields
+      - Enforce JWT authentication and role-based access control correctly
+      - Handle all error cases appropriately with descriptive error messages
+      - Password change flow verified end-to-end (old password rejected, new password works)
+      - Admin plan update verified end-to-end (admin updates plan, user sees updated plan)
+
+      No critical issues found. All Round 2 backend features working correctly.
+
     implemented: true
     working: true
     file: "/app/app/pricing/page.js"
@@ -309,7 +425,7 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 1
+  test_sequence: 2
   run_ui: false
 
 test_plan:
@@ -355,3 +471,33 @@ agent_communication:
       - Handle error cases appropriately
 
       No critical issues found. Backend is production-ready for MVP launch.
+
+
+  - agent: "main"
+    message: |
+      🆕 Round 2 features shipped — please test the NEW backend endpoints (others already tested in round 1 and unchanged):
+
+      NEW endpoints to validate:
+      1. POST /api/auth/update-profile   body: { name, email }   (auth required)
+         - 200 success
+         - 400 if missing fields, 400 if email already taken by another user
+      2. POST /api/auth/change-password  body: { currentPassword, newPassword }   (auth required)
+         - 200 success
+         - 401 if currentPassword wrong (verified via bcrypt)
+         - 400 if newPassword length < 6
+      3. GET  /api/admin/stats            (auth + role=admin required)
+         - 200 returns { totalUsers, totalCalculations, totalAISessions, totalProjects, planBreakdown:{free,pro,enterprise} }
+         - 403 if non-admin user
+      4. GET  /api/admin/users            (auth + role=admin required)
+         - 200 returns { users:[...] } (password field excluded)
+         - 403 if non-admin user
+      5. POST /api/admin/users/{userId}/plan  body: { plan: 'free'|'pro'|'enterprise' }   (admin required)
+         - 200 success
+         - 400 if plan invalid
+         - 404 if userId not found
+         - 403 if non-admin
+
+      Also re-confirm signup now returns user.role in payload (admin@civilcalc.in → 'admin', others → 'user').
+
+      Admin creds (already seeded): admin@civilcalc.in / Admin@1234
+      For regular-user tests, signup with a unique email+password as before.

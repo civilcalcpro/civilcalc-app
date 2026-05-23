@@ -3,16 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import {
-  Ruler,
-  ChevronLeft,
-  Loader2,
-  Check,
-  AlertTriangle,
-  Calculator,
-  Sparkles,
-  Info,
-} from 'lucide-react'
+import { Ruler, ChevronLeft, Loader2, Check, AlertTriangle, Calculator, Sparkles, Info } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
+import { DownloadPDFButton } from '@/components/calc-shell'
 
 export default function BeamDesignPage() {
   const { authFetch } = useAuth()
@@ -34,6 +26,7 @@ export default function BeamDesignPage() {
   })
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
+  const [calculationId, setCalculationId] = useState(null)
 
   const update = (k, v) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -56,6 +49,7 @@ export default function BeamDesignPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Calculation failed')
       setResult(data.result)
+      setCalculationId(data.calculationId)
       toast.success('Design completed')
     } catch (e) {
       toast.error(e.message)
@@ -159,6 +153,10 @@ export default function BeamDesignPage() {
                   <Sparkles className="h-5 w-5 text-orange-400" />
                 </div>
               </Card>
+
+              <div className="flex justify-end">
+                <DownloadPDFButton type="beam" inputs={form} result={result} calculationId={calculationId} />
+              </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <ResultBlock title="Geometry">

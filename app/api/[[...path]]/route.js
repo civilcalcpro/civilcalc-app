@@ -11,6 +11,25 @@ import {
 } from '@/lib/engineering/rcc-formulas'
 import { chatWithClaude } from '@/lib/llm-client'
 
+// Admin allow-list (comma-separated emails). Users created with these emails get role: 'admin'.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'admin@civilcalc.in')
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean)
+
+function isAdminEmail(email) {
+  return ADMIN_EMAILS.includes((email || '').toLowerCase())
+}
+
+async function requireAdmin(request) {
+  const user = getUserFromRequest(request)
+  if (!user) return { error: 'Unauthorized', status: 401 }
+  const db = await getDb()
+  const userDoc = await db.collection('users').findOne({ userId: user.userId })
+  if (!userDoc || userDoc.role !== 'admin') return { error: 'Forbidden', status: 403 }
+  return { user, userDoc, db }
+}
+
 // CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,6 +71,7 @@ export async function GET(request) {
         userId: userDoc.userId,
         name: userDoc.name,
         email: userDoc.email,
+        role: userDoc.role || (isAdminEmail(userDoc.email) ? 'admin' : 'user'),
         plan: userDoc.plan || 'free',
         createdAt: userDoc.createdAt,
       }, { headers: corsHeaders })
@@ -129,6 +149,40 @@ export async function GET(request) {
       return NextResponse.json({ sessions }, { headers: corsHeaders })
     }
 
+    // Admin — stats
+    if (path === 'admin/stats') {
+      const guard = await requireAdmin(request)
+      if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status, headers: corsHeaders })
+      const { db } = guard
+      const [totalUsers, totalCalculations, totalAISessions, totalProjects, planBreakdownArr] = await Promise.all([
+        db.collection('users').countDocuments({}),
+        db.collection('calculations').countDocuments({}),
+        db.collection('ai_sessions').countDocuments({}),
+        db.collection('projects').countDocuments({}),
+        db.collection('users').aggregate([
+          { $group: { _id: { $ifNull: ['$plan', 'free'] }, count: { $sum: 1 } } },
+        ]).toArray(),
+      ])
+      const planBreakdown = { free: 0, pro: 0, enterprise: 0 }
+      planBreakdownArr.forEach((p) => { planBreakdown[p._id] = p.count })
+      return NextResponse.json({
+        totalUsers, totalCalculations, totalAISessions, totalProjects, planBreakdown,
+      }, { headers: corsHeaders })
+    }
+
+    // Admin — list users
+    if (path === 'admin/users') {
+      const guard = await requireAdmin(request)
+      if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status, headers: corsHeaders })
+      const { db } = guard
+      const users = await db.collection('users')
+        .find({}, { projection: { password: 0, _id: 0 } })
+        .sort({ createdAt: -1 })
+        .limit(500)
+        .toArray()
+      return NextResponse.json({ users }, { headers: corsHeaders })
+    }
+
     // Get single AI session
     if (path.startsWith('ai/sessions/')) {
       const user = getUserFromRequest(request)
@@ -181,12 +235,14 @@ export async function POST(request) {
 
       const userId = uuidv4()
       const hashedPassword = hashPassword(password)
+      const role = isAdminEmail(email) ? 'admin' : 'user'
 
       await db.collection('users').insertOne({
         userId,
         name,
         email,
         password: hashedPassword,
+        role,
         plan: 'free',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -197,7 +253,7 @@ export async function POST(request) {
       return NextResponse.json({
         message: 'User created successfully',
         token,
-        user: { userId, name, email, plan: 'free' },
+        user: { userId, name, email, role, plan: 'free' },
       }, { headers: corsHeaders })
     }
 
@@ -231,6 +287,7 @@ export async function POST(request) {
           userId: user.userId,
           name: user.name,
           email: user.email,
+          role: user.role || (isAdminEmail(user.email) ? 'admin' : 'user'),
           plan: user.plan || 'free',
         },
       }, { headers: corsHeaders })
@@ -458,6 +515,62 @@ export async function POST(request) {
         { headers: corsHeaders }
       )
     }
+
+    // Profile update
+    if (path === 'auth/update-profile') {
+      const user = getUserFromRequest(request)
+      if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+      const { name, email } = body
+      if (!name || !email) return NextResponse.json({ error: 'Name and email required' }, { status: 400, headers: corsHeaders })
+      const db = await getDb()
+      const taken = await db.collection('users').findOne({ email, userId: { $ne: user.userId } })
+      if (taken) return NextResponse.json({ error: 'Email already in use' }, { status: 400, headers: corsHeaders })
+      await db.collection('users').updateOne(
+        { userId: user.userId },
+        { $set: { name, email, updatedAt: new Date() } }
+      )
+      return NextResponse.json({ success: true }, { headers: corsHeaders })
+    }
+
+    // Password change
+    if (path === 'auth/change-password') {
+      const user = getUserFromRequest(request)
+      if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+      const { currentPassword, newPassword } = body
+      if (!currentPassword || !newPassword) return NextResponse.json({ error: 'Both passwords required' }, { status: 400, headers: corsHeaders })
+      if (newPassword.length < 6) return NextResponse.json({ error: 'New password must be at least 6 chars' }, { status: 400, headers: corsHeaders })
+      const db = await getDb()
+      const doc = await db.collection('users').findOne({ userId: user.userId })
+      if (!doc || !comparePassword(currentPassword, doc.password)) {
+        return NextResponse.json({ error: 'Current password is incorrect' }, { status: 401, headers: corsHeaders })
+      }
+      await db.collection('users').updateOne(
+        { userId: user.userId },
+        { $set: { password: hashPassword(newPassword), updatedAt: new Date() } }
+      )
+      return NextResponse.json({ success: true }, { headers: corsHeaders })
+    }
+
+    // Admin — update user plan (POST /admin/users/{userId}/plan)
+    if (path.startsWith('admin/users/') && path.endsWith('/plan')) {
+      const guard = await requireAdmin(request)
+      if (guard.error) return NextResponse.json({ error: guard.error }, { status: guard.status, headers: corsHeaders })
+      const targetUserId = path.replace('admin/users/', '').replace('/plan', '')
+      const { plan } = body
+      if (!['free', 'pro', 'enterprise'].includes(plan)) {
+        return NextResponse.json({ error: 'Invalid plan' }, { status: 400, headers: corsHeaders })
+      }
+      const { db } = guard
+      const r = await db.collection('users').updateOne(
+        { userId: targetUserId },
+        { $set: { plan, planUpdatedAt: new Date(), planUpdatedBy: guard.user.userId } }
+      )
+      if (r.matchedCount === 0) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404, headers: corsHeaders })
+      }
+      return NextResponse.json({ success: true, plan }, { headers: corsHeaders })
+    }
+
 
     // Razorpay (MOCKED) — create order
     if (path === 'payments/create-order') {
