@@ -16,6 +16,13 @@ import {
   ArrowUpRight,
   Clock,
   Activity,
+  Grid3x3,
+  Anchor,
+  Layers,
+  Shovel,
+  Paintbrush,
+  IndianRupee,
+  ArrowLeftRight,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -32,11 +39,19 @@ import {
 
 const quickTools = [
   { name: 'RCC Beam Design', icon: Ruler, href: '/dashboard/calculators/beam', color: 'orange', desc: 'Singly/doubly reinforced beam per IS 456' },
+  { name: 'Column Design', icon: Building2, href: '/dashboard/calculators/column', color: 'blue', desc: 'Axially loaded RCC column' },
+  { name: 'One-Way Slab', icon: HardHat, href: '/dashboard/calculators/slab', color: 'yellow', desc: 'Simply-supported one-way slab' },
+  { name: 'Two-Way Slab', icon: Grid3x3, href: '/dashboard/calculators/two-way-slab', color: 'red', desc: 'Simply-supported two-way slab (Table 27)' },
+  { name: 'Footing Design', icon: Anchor, href: '/dashboard/calculators/footing', color: 'purple', desc: 'Isolated square footing' },
+  { name: 'Concrete & Mix', icon: Boxes, href: '/dashboard/calculators/concrete-volume', color: 'green', desc: 'Nominal mix C : S : A per grade' },
+  { name: 'Steel Weight', icon: Ruler, href: '/dashboard/calculators/steel-weight', color: 'orange', desc: 'D²/162 bar weight calculator' },
+  { name: 'Brickwork', icon: Layers, href: '/dashboard/calculators/brickwork', color: 'red', desc: 'Brick count + mortar take-off' },
+  { name: 'Plaster Work', icon: Paintbrush, href: '/dashboard/calculators/plaster', color: 'yellow', desc: 'Cement & sand for plaster' },
+  { name: 'Excavation', icon: Shovel, href: '/dashboard/calculators/excavation', color: 'blue', desc: 'Earthwork volume & truck loads' },
+  { name: 'Rate Analysis', icon: IndianRupee, href: '/dashboard/calculators/rate-analysis', color: 'green', desc: 'Project cost estimation' },
+  { name: 'Unit Converter', icon: ArrowLeftRight, href: '/dashboard/calculators/unit-converter', color: 'purple', desc: 'Length, force, pressure & more' },
   { name: 'AI Engineering Assistant', icon: Bot, href: '/dashboard/ai-assistant', color: 'purple', desc: 'Powered by Claude — ask anything' },
-  { name: 'Column Design', icon: Building2, href: '#', color: 'blue', desc: 'Coming soon', soon: true },
-  { name: 'Concrete Volume', icon: Boxes, href: '#', color: 'green', desc: 'Coming soon', soon: true },
-  { name: 'One-Way Slab', icon: HardHat, href: '#', color: 'yellow', desc: 'Coming soon', soon: true },
-  { name: 'IS Code Library', icon: FileText, href: '#', color: 'red', desc: 'Coming soon', soon: true },
+  { name: 'IS Code Library', icon: FileText, href: '/dashboard/is-codes', color: 'red', desc: 'IS 456 / 875 / 1893 / 13920 references' },
 ]
 
 export default function DashboardPage() {
@@ -108,7 +123,7 @@ export default function DashboardPage() {
           { label: 'Calculations', value: stats.calculationCount || 0, icon: Calculator, color: 'orange' },
           { label: 'Projects', value: stats.projectCount || 0, icon: FileText, color: 'blue' },
           { label: 'AI Sessions', value: 0, icon: Bot, color: 'purple' },
-          { label: 'Plan', value: (user?.plan || 'free').toUpperCase(), icon: Sparkles, color: 'green' },
+          { label: 'Tools', value: '14+', icon: Sparkles, color: 'green' },
         ].map((s, i) => (
           <motion.div
             key={s.label}

@@ -10,16 +10,21 @@ import {
   Calculator,
   Bot,
   BookOpen,
-  CreditCard,
   Settings,
   LogOut,
   Menu,
-  X,
   Ruler,
   Boxes,
   HardHat,
-  ChevronRight,
   Shield,
+  Grid3x3,
+  Anchor,
+  Layers,
+  Shovel,
+  Paintbrush,
+  IndianRupee,
+  ArrowLeftRight,
+  Linkedin,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
@@ -32,18 +37,30 @@ const navGroups = [
     ],
   },
   {
-    label: 'Calculators',
+    label: 'Structural Design',
     items: [
-      { href: '/dashboard/calculators/beam', label: 'RCC Beam Design', icon: Ruler },
-      { href: '/dashboard/calculators/column', label: 'Column Design', icon: Building2 },
+      { href: '/dashboard/calculators/beam', label: 'RCC Beam', icon: Ruler },
+      { href: '/dashboard/calculators/column', label: 'Column', icon: Building2 },
       { href: '/dashboard/calculators/slab', label: 'One-Way Slab', icon: HardHat },
-      { href: '/dashboard/calculators/concrete-volume', label: 'Concrete Volume', icon: Boxes },
-      { href: '/dashboard/calculators/steel-weight', label: 'Steel Weight', icon: Ruler },
+      { href: '/dashboard/calculators/two-way-slab', label: 'Two-Way Slab', icon: Grid3x3 },
+      { href: '/dashboard/calculators/footing', label: 'Footing', icon: Anchor },
     ],
   },
   {
-    label: 'Intelligence',
+    label: 'Estimation',
     items: [
+      { href: '/dashboard/calculators/concrete-volume', label: 'Concrete & Mix', icon: Boxes },
+      { href: '/dashboard/calculators/steel-weight', label: 'Steel Weight', icon: Ruler },
+      { href: '/dashboard/calculators/brickwork', label: 'Brickwork', icon: Layers },
+      { href: '/dashboard/calculators/plaster', label: 'Plaster Work', icon: Paintbrush },
+      { href: '/dashboard/calculators/excavation', label: 'Excavation', icon: Shovel },
+      { href: '/dashboard/calculators/rate-analysis', label: 'Rate Analysis', icon: IndianRupee },
+    ],
+  },
+  {
+    label: 'Tools & Intelligence',
+    items: [
+      { href: '/dashboard/calculators/unit-converter', label: 'Unit Converter', icon: ArrowLeftRight },
       { href: '/dashboard/ai-assistant', label: 'AI Assistant', icon: Bot, badge: 'Claude' },
       { href: '/dashboard/is-codes', label: 'IS Code Library', icon: BookOpen },
     ],
@@ -51,13 +68,13 @@ const navGroups = [
   {
     label: 'Account',
     items: [
-      { href: '/pricing', label: 'Plans & Billing', icon: CreditCard },
       { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     ],
   },
 ]
 
 const adminItem = { href: '/dashboard/admin', label: 'Admin Panel', icon: Shield, badge: 'ADMIN' }
+const LINKEDIN_URL = 'https://www.linkedin.com/in/civilcal-pro-6ba230411'
 
 export default function DashboardLayout({ children }) {
   const { user, loading, logout } = useAuth()
@@ -167,7 +184,18 @@ export default function DashboardLayout({ children }) {
         )}
       </nav>
 
-      <div className="p-3 border-t border-slate-800">
+      <div className="p-3 border-t border-slate-800 space-y-2">
+        {/* LinkedIn link */}
+        <a
+          href={LINKEDIN_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-[#0a66c2]/50 hover:bg-[#0a66c2]/10 text-slate-400 hover:text-[#70b5f9] text-xs transition group"
+        >
+          <Linkedin className="h-3.5 w-3.5 group-hover:scale-110 transition" />
+          <span>Follow on LinkedIn</span>
+        </a>
+
         <div className="flex items-center justify-between px-2 py-2 rounded-lg bg-slate-900/50">
           <div className="flex items-center min-w-0">
             <div className="h-9 w-9 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
@@ -175,7 +203,7 @@ export default function DashboardLayout({ children }) {
             </div>
             <div className="ml-2 min-w-0">
               <div className="text-sm font-medium text-white truncate">{user.name}</div>
-              <div className="text-[11px] text-slate-500 truncate uppercase tracking-wide">{user.plan} plan</div>
+              <div className="text-[11px] text-slate-500 truncate">{user.email}</div>
             </div>
           </div>
           <Button

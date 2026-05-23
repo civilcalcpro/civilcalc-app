@@ -8,6 +8,12 @@ import {
   designColumn,
   calculateConcreteVolume,
   calculateSteelWeight,
+  designTwoWaySlab,
+  designFooting,
+  calculateBrickwork,
+  calculateExcavation,
+  calculatePlaster,
+  calculateRateAnalysis,
 } from '@/lib/engineering/rcc-formulas'
 import { chatWithClaude } from '@/lib/llm-client'
 
@@ -449,6 +455,28 @@ export async function POST(request) {
         calculationId,
         result,
       }, { headers: corsHeaders })
+    }
+
+    // Generic calculator dispatcher for new modules
+    const calcMap = {
+      'calculate/two-way-slab': { fn: designTwoWaySlab, type: 'two-way-slab' },
+      'calculate/footing': { fn: designFooting, type: 'footing' },
+      'calculate/brickwork': { fn: calculateBrickwork, type: 'brickwork' },
+      'calculate/excavation': { fn: calculateExcavation, type: 'excavation' },
+      'calculate/plaster': { fn: calculatePlaster, type: 'plaster' },
+      'calculate/rate-analysis': { fn: calculateRateAnalysis, type: 'rate-analysis' },
+    }
+    if (calcMap[path]) {
+      const user = getUserFromRequest(request)
+      if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+      const { fn, type } = calcMap[path]
+      const result = fn(body)
+      const calculationId = uuidv4()
+      const db = await getDb()
+      await db.collection('calculations').insertOne({
+        calculationId, userId: user.userId, type, inputs: body, results: result, createdAt: new Date(),
+      })
+      return NextResponse.json({ calculationId, result }, { headers: corsHeaders })
     }
 
     // AI Chat

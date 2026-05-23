@@ -21,7 +21,8 @@ import {
   HardHat,
   Boxes,
   Database,
-  Bot
+  Bot,
+  Linkedin
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -59,13 +60,16 @@ export default function LandingPage() {
             <div className="hidden md:flex items-center space-x-8">
               <Link href="#features" className="text-slate-300 hover:text-white transition">Features</Link>
               <Link href="#tools" className="text-slate-300 hover:text-white transition">Tools</Link>
-              <Link href="#pricing" className="text-slate-300 hover:text-white transition">Pricing</Link>
+              <Link href="/dashboard" className="text-slate-300 hover:text-white transition">Dashboard</Link>
+              <a href="https://www.linkedin.com/in/civilcal-pro-6ba230411" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-[#70b5f9] transition" title="Follow on LinkedIn">
+                <Linkedin className="h-5 w-5" />
+              </a>
               <Link href="/login">
                 <Button variant="ghost" className="text-slate-300">Login</Button>
               </Link>
               <Link href="/signup">
                 <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
-                  Start Free Trial
+                  Get Started Free
                 </Button>
               </Link>
             </div>
@@ -88,11 +92,14 @@ export default function LandingPage() {
             >
               <Link href="#features" className="block text-slate-300 hover:text-white">Features</Link>
               <Link href="#tools" className="block text-slate-300 hover:text-white">Tools</Link>
-              <Link href="#pricing" className="block text-slate-300 hover:text-white">Pricing</Link>
+              <Link href="/dashboard" className="block text-slate-300 hover:text-white">Dashboard</Link>
+              <a href="https://www.linkedin.com/in/civilcal-pro-6ba230411" target="_blank" rel="noopener noreferrer" className="flex items-center text-slate-300 hover:text-[#70b5f9]">
+                <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
+              </a>
               <Link href="/login" className="block text-slate-300 hover:text-white">Login</Link>
               <Link href="/signup">
                 <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600">
-                  Start Free Trial
+                  Get Started Free
                 </Button>
               </Link>
             </motion.div>
@@ -130,7 +137,7 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/signup">
                   <Button size="lg" className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-lg px-8 h-14 w-full sm:w-auto">
-                    Start Free Trial
+                    Get Started — It&apos;s Free
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -358,117 +365,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4">
-        <div className="container mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl lg:text-5xl font-bold mb-4">
-              Simple,{' '}
-              <span className="bg-gradient-to-r from-orange-500 to-orange-300 bg-clip-text text-transparent">
-                Transparent Pricing
-              </span>
-            </h2>
-            <p className="text-xl text-slate-400">
-              Choose the plan that fits your needs
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              {
-                name: 'Free',
-                price: '₹0',
-                period: 'forever',
-                features: [
-                  'Basic calculators',
-                  'Unit converter',
-                  'Limited calculations',
-                  'Community support',
-                ],
-                cta: 'Get Started',
-                highlighted: false,
-              },
-              {
-                name: 'Pro',
-                price: '₹499',
-                period: '/month',
-                features: [
-                  'All RCC Design tools',
-                  'AI Engineering Assistant',
-                  'Unlimited calculations',
-                  'PDF report generation',
-                  'Quantity estimation',
-                  'Priority support',
-                ],
-                cta: 'Start Free Trial',
-                highlighted: true,
-              },
-              {
-                name: 'Enterprise',
-                price: '₹999',
-                period: '/month',
-                features: [
-                  'Everything in Pro',
-                  'Team collaboration',
-                  'Advanced analytics',
-                  'Custom IS code library',
-                  'API access',
-                  'Dedicated support',
-                ],
-                cta: 'Contact Sales',
-                highlighted: false,
-              },
-            ].map((plan, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <Card className={`p-8 h-full ${
-                  plan.highlighted
-                    ? 'bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-orange-500/50 scale-105'
-                    : 'bg-slate-800/30 backdrop-blur-xl border-slate-700/50'
-                }`}>
-                  {plan.highlighted && (
-                    <div className="inline-block px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full mb-4">
-                      MOST POPULAR
-                    </div>
-                  )}
-                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-slate-400">{plan.period}</span>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start">
-                        <Check className="h-5 w-5 text-green-400 mr-2 flex-shrink-0 mt-0.5" />
-                        <span className="text-slate-300">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/signup">
-                    <Button className={`w-full ${
-                      plan.highlighted
-                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'
-                        : 'bg-slate-700 hover:bg-slate-600'
-                    }`}>
-                      {plan.cta}
-                    </Button>
-                  </Link>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Pricing Section — Removed. CivilCalc Pro is now 100% free. */}
 
       {/* CTA Section */}
       <section className="py-20 px-4">
@@ -483,11 +380,11 @@ export default function LandingPage() {
               Ready to Transform Your Engineering Workflow?
             </h2>
             <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of civil engineers who trust CivilCalc Pro for their structural calculations
+              All 14+ calculators, AI assistant and IS code library — completely free for engineers & students.
             </p>
             <Link href="/signup">
               <Button size="lg" className="bg-white text-orange-600 hover:bg-slate-100 text-lg px-8 h-14">
-                Start Your Free Trial
+                Get Started — It&apos;s Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
@@ -516,7 +413,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li><Link href="#features" className="hover:text-white">Features</Link></li>
                 <li><Link href="#tools" className="hover:text-white">Tools</Link></li>
-                <li><Link href="#pricing" className="hover:text-white">Pricing</Link></li>
+                <li><Link href="/dashboard" className="hover:text-white">Dashboard</Link></li>
               </ul>
             </div>
 
@@ -539,8 +436,17 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-800 pt-8 text-center text-slate-400 text-sm">
+          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-400 text-sm">
             <p>© 2025 CivilCalc Pro. All rights reserved.</p>
+            <a
+              href="https://www.linkedin.com/in/civilcal-pro-6ba230411"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/60 border border-slate-800 hover:border-[#0a66c2]/60 hover:bg-[#0a66c2]/10 transition"
+            >
+              <Linkedin className="h-4 w-4 text-[#70b5f9] group-hover:scale-110 transition" />
+              <span className="text-slate-300 group-hover:text-white">Follow on LinkedIn</span>
+            </a>
           </div>
         </div>
       </footer>

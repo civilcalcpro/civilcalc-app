@@ -131,14 +131,13 @@ export default function SettingsPage() {
           </form>
         </Card>
 
-        {/* Plan info */}
-        <Card className="bg-slate-900/50 border-slate-800 p-6">
+        {/* Free access info */}
+        <Card className="bg-gradient-to-br from-green-500/10 to-slate-900 border-green-500/30 p-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <div className="text-base font-semibold text-white">Current plan</div>
-              <div className="text-xs text-slate-500">You are on the <span className="text-orange-400 font-semibold uppercase">{user?.plan || 'free'}</span> plan</div>
+              <div className="text-base font-semibold text-white">All features unlocked</div>
+              <div className="text-xs text-slate-400">CivilCalc Pro is <span className="text-green-400 font-semibold">100% free</span> — every calculator, the AI assistant and the IS code library are open to you.</div>
             </div>
-            <a href="/pricing" className="text-sm text-orange-400 hover:underline">Manage plan →</a>
           </div>
         </Card>
       </div>

@@ -385,6 +385,34 @@ frontend:
         agent: "main"
         comment: "Sessions sidebar, suggested prompts grid, typewriter streaming effect, typing dots, message bubbles, mock-indicator badge when fallback active. Verified live with Claude — formatted IS code response rendered correctly."
 
+  - agent: "main"
+    message: |
+      🆕 ROUND 3 — Complete feature unlock + 7 new calculators + LinkedIn integration + paywall removal
+
+      BACKEND ENDPOINTS ADDED (all behind JWT auth, NO plan checks anywhere):
+      - POST /api/calculate/two-way-slab    (IS 456 Annex D, Table 27 coefficients)
+      - POST /api/calculate/footing          (IS 456 Cl. 34, isolated square footing)
+      - POST /api/calculate/brickwork        (brick count + mortar take-off)
+      - POST /api/calculate/excavation       (volume + bulking + truck loads)
+      - POST /api/calculate/plaster          (cement + sand for plaster)
+      - POST /api/calculate/rate-analysis    (project cost with overhead + profit)
+
+      All 6 dispatched via a single `calcMap` in route.js POST handler. Results persisted to `calculations` collection with the user id and a unique calculationId — same pattern as the existing 5 calculators.
+
+      FRONTEND CHANGES:
+      - 7 new calculator pages under /app/app/dashboard/calculators/{two-way-slab|footing|brickwork|excavation|plaster|rate-analysis|unit-converter}/page.js. Each has form + result cards + Download PDF Report button (Unit Converter is client-only, no PDF/API).
+      - Sidebar reorganised into 5 groups: Overview · Structural Design · Estimation · Tools & Intelligence · Account. ALL "Coming Soon" removed. Admin Panel still role-gated.
+      - "Plans & Billing" sidebar link REMOVED.
+      - User card no longer shows plan badge; shows email instead.
+      - Dashboard "Plan" stat card replaced with "Tools — 14+".
+      - Dashboard "Quick Tools" grid now lists all 14 calculators (no more "Coming Soon" cards).
+      - Landing page: Pricing section REMOVED, hero CTA renamed to "Get Started — It's Free", nav/footer/mobile menu LinkedIn icon added (https://www.linkedin.com/in/civilcal-pro-6ba230411).
+      - Sidebar (dashboard) footer also has a "Follow on LinkedIn" pill button.
+      - Settings page: Plan card replaced with "All features unlocked — 100% free" green card.
+
+      No-action policy for testing this round: User has limited credits — please do NOT run an exhaustive automated test for this batch unless something is visibly broken. The calculators were verified visually via screenshot tool. If user requests testing, focus only on the 6 new POST endpoints with a single admin token.
+
+
   - task: "Pricing page + mocked Razorpay checkout dialog"
 
   - agent: "testing"
