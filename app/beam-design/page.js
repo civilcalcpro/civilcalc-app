@@ -11,7 +11,7 @@ export const metadata = {
     'structural design',
   ],
 }
-
+import BeamCalculator from '../dashboard/calculators/beam/page'
 export default function BeamDesignPage() {
   return (
     <main className="min-h-screen bg-white text-black p-10">
@@ -45,6 +45,9 @@ export default function BeamDesignPage() {
         CivilCalc Pro helps civil engineers perform RCC beam design quickly
         using AI-powered engineering tools and structural calculations.
       </p>
+          <div className="mt-10">
+  <BeamCalculator />
+</div>
     </main>
   )
 }
