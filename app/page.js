@@ -471,6 +471,11 @@ export default function LandingPage() {
     RCC Column Design Calculator
   </Link>
 </li>
+                <li>
+  <Link href="/footing-design">
+    RCC Footing Design Calculator
+  </Link>
+</li>
 </ul>
                 </div>
       </footer>
