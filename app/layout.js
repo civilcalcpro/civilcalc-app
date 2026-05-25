@@ -30,7 +30,9 @@ export const metadata = {
   creator: 'CivilCalc Pro',
 
   metadataBase: new URL('https://civilcalc-app.vercel.app'),
-
+verification: {
+  google: 'a0tPHDR5XdLr0qk......',
+},
   openGraph: {
     title: 'CivilCalc Pro',
     description:
