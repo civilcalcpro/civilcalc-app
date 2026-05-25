@@ -31,7 +31,7 @@ export const metadata = {
 
   metadataBase: new URL('https://civilcalc-app.vercel.app'),
 verification: {
-  google: 'a0tPHDR5XdLr0qk......',
+  google: aOtPHDR5XdLr0qbTeQWhuBzmdNlJaO3qGZChVTUoqRE',
 },
   openGraph: {
     title: 'CivilCalc Pro',
