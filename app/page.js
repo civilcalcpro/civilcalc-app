@@ -455,13 +455,18 @@ export default function LandingPage() {
   </h2>
 
   <ul className="list-disc pl-6 space-y-2">
-    <li>
-      <Link href="/beam-design">
-        RCC Beam Design Calculator
-      </Link>
-    </li>
-  </ul>
-</div>
+  <li>
+    <Link href="/beam-design">
+      RCC Beam Design Calculator
+    </Link>
+  </li>
+
+  <li>
+    <Link href="/slab-design">
+      RCC Slab Design Calculator
+    </Link>
+  </li>
+</ul>
       </footer>
     </div>
   )
