@@ -1,50 +1,63 @@
-  export const metadata = {
-  title: 'Plaster Calculator | CivilCalc Pro',
+import Link from "next/link";
+
+export const metadata = {
+  title: "Plaster Work Calculator | CivilCalc Pro",
   description:
-    'Free Plaster Calculator for civil engineers. Calculate plaster quantity, cement sand ratio, wall plaster area, and material estimation instantly.',
-  keywords: [
-    'plaster calculator',
-    'wall plaster calculator',
-    'cement sand ratio calculator',
-    'civil engineering calculator',
-    'construction material estimation',
-    'plaster quantity calculator',
-  ],
-}
+    "Free online plaster work calculator for civil engineers and contractors. Calculate plaster area, cement quantity, sand quantity, plaster thickness, and construction material estimation.",
+};
 
 export default function PlasterCalculatorPage() {
   return (
-    <main className="min-h-screen bg-white text-black p-10">
-      <h1 className="text-4xl font-bold mb-6">
-        Plaster Calculator
-      </h1>
+    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+      <div className="max-w-5xl mx-auto">
 
-      <p className="text-lg mb-6">
-        Free online plaster calculator for civil engineers,
-        contractors, and students. Calculate plaster quantity,
-        cement sand ratio, wall plaster area, and material estimation instantly.
-      </p>
+        <h1 className="text-5xl font-bold mb-6">
+          Plaster Work Calculator
+        </h1>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        Features
-      </h2>
+        <p className="text-slate-300 text-lg mb-10">
+          Free online plaster work calculator for civil engineers,
+          contractors, and students. Calculate plaster area, cement quantity,
+          sand quantity, plaster thickness, and construction material estimation.
+        </p>
 
-      <ul className="list-disc pl-6 space-y-2">
-        <li>Wall plaster quantity calculation</li>
-        <li>Cement sand ratio estimation</li>
-        <li>Material quantity estimation</li>
-        <li>Surface area calculation</li>
-        <li>Construction material planning</li>
-      </ul>
+        <Link
+          href="/login?redirect=/dashboard/calculators/plaster"
+          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
+        >
+          Open Plaster Calculator
+        </Link>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Why Use CivilCalc Pro?
-      </h2>
+        <div className="grid md:grid-cols-2 gap-10">
 
-      <p>
-        CivilCalc Pro helps civil engineers estimate plaster quantities
-        quickly using engineering formulas and AI-powered construction tools.
-      </p>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">Features</h2>
+
+            <ul className="space-y-3 text-slate-300">
+              <li>• Wall plaster area calculation</li>
+              <li>• Cement quantity estimation</li>
+              <li>• Sand quantity estimation</li>
+              <li>• Plaster thickness calculation</li>
+              <li>• Material quantity analysis</li>
+              <li>• Construction cost planning</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">
+              Why Use CivilCalc Pro?
+            </h2>
+
+            <p className="text-slate-300 leading-8">
+              CivilCalc Pro helps engineers and contractors calculate plaster
+              quantities quickly using professional construction estimation
+              tools. Ideal for site engineers, quantity surveyors,
+              contractors, and students.
+            </p>
+          </div>
+
+        </div>
+      </div>
     </main>
-  )
+  );
 }
