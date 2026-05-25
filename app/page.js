@@ -448,65 +448,6 @@ export default function LandingPage() {
               <span className="text-slate-300 group-hover:text-white">Follow on LinkedIn</span>
             </a>
           </div>
-        </div>
-              <section className="py-20 px-6 bg-slate-950">
-  <div className="max-w-7xl mx-auto">
-
-    <div className="text-center mb-12">
-      <p className="text-orange-400 font-semibold mb-2">
-        ENGINEERING CALCULATORS
-      </p>
-
-      <h2 className="text-4xl font-bold text-white mb-4">
-        Professional Civil Engineering Tools
-      </h2>
-
-      <p className="text-slate-400 max-w-2xl mx-auto">
-        Fast, accurate calculators for RCC design,
-        quantity estimation, and construction planning.
-      </p>
-    </div>
-
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-      <Link
-        href="/beam-design"
-        className="rounded-2xl border border-slate-800 bg-slate-900 p-6 hover:border-orange-500 transition"
-      >
-        <h3 className="text-xl font-bold text-white mb-3">
-          RCC Beam Design
-        </h3>
-
-        <p className="text-slate-400 text-sm mb-4">
-          Design RCC beams as per IS 456 with reinforcement checks.
-        </p>
-
-        <span className="text-orange-400 font-semibold">
-          Open Calculator →
-        </span>
-      </Link>
-
-      <Link
-        href="/column-design"
-        className="rounded-2xl border border-slate-800 bg-slate-900 p-6 hover:border-orange-500 transition"
-      >
-        <h3 className="text-xl font-bold text-white mb-3">
-          RCC Column Design
-        </h3>
-
-        <p className="text-slate-400 text-sm mb-4">
-          Calculate axial load capacity and reinforcement.
-        </p>
-
-        <span className="text-orange-400 font-semibold">
-          Open Calculator →
-        </span>
-      </Link>
-
-    </div>
-  </div>
-</section>
-
 </footer>
 </div>
 )
