@@ -360,20 +360,19 @@ export default function LandingPage() {
 
 { name: 'Unit Converter', href: '/dashboard/calculators/unit-converter', icon: Zap },
             ].map((tool, idx) => (
-              <Link href={tool.href}>
-  <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.05 }}
-                className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-lg p-4 hover:bg-slate-800/50 transition-all hover:border-orange-500/30 cursor-pointer"
-              >
-                <tool.icon className="h-5 w-5 text-orange-400 mb-2" />
-                      <div className="text-sm font-medium">{tool.name}</div>
+  <Link href={tool.href} key={idx}>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true }}
+      transition={{ delay: idx * 0.05 }}
+      className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-lg p-4 hover:bg-slate-800/50 transition-all hover:border-orange-500/30 cursor-pointer"
+    >
+      <tool.icon className="h-5 w-5 text-orange-400 mb-2" />
+      <div className="text-sm font-medium">{tool.name}</div>
     </motion.div>
   </Link>
-))
+))}
           </div>
         </div>
       </section>
