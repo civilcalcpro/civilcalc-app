@@ -1,27 +1,27 @@
 export const metadata = {
-  title: 'RCC Beam Design Calculator | CivilCalc Pro',
+  title: 'RCC Column Design Calculator | CivilCalc Pro',
   description:
-    'Free RCC Beam Design Calculator for civil engineers. Calculate beam size, steel reinforcement, loads, bending moment, and IS code based RCC beam design instantly.',
+    'Free RCC Column Design Calculator for civil engineers. Calculate column size, steel reinforcement, axial load, bending moment, and IS code based RCC column design instantly.',
   keywords: [
-    'RCC beam design',
-    'beam design calculator',
+    'RCC column design',
+    'column design calculator',
     'civil engineering calculator',
-    'beam analysis',
-    'IS 456 beam design',
+    'column analysis',
+    'IS 456 column design',
     'structural design',
   ],
 }
 
-export default function BeamDesignPage() {
+export default function ColumnDesignPage() {
   return (
     <main className="min-h-screen bg-white text-black p-10">
       <h1 className="text-4xl font-bold mb-6">
-        RCC Beam Design Calculator
+        RCC Column Design Calculator
       </h1>
 
       <p className="text-lg mb-6">
-        Free online RCC beam design calculator for civil engineers and students.
-        Calculate beam dimensions, reinforcement steel, loads, bending moments,
+        Free online RCC column design calculator for civil engineers and students.
+        Calculate column dimensions, reinforcement steel, axial loads, bending moments,
         and structural design as per IS codes.
       </p>
 
@@ -30,10 +30,10 @@ export default function BeamDesignPage() {
       </h2>
 
       <ul className="list-disc pl-6 space-y-2">
-        <li>Beam load calculations</li>
-        <li>Bending moment calculation</li>
+        <li>Axial load calculations</li>
+        <li>Column sizing</li>
         <li>Steel reinforcement estimation</li>
-        <li>IS 456 based RCC design</li>
+        <li>IS 456 based RCC column design</li>
         <li>Fast structural analysis</li>
       </ul>
 
@@ -42,7 +42,7 @@ export default function BeamDesignPage() {
       </h2>
 
       <p>
-        CivilCalc Pro helps civil engineers perform RCC beam design quickly
+        CivilCalc Pro helps civil engineers perform RCC column design quickly
         using AI-powered engineering tools and structural calculations.
       </p>
     </main>
