@@ -1,41 +1,53 @@
+'use client'
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
-export const metadata = {
-  title: "One Way Slab Design Calculator | CivilCalc Pro",
-  description:
-    "Free online one way slab design calculator for civil engineers and students. Calculate slab thickness, reinforcement steel, bending moment, load distribution, and structural design as per IS 456.",
-};
+export default function SlabDesignPage() {
+  const searchParams = useSearchParams();
 
-export default function OneWaySlabCalculatorPage() {
+  const type = searchParams.get("type");
+
+  const isTwoWay = type === "two-way";
+
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
       <div className="max-w-5xl mx-auto">
 
         <h1 className="text-5xl font-bold mb-6">
-          One Way Slab Design Calculator
+          {isTwoWay
+            ? "Two Way Slab Design Calculator"
+            : "One Way Slab Design Calculator"}
         </h1>
 
         <p className="text-slate-300 text-lg mb-10">
-          Free online one way slab design calculator for civil engineers
-          and students. Calculate slab thickness, reinforcement steel,
-          bending moments, load distribution, and structural design
-          as per IS 456 code.
+          {isTwoWay
+            ? "Free online two way slab design calculator for civil engineers and students."
+            : "Free online one way slab design calculator for civil engineers and students."}
         </p>
 
         <Link
-          href="/login?redirect=/dashboard/calculators/one-way-slab"
+          href={
+            isTwoWay
+              ? "/login?redirect=/dashboard/calculators/two-way-slab"
+              : "/login?redirect=/dashboard/calculators/one-way-slab"
+          }
           className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
         >
-          Open One Way Slab Calculator
+          {isTwoWay
+            ? "Open Two Way Slab Calculator"
+            : "Open One Way Slab Calculator"}
         </Link>
 
         <div className="grid md:grid-cols-2 gap-10">
 
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">Features</h2>
+            <h2 className="text-2xl font-bold mb-4">
+              Features
+            </h2>
 
             <ul className="space-y-3 text-slate-300">
-              <li>• One way slab thickness calculation</li>
+              <li>• Slab thickness calculation</li>
               <li>• Reinforcement steel estimation</li>
               <li>• Bending moment analysis</li>
               <li>• Load distribution calculation</li>
@@ -50,10 +62,9 @@ export default function OneWaySlabCalculatorPage() {
             </h2>
 
             <p className="text-slate-300 leading-8">
-              CivilCalc Pro helps civil engineers perform one way slab
-              design quickly using AI-powered engineering tools and
-              structural calculations. Suitable for students,
-              consultants, and construction professionals.
+              CivilCalc Pro helps civil engineers perform slab design
+              quickly using AI-powered engineering tools and
+              structural calculations.
             </p>
           </div>
 
