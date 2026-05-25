@@ -4,13 +4,55 @@ import { AuthProvider } from '@/lib/auth-context'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 export const metadata = {
-  title: 'CivilCalc Pro - AI-Powered Civil Engineering Platform',
+  title: 'CivilCalc Pro - AI Civil Engineering Platform',
+  
   description:
-    'Design RCC structures, estimate quantities, generate structural reports, and automate civil engineering workflows with AI assistance.',
-  keywords:
-    'civil engineering, RCC design, structural analysis, quantity estimation, IS codes, civil calculator',
-}
+    'AI-powered civil engineering platform for RCC design, quantity estimation, IS code calculations, structural analysis, beam design, slab design, footing design, and project estimation.',
 
+  keywords: [
+    'civil engineering software',
+    'RCC design',
+    'beam design',
+    'slab design',
+    'footing design',
+    'civil calculator',
+    'quantity estimation',
+    'structural analysis',
+    'IS code calculations',
+    'AI civil engineering',
+    'construction estimation',
+    'civil engineering tools',
+    'civilcalc pro'
+  ],
+
+  authors: [{ name: 'CivilCalc Pro' }],
+
+  creator: 'CivilCalc Pro',
+
+  metadataBase: new URL('https://civilcalc-app.vercel.app'),
+
+  openGraph: {
+    title: 'CivilCalc Pro',
+    description:
+      'AI-powered civil engineering platform for RCC design and estimation.',
+    url: 'https://civilcalc-app.vercel.app',
+    siteName: 'CivilCalc Pro',
+    locale: 'en_US',
+    type: 'website',
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CivilCalc Pro',
+    description:
+      'AI-powered civil engineering platform for RCC design and estimation.',
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+  },
+}
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
