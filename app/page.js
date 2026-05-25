@@ -491,6 +491,11 @@ export default function LandingPage() {
     Brickwork Calculator
   </Link>
 </li>
+                <li>
+  <Link href="/excavation-calculator">
+    Excavation Calculator
+  </Link>
+</li>
 </ul>
                 </div>
       </footer>
