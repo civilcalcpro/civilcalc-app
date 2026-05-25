@@ -486,6 +486,11 @@ export default function LandingPage() {
     Concrete Volume Calculator
   </Link>
 </li>
+                <li>
+  <Link href="/brickwork-calculator">
+    Brickwork Calculator
+  </Link>
+</li>
 </ul>
                 </div>
       </footer>
