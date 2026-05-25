@@ -336,20 +336,32 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { name: 'One-Way Slab', icon: Home },
-              { name: 'Two-Way Slab', icon: Home },
-              { name: 'Beam Design', icon: Ruler },
-              { name: 'Column Design', icon: Building2 },
-              { name: 'Footing Design', icon: HardHat },
-              { name: 'Concrete Volume', icon: Boxes },
-              { name: 'Steel Weight', icon: BarChart3 },
-              { name: 'Brickwork', icon: Building2 },
-              { name: 'Excavation', icon: HardHat },
-              { name: 'Plaster Work', icon: Home },
-              { name: 'Rate Analysis', icon: Calculator },
-              { name: 'Unit Converter', icon: Zap },
+             { name: 'One-Way Slab', href: '/slab-design?type=one-way', icon: Home },
+
+{ name: 'Two-Way Slab', href: '/slab-design?type=two-way', icon: Home },
+
+{ name: 'Beam Design', href: '/beam-design', icon: Ruler },
+
+{ name: 'Column Design', href: '/column-design', icon: Building2 },
+
+{ name: 'Footing Design', href: '/footing-design', icon: HardHat },
+
+{ name: 'Concrete Volume', href: '/concrete-volume-calculator', icon: Boxes },
+
+{ name: 'Steel Weight', href: '/steel-weight-calculator', icon: BarChart3 },
+
+{ name: 'Brickwork', href: '/brickwork-calculator', icon: Building2 },
+
+{ name: 'Excavation', href: '/excavation-calculator', icon: HardHat },
+
+{ name: 'Plaster Work', href: '/plaster-calculator', icon: Home },
+
+{ name: 'Rate Analysis', href: '/dashboard/calculators/rate-analysis', icon: Calculator },
+
+{ name: 'Unit Converter', href: '/dashboard/calculators/unit-converter', icon: Zap },
             ].map((tool, idx) => (
-              <motion.div
+              <Link href={tool.href}>
+  <motion.div
                 key={idx}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -358,9 +370,10 @@ export default function LandingPage() {
                 className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-lg p-4 hover:bg-slate-800/50 transition-all hover:border-orange-500/30 cursor-pointer"
               >
                 <tool.icon className="h-5 w-5 text-orange-400 mb-2" />
-                <div className="text-sm font-medium">{tool.name}</div>
-              </motion.div>
-            ))}
+                      <div className="text-sm font-medium">{tool.name}</div>
+    </motion.div>
+  </Link>
+))
           </div>
         </div>
       </section>
