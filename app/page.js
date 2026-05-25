@@ -476,6 +476,11 @@ export default function LandingPage() {
     RCC Footing Design Calculator
   </Link>
 </li>
+                <li>
+  <Link href="/steel-weight-calculator">
+    Steel Weight Calculator
+  </Link>
+</li>
 </ul>
                 </div>
       </footer>
