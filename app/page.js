@@ -448,6 +448,7 @@ export default function LandingPage() {
               <span className="text-slate-300 group-hover:text-white">Follow on LinkedIn</span>
             </a>
           </div>
+                </div>
 </footer>
 </div>
 )
