@@ -1,50 +1,63 @@
+import Link from "next/link";
+
 export const metadata = {
-  title: 'Excavation Calculator | CivilCalc Pro',
+  title: "Excavation Calculator | CivilCalc Pro",
   description:
-    'Free Excavation Calculator for civil engineers. Calculate excavation volume, earthwork quantity, trench excavation, and soil removal estimation instantly.',
-  keywords: [
-    'excavation calculator',
-    'earthwork calculator',
-    'soil excavation calculator',
-    'trench excavation',
-    'civil engineering calculator',
-    'construction quantity estimation',
-  ],
-}
+    "Free online excavation calculator for civil engineers and contractors. Calculate excavation volume, earthwork quantity, trench excavation, and construction material estimation instantly.",
+};
 
 export default function ExcavationCalculatorPage() {
   return (
-    <main className="min-h-screen bg-white text-black p-10">
-      <h1 className="text-4xl font-bold mb-6">
-        Excavation Calculator
-      </h1>
+    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+      <div className="max-w-5xl mx-auto">
 
-      <p className="text-lg mb-6">
-        Free online excavation calculator for civil engineers,
-        contractors, and students. Calculate excavation volume,
-        earthwork quantity, trench excavation, and soil removal instantly.
-      </p>
+        <h1 className="text-5xl font-bold mb-6">
+          Excavation Calculator
+        </h1>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        Features
-      </h2>
+        <p className="text-slate-300 text-lg mb-10">
+          Free online excavation calculator for civil engineers,
+          contractors, and students. Calculate excavation volume,
+          earthwork quantity, trench excavation, and site estimation instantly.
+        </p>
 
-      <ul className="list-disc pl-6 space-y-2">
-        <li>Excavation volume calculation</li>
-        <li>Earthwork quantity estimation</li>
-        <li>Trench excavation calculation</li>
-        <li>Soil removal estimation</li>
-        <li>Construction quantity estimation</li>
-      </ul>
+        <Link
+          href="/login?redirect=/dashboard/calculators/excavation"
+          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
+        >
+          Open Excavation Calculator
+        </Link>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Why Use CivilCalc Pro?
-      </h2>
+        <div className="grid md:grid-cols-2 gap-10">
 
-      <p>
-        CivilCalc Pro helps civil engineers estimate excavation quantities
-        quickly using engineering formulas and AI-powered construction tools.
-      </p>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">Features</h2>
+
+            <ul className="space-y-3 text-slate-300">
+              <li>• Excavation volume calculation</li>
+              <li>• Earthwork quantity estimation</li>
+              <li>• Trench excavation analysis</li>
+              <li>• Site quantity planning</li>
+              <li>• Fast construction calculations</li>
+              <li>• Material estimation support</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">
+              Why Use CivilCalc Pro?
+            </h2>
+
+            <p className="text-slate-300 leading-8">
+              CivilCalc Pro helps engineers and contractors calculate
+              excavation quantities quickly using professional construction
+              estimation tools. Ideal for site engineers, quantity surveyors,
+              and students.
+            </p>
+          </div>
+
+        </div>
+      </div>
     </main>
-  )
+  );
 }
