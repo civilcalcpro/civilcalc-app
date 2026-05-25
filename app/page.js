@@ -498,15 +498,16 @@ export default function LandingPage() {
           Calculate axial load capacity and reinforcement.
         </p>
 
-                          <span className="text-orange-400 font-semibold">
-            Open Calculator →
-          </span>
-        </Link>
+        <span className="text-orange-400 font-semibold">
+          Open Calculator →
+        </span>
+      </Link>
 
-      </div>
     </div>
-  </section>
-     
+  </div>
+</section>
 
+</footer>
+</div>
 )
 }
