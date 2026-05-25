@@ -449,6 +449,19 @@ export default function LandingPage() {
             </a>
           </div>
         </div>
+                <div className="mt-10 p-10">
+  <h2 className="text-2xl font-bold mb-4">
+    Engineering Calculators
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2">
+    <li>
+      <Link href="/beam-design">
+        RCC Beam Design Calculator
+      </Link>
+    </li>
+  </ul>
+</div>
       </footer>
     </div>
   )
