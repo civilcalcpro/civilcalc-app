@@ -22,7 +22,7 @@ export default function ColumnDesignPage() {
         </p>
 
         <Link
-          href="/dashboard/calculators/column"
+          href="/login?redirect=/dashboard/calculators/column"
           className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
         >
           Open Column Calculator
