@@ -496,6 +496,11 @@ export default function LandingPage() {
     Excavation Calculator
   </Link>
 </li>
+                <li>
+  <Link href="/plaster-calculator">
+    Plaster Calculator
+  </Link>
+</li>
 </ul>
                 </div>
       </footer>
