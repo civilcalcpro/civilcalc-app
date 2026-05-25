@@ -1,50 +1,63 @@
+import Link from "next/link";
+
 export const metadata = {
-  title: 'Brickwork Calculator | CivilCalc Pro',
+  title: "Brickwork Calculator | CivilCalc Pro",
   description:
-    'Free Brickwork Calculator for civil engineers. Calculate number of bricks, mortar quantity, wall volume, and brickwork estimation instantly.',
-  keywords: [
-    'brickwork calculator',
-    'brick quantity calculator',
-    'brick estimation',
-    'wall brick calculator',
-    'civil engineering calculator',
-    'construction material calculator',
-  ],
-}
+    "Free online brickwork calculator for civil engineers and contractors. Calculate number of bricks, mortar quantity, wall volume, and construction material estimation.",
+};
 
 export default function BrickworkCalculatorPage() {
   return (
-    <main className="min-h-screen bg-white text-black p-10">
-      <h1 className="text-4xl font-bold mb-6">
-        Brickwork Calculator
-      </h1>
+    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+      <div className="max-w-5xl mx-auto">
 
-      <p className="text-lg mb-6">
-        Free online brickwork calculator for civil engineers, contractors,
-        and students. Calculate number of bricks, mortar quantity,
-        wall volume, and construction material estimation instantly.
-      </p>
+        <h1 className="text-5xl font-bold mb-6">
+          Brickwork Calculator
+        </h1>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        Features
-      </h2>
+        <p className="text-slate-300 text-lg mb-10">
+          Free online brickwork calculator for civil engineers,
+          contractors, and students. Calculate brick quantity,
+          mortar quantity, wall volume, and construction materials instantly.
+        </p>
 
-      <ul className="list-disc pl-6 space-y-2">
-        <li>Brick quantity calculation</li>
-        <li>Mortar quantity estimation</li>
-        <li>Wall volume calculation</li>
-        <li>Construction material estimation</li>
-        <li>Useful for residential and commercial projects</li>
-      </ul>
+        <Link
+          href="/login?redirect=/dashboard/calculators/brickwork"
+          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
+        >
+          Open Brickwork Calculator
+        </Link>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Why Use CivilCalc Pro?
-      </h2>
+        <div className="grid md:grid-cols-2 gap-10">
 
-      <p>
-        CivilCalc Pro helps civil engineers estimate brickwork quantities
-        quickly using engineering formulas and AI-powered construction tools.
-      </p>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">Features</h2>
+
+            <ul className="space-y-3 text-slate-300">
+              <li>• Brick quantity calculations</li>
+              <li>• Mortar estimation</li>
+              <li>• Wall volume calculations</li>
+              <li>• Material estimation</li>
+              <li>• Fast quantity analysis</li>
+              <li>• Construction planning support</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">
+              Why Use CivilCalc Pro?
+            </h2>
+
+            <p className="text-slate-300 leading-8">
+              CivilCalc Pro helps engineers and contractors estimate
+              brickwork quantities quickly using professional construction
+              tools and quantity calculations. Ideal for site engineers,
+              estimators, and students.
+            </p>
+          </div>
+
+        </div>
+      </div>
     </main>
-  )
+  );
 }
