@@ -467,6 +467,7 @@ export default function LandingPage() {
     </Link>
   </li>
 </ul>
+                </div>
       </footer>
     </div>
   )
