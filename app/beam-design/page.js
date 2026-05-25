@@ -45,8 +45,22 @@ export default function BeamDesignPage() {
         CivilCalc Pro helps civil engineers perform RCC beam design quickly
         using AI-powered engineering tools and structural calculations.
       </p>
-          <div className="mt-10">
-  <BeamCalculator />
+<div className="mt-10 border rounded-xl p-6 bg-gray-50">
+  <h2 className="text-2xl font-semibold mb-4">
+    Use RCC Beam Design Calculator
+  </h2>
+
+  <p className="mb-4">
+    Login to CivilCalc Pro to calculate beam dimensions, reinforcement steel,
+    loads, bending moments, and generate engineering reports.
+  </p>
+
+  <a
+    href="/login"
+    className="inline-block bg-black text-white px-6 py-3 rounded-lg"
+  >
+    Login to Use Calculator
+  </a>
 </div>
     </main>
   )
