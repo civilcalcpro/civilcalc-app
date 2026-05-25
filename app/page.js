@@ -466,6 +466,11 @@ export default function LandingPage() {
       RCC Slab Design Calculator
     </Link>
   </li>
+                <li>
+  <Link href="/column-design">
+    RCC Column Design Calculator
+  </Link>
+</li>
 </ul>
                 </div>
       </footer>
