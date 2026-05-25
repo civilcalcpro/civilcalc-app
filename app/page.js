@@ -449,61 +449,81 @@ export default function LandingPage() {
             </a>
           </div>
         </div>
-                <div className="mt-10 p-10">
-  <h2 className="text-2xl font-bold mb-4">
-    Engineering Calculators
-  </h2>
+              <section className="py-20 px-6 bg-slate-950">
+  <div className="max-w-7xl mx-auto">
 
-  <ul className="list-disc pl-6 space-y-2">
-  <li>
-    <Link href="/beam-design">
-      RCC Beam Design Calculator
-    </Link>
-  </li>
+    <div className="text-center mb-12">
+      <p className="text-orange-400 font-semibold mb-2">
+        ENGINEERING CALCULATORS
+      </p>
 
-  <li>
-    <Link href="/slab-design">
-      RCC Slab Design Calculator
-    </Link>
-  </li>
-                <li>
-  <Link href="/column-design">
-    RCC Column Design Calculator
-  </Link>
-</li>
-                <li>
-  <Link href="/footing-design">
-    RCC Footing Design Calculator
-  </Link>
-</li>
-                <li>
-  <Link href="/steel-weight-calculator">
-    Steel Weight Calculator
-  </Link>
-</li>
-                <li>
-  <Link href="/concrete-volume-calculator">
-    Concrete Volume Calculator
-  </Link>
-</li>
-                <li>
-  <Link href="/brickwork-calculator">
-    Brickwork Calculator
-  </Link>
-</li>
-                <li>
-  <Link href="/excavation-calculator">
-    Excavation Calculator
-  </Link>
-</li>
-                <li>
-  <Link href="/plaster-calculator">
-    Plaster Calculator
-  </Link>
-</li>
-</ul>
-                </div>
-      </footer>
+      <h2 className="text-4xl font-bold text-white mb-4">
+        Professional Civil Engineering Tools
+      </h2>
+
+      <p className="text-slate-400 max-w-2xl mx-auto">
+        Fast, accurate calculators for RCC design,
+        quantity estimation, and construction planning.
+      </p>
     </div>
-  )
+
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <Link
+        href="/beam-design"
+        className="rounded-2xl border border-slate-800 bg-slate-900 p-6 hover:border-orange-500 transition"
+      >
+        <h3 className="text-xl font-bold text-white mb-3">
+          RCC Beam Design
+        </h3>
+
+        <p className="text-slate-400 text-sm mb-4">
+          Design RCC beams as per IS 456 with reinforcement checks.
+        </p>
+
+        <span className="text-orange-400 font-semibold">
+          Open Calculator →
+        </span>
+      </Link>
+
+      <Link
+        href="/column-design"
+        className="rounded-2xl border border-slate-800 bg-slate-900 p-6 hover:border-orange-500 transition"
+      >
+        <h3 className="text-xl font-bold text-white mb-3">
+          RCC Column Design
+        </h3>
+
+        <p className="text-slate-400 text-sm mb-4">
+          Calculate axial load capacity and reinforcement.
+        </p>
+
+        <span className="text-orange-400 font-semibold">
+          Open Calculator →
+        </span>
+      </Link>
+
+      <Link
+        href="/slab-design"
+        className="rounded-2xl border border-slate-800 bg-slate-900 p-6 hover:border-orange-500 transition"
+      >
+        <h3 className="text-xl font-bold text-white mb-3">
+          RCC Slab Design
+        </h3>
+
+        <p className="text-slate-400 text-sm mb-4">
+          One-way slab reinforcement and thickness calculations.
+        </p>
+
+        <span className="text-orange-400 font-semibold">
+          Open Calculator →
+        </span>
+      </Link>
+
+    </div>
+  </div>
+</section>
+
+</div>
+)
 }
