@@ -14,54 +14,59 @@ export const metadata = {
 
 export default function BeamDesignPage() {
   return (
-    <main className="min-h-screen bg-white text-black p-10">
-      <h1 className="text-4xl font-bold mb-6">
-        RCC Beam Design Calculator
-      </h1>
+<main className="min-h-screen bg-slate-950 text-white p-10">
+  <div className="max-w-6xl mx-auto">
+    <p className="text-orange-400 font-semibold mb-2">RCC CALCULATOR</p>
 
-      <p className="text-lg mb-6">
-        Free online RCC beam design calculator for civil engineers and students.
-        Calculate beam dimensions, reinforcement steel, loads, bending moments,
-        and structural design as per IS codes.
-      </p>
+    <h1 className="text-5xl font-bold mb-4">Beam Design</h1>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        Features
-      </h2>
+    <p className="text-slate-400 text-lg mb-8">
+      Singly / doubly reinforced rectangular beam — limit state method per IS 456:2000
+    </p>
 
-      <ul className="list-disc pl-6 space-y-2">
-        <li>Beam load calculations</li>
-        <li>Bending moment calculation</li>
-        <li>Steel reinforcement estimation</li>
-        <li>IS 456 based RCC design</li>
-        <li>Fast structural analysis</li>
-      </ul>
+    <div className="grid md:grid-cols-2 gap-8">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <h2 className="text-2xl font-semibold mb-4">
+          RCC Beam Design Calculator
+        </h2>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Why Use CivilCalc Pro?
-      </h2>
+        <p className="text-slate-300 mb-4">
+          Calculate beam dimensions, reinforcement steel, loads, bending moments,
+          and structural design as per IS codes.
+        </p>
 
-      <p>
-        CivilCalc Pro helps civil engineers perform RCC beam design quickly
-        using AI-powered engineering tools and structural calculations.
-      </p>
-<div className="mt-10 border rounded-xl p-6 bg-gray-50">
-  <h2 className="text-2xl font-semibold mb-4">
-    Use RCC Beam Design Calculator
-  </h2>
+        <ul className="list-disc pl-6 space-y-2 text-slate-300">
+          <li>Beam load calculations</li>
+          <li>Bending moment calculation</li>
+          <li>Steel reinforcement estimation</li>
+          <li>IS 456 based RCC design</li>
+          <li>Fast structural analysis</li>
+        </ul>
+      </div>
 
-  <p className="mb-4">
-    Login to CivilCalc Pro to calculate beam dimensions, reinforcement steel,
-    loads, bending moments, and generate engineering reports.
-  </p>
+      <div className="bg-slate-900 border border-dashed border-slate-700 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+        <div className="text-orange-400 font-semibold mb-3">
+          FULL CALCULATOR ACCESS
+        </div>
 
-  <a
-    href="/login"
-    className="inline-block bg-black text-white px-6 py-3 rounded-lg"
-  >
-    Login to Use Calculator
-  </a>
-</div>
-    </main>
+        <h2 className="text-2xl font-bold mb-4">
+          Login to use the real Beam Design Calculator
+        </h2>
+
+        <p className="text-slate-400 mb-6">
+          Run design checks, calculate reinforcement, view results,
+          and generate PDF reports.
+        </p>
+
+        <a
+          href="/login"
+          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold"
+        >
+          Login to Use Calculator
+        </a>
+      </div>
+    </div>
+  </div>
+</main>
   )
 }
