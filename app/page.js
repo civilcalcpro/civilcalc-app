@@ -336,10 +336,9 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-             { name: 'One-Way Slab', href: '/slab-design?type=one-way', icon: Home },
+             { name: 'One-Way Slab', href: '/one-way-slab-calculator', icon: Home },
 
-{ name: 'Two-Way Slab', href: '/slab-design?type=two-way', icon: Home },
-
+{ name: 'Two-Way Slab', href: '/two-way-slab-calculator', icon: Home },
 { name: 'Beam Design', href: '/beam-design', icon: Ruler },
 
 { name: 'Column Design', href: '/column-design', icon: Building2 },
