@@ -520,10 +520,8 @@ export default function LandingPage() {
         </span>
       </Link>
 
-    </div>
+          </div>
+    </section>
   </div>
-</section>
-
-</div>
 )
 }
