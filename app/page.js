@@ -498,31 +498,14 @@ export default function LandingPage() {
           Calculate axial load capacity and reinforcement.
         </p>
 
-        <span className="text-orange-400 font-semibold">
-          Open Calculator →
-        </span>
-      </Link>
+                          <span className="text-orange-400 font-semibold">
+            Open Calculator →
+          </span>
+        </Link>
 
-      <Link
-        href="/slab-design"
-        className="rounded-2xl border border-slate-800 bg-slate-900 p-6 hover:border-orange-500 transition"
-      >
-        <h3 className="text-xl font-bold text-white mb-3">
-          RCC Slab Design
-        </h3>
-
-        <p className="text-slate-400 text-sm mb-4">
-          One-way slab reinforcement and thickness calculations.
-        </p>
-
-        <span className="text-orange-400 font-semibold">
-          Open Calculator →
-        </span>
-      </Link>
-
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
 </div>
 )
