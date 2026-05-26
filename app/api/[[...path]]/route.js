@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
-import { hashPassword, comparePassword, generateToken, getUserFromRequest } from '@/lib/auth'
+import { hashPassword, comparePassword, generateToken } from '@/lib/auth'
 import { v4 as uuidv4 } from 'uuid'
 import {
   designOneWaySlab,
@@ -16,29 +16,6 @@ import {
   calculateRateAnalysis,
 } from '@/lib/engineering/rcc-formulas'
 import { chatWithClaude } from '@/lib/llm-client'
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'admin@civilcalc.in')
-  .split(',')
-  .map((s) => s.trim().toLowerCase())
-  .filter(Boolean)
-
-function isAdminEmail(email) {
-  return ADMIN_EMAILS.includes((email || '').toLowerCase())
-}
-
-async function requireAdmin(request) {
-  const user = getUserFromRequest(request)
-  if (!user) return { error: 'Unauthorized', status: 401 }
-
-  const db = await getDb()
-  const userDoc = await db.collection('users').findOne({ userId: user.userId })
-
-  if (!userDoc || userDoc.role !== 'admin') {
-    return { error: 'Forbidden', status: 403 }
-  }
-
-  return { user, userDoc, db }
-}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,11 +36,54 @@ export async function GET(request) {
       return NextResponse.json({ status: 'ok' }, { headers: corsHeaders })
     }
 
+    if (path === 'dashboard/stats') {
+      const db = await getDb()
+
+      const calculationCount = await db.collection('calculations').countDocuments({})
+
+      const recentCalculations = await db.collection('calculations')
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .toArray()
+
+      return NextResponse.json({
+        projectCount: 0,
+        calculationCount,
+        recentProjects: recentCalculations,
+      }, { headers: corsHeaders })
+    }
+
+    if (path === 'calculations') {
+      const db = await getDb()
+
+      const calculations = await db.collection('calculations')
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .toArray()
+
+      return NextResponse.json({ calculations }, { headers: corsHeaders })
+    }
+
+    if (path === 'projects') {
+      return NextResponse.json({ projects: [] }, { headers: corsHeaders })
+    }
+
+    if (path === 'ai/sessions') {
+      return NextResponse.json({ sessions: [] }, { headers: corsHeaders })
+    }
+
     if (path === 'admin/stats') {
+      const db = await getDb()
+
+      const totalCalculations = await db.collection('calculations').countDocuments({})
+      const totalAISessions = await db.collection('ai_sessions').countDocuments({}).catch(() => 0)
+
       return NextResponse.json({
         totalUsers: 1,
-        totalCalculations: 25,
-        totalAISessions: 8,
+        totalCalculations,
+        totalAISessions,
         totalProjects: 0,
         planBreakdown: {
           free: 1,
@@ -86,26 +106,6 @@ export async function GET(request) {
           },
         ],
       }, { headers: corsHeaders })
-    }
-
-    if (path === 'calculations') {
-      return NextResponse.json({ calculations: [] }, { headers: corsHeaders })
-    }
-
-    if (path === 'projects') {
-      return NextResponse.json({ projects: [] }, { headers: corsHeaders })
-    }
-
-    if (path === 'dashboard/stats') {
-      return NextResponse.json({
-        projectCount: 0,
-        calculationCount: 0,
-        recentProjects: [],
-      }, { headers: corsHeaders })
-    }
-
-    if (path === 'ai/sessions') {
-      return NextResponse.json({ sessions: [] }, { headers: corsHeaders })
     }
 
     return NextResponse.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
@@ -135,7 +135,7 @@ export async function POST(request) {
       }
 
       const userId = uuidv4()
-      const role = isAdminEmail(email) ? 'admin' : 'user'
+      const role = email === 'admin@civilcalc.in' ? 'admin' : 'user'
 
       await db.collection('users').insertOne({
         userId,
@@ -195,31 +195,27 @@ export async function POST(request) {
     }
 
     if (calcMap[path]) {
-  const { fn, type } = calcMap[path]
-  const result = fn(body)
-  const calculationId = uuidv4()
+      const { fn, type } = calcMap[path]
+      const result = fn(body)
+      const calculationId = uuidv4()
 
-  try {
-    const db = await getDb()
+      const db = await getDb()
 
-    await db.collection('calculations').insertOne({
-      calculationId,
-      userId: 'firebase-user',
-      type,
-      inputs: body,
-      results: result,
-      createdAt: new Date(),
-    })
-  } catch (e) {
-    console.error('Save calculation failed:', e)
-  }
+      await db.collection('calculations').insertOne({
+        calculationId,
+        userId: 'firebase-user',
+        type,
+        inputs: body,
+        results: result,
+        createdAt: new Date(),
+      })
 
-  return NextResponse.json({
-    calculationId,
-    type,
-    result,
-  }, { headers: corsHeaders })
-}
+      return NextResponse.json({
+        calculationId,
+        type,
+        result,
+      }, { headers: corsHeaders })
+    }
 
     if (path === 'ai/chat') {
       const { message } = body
@@ -272,16 +268,5 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
-  try {
-    const { pathname } = new URL(request.url)
-    const path = pathname.replace('/api/', '')
-
-    if (path.startsWith('ai/sessions/')) {
-      return NextResponse.json({ deleted: 1 }, { headers: corsHeaders })
-    }
-
-    return NextResponse.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
-  }
+  return NextResponse.json({ deleted: 1 }, { headers: corsHeaders })
 }
