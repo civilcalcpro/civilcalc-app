@@ -72,6 +72,62 @@ export default function UnitConverterPage() {
           </div>
         </div>
       </div>
+              <section className="mt-16 space-y-8">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Engineering Unit Converter
+    </h2>
+
+    <p className="text-slate-300 leading-7">
+      This engineering unit converter helps civil engineers convert
+      length, area, volume, weight and pressure units quickly and accurately.
+    </p>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Common Engineering Unit Conversions
+    </h2>
+
+    <ul className="list-disc pl-6 space-y-2 text-slate-300">
+      <li>Meter to feet</li>
+      <li>Square meter to square feet</li>
+      <li>Cubic meter to cubic feet</li>
+      <li>Kilogram to ton</li>
+      <li>MPa to kN/m²</li>
+    </ul>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      FAQ
+    </h2>
+
+    <div className="space-y-5 text-slate-300">
+      <div>
+        <h3 className="font-semibold text-white">
+          Why is unit conversion important in civil engineering?
+        </h3>
+
+        <p>
+          Accurate unit conversion prevents calculation errors
+          in structural design and quantity estimation.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-white">
+          Which units are commonly used in construction?
+        </h3>
+
+        <p>
+          Meter, feet, cubic meter, kilogram, ton and MPa
+          are widely used in civil engineering projects.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
     </main>
   )
 }
