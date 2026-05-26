@@ -21,7 +21,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState(null)
   const [users, setUsers] = useState([])
   const [query, setQuery] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [denied, setDenied] = useState(false)
 
   const load = async () => {
@@ -63,7 +63,6 @@ export default function AdminPage() {
     }
   }
 
-  if (loading) {
     return (
       <div className="p-10 flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
