@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select'
 
 export default function AdminPage() {
-  const { user, authFetch, loading: authLoading } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
   const [stats, setStats] = useState(null)
   const [users, setUsers] = useState([])
@@ -25,43 +25,45 @@ export default function AdminPage() {
   const [denied, setDenied] = useState(false)
 
   const load = async () => {
-    try {
-      const [s, u] = await Promise.all([
-        authFetch('/api/admin/stats'),
-        authFetch('/api/admin/users'),
-      ])
-      if (s.status === 403 || u.status === 403) {
-        setDenied(true)
-        return
-      }
-      if (s.ok) setStats(await s.json())
-      if (u.ok) setUsers((await u.json()).users || [])
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }
+  setStats({
+    totalUsers: 1,
+    totalCalculations: 25,
+    totalAISessions: 8,
+    planBreakdown: {
+      free: 1,
+      pro: 0,
+      enterprise: 0,
+    },
+  })
+
+  setUsers([
+    {
+      userId: '1',
+      name: 'Admin User',
+      email: 'admin@civilcalc.in',
+      role: 'admin',
+      plan: 'pro',
+      createdAt: new Date(),
+    },
+  ])
+
+  setLoading(false)
+}
 
   useEffect(() => {
    load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
  }, [])
 
-  const changePlan = async (userId, plan) => {
-    try {
-      const r = await authFetch(`/api/admin/users/${userId}/plan`, {
-        method: 'POST',
-        body: JSON.stringify({ plan }),
-      })
-      const data = await r.json()
-      if (!r.ok) throw new Error(data.error || 'Failed')
-      setUsers((us) => us.map((x) => (x.userId === userId ? { ...x, plan } : x)))
-      toast.success(`Plan updated to ${plan.toUpperCase()}`)
-    } catch (e) {
-      toast.error(e.message)
-    }
-  }
+ const changePlan = async (userId, plan) => {
+  setUsers((us) =>
+    us.map((x) =>
+      x.userId === userId ? { ...x, plan } : x
+    )
+  )
+
+  toast.success(`Plan updated to ${plan.toUpperCase()}`)
+}
 if (loading) {
     return (
       <div className="p-10 flex items-center justify-center min-h-[60vh]">
