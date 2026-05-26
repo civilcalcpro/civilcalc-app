@@ -242,7 +242,17 @@ export async function POST(request) {
         plan: body.plan || 'free',
       }, { headers: corsHeaders })
     }
+if (path === 'auth/update-profile') {
+  const { name, email } = body
 
+  return NextResponse.json({
+    success: true,
+    user: {
+      name,
+      email,
+    },
+  }, { headers: corsHeaders })
+}
     if (path === 'payments/create-order') {
       return NextResponse.json({
         orderId: 'order_mock_' + uuidv4().slice(0, 12),
