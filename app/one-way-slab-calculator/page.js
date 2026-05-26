@@ -70,6 +70,70 @@ export default function OneWaySlabPage() {
 
         </div>
       </div>
+                  <section className="mt-16 space-y-8">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      One-Way Slab Design Formula
+    </h2>
+
+    <p className="text-slate-300 leading-7 mb-4">
+      One-way slab design is used when the slab bends mainly in one direction.
+      It helps calculate bending moment, effective depth and steel reinforcement.
+    </p>
+
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+      Mu = w × L² / 8
+    </div>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      IS Code Used for One-Way Slab
+    </h2>
+
+    <p className="text-slate-300 leading-7">
+      This one-way slab calculator follows IS 456:2000 for reinforced concrete
+      slab design and limit state method calculations.
+    </p>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Frequently Asked Questions
+    </h2>
+
+    <div className="space-y-5 text-slate-300">
+      <div>
+        <h3 className="font-semibold text-white">
+          What is a one-way slab?
+        </h3>
+        <p>
+          A one-way slab is a slab supported on two opposite sides where load
+          is mainly transferred in one direction.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-white">
+          When is a slab considered one-way?
+        </h3>
+        <p>
+          A slab is generally considered one-way when the longer span to shorter
+          span ratio is greater than 2.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-white">
+          Which IS code is used for slab design?
+        </h3>
+        <p>
+          IS 456:2000 is commonly used for reinforced concrete slab design in India.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
     </main>
   );
 }
