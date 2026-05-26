@@ -62,7 +62,7 @@ export default function AdminPage() {
       toast.error(e.message)
     }
   }
-
+if (loading) {
     return (
       <div className="p-10 flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
