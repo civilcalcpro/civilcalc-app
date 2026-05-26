@@ -58,6 +58,71 @@ export default function ColumnDesignPage() {
 
         </div>
       </div>
+                <section className="mt-16 space-y-8">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      RCC Column Design Formula
+    </h2>
+
+    <p className="text-slate-300 leading-7 mb-4">
+      RCC column design is used to calculate axial load capacity,
+      reinforcement requirements and safe concrete dimensions.
+    </p>
+
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+      Pu = 0.4 × fck × Ac + 0.67 × fy × Asc
+    </div>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      IS Code Used for RCC Column Design
+    </h2>
+
+    <p className="text-slate-300 leading-7">
+      This RCC column design calculator follows IS 456:2000 for
+      reinforced concrete column analysis and design.
+    </p>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Frequently Asked Questions
+    </h2>
+
+    <div className="space-y-5 text-slate-300">
+      <div>
+        <h3 className="font-semibold text-white">
+          What is RCC column design?
+        </h3>
+        <p>
+          RCC column design determines safe column size and steel
+          reinforcement for axial loads.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-white">
+          Which IS code is used for RCC columns?
+        </h3>
+        <p>
+          IS 456:2000 is commonly used for reinforced concrete
+          column design in India.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-white">
+          What is axial load in column design?
+        </h3>
+        <p>
+          Axial load is the vertical compressive load acting on
+          a reinforced concrete column.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
     </main>
   );
 }
