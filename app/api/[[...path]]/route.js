@@ -195,16 +195,31 @@ export async function POST(request) {
     }
 
     if (calcMap[path]) {
-      const { fn, type } = calcMap[path]
-      const result = fn(body)
-      const calculationId = uuidv4()
+  const { fn, type } = calcMap[path]
+  const result = fn(body)
+  const calculationId = uuidv4()
 
-      return NextResponse.json({
-        calculationId,
-        type,
-        result,
-      }, { headers: corsHeaders })
-    }
+  try {
+    const db = await getDb()
+
+    await db.collection('calculations').insertOne({
+      calculationId,
+      userId: 'firebase-user',
+      type,
+      inputs: body,
+      results: result,
+      createdAt: new Date(),
+    })
+  } catch (e) {
+    console.error('Save calculation failed:', e)
+  }
+
+  return NextResponse.json({
+    calculationId,
+    type,
+    result,
+  }, { headers: corsHeaders })
+}
 
     if (path === 'ai/chat') {
       const { message } = body
