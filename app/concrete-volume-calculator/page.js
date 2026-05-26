@@ -58,6 +58,21 @@ export default function ConcreteVolumeCalculatorPage() {
 
         </div>
       </div>
+                <section className="mt-16">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Concrete Volume Formula
+    </h2>
+
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+      Volume = Length × Width × Depth
+    </div>
+
+    <p className="text-slate-300 mt-4">
+      Calculate wet volume, dry volume and material quantities for concrete mix.
+    </p>
+  </div>
+</section>
     </main>
   );
 }
