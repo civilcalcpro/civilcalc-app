@@ -67,6 +67,72 @@ export default function BeamDesignPage() {
       </div>
     </div>
   </div>
-</main>
+<section className="mt-16 space-y-8">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      RCC Beam Design Formula
+    </h2>
+
+    <p className="text-slate-300 leading-7 mb-4">
+      RCC beam design is used to calculate bending moment, shear force,
+      effective depth and reinforcement required for a reinforced concrete beam.
+    </p>
+
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+      Mu = 1.5 × w × L² / 8
+    </div>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      IS Code Used for Beam Design
+    </h2>
+
+    <p className="text-slate-300 leading-7">
+      This RCC beam design calculator follows the limit state design method
+      based on IS 456:2000. Civil engineers use this code for reinforced
+      concrete beam design, slab design, column design and footing design.
+    </p>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Frequently Asked Questions
+    </h2>
+
+    <div className="space-y-5 text-slate-300">
+      <div>
+        <h3 className="font-semibold text-white">
+          What is RCC beam design?
+        </h3>
+        <p>
+          RCC beam design is the process of selecting beam dimensions and
+          steel reinforcement to safely resist bending and shear forces.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-white">
+          Which IS code is used for RCC beam design?
+        </h3>
+        <p>
+          IS 456:2000 is commonly used for reinforced concrete beam design
+          in India.
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-white">
+          What is bending moment in beam design?
+        </h3>
+        <p>
+          Bending moment is the internal moment developed in a beam due to
+          applied loads. It is used to calculate required steel reinforcement.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+            </main>
   )
 }
