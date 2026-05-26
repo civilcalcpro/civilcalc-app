@@ -70,6 +70,31 @@ export default function TwoWaySlabPage() {
 
         </div>
       </div>
+                  <section className="mt-16 space-y-8">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Two-Way Slab Design Formula
+    </h2>
+
+    <p className="text-slate-300 leading-7 mb-4">
+      Two-way slab design is used when slabs transfer load in both directions.
+    </p>
+
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+      Mu = α × w × L²
+    </div>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      FAQ
+    </h2>
+
+    <p className="text-slate-300">
+      IS 456:2000 is commonly used for RCC two-way slab design.
+    </p>
+  </div>
+</section>
     </main>
   );
 }
