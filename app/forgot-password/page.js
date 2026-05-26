@@ -1,5 +1,5 @@
 'use client'
-
+import { useAuth } from '@/lib/auth-context'
 import { useState } from 'react'
 import Link from 'next/link'
 import { Mail, ArrowLeft } from 'lucide-react'
@@ -12,16 +12,21 @@ import { toast } from 'sonner'
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-
+const { resetPassword } = useAuth()
   const handleReset = async (e) => {
     e.preventDefault()
 
     setLoading(true)
 
-    setTimeout(() => {
-      toast.success('Password reset link sent to your email')
-      setLoading(false)
-    }, 1500)
+    try {
+  await resetPassword(email)
+
+  toast.success('Password reset link sent to your email')
+} catch (error) {
+  toast.error(error.message)
+} finally {
+  setLoading(false)
+}
   }
 
   return (
