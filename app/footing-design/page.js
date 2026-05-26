@@ -58,6 +58,21 @@ export default function FootingDesignPage() {
 
         </div>
       </div>
+                <section className="mt-16 space-y-8">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Footing Design Formula
+    </h2>
+
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+      Area = Load / SBC
+    </div>
+
+    <p className="text-slate-300 mt-4">
+      Footing design is used to safely transfer structural loads to soil.
+    </p>
+  </div>
+</section>
     </main>
   );
 }
