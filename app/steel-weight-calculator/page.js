@@ -58,6 +58,21 @@ export default function SteelWeightCalculatorPage() {
 
         </div>
       </div>
+                <section className="mt-16">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Steel Weight Formula
+    </h2>
+
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+      Weight = D² / 162
+    </div>
+
+    <p className="text-slate-300 mt-4">
+      Steel weight calculator is used for reinforcement quantity estimation.
+    </p>
+  </div>
+</section>
     </main>
   );
 }
