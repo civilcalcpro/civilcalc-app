@@ -58,6 +58,21 @@ export default function ExcavationCalculatorPage() {
 
         </div>
       </div>
+            <section className="mt-16">
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Excavation Volume Formula
+    </h2>
+
+    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+      Volume = Length × Width × Depth
+    </div>
+
+    <p className="text-slate-300 mt-4">
+      Excavation calculator helps estimate soil quantity for foundation work.
+    </p>
+  </div>
+</section>    
     </main>
   );
 }
