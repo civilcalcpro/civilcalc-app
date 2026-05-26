@@ -44,9 +44,9 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (!authLoading && user) load()
+   load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, user])
+ }, [])
 
   const changePlan = async (userId, plan) => {
     try {
@@ -71,20 +71,6 @@ export default function AdminPage() {
     )
   }
 
-  if (denied) {
-    return (
-      <div className="p-10 flex items-center justify-center min-h-[60vh]">
-        <Card className="bg-slate-900/50 border-slate-800 p-10 max-w-md text-center">
-          <Shield className="h-10 w-10 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Access denied</h2>
-          <p className="text-sm text-slate-400 mb-4">Admin privileges required to view this page.</p>
-          <Button onClick={() => router.push('/dashboard')} className="bg-orange-500 hover:bg-orange-600">
-            Back to Dashboard
-          </Button>
-        </Card>
-      </div>
-    )
-  }
 
   const filtered = users.filter((u) => {
     if (!query) return true
