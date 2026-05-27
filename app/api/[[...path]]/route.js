@@ -39,10 +39,14 @@ export async function GET(request) {
     if (path === 'dashboard/stats') {
       const db = await getDb()
 
-      const calculationCount = await db.collection('calculations').countDocuments({})
+      const userId =
+  request.headers.get('authorization') || 'guest-user'
 
-      const recentCalculations = await db.collection('calculations')
-        .find({})
+const calculationCount = await db.collection('calculations')
+  .countDocuments({ userId })
+
+const recentCalculations = await db.collection('calculations')
+  .find({ userId })
         .sort({ createdAt: -1 })
         .limit(5)
         .toArray()
@@ -58,7 +62,9 @@ export async function GET(request) {
       const db = await getDb()
 
       const calculations = await db.collection('calculations')
-        .find({})
+        const userId =
+  request.headers.get('authorization') || 'guest-user'
+        .find({ userId })
         .sort({ createdAt: -1 })
         .limit(100)
         .toArray()
@@ -207,9 +213,12 @@ export async function POST(request) {
 
       const db = await getDb()
 
-      await db.collection('calculations').insertOne({
-        calculationId,
-        userId: 'firebase-user',
+     const userId =
+  request.headers.get('authorization') || 'guest-user'
+
+await db.collection('calculations').insertOne({
+  calculationId,
+  userId,
         type,
         inputs: body,
         results: result,
