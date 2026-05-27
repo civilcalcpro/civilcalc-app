@@ -80,8 +80,10 @@ export async function GET(request) {
       const totalCalculations = await db.collection('calculations').countDocuments({})
       const totalAISessions = await db.collection('ai_sessions').countDocuments({}).catch(() => 0)
 
-      return NextResponse.json({
-        totalUsers: 1,
+     const totalUsers = await db.collection('users').countDocuments({})
+
+return NextResponse.json({
+  totalUsers,
         totalCalculations,
         totalAISessions,
         totalProjects: 0,
@@ -93,20 +95,24 @@ export async function GET(request) {
       }, { headers: corsHeaders })
     }
 
-    if (path === 'admin/users') {
-      return NextResponse.json({
-        users: [
-          {
-            userId: '1',
-            name: 'Admin User',
-            email: 'admin@civilcalc.in',
-            role: 'admin',
-            plan: 'pro',
-            createdAt: new Date(),
-          },
-        ],
-      }, { headers: corsHeaders })
-    }
+   if (path === 'admin/users') {
+  const db = await getDb()
+
+  const users = await db.collection('users')
+    .find({}, {
+      projection: {
+        password: 0,
+        _id: 0,
+      },
+    })
+    .sort({ createdAt: -1 })
+    .limit(500)
+    .toArray()
+
+  return NextResponse.json({
+    users,
+  }, { headers: corsHeaders })
+}
 
     return NextResponse.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
   } catch (error) {
