@@ -24,6 +24,7 @@ import {
   IndianRupee,
   ArrowLeftRight,
   Linkedin,
+  Activity,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -44,6 +45,11 @@ const navGroups = [
       { href: '/dashboard/calculators/slab', label: 'One-Way Slab', icon: HardHat },
       { href: '/dashboard/calculators/two-way-slab', label: 'Two-Way Slab', icon: Grid3x3 },
       { href: '/dashboard/calculators/footing', label: 'Footing', icon: Anchor },
+      {
+        href: '/dashboard/calculators/structural-analysis',
+        label: 'Structural Analysis',
+        icon: Activity,
+      },
     ],
   },
   {
@@ -149,7 +155,6 @@ export default function DashboardLayout({ children }) {
           </div>
         ))}
 
-        {/* ADMIN SECTION */}
         {user?.email === 'admin@civilcalc.in' && (
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-wider text-red-400 px-3 mb-2">
