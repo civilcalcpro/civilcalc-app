@@ -1,13 +1,15 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY
-)
-
 export async function POST(req) {
   try {
-    const body = await req.json()
+    if (!process.env.GEMINI_API_KEY) {
+      return Response.json(
+        { error: 'GEMINI_API_KEY is missing in Vercel environment variables' },
+        { status: 500 }
+      )
+    }
 
+    const body = await req.json()
     const prompt = body.prompt
 
     if (!prompt) {
@@ -17,44 +19,65 @@ export async function POST(req) {
       )
     }
 
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-1.5-flash-latest',
     })
 
-    const result = await model.generateContent(`
-You are CivilCalc AI.
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: `
+You are CivilCalc AI, an expert civil engineering assistant.
 
-You are an expert civil structural engineer.
+Answer for civil engineering students and site engineers.
 
-Answer clearly for:
-- RCC Design
-- IS Codes
-- Structural Analysis
-- Estimation
-- Beam Design
-- Slab Design
-- Footing
-- Concrete Mix
-- Steel Design
+Focus on:
+- RCC design
+- IS 456
+- IS 875
+- structural analysis
+- beam design
+- slab design
+- footing design
+- concrete mix
+- steel weight
+- estimation
+- construction site problems
 
-Explain step-by-step.
+Rules:
+- Explain step-by-step.
+- Use simple language.
+- Mention formulas when useful.
+- Warn users to verify final structural design with a qualified engineer.
 
 User question:
 ${prompt}
-`)
+              `,
+            },
+          ],
+        },
+      ],
+    })
 
     const response = await result.response
     const text = response.text()
 
     return Response.json({
-      reply: text,
+      reply: text || 'No response generated',
     })
   } catch (error) {
-    console.error(error)
+    console.error('Gemini API error:', error)
 
     return Response.json(
       {
-        error: 'AI generation failed',
+        error:
+          error?.message ||
+          'AI generation failed. Check Gemini API key, quota, and model access.',
       },
       { status: 500 }
     )
