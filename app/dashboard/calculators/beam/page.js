@@ -186,7 +186,16 @@ export default function BeamDesignPage() {
                     <Row k="Compression steel" v={`${result.steel.compressionSteel} mm²`} />
                   )}
                 </ResultBlock>
-
+{result.sideFaceReinforcement && (
+  <ResultBlock title="Side Face Reinforcement" className="sm:col-span-2">
+    <Row k="Required" v={result.sideFaceReinforcement.required} highlight />
+    <Row k="IS Code Clause" v={result.sideFaceReinforcement.clause} />
+    <Row k="Total side face steel" v={`${result.sideFaceReinforcement.requiredAstTotal} mm²`} />
+    <Row k="Steel per face" v={`${result.sideFaceReinforcement.requiredAstEachFace} mm²`} />
+    <Row k="Specification" v={result.sideFaceReinforcement.specification} highlight />
+    <Row k="Note" v={result.sideFaceReinforcement.note} />
+  </ResultBlock>
+)}
                 <ResultBlock title="Shear & Stirrups" className="sm:col-span-2">
                   <div className="grid sm:grid-cols-2 gap-x-6">
                     <div>
