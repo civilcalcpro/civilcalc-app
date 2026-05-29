@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { sectionProperties } from '@/lib/engineering/section-properties'
+import { columnBuckling } from '@/lib/engineering/column-buckling'
 export default function StructuralAnalysisPage() {
   const [structureType, setStructureType] = useState('simply-supported')
   const [span, setSpan] = useState(6)
@@ -34,6 +35,21 @@ const sectionResult = useMemo(() => {
     diameter: Number(sectionDiameter),
   })
 }, [sectionShape, sectionWidth, sectionDepth, sectionDiameter])
+  const [columnLength, setColumnLength] = useState(3)
+const [columnE, setColumnE] = useState(200000)
+const [columnI, setColumnI] = useState(3125000000)
+const [columnArea, setColumnArea] = useState(150000)
+const [columnEndCondition, setColumnEndCondition] = useState('pinnedPinned')
+
+const columnResult = useMemo(() => {
+  return columnBuckling({
+    length: columnLength,
+    E: columnE,
+    I: columnI,
+    area: columnArea,
+    endCondition: columnEndCondition,
+  })
+}, [columnLength, columnE, columnI, columnArea, columnEndCondition])
   const [pointLoads, setPointLoads] = useState([
     { id: 1, P: 20, x: 3 },
   ])
@@ -396,6 +412,62 @@ const sectionResult = useMemo(() => {
     )}
   </div>
 </div>
+          <div className="pt-4 border-t border-slate-800">
+  <h3 className="font-semibold text-white mb-3">
+    Column Buckling
+  </h3>
+
+  <div className="space-y-3">
+    <Select
+      value={columnEndCondition}
+      onValueChange={setColumnEndCondition}
+    >
+      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+        <SelectItem value="pinnedPinned">Pinned - Pinned</SelectItem>
+        <SelectItem value="fixedFixed">Fixed - Fixed</SelectItem>
+        <SelectItem value="fixedFree">Fixed - Free</SelectItem>
+        <SelectItem value="fixedPinned">Fixed - Pinned</SelectItem>
+      </SelectContent>
+    </Select>
+
+    <div className="grid grid-cols-2 gap-2">
+      <Input
+        type="number"
+        value={columnLength}
+        onChange={(e) => setColumnLength(e.target.value)}
+        placeholder="Length m"
+        className="bg-slate-900 border-slate-700 text-white"
+      />
+
+      <Input
+        type="number"
+        value={columnE}
+        onChange={(e) => setColumnE(e.target.value)}
+        placeholder="E N/mm²"
+        className="bg-slate-900 border-slate-700 text-white"
+      />
+
+      <Input
+        type="number"
+        value={columnI}
+        onChange={(e) => setColumnI(e.target.value)}
+        placeholder="I mm⁴"
+        className="bg-slate-900 border-slate-700 text-white"
+      />
+
+      <Input
+        type="number"
+        value={columnArea}
+        onChange={(e) => setColumnArea(e.target.value)}
+        placeholder="Area mm²"
+        className="bg-slate-900 border-slate-700 text-white"
+      />
+    </div>
+  </div>
+</div>
             <LoadSection
               title="Point Loads"
               onAdd={addPointLoad}
@@ -539,6 +611,25 @@ const sectionResult = useMemo(() => {
 <SummaryCard
   label="r"
   value={`${sectionResult.radiusOfGyration} mm`}
+/>
+  <SummaryCard
+  label="Le"
+  value={`${columnResult.effectiveLength} m`}
+/>
+
+<SummaryCard
+  label="λ"
+  value={columnResult.slendernessRatio}
+/>
+
+<SummaryCard
+  label="Euler Load"
+  value={`${columnResult.eulerLoad} kN`}
+/>
+
+<SummaryCard
+  label="Column Type"
+  value={columnResult.columnType}
 />
           </div>
 
