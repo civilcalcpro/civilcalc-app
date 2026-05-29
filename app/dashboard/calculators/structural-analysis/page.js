@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
+import { sectionProperties } from '@/lib/engineering/section-properties'
 export default function StructuralAnalysisPage() {
   const [structureType, setStructureType] = useState('simply-supported')
   const [span, setSpan] = useState(6)
@@ -21,7 +21,19 @@ export default function StructuralAnalysisPage() {
   const [depth, setDepth] = useState(450)
   const [E, setE] = useState(200000)
   const [I, setI] = useState(0)
+const [sectionShape, setSectionShape] = useState('rectangle')
+const [sectionWidth, setSectionWidth] = useState(300)
+const [sectionDepth, setSectionDepth] = useState(500)
+const [sectionDiameter, setSectionDiameter] = useState(300)
 
+const sectionResult = useMemo(() => {
+  return sectionProperties({
+    shape: sectionShape,
+    width: Number(sectionWidth),
+    depth: Number(sectionDepth),
+    diameter: Number(sectionDiameter),
+  })
+}, [sectionShape, sectionWidth, sectionDepth, sectionDiameter])
   const [pointLoads, setPointLoads] = useState([
     { id: 1, P: 20, x: 3 },
   ])
@@ -334,7 +346,56 @@ export default function StructuralAnalysisPage() {
                 />
               </div>
             </div>
+<div className="pt-4 border-t border-slate-800">
+  <h3 className="font-semibold text-white mb-3">
+    Section Properties
+  </h3>
 
+  <div className="space-y-3">
+    <div>
+      <Label className="text-slate-400">Section Shape</Label>
+      <Select value={sectionShape} onValueChange={setSectionShape}>
+        <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-2">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-slate-900 border-slate-700 text-white">
+          <SelectItem value="rectangle">Rectangle</SelectItem>
+          <SelectItem value="circle">Circle</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
+    {sectionShape === 'rectangle' && (
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          type="number"
+          value={sectionWidth}
+          onChange={(e) => setSectionWidth(e.target.value)}
+          placeholder="Width b mm"
+          className="bg-slate-900 border-slate-700 text-white"
+        />
+
+        <Input
+          type="number"
+          value={sectionDepth}
+          onChange={(e) => setSectionDepth(e.target.value)}
+          placeholder="Depth h mm"
+          className="bg-slate-900 border-slate-700 text-white"
+        />
+      </div>
+    )}
+
+    {sectionShape === 'circle' && (
+      <Input
+        type="number"
+        value={sectionDiameter}
+        onChange={(e) => setSectionDiameter(e.target.value)}
+        placeholder="Diameter d mm"
+        className="bg-slate-900 border-slate-700 text-white"
+      />
+    )}
+  </div>
+</div>
             <LoadSection
               title="Point Loads"
               onAdd={addPointLoad}
@@ -455,11 +516,30 @@ export default function StructuralAnalysisPage() {
             />
           </Card>
 
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-4 lg:grid-cols-4 gap-4">
             <SummaryCard label="RA" value={`${result.RA.toFixed(2)} kN`} />
             <SummaryCard label="RB" value={`${result.RB.toFixed(2)} kN`} />
             <SummaryCard label="Max BM" value={`${Math.max(Math.abs(result.maxMoment), Math.abs(result.minMoment)).toFixed(2)} kNm`} />
             <SummaryCard label="Deflection" value={`${result.maxDeflection.toFixed(2)} mm`} />
+                <SummaryCard
+  label="Area"
+  value={`${sectionResult.area} mm²`}
+/>
+
+<SummaryCard
+  label="MOI"
+  value={`${sectionResult.momentOfInertia} mm⁴`}
+/>
+
+<SummaryCard
+  label="Z"
+  value={`${sectionResult.sectionModulus} mm³`}
+/>
+
+<SummaryCard
+  label="r"
+  value={`${sectionResult.radiusOfGyration} mm`}
+/>
           </div>
 
           <Card className="bg-slate-900/50 border-slate-800 p-6">
