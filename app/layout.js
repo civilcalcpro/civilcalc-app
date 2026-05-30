@@ -7,7 +7,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata = {
-  metadataBase: new URL('https://civilcalc-app.vercel.app'),
+  metadataBase: new URL('https://civilcalcpro.in'),
 
   title: {
     default: 'CivilCalc Pro — Civil Engineering Calculators',
@@ -15,7 +15,7 @@ export const metadata = {
   },
 
   description:
-    'Professional civil engineering calculators for RCC beam, column, slab, footing, concrete mix, steel weight, excavation, brickwork and estimation.',
+    'Professional civil engineering calculators, RCC design, structural analysis, IS code tools, estimation calculators and AI assistant.',
 
   keywords: [
     'civil engineering calculator',
@@ -23,12 +23,15 @@ export const metadata = {
     'column design calculator',
     'slab design',
     'footing design',
+    'structural analysis',
+    'SFD BMD calculator',
     'steel weight calculator',
     'brickwork calculator',
     'excavation calculator',
     'rate analysis',
     'IS 456 calculator',
     'civil engineering tools',
+    'CivilCalc Pro',
   ],
 
   authors: [{ name: 'CivilCalc Pro' }],
@@ -39,8 +42,8 @@ export const metadata = {
   openGraph: {
     title: 'CivilCalc Pro',
     description:
-      'Professional civil engineering calculators and tools.',
-    url: 'https://civilcalc-app.vercel.app',
+      'Professional civil engineering calculators, RCC design and structural analysis tools.',
+    url: 'https://civilcalcpro.in',
     siteName: 'CivilCalc Pro',
     locale: 'en_US',
     type: 'website',
@@ -50,7 +53,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'CivilCalc Pro',
     description:
-      'Professional civil engineering calculators and tools.',
+      'Professional civil engineering calculators and structural analysis tools.',
   },
 
   robots: {
