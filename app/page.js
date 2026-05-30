@@ -149,20 +149,20 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              <div className="mt-12 grid grid-cols-3 gap-6">
-                <div>
-                  <div className="text-3xl font-bold text-orange-500">50+</div>
-                  <div className="text-sm text-slate-400">Engineering Tools</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-orange-500">IS Codes</div>
-                  <div className="text-sm text-slate-400">Reference Library</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-orange-500">AI</div>
-                  <div className="text-sm text-slate-400">Assistant</div>
-                </div>
-              </div>
+             <div className="mt-12 grid grid-cols-3 gap-6">
+  <div>
+    <div className="text-3xl font-bold text-orange-500">25+</div>
+    <div className="text-sm text-slate-400">Calculators</div>
+  </div>
+  <div>
+    <div className="text-3xl font-bold text-orange-500">SFD/BMD</div>
+    <div className="text-sm text-slate-400">Structural Analysis</div>
+  </div>
+  <div>
+    <div className="text-3xl font-bold text-orange-500">AI</div>
+    <div className="text-sm text-slate-400">Assistant</div>
+  </div>
+</div>
             </motion.div>
 
             <motion.div
@@ -390,9 +390,13 @@ export default function LandingPage() {
             <h2 className="text-4xl font-bold mb-4 text-white">
               Ready to Transform Your Engineering Workflow?
             </h2>
-            <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
-              All 14+ calculators, AI assistant and IS code library — completely free for engineers & students.
-            </p>
+           <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
+  RCC design, structural analysis, IS code tools, AI assistant and estimation calculators — free for civil engineers and students.
+</p>
+
+<p className="text-orange-100 mb-8">
+  Available at: <strong>civilcalcpro.in</strong>
+</p>
             <Link href="/signup">
               <Button size="lg" className="bg-white text-orange-600 hover:bg-slate-100 text-lg px-8 h-14">
                 Get Started — It&apos;s Free
@@ -448,7 +452,12 @@ export default function LandingPage() {
           </div>
 
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-slate-400 text-sm">
-            <p>© 2025 CivilCalc Pro. All rights reserved.</p>
+           <div>
+  <p>© 2025 CivilCalc Pro. All rights reserved.</p>
+  <p className="text-slate-500 text-xs mt-1">
+    civilcalcpro.in
+  </p>
+</div>
             <a
               href="https://www.linkedin.com/in/civilcal-pro-6ba230411"
               target="_blank"
