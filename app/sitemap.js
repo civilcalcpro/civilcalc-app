@@ -1,67 +1,84 @@
 export default function sitemap() {
+  const baseUrl = 'https://civilcalcpro.in'
+
   return [
     {
-      url: 'https://civilcalc-app.vercel.app',
+      url: baseUrl,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/beam-design',
+      url: `${baseUrl}/beam-design`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/column-design',
+      url: `${baseUrl}/column-design`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/footing-design',
+      url: `${baseUrl}/footing-design`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/one-way-slab-calculator',
+      url: `${baseUrl}/one-way-slab-calculator`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/two-way-slab-calculator',
+      url: `${baseUrl}/two-way-slab-calculator`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/concrete-volume-calculator',
+      url: `${baseUrl}/concrete-volume-calculator`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/steel-weight-calculator',
+      url: `${baseUrl}/steel-weight-calculator`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/brickwork-calculator',
+      url: `${baseUrl}/brickwork-calculator`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/plaster-calculator',
+      url: `${baseUrl}/plaster-calculator`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/excavation-calculator',
+      url: `${baseUrl}/excavation-calculator`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/privacy-policy',
+      url: `${baseUrl}/dashboard/calculators/rate-analysis`,
       lastModified: new Date(),
     },
 
     {
-      url: 'https://civilcalc-app.vercel.app/terms-of-service',
+      url: `${baseUrl}/dashboard/calculators/unit-converter`,
+      lastModified: new Date(),
+    },
+
+    {
+      url: `${baseUrl}/dashboard/calculators/structural-analysis`,
+      lastModified: new Date(),
+    },
+
+    {
+      url: `${baseUrl}/privacy-policy`,
+      lastModified: new Date(),
+    },
+
+    {
+      url: `${baseUrl}/terms-of-service`,
       lastModified: new Date(),
     },
   ]
