@@ -5,6 +5,7 @@ import { AuthProvider } from '@/lib/auth-context'
 
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import Script from 'next/script'
 
 export const metadata = {
   metadataBase: new URL('https://civilcalcpro.in'),
@@ -79,6 +80,20 @@ export default function RootLayout({ children }) {
           <Analytics />
           <SpeedInsights />
         </AuthProvider>
+              <Script
+  src="https://www.googletagmanager.com/gtag/js?id=G-WY9TW5Y54J"
+  strategy="afterInteractive"
+/>
+
+<Script id="google-analytics" strategy="afterInteractive">
+  {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-WY9TW5Y54J');
+  `}
+</Script>
       </body>
     </html>
   )
