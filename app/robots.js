@@ -4,6 +4,17 @@ export default function robots() {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://civilcalc-app.vercel.app/sitemap.xml',
+  export default function robots() {
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+    },
+
+    sitemap: 'https://civilcalcpro.in/sitemap.xml',
+
+    host: 'https://civilcalcpro.in',
+  }
+}
   }
 }
