@@ -8,7 +8,9 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata = {
   metadataBase: new URL('https://civilcalcpro.in'),
-
+verification: {
+  google: '-39KadMQidRHVAfg4YFM1we0tudJtd9k8MrIM0j5Mz4',
+},
   title: {
     default: 'CivilCalc Pro — Civil Engineering Calculators',
     template: '%s | CivilCalc Pro',
