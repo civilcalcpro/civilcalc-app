@@ -16,5 +16,3 @@ export default function robots() {
     host: 'https://civilcalcpro.in',
   }
 }
-  }
-}
