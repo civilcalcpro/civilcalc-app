@@ -9,59 +9,85 @@ import Script from 'next/script'
 
 export const metadata = {
   metadataBase: new URL('https://civilcalcpro.in'),
-verification: {
-  google: '-39KadMQidRHVAfg4YFM1we0tudJtd9k8MrIM0j5Mz4',
-},
+
+  verification: {
+    google: '-39KadMQidRHVAfg4YFM1we0tudJtd9k8MrIM0j5Mz4',
+  },
+
   title: {
-    default: 'CivilCalc Pro — Civil Engineering Calculators',
+    default: 'CivilCalc Pro — Civil Engineering Calculators & Structural Analysis',
     template: '%s | CivilCalc Pro',
   },
 
   description:
-    'Professional civil engineering calculators, RCC design, structural analysis, IS code tools, estimation calculators and AI assistant.',
+    'CivilCalc Pro is a professional civil engineering platform featuring RCC beam design, column design, slab design, footing design, structural analysis, IS code tools, estimation calculators, PDF reports, and AI-powered engineering assistance.',
 
   keywords: [
     'civil engineering calculator',
+    'civil engineering software',
     'RCC beam design',
     'column design calculator',
-    'slab design',
     'footing design',
+    'slab design',
     'structural analysis',
-    'SFD BMD calculator',
+    'SFD calculator',
+    'BMD calculator',
     'steel weight calculator',
+    'concrete volume calculator',
     'brickwork calculator',
     'excavation calculator',
     'rate analysis',
-    'IS 456 calculator',
+    'IS 456',
+    'IS code calculator',
     'civil engineering tools',
     'CivilCalc Pro',
   ],
 
   authors: [{ name: 'CivilCalc Pro' }],
-
   creator: 'CivilCalc Pro',
   publisher: 'CivilCalc Pro',
+
+  alternates: {
+    canonical: 'https://civilcalcpro.in',
+  },
 
   openGraph: {
     title: 'CivilCalc Pro',
     description:
-      'Professional civil engineering calculators, RCC design and structural analysis tools.',
+      'Professional Civil Engineering Platform for RCC Design, Structural Analysis, IS Code Calculations and AI Engineering Assistance.',
     url: 'https://civilcalcpro.in',
     siteName: 'CivilCalc Pro',
     locale: 'en_US',
     type: 'website',
+
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'CivilCalc Pro',
+      },
+    ],
   },
 
   twitter: {
     card: 'summary_large_image',
     title: 'CivilCalc Pro',
     description:
-      'Professional civil engineering calculators and structural analysis tools.',
+      'Professional Civil Engineering Calculators and Structural Analysis Platform.',
+    images: ['/og-image.png'],
   },
 
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 }
 
