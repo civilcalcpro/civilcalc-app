@@ -59,15 +59,6 @@ export const metadata = {
     siteName: 'CivilCalc Pro',
     locale: 'en_US',
     type: 'website',
-
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'CivilCalc Pro',
-      },
-    ],
   },
 
   twitter: {
@@ -75,7 +66,6 @@ export const metadata = {
     title: 'CivilCalc Pro',
     description:
       'Professional Civil Engineering Calculators and Structural Analysis Platform.',
-    images: ['/og-image.png'],
   },
 
   robots: {
