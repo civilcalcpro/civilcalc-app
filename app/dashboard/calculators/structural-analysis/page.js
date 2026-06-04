@@ -1731,6 +1731,18 @@ function ColumnBucklingModule({
     </div>
   )
 }
+function ResultRow({ label, value }) {
+  return (
+    <div className="bg-slate-800/60 rounded-xl p-4">
+      <div className="text-xs uppercase tracking-wider text-slate-400 mb-1">
+        {label}
+      </div>
+      <div className="text-lg font-bold text-white">
+        {value}
+      </div>
+    </div>
+  )
+}
 function TrussDiagram({ trussData }) {
   const width = 760
   const height = 300
