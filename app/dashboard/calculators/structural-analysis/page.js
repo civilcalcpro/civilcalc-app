@@ -23,6 +23,7 @@ import {
 
 import { analyzeTruss } from '@/lib/engineering/truss-analysis'
 import { columnBuckling } from '@/lib/engineering/column-buckling'
+import { momentAreaAnalysis } from '@/lib/engineering/moment-area'
 export default function StructuralAnalysisPage() {
   const [activeModule, setActiveModule] = useState('beam')
 const [columnLength, setColumnLength] = useState(3)
@@ -284,6 +285,36 @@ const columnResult = useMemo(() => {
   columnMaterial,
   columnEndCondition,
   columnAppliedLoad,
+])
+  const momentAreaResult = useMemo(() => {
+  return momentAreaAnalysis({
+    span: momentAreaSpan,
+    E: momentAreaE,
+    I: momentAreaI,
+    pointLoads: [
+      {
+        P: momentAreaPointLoad,
+        x: momentAreaPointPosition,
+      },
+    ],
+    udls:
+      Number(momentAreaUDL) > 0
+        ? [
+            {
+              w: momentAreaUDL,
+              start: 0,
+              end: momentAreaSpan,
+            },
+          ]
+        : [],
+  })
+}, [
+  momentAreaSpan,
+  momentAreaE,
+  momentAreaI,
+  momentAreaPointLoad,
+  momentAreaPointPosition,
+  momentAreaUDL,
 ])
   const result = useMemo(() => {
     const L = Number(span) || 1
@@ -566,6 +597,16 @@ const columnResult = useMemo(() => {
 >
   Column Buckling
 </Button>
+    <Button
+  onClick={() => setActiveModule('moment-area')}
+  className={
+    activeModule === 'moment-area'
+      ? 'bg-orange-500 hover:bg-orange-600'
+      : 'bg-slate-800 hover:bg-slate-700'
+  }
+>
+  Moment Area
+</Button>
         </div>
       </div>
 
@@ -637,6 +678,23 @@ const columnResult = useMemo(() => {
   columnAppliedLoad={columnAppliedLoad}
   setColumnAppliedLoad={setColumnAppliedLoad}
 />
+)}
+    {activeModule === 'moment-area' && (
+  <MomentAreaModule
+    result={momentAreaResult}
+    span={momentAreaSpan}
+    setSpan={setMomentAreaSpan}
+    E={momentAreaE}
+    setE={setMomentAreaE}
+    I={momentAreaI}
+    setI={setMomentAreaI}
+    pointLoad={momentAreaPointLoad}
+    setPointLoad={setMomentAreaPointLoad}
+    pointPosition={momentAreaPointPosition}
+    setPointPosition={setMomentAreaPointPosition}
+    udl={momentAreaUDL}
+    setUDL={setMomentAreaUDL}
+  />
 )}
     </div>
   )
@@ -1720,6 +1778,102 @@ function InputBox({ label, value, setValue }) {
         onChange={(e) => setValue(Number(e.target.value))}
         className="bg-slate-800 border-slate-700 text-white mt-2"
       />
+    </div>
+  )
+}
+function MomentAreaModule({
+  result,
+  span,
+  setSpan,
+  E,
+  setE,
+  I,
+  setI,
+  pointLoad,
+  setPointLoad,
+  pointPosition,
+  setPointPosition,
+  udl,
+  setUDL,
+}) {
+  return (
+    <div className="grid lg:grid-cols-3 gap-6">
+      <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
+        <h2 className="text-xl font-bold text-white mb-5">
+          Moment Area Inputs
+        </h2>
+
+        <div className="space-y-4">
+          <InputBox label="Span L (m)" value={span} setValue={setSpan} />
+          <InputBox label="E (N/mm²)" value={E} setValue={setE} />
+          <InputBox label="I (mm⁴)" value={I} setValue={setI} />
+          <InputBox label="Point Load P (kN)" value={pointLoad} setValue={setPointLoad} />
+          <InputBox label="Point Load Position x (m)" value={pointPosition} setValue={setPointPosition} />
+          <InputBox label="UDL w (kN/m)" value={udl} setValue={setUDL} />
+        </div>
+
+        <Button
+          onClick={() => window.print()}
+          className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export / Print PDF
+        </Button>
+      </Card>
+
+      <div className="lg:col-span-2 space-y-6">
+        <div className="grid md:grid-cols-4 gap-4">
+          <SummaryCard label="RA" value={`${result.reactions.RA} kN`} />
+          <SummaryCard label="RB" value={`${result.reactions.RB} kN`} />
+          <SummaryCard label="Max Moment" value={`${result.summary.maxMoment} kNm`} />
+          <SummaryCard label="Max Deflection" value={`${result.summary.maxDeflection} mm`} />
+        </div>
+
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <h2 className="text-xl font-bold text-white mb-4">
+            Moment Area Results
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <ResultRow label="Total Load" value={`${result.summary.totalLoad} kN`} />
+            <ResultRow label="Max Moment Location" value={`${result.summary.maxMomentLocation} m`} />
+            <ResultRow label="Slope Difference" value={`${result.summary.slopeDifference} rad`} />
+            <ResultRow label="Tangential Deviation" value={`${result.summary.tangentialDeviation} mm`} />
+            <ResultRow label="Max Deflection Location" value={`${result.summary.maxDeflectionLocation} m`} />
+            <ResultRow label="Maximum Deflection" value={`${result.summary.maxDeflection} mm`} />
+          </div>
+        </Card>
+
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <h2 className="text-xl font-bold text-white mb-4">
+            Step-by-Step Moment Area Solution
+          </h2>
+
+          <div className="space-y-3 text-slate-300 leading-7">
+            {result.steps.map((step, index) => (
+              <p key={index}>
+                <span className="text-orange-400 font-semibold">
+                  Step {index + 1}:
+                </span>{' '}
+                {step}
+              </p>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <h2 className="text-xl font-bold text-white mb-4">
+            Formula Panel
+          </h2>
+
+          <div className="space-y-3 text-slate-300">
+            <p><b className="text-orange-400">Theorem 1:</b> {result.formulas.theorem1}</p>
+            <p><b className="text-orange-400">Theorem 2:</b> {result.formulas.theorem2}</p>
+            <p><b className="text-orange-400">Curvature:</b> {result.formulas.curvature}</p>
+            <p><b className="text-orange-400">Deflection:</b> {result.formulas.deflection}</p>
+          </div>
+        </Card>
+      </div>
     </div>
   )
 }
