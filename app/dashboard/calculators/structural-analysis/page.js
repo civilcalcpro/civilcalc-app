@@ -25,7 +25,13 @@ import { analyzeTruss } from '@/lib/engineering/truss-analysis'
 import { columnBuckling } from '@/lib/engineering/column-buckling'
 export default function StructuralAnalysisPage() {
   const [activeModule, setActiveModule] = useState('beam')
-
+const [columnLength, setColumnLength] = useState(3)
+const [columnE, setColumnE] = useState(200000)
+const [columnI, setColumnI] = useState(133333333)
+const [columnArea, setColumnArea] = useState(40000)
+const [columnEndCondition, setColumnEndCondition] = useState('pinnedPinned')
+const [columnCrushingStress, setColumnCrushingStress] = useState(0)
+const [columnRankineConstant, setColumnRankineConstant] = useState(1 / 7500)
   const [structureType, setStructureType] = useState('simply-supported')
   const [span, setSpan] = useState(6)
   const [width, setWidth] = useState(300)
@@ -225,13 +231,23 @@ const removeTrussLoad = (index) => {
   }, [trussData])
 const columnResult = useMemo(() => {
   return columnBuckling({
-    length: 3,
-    E: 200000,
-    I: 133333333,
-    area: 40000,
-    endCondition: 'pinnedPinned',
+    length: columnLength,
+    E: columnE,
+    I: columnI,
+    area: columnArea,
+    endCondition: columnEndCondition,
+    crushingStress: columnCrushingStress,
+    rankineConstant: columnRankineConstant,
   })
-}, [])
+}, [
+  columnLength,
+  columnE,
+  columnI,
+  columnArea,
+  columnEndCondition,
+  columnCrushingStress,
+  columnRankineConstant,
+])
   const result = useMemo(() => {
     const L = Number(span) || 1
     const b = Number(width) || 300
@@ -565,7 +581,23 @@ const columnResult = useMemo(() => {
 />
       )}
     {activeModule === 'column' && (
-  <ColumnBucklingModule columnResult={columnResult} />
+  <ColumnBucklingModule
+  columnResult={columnResult}
+  columnLength={columnLength}
+  setColumnLength={setColumnLength}
+  columnE={columnE}
+  setColumnE={setColumnE}
+  columnI={columnI}
+  setColumnI={setColumnI}
+  columnArea={columnArea}
+  setColumnArea={setColumnArea}
+  columnEndCondition={columnEndCondition}
+  setColumnEndCondition={setColumnEndCondition}
+  columnCrushingStress={columnCrushingStress}
+  setColumnCrushingStress={setColumnCrushingStress}
+  columnRankineConstant={columnRankineConstant}
+  setColumnRankineConstant={setColumnRankineConstant}
+/>
 )}
     </div>
   )
@@ -1492,7 +1524,23 @@ function TrussModule({
     </div>
   )
 }
-function ColumnBucklingModule({ columnResult }) {
+function ColumnBucklingModule({
+  columnResult,
+  columnLength,
+  setColumnLength,
+  columnE,
+  setColumnE,
+  columnI,
+  setColumnI,
+  columnArea,
+  setColumnArea,
+  columnEndCondition,
+  setColumnEndCondition,
+  columnCrushingStress,
+  setColumnCrushingStress,
+  columnRankineConstant,
+  setColumnRankineConstant,
+}) {
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
@@ -1500,12 +1548,91 @@ function ColumnBucklingModule({ columnResult }) {
           Column Buckling Inputs
         </h2>
 
-        <div className="space-y-4 text-slate-300">
-          <p>Length = 3 m</p>
-          <p>E = 200000 N/mm²</p>
-          <p>I = 133333333 mm⁴</p>
-          <p>Area = 40000 mm²</p>
-          <p>End Condition = Pinned - Pinned</p>
+        <div className="space-y-4">
+          <div>
+            <Label className="text-slate-400">Length L (m)</Label>
+            <Input
+              type="number"
+              value={columnLength}
+              onChange={(e) => setColumnLength(Number(e.target.value))}
+              className="bg-slate-800 border-slate-700 text-white mt-2"
+            />
+          </div>
+
+          <div>
+            <Label className="text-slate-400">Young’s Modulus E (N/mm²)</Label>
+            <Input
+              type="number"
+              value={columnE}
+              onChange={(e) => setColumnE(Number(e.target.value))}
+              className="bg-slate-800 border-slate-700 text-white mt-2"
+            />
+          </div>
+
+          <div>
+            <Label className="text-slate-400">Moment of Inertia I (mm⁴)</Label>
+            <Input
+              type="number"
+              value={columnI}
+              onChange={(e) => setColumnI(Number(e.target.value))}
+              className="bg-slate-800 border-slate-700 text-white mt-2"
+            />
+          </div>
+
+          <div>
+            <Label className="text-slate-400">Area A (mm²)</Label>
+            <Input
+              type="number"
+              value={columnArea}
+              onChange={(e) => setColumnArea(Number(e.target.value))}
+              className="bg-slate-800 border-slate-700 text-white mt-2"
+            />
+          </div>
+
+          <div>
+            <Label className="text-slate-400">End Condition</Label>
+            <Select
+              value={columnEndCondition}
+              onValueChange={setColumnEndCondition}
+            >
+              <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                <SelectItem value="pinnedPinned">Pinned - Pinned</SelectItem>
+                <SelectItem value="fixedFixed">Fixed - Fixed</SelectItem>
+                <SelectItem value="fixedFree">Fixed - Free</SelectItem>
+                <SelectItem value="fixedPinned">Fixed - Pinned</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-slate-400">
+              Crushing Stress Pc/A (N/mm²)
+            </Label>
+            <Input
+              type="number"
+              value={columnCrushingStress}
+              onChange={(e) =>
+                setColumnCrushingStress(Number(e.target.value))
+              }
+              className="bg-slate-800 border-slate-700 text-white mt-2"
+            />
+          </div>
+
+          <div>
+            <Label className="text-slate-400">Rankine Constant α</Label>
+            <Input
+              type="number"
+              step="0.000001"
+              value={columnRankineConstant}
+              onChange={(e) =>
+                setColumnRankineConstant(Number(e.target.value))
+              }
+              className="bg-slate-800 border-slate-700 text-white mt-2"
+            />
+          </div>
         </div>
 
         <Button
@@ -1600,19 +1727,6 @@ function ColumnBucklingModule({ columnResult }) {
             </p>
           </div>
         </Card>
-      </div>
-    </div>
-  )
-}
-
-function ResultRow({ label, value }) {
-  return (
-    <div className="bg-slate-800/60 rounded-xl p-4">
-      <div className="text-xs uppercase tracking-wider text-slate-400 mb-1">
-        {label}
-      </div>
-      <div className="text-lg font-bold text-white">
-        {value}
       </div>
     </div>
   )
