@@ -1797,30 +1797,63 @@ function TrussDiagram({ trussData }) {
       ))}
 
       {trussData.loads.map((load, index) => {
-        const joint = getJoint(load.joint)
-        if (!joint) return null
+  const joint = getJoint(load.joint)
+  if (!joint) return null
 
-        const x = scaleX(joint.x)
-        const y = scaleY(joint.y)
+  const x = scaleX(joint.x)
+  const y = scaleY(joint.y)
 
-        return (
-          <g key={index}>
-            <line
-              x1={x}
-              y1={y - 55}
-              x2={x}
-              y2={y - 18}
-              stroke="#ef4444"
-              strokeWidth="3"
-              markerEnd="url(#trussLoadArrow)"
-            />
-            <text x={x + 10} y={y - 40} fill="#fca5a5">
-              {Math.abs(load.fy)} kN
-            </text>
-          </g>
-        )
-      })}
+  const fx = Number(load.fx) || 0
+  const fy = Number(load.fy) || 0
 
+  return (
+    <g key={index}>
+      {fx !== 0 && (
+        <g>
+          <line
+            x1={fx > 0 ? x - 60 : x + 60}
+            y1={y}
+            x2={fx > 0 ? x - 18 : x + 18}
+            y2={y}
+            stroke="#ef4444"
+            strokeWidth="3"
+            markerEnd="url(#trussLoadArrow)"
+          />
+          <text
+            x={fx > 0 ? x - 68 : x + 25}
+            y={y - 10}
+            fill="#fca5a5"
+            fontSize="12"
+          >
+            Fx {fx} kN
+          </text>
+        </g>
+      )}
+
+      {fy !== 0 && (
+        <g>
+          <line
+            x1={x}
+            y1={fy > 0 ? y + 60 : y - 60}
+            x2={x}
+            y2={fy > 0 ? y + 18 : y - 18}
+            stroke="#ef4444"
+            strokeWidth="3"
+            markerEnd="url(#trussLoadArrow)"
+          />
+          <text
+            x={x + 10}
+            y={fy > 0 ? y + 55 : y - 45}
+            fill="#fca5a5"
+            fontSize="12"
+          >
+            Fy {fy} kN
+          </text>
+        </g>
+      )}
+    </g>
+  )
+})}
       <defs>
         <marker
           id="trussLoadArrow"
