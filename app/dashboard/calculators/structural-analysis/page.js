@@ -1187,27 +1187,37 @@ function TrussModule({
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      value={member.area || 1000}
-                      onChange={(e) =>
-                        updateTrussMember(index, 'area', e.target.value)
-                      }
-                      placeholder="Area mm²"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
+                <div className="grid grid-cols-2 gap-2">
+  <div>
+    <Label className="text-slate-400 text-xs">
+      Area A (mm²)
+    </Label>
+    <Input
+      type="number"
+      value={member.area || 1000}
+      onChange={(e) =>
+        updateTrussMember(index, 'area', e.target.value)
+      }
+      placeholder="Area mm²"
+      className="bg-slate-900 border-slate-700 text-white mt-1"
+    />
+  </div>
 
-                    <Input
-                      type="number"
-                      value={member.E || 200000}
-                      onChange={(e) =>
-                        updateTrussMember(index, 'E', e.target.value)
-                      }
-                      placeholder="E N/mm²"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
-                  </div>
+  <div>
+    <Label className="text-slate-400 text-xs">
+      Elastic Modulus E (N/mm²)
+    </Label>
+    <Input
+      type="number"
+      value={member.E || 200000}
+      onChange={(e) =>
+        updateTrussMember(index, 'E', e.target.value)
+      }
+      placeholder="E N/mm²"
+      className="bg-slate-900 border-slate-700 text-white mt-1"
+    />
+  </div>
+</div>
 
                   <RemoveButton onClick={() => removeTrussMember(index)} />
                 </div>
@@ -1320,26 +1330,36 @@ function TrussModule({
                   </Select>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      value={load.fx}
-                      onChange={(e) =>
-                        updateTrussLoad(index, 'fx', e.target.value)
-                      }
-                      placeholder="Fx kN"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
+  <div>
+    <Label className="text-slate-400 text-xs">
+      Horizontal Load Fx (kN)
+    </Label>
+    <Input
+      type="number"
+      value={load.fx}
+      onChange={(e) =>
+        updateTrussLoad(index, 'fx', e.target.value)
+      }
+      placeholder="Right + / Left -"
+      className="bg-slate-900 border-slate-700 text-white mt-1"
+    />
+  </div>
 
-                    <Input
-                      type="number"
-                      value={load.fy}
-                      onChange={(e) =>
-                        updateTrussLoad(index, 'fy', e.target.value)
-                      }
-                      placeholder="Fy kN"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
-                  </div>
+  <div>
+    <Label className="text-slate-400 text-xs">
+      Vertical Load Fy (kN)
+    </Label>
+    <Input
+      type="number"
+      value={load.fy}
+      onChange={(e) =>
+        updateTrussLoad(index, 'fy', e.target.value)
+      }
+      placeholder="Up + / Down -"
+      className="bg-slate-900 border-slate-700 text-white mt-1"
+    />
+  </div>
+</div>
 
                   <RemoveButton onClick={() => removeTrussLoad(index)} />
                 </div>
