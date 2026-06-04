@@ -45,25 +45,180 @@ export default function StructuralAnalysisPage() {
     { id: 1, M: 0, x: 3 },
   ])
 
-  const [trussData] = useState({
+  const [trussData, setTrussData] = useState({
+  joints: [
+    { id: 'A', x: 0, y: 0 },
+    { id: 'B', x: 4, y: 0 },
+    { id: 'C', x: 2, y: 3 },
+  ],
+  members: [
+    { id: 'AB', start: 'A', end: 'B', area: 1000, E: 200000 },
+    { id: 'AC', start: 'A', end: 'C', area: 1000, E: 200000 },
+    { id: 'BC', start: 'B', end: 'C', area: 1000, E: 200000 },
+  ],
+  supports: [
+    { joint: 'A', type: 'pin' },
+    { joint: 'B', type: 'roller-y' },
+  ],
+  loads: [
+    { joint: 'C', fx: 0, fy: -20 },
+  ],
+})
+
+const updateTrussJoint = (index, field, value) => {
+  setTrussData((prev) => ({
+    ...prev,
+    joints: prev.joints.map((joint, i) =>
+      i === index
+        ? {
+            ...joint,
+            [field]: field === 'id' ? value.toUpperCase() : Number(value),
+          }
+        : joint
+    ),
+  }))
+}
+
+const addTrussJoint = () => {
+  const nextId = String.fromCharCode(65 + trussData.joints.length)
+
+  setTrussData((prev) => ({
+    ...prev,
     joints: [
-      { id: 'A', x: 0, y: 0 },
-      { id: 'B', x: 4, y: 0 },
-      { id: 'C', x: 2, y: 3 },
+      ...prev.joints,
+      { id: nextId, x: 0, y: 0 },
     ],
+  }))
+}
+
+const removeTrussJoint = (index) => {
+  if (trussData.joints.length <= 2) return
+
+  const removedJoint = trussData.joints[index]?.id
+
+  setTrussData((prev) => ({
+    ...prev,
+    joints: prev.joints.filter((_, i) => i !== index),
+    members: prev.members.filter(
+      (member) =>
+        member.start !== removedJoint && member.end !== removedJoint
+    ),
+    supports: prev.supports.filter(
+      (support) => support.joint !== removedJoint
+    ),
+    loads: prev.loads.filter((load) => load.joint !== removedJoint),
+  }))
+}
+
+const updateTrussMember = (index, field, value) => {
+  setTrussData((prev) => ({
+    ...prev,
+    members: prev.members.map((member, i) =>
+      i === index
+        ? {
+            ...member,
+            [field]:
+              field === 'area' || field === 'E'
+                ? Number(value)
+                : value,
+          }
+        : member
+    ),
+  }))
+}
+
+const addTrussMember = () => {
+  const firstJoint = trussData.joints[0]?.id || 'A'
+  const secondJoint = trussData.joints[1]?.id || 'B'
+
+  setTrussData((prev) => ({
+    ...prev,
     members: [
-      { id: 'AB', start: 'A', end: 'B' },
-      { id: 'AC', start: 'A', end: 'C' },
-      { id: 'BC', start: 'B', end: 'C' },
+      ...prev.members,
+      {
+        id: `M${prev.members.length + 1}`,
+        start: firstJoint,
+        end: secondJoint,
+        area: 1000,
+        E: 200000,
+      },
     ],
+  }))
+}
+
+const removeTrussMember = (index) => {
+  setTrussData((prev) => ({
+    ...prev,
+    members: prev.members.filter((_, i) => i !== index),
+  }))
+}
+
+const updateTrussSupport = (index, field, value) => {
+  setTrussData((prev) => ({
+    ...prev,
+    supports: prev.supports.map((support, i) =>
+      i === index ? { ...support, [field]: value } : support
+    ),
+  }))
+}
+
+const addTrussSupport = () => {
+  setTrussData((prev) => ({
+    ...prev,
     supports: [
-      { joint: 'A', type: 'pin' },
-      { joint: 'B', type: 'roller' },
+      ...prev.supports,
+      {
+        joint: prev.joints[0]?.id || 'A',
+        type: 'roller-y',
+      },
     ],
+  }))
+}
+
+const removeTrussSupport = (index) => {
+  setTrussData((prev) => ({
+    ...prev,
+    supports: prev.supports.filter((_, i) => i !== index),
+  }))
+}
+
+const updateTrussLoad = (index, field, value) => {
+  setTrussData((prev) => ({
+    ...prev,
+    loads: prev.loads.map((load, i) =>
+      i === index
+        ? {
+            ...load,
+            [field]:
+              field === 'fx' || field === 'fy'
+                ? Number(value)
+                : value,
+          }
+        : load
+    ),
+  }))
+}
+
+const addTrussLoad = () => {
+  setTrussData((prev) => ({
+    ...prev,
     loads: [
-      { joint: 'C', fx: 0, fy: -20 },
+      ...prev.loads,
+      {
+        joint: prev.joints[0]?.id || 'A',
+        fx: 0,
+        fy: -10,
+      },
     ],
-  })
+  }))
+}
+
+const removeTrussLoad = (index) => {
+  setTrussData((prev) => ({
+    ...prev,
+    loads: prev.loads.filter((_, i) => i !== index),
+  }))
+}
 
   const trussResult = useMemo(() => {
     return analyzeTruss(trussData)
@@ -375,9 +530,21 @@ export default function StructuralAnalysisPage() {
 
       {activeModule === 'truss' && (
         <TrussModule
-          trussData={trussData}
-          trussResult={trussResult}
-        />
+  trussData={trussData}
+  trussResult={trussResult}
+  updateTrussJoint={updateTrussJoint}
+  addTrussJoint={addTrussJoint}
+  removeTrussJoint={removeTrussJoint}
+  updateTrussMember={updateTrussMember}
+  addTrussMember={addTrussMember}
+  removeTrussMember={removeTrussMember}
+  updateTrussSupport={updateTrussSupport}
+  addTrussSupport={addTrussSupport}
+  removeTrussSupport={removeTrussSupport}
+  updateTrussLoad={updateTrussLoad}
+  addTrussLoad={addTrussLoad}
+  removeTrussLoad={removeTrussLoad}
+/>
       )}
     </div>
   )
@@ -774,7 +941,24 @@ function BeamModule({
   )
 }
 
-function TrussModule({ trussData, trussResult }) {
+function TrussModule({
+  trussData,
+  trussResult,
+  updateTrussJoint,
+  addTrussJoint,
+  removeTrussJoint,
+  updateTrussMember,
+  addTrussMember,
+  removeTrussMember,
+  updateTrussSupport,
+  addTrussSupport,
+  removeTrussSupport,
+  updateTrussLoad,
+  addTrussLoad,
+  removeTrussLoad,
+}) {
+  const jointOptions = trussData.joints.map((joint) => joint.id)
+
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
@@ -782,60 +966,293 @@ function TrussModule({ trussData, trussResult }) {
           Truss Inputs
         </h2>
 
-        <div className="space-y-5 text-sm text-slate-300">
+        <div className="space-y-6 text-sm text-slate-300">
           <div>
-            <h3 className="font-semibold text-orange-400 mb-2">
-              Joints
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-orange-400">
+                Joints
+              </h3>
 
-            <div className="space-y-2">
-              {trussData.joints.map((joint) => (
-                <div
-                  key={joint.id}
-                  className="flex justify-between bg-slate-800/60 rounded-lg px-3 py-2"
-                >
-                  <span>Joint {joint.id}</span>
-                  <span>
-                    ({joint.x}, {joint.y})
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-orange-400 mb-2">
-              Members
-            </h3>
-
-            <div className="space-y-2">
-              {trussData.members.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex justify-between bg-slate-800/60 rounded-lg px-3 py-2"
-                >
-                  <span>{member.id}</span>
-                  <span>
-                    {member.start} → {member.end}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-orange-400 mb-2">
-              Load
-            </h3>
-
-            {trussData.loads.map((load, index) => (
-              <div
-                key={index}
-                className="bg-slate-800/60 rounded-lg px-3 py-2"
+              <Button
+                size="sm"
+                onClick={addTrussJoint}
+                className="bg-orange-500 hover:bg-orange-600"
               >
-                Joint {load.joint}: Fx = {load.fx} kN, Fy = {load.fy} kN
-              </div>
-            ))}
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {trussData.joints.map((joint, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-800/60 rounded-xl p-3 space-y-2"
+                >
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      value={joint.id}
+                      onChange={(e) =>
+                        updateTrussJoint(index, 'id', e.target.value)
+                      }
+                      placeholder="Joint"
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+
+                    <Input
+                      type="number"
+                      value={joint.x}
+                      onChange={(e) =>
+                        updateTrussJoint(index, 'x', e.target.value)
+                      }
+                      placeholder="x m"
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+
+                    <Input
+                      type="number"
+                      value={joint.y}
+                      onChange={(e) =>
+                        updateTrussJoint(index, 'y', e.target.value)
+                      }
+                      placeholder="y m"
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+                  </div>
+
+                  <RemoveButton onClick={() => removeTrussJoint(index)} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-orange-400">
+                Members
+              </h3>
+
+              <Button
+                size="sm"
+                onClick={addTrussMember}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {trussData.members.map((member, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-800/60 rounded-xl p-3 space-y-2"
+                >
+                  <Input
+                    value={member.id}
+                    onChange={(e) =>
+                      updateTrussMember(index, 'id', e.target.value)
+                    }
+                    placeholder="Member ID"
+                    className="bg-slate-900 border-slate-700 text-white"
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select
+                      value={member.start}
+                      onValueChange={(value) =>
+                        updateTrussMember(index, 'start', value)
+                      }
+                    >
+                      <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                        <SelectValue placeholder="Start joint" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                        {jointOptions.map((joint) => (
+                          <SelectItem key={joint} value={joint}>
+                            {joint}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={member.end}
+                      onValueChange={(value) =>
+                        updateTrussMember(index, 'end', value)
+                      }
+                    >
+                      <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                        <SelectValue placeholder="End joint" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                        {jointOptions.map((joint) => (
+                          <SelectItem key={joint} value={joint}>
+                            {joint}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      value={member.area || 1000}
+                      onChange={(e) =>
+                        updateTrussMember(index, 'area', e.target.value)
+                      }
+                      placeholder="Area mm²"
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+
+                    <Input
+                      type="number"
+                      value={member.E || 200000}
+                      onChange={(e) =>
+                        updateTrussMember(index, 'E', e.target.value)
+                      }
+                      placeholder="E N/mm²"
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+                  </div>
+
+                  <RemoveButton onClick={() => removeTrussMember(index)} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-orange-400">
+                Supports
+              </h3>
+
+              <Button
+                size="sm"
+                onClick={addTrussSupport}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {trussData.supports.map((support, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-800/60 rounded-xl p-3 space-y-2"
+                >
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select
+                      value={support.joint}
+                      onValueChange={(value) =>
+                        updateTrussSupport(index, 'joint', value)
+                      }
+                    >
+                      <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                        <SelectValue placeholder="Joint" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                        {jointOptions.map((joint) => (
+                          <SelectItem key={joint} value={joint}>
+                            {joint}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={support.type}
+                      onValueChange={(value) =>
+                        updateTrussSupport(index, 'type', value)
+                      }
+                    >
+                      <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                        <SelectValue placeholder="Support" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                        <SelectItem value="pin">Pin</SelectItem>
+                        <SelectItem value="roller-y">Roller Vertical</SelectItem>
+                        <SelectItem value="roller-x">Roller Horizontal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <RemoveButton onClick={() => removeTrussSupport(index)} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-orange-400">
+                Loads
+              </h3>
+
+              <Button
+                size="sm"
+                onClick={addTrussLoad}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {trussData.loads.map((load, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-800/60 rounded-xl p-3 space-y-2"
+                >
+                  <Select
+                    value={load.joint}
+                    onValueChange={(value) =>
+                      updateTrussLoad(index, 'joint', value)
+                    }
+                  >
+                    <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                      <SelectValue placeholder="Load Joint" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                      {jointOptions.map((joint) => (
+                        <SelectItem key={joint} value={joint}>
+                          {joint}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      value={load.fx}
+                      onChange={(e) =>
+                        updateTrussLoad(index, 'fx', e.target.value)
+                      }
+                      placeholder="Fx kN"
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+
+                    <Input
+                      type="number"
+                      value={load.fy}
+                      onChange={(e) =>
+                        updateTrussLoad(index, 'fy', e.target.value)
+                      }
+                      placeholder="Fy kN"
+                      className="bg-slate-900 border-slate-700 text-white"
+                    />
+                  </div>
+
+                  <RemoveButton onClick={() => removeTrussLoad(index)} />
+                </div>
+              ))}
+            </div>
           </div>
 
           <Button
@@ -857,24 +1274,47 @@ function TrussModule({ trussData, trussResult }) {
           <TrussDiagram trussData={trussData} />
         </Card>
 
+        {!trussResult.ok && (
+          <Card className="bg-red-950/40 border-red-800 p-5">
+            <h3 className="text-red-300 font-semibold mb-2">
+              Analysis Error
+            </h3>
+            <p className="text-red-200 text-sm">
+              {trussResult.error}
+            </p>
+          </Card>
+        )}
+
         <div className="grid md:grid-cols-4 gap-4">
-          <SummaryCard
-            label="Joints"
-            value={trussResult.summary.joints}
-          />
-          <SummaryCard
-            label="Members"
-            value={trussResult.summary.members}
-          />
-          <SummaryCard
-            label="Reactions"
-            value={trussResult.summary.reactions}
-          />
-          <SummaryCard
-            label="Type"
-            value={trussResult.summary.determinacy}
-          />
+          <SummaryCard label="Joints" value={trussResult.summary.joints} />
+          <SummaryCard label="Members" value={trussResult.summary.members} />
+          <SummaryCard label="Reactions" value={trussResult.summary.reactions} />
+          <SummaryCard label="Type" value={trussResult.summary.determinacy} />
         </div>
+
+        {trussResult.reactions?.length > 0 && (
+          <Card className="bg-slate-900/50 border-slate-800 p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              Support Reactions
+            </h2>
+
+            <div className="grid md:grid-cols-3 gap-3">
+              {trussResult.reactions.map((reaction, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-800/60 rounded-xl p-4"
+                >
+                  <div className="text-slate-400 text-xs uppercase">
+                    Joint {reaction.joint} · {reaction.direction}
+                  </div>
+                  <div className="text-white font-bold text-lg mt-1">
+                    {reaction.value} {reaction.unit}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <Card className="bg-slate-900/50 border-slate-800 p-6">
           <h2 className="text-xl font-bold text-white mb-4">
@@ -890,7 +1330,9 @@ function TrussModule({ trussData, trussResult }) {
                   <th className="text-left py-3">End</th>
                   <th className="text-left py-3">Length</th>
                   <th className="text-left py-3">Angle</th>
+                  <th className="text-left py-3">Force</th>
                   <th className="text-left py-3">Nature</th>
+                  <th className="text-left py-3">Stress</th>
                 </tr>
               </thead>
 
@@ -907,13 +1349,62 @@ function TrussModule({ trussData, trussResult }) {
                     <td className="py-3">{member.end}</td>
                     <td className="py-3">{member.length} m</td>
                     <td className="py-3">{member.angle}°</td>
-                    <td className="py-3">{member.nature}</td>
+                    <td className="py-3">{member.force} kN</td>
+                    <td
+                      className={
+                        member.nature === 'Tension'
+                          ? 'py-3 text-green-400 font-semibold'
+                          : member.nature === 'Compression'
+                            ? 'py-3 text-red-400 font-semibold'
+                            : 'py-3 text-slate-400 font-semibold'
+                      }
+                    >
+                      {member.nature}
+                    </td>
+                    <td className="py-3">{member.stress} N/mm²</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </Card>
+
+        {trussResult.displacements?.length > 0 && (
+          <Card className="bg-slate-900/50 border-slate-800 p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              Joint Displacements
+            </h2>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-slate-300">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400">
+                    <th className="text-left py-3">Joint</th>
+                    <th className="text-left py-3">Ux</th>
+                    <th className="text-left py-3">Uy</th>
+                    <th className="text-left py-3">Unit</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {trussResult.displacements.map((item) => (
+                    <tr
+                      key={item.joint}
+                      className="border-b border-slate-800/70"
+                    >
+                      <td className="py-3 font-semibold text-orange-400">
+                        {item.joint}
+                      </td>
+                      <td className="py-3">{item.ux}</td>
+                      <td className="py-3">{item.uy}</td>
+                      <td className="py-3">{item.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
 
         <Card className="bg-slate-900/50 border-slate-800 p-6">
           <h2 className="text-xl font-bold text-white mb-4">
@@ -954,6 +1445,18 @@ function TrussModule({ trussData, trussResult }) {
               Joint equilibrium Y:{' '}
               <b className="text-orange-400">
                 {trussResult.formulas.jointEquilibriumY}
+              </b>
+            </p>
+            <p>
+              Stiffness equation:{' '}
+              <b className="text-orange-400">
+                {trussResult.formulas.stiffnessEquation}
+              </b>
+            </p>
+            <p>
+              Member force:{' '}
+              <b className="text-orange-400">
+                {trussResult.formulas.memberForce}
               </b>
             </p>
             <p>
