@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select'
 
 import { analyzeTruss } from '@/lib/engineering/truss-analysis'
-
+import { columnBuckling } from '@/lib/engineering/column-buckling'
 export default function StructuralAnalysisPage() {
   const [activeModule, setActiveModule] = useState('beam')
 
@@ -223,7 +223,15 @@ const removeTrussLoad = (index) => {
   const trussResult = useMemo(() => {
     return analyzeTruss(trussData)
   }, [trussData])
-
+const columnResult = useMemo(() => {
+  return columnBuckling({
+    length: 3,
+    E: 200000,
+    I: 133333333,
+    area: 40000,
+    endCondition: 'pinnedPinned',
+  })
+}, [])
   const result = useMemo(() => {
     const L = Number(span) || 1
     const b = Number(width) || 300
@@ -495,6 +503,16 @@ const removeTrussLoad = (index) => {
             <Triangle className="h-4 w-4 mr-2" />
             Truss Analysis
           </Button>
+              <Button
+  onClick={() => setActiveModule('column')}
+  className={
+    activeModule === 'column'
+      ? 'bg-orange-500 hover:bg-orange-600'
+      : 'bg-slate-800 hover:bg-slate-700'
+  }
+>
+  Column Buckling
+</Button>
         </div>
       </div>
 
@@ -546,6 +564,9 @@ const removeTrussLoad = (index) => {
   removeTrussLoad={removeTrussLoad}
 />
       )}
+    {activeModule === 'column' && (
+  <ColumnBucklingModule columnResult={columnResult} />
+)}
     </div>
   )
 }
@@ -1471,7 +1492,131 @@ function TrussModule({
     </div>
   )
 }
+function ColumnBucklingModule({ columnResult }) {
+  return (
+    <div className="grid lg:grid-cols-3 gap-6">
+      <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
+        <h2 className="text-xl font-bold text-white mb-5">
+          Column Buckling Inputs
+        </h2>
 
+        <div className="space-y-4 text-slate-300">
+          <p>Length = 3 m</p>
+          <p>E = 200000 N/mm²</p>
+          <p>I = 133333333 mm⁴</p>
+          <p>Area = 40000 mm²</p>
+          <p>End Condition = Pinned - Pinned</p>
+        </div>
+
+        <Button
+          onClick={() => window.print()}
+          className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export / Print PDF
+        </Button>
+      </Card>
+
+      <div className="lg:col-span-2 space-y-6">
+        <div className="grid md:grid-cols-4 gap-4">
+          <SummaryCard
+            label="K Factor"
+            value={columnResult.effectiveLengthFactor}
+          />
+          <SummaryCard
+            label="Effective Length"
+            value={`${columnResult.effectiveLength} m`}
+          />
+          <SummaryCard
+            label="Slenderness"
+            value={columnResult.slendernessRatio}
+          />
+          <SummaryCard
+            label="Column Type"
+            value={columnResult.columnType}
+          />
+        </div>
+
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <h2 className="text-xl font-bold text-white mb-4">
+            Buckling Results
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <ResultRow
+              label="Radius of Gyration"
+              value={`${columnResult.radiusOfGyration} mm`}
+            />
+            <ResultRow
+              label="Euler Critical Load"
+              value={`${columnResult.eulerLoad} kN`}
+            />
+            <ResultRow
+              label="Rankine Load"
+              value={`${columnResult.rankineLoad} kN`}
+            />
+            <ResultRow
+              label="Classification"
+              value={columnResult.columnType}
+            />
+          </div>
+        </Card>
+
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <h2 className="text-xl font-bold text-white mb-4">
+            Formula Panel
+          </h2>
+
+          <div className="space-y-3 text-slate-300">
+            <p>
+              Effective length:{' '}
+              <b className="text-orange-400">
+                {columnResult.formulas.effectiveLength}
+              </b>
+            </p>
+            <p>
+              Radius of gyration:{' '}
+              <b className="text-orange-400">
+                {columnResult.formulas.radiusOfGyration}
+              </b>
+            </p>
+            <p>
+              Slenderness ratio:{' '}
+              <b className="text-orange-400">
+                {columnResult.formulas.slendernessRatio}
+              </b>
+            </p>
+            <p>
+              Euler load:{' '}
+              <b className="text-orange-400">
+                {columnResult.formulas.eulerLoad}
+              </b>
+            </p>
+            <p>
+              Rankine load:{' '}
+              <b className="text-orange-400">
+                {columnResult.formulas.rankineLoad}
+              </b>
+            </p>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function ResultRow({ label, value }) {
+  return (
+    <div className="bg-slate-800/60 rounded-xl p-4">
+      <div className="text-xs uppercase tracking-wider text-slate-400 mb-1">
+        {label}
+      </div>
+      <div className="text-lg font-bold text-white">
+        {value}
+      </div>
+    </div>
+  )
+}
 function TrussDiagram({ trussData }) {
   const width = 760
   const height = 300
