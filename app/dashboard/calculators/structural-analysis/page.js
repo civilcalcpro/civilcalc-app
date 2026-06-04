@@ -618,22 +618,24 @@ const columnResult = useMemo(() => {
 />
       )}
     {activeModule === 'column' && (
-  <ColumnBucklingModule
+<ColumnBucklingModule
   columnResult={columnResult}
   columnLength={columnLength}
   setColumnLength={setColumnLength}
-  columnE={columnE}
-  setColumnE={setColumnE}
-  columnI={columnI}
-  setColumnI={setColumnI}
-  columnArea={columnArea}
-  setColumnArea={setColumnArea}
+  columnSectionType={columnSectionType}
+  setColumnSectionType={setColumnSectionType}
+  columnWidth={columnWidth}
+  setColumnWidth={setColumnWidth}
+  columnDepth={columnDepth}
+  setColumnDepth={setColumnDepth}
+  columnDiameter={columnDiameter}
+  setColumnDiameter={setColumnDiameter}
+  columnMaterial={columnMaterial}
+  setColumnMaterial={setColumnMaterial}
   columnEndCondition={columnEndCondition}
   setColumnEndCondition={setColumnEndCondition}
-  columnCrushingStress={columnCrushingStress}
-  setColumnCrushingStress={setColumnCrushingStress}
-  columnRankineConstant={columnRankineConstant}
-  setColumnRankineConstant={setColumnRankineConstant}
+  columnAppliedLoad={columnAppliedLoad}
+  setColumnAppliedLoad={setColumnAppliedLoad}
 />
 )}
     </div>
@@ -1558,6 +1560,146 @@ function TrussModule({
           </div>
         </Card>
       </div>
+    </div>
+  )
+}
+function ColumnBucklingModule({
+  columnResult,
+  columnLength,
+  setColumnLength,
+  columnSectionType,
+  setColumnSectionType,
+  columnWidth,
+  setColumnWidth,
+  columnDepth,
+  setColumnDepth,
+  columnDiameter,
+  setColumnDiameter,
+  columnMaterial,
+  setColumnMaterial,
+  columnEndCondition,
+  setColumnEndCondition,
+  columnAppliedLoad,
+  setColumnAppliedLoad,
+}) {
+  return (
+    <div className="grid lg:grid-cols-3 gap-6">
+      <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
+        <h2 className="text-xl font-bold text-white mb-5">Column Buckling Inputs</h2>
+
+        <div className="space-y-4">
+          <InputBox label="Length L (m)" value={columnLength} setValue={setColumnLength} />
+
+          <div>
+            <Label className="text-slate-400">Section Type</Label>
+            <Select value={columnSectionType} onValueChange={setColumnSectionType}>
+              <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                <SelectItem value="rectangular">Rectangular</SelectItem>
+                <SelectItem value="circular">Circular</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {columnSectionType === 'rectangular' ? (
+            <>
+              <InputBox label="Width b (mm)" value={columnWidth} setValue={setColumnWidth} />
+              <InputBox label="Depth d (mm)" value={columnDepth} setValue={setColumnDepth} />
+            </>
+          ) : (
+            <InputBox label="Diameter D (mm)" value={columnDiameter} setValue={setColumnDiameter} />
+          )}
+
+          <div>
+            <Label className="text-slate-400">Material</Label>
+            <Select value={columnMaterial} onValueChange={setColumnMaterial}>
+              <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                <SelectItem value="steel">Steel</SelectItem>
+                <SelectItem value="rcc">RCC</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-slate-400">End Condition</Label>
+            <Select value={columnEndCondition} onValueChange={setColumnEndCondition}>
+              <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                <SelectItem value="pinnedPinned">Pinned - Pinned</SelectItem>
+                <SelectItem value="fixedFixed">Fixed - Fixed</SelectItem>
+                <SelectItem value="fixedFree">Fixed - Free</SelectItem>
+                <SelectItem value="fixedPinned">Fixed - Pinned</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <InputBox label="Applied Load (kN)" value={columnAppliedLoad} setValue={setColumnAppliedLoad} />
+        </div>
+
+        <Button
+          onClick={() => window.print()}
+          className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export / Print PDF
+        </Button>
+      </Card>
+
+      <div className="lg:col-span-2 space-y-6">
+        <div className="grid md:grid-cols-4 gap-4">
+          <SummaryCard label="Effective Length" value={`${columnResult.effectiveLength} m`} />
+          <SummaryCard label="Area" value={`${columnResult.area} mm²`} />
+          <SummaryCard label="Moment of Inertia" value={`${columnResult.momentOfInertia} mm⁴`} />
+          <SummaryCard label="Status" value={columnResult.safetyStatus} />
+        </div>
+
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <h2 className="text-xl font-bold text-white mb-4">Buckling Results</h2>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <ResultRow label="Radius of Gyration" value={`${columnResult.radiusOfGyration} mm`} />
+            <ResultRow label="Slenderness Ratio" value={columnResult.slendernessRatio} />
+            <ResultRow label="Euler Load" value={`${columnResult.eulerLoad} kN`} />
+            <ResultRow label="Rankine Load" value={`${columnResult.rankineLoad} kN`} />
+            <ResultRow label="Applied Load" value={`${columnResult.appliedLoad} kN`} />
+            <ResultRow label="Safe / Unsafe" value={columnResult.safetyStatus} />
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function ResultRow({ label, value }) {
+  return (
+    <div className="bg-slate-800/60 rounded-xl p-4">
+      <div className="text-xs uppercase tracking-wider text-slate-400 mb-1">
+        {label}
+      </div>
+      <div className="text-lg font-bold text-white">
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function InputBox({ label, value, setValue }) {
+  return (
+    <div>
+      <Label className="text-slate-400">{label}</Label>
+      <Input
+        type="number"
+        value={value}
+        onChange={(e) => setValue(Number(e.target.value))}
+        className="bg-slate-800 border-slate-700 text-white mt-2"
+      />
     </div>
   )
 }
