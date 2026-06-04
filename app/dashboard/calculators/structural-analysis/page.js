@@ -1561,7 +1561,6 @@ function TrussModule({
     </div>
   )
 }
-Fix column buckling inputs and safety check
 function TrussDiagram({ trussData }) {
   const width = 760
   const height = 300
