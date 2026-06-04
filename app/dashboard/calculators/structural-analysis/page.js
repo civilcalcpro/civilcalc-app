@@ -26,12 +26,13 @@ import { columnBuckling } from '@/lib/engineering/column-buckling'
 export default function StructuralAnalysisPage() {
   const [activeModule, setActiveModule] = useState('beam')
 const [columnLength, setColumnLength] = useState(3)
-const [columnE, setColumnE] = useState(200000)
-const [columnI, setColumnI] = useState(133333333)
-const [columnArea, setColumnArea] = useState(40000)
+const [columnSectionType, setColumnSectionType] = useState('rectangular')
+const [columnWidth, setColumnWidth] = useState(300)
+const [columnDepth, setColumnDepth] = useState(450)
+const [columnDiameter, setColumnDiameter] = useState(300)
+const [columnMaterial, setColumnMaterial] = useState('rcc')
 const [columnEndCondition, setColumnEndCondition] = useState('pinnedPinned')
-const [columnCrushingStress, setColumnCrushingStress] = useState(0)
-const [columnRankineConstant, setColumnRankineConstant] = useState(1 / 7500)
+const [columnAppliedLoad, setColumnAppliedLoad] = useState(500)
   const [structureType, setStructureType] = useState('simply-supported')
   const [span, setSpan] = useState(6)
   const [width, setWidth] = useState(300)
@@ -230,23 +231,59 @@ const removeTrussLoad = (index) => {
     return analyzeTruss(trussData)
   }, [trussData])
 const columnResult = useMemo(() => {
-  return columnBuckling({
-    length: columnLength,
-    E: columnE,
-    I: columnI,
-    area: columnArea,
+  const L = Number(columnLength) || 1
+  const b = Number(columnWidth) || 300
+  const d = Number(columnDepth) || 450
+  const dia = Number(columnDiameter) || 300
+  const appliedLoad = Number(columnAppliedLoad) || 0
+
+  const isRectangular = columnSectionType === 'rectangular'
+
+  const area = isRectangular
+    ? b * d
+    : (Math.PI * dia * dia) / 4
+
+  const I = isRectangular
+    ? (b * Math.pow(d, 3)) / 12
+    : (Math.PI * Math.pow(dia, 4)) / 64
+
+  const E = columnMaterial === 'steel' ? 200000 : 25000
+  const crushingStress = columnMaterial === 'steel' ? 250 : 25
+  const rankineConstant = columnMaterial === 'steel' ? 1 / 7500 : 1 / 1600
+
+  const result = columnBuckling({
+    length: L,
+    E,
+    I,
+    area,
     endCondition: columnEndCondition,
-    crushingStress: columnCrushingStress,
-    rankineConstant: columnRankineConstant,
+    crushingStress,
+    rankineConstant,
   })
+
+  const safeLoad =
+    result.rankineLoad !== 'Not calculated'
+      ? Number(result.rankineLoad)
+      : Number(result.eulerLoad)
+
+  return {
+    ...result,
+    area: area.toFixed(2),
+    momentOfInertia: I.toFixed(2),
+    material: columnMaterial === 'steel' ? 'Steel' : 'RCC',
+    appliedLoad: appliedLoad.toFixed(2),
+    safeLoad: safeLoad.toFixed(2),
+    safetyStatus: appliedLoad <= safeLoad ? 'Safe' : 'Unsafe',
+  }
 }, [
   columnLength,
-  columnE,
-  columnI,
-  columnArea,
+  columnSectionType,
+  columnWidth,
+  columnDepth,
+  columnDiameter,
+  columnMaterial,
   columnEndCondition,
-  columnCrushingStress,
-  columnRankineConstant,
+  columnAppliedLoad,
 ])
   const result = useMemo(() => {
     const L = Number(span) || 1
@@ -1524,225 +1561,7 @@ function TrussModule({
     </div>
   )
 }
-function ColumnBucklingModule({
-  columnResult,
-  columnLength,
-  setColumnLength,
-  columnE,
-  setColumnE,
-  columnI,
-  setColumnI,
-  columnArea,
-  setColumnArea,
-  columnEndCondition,
-  setColumnEndCondition,
-  columnCrushingStress,
-  setColumnCrushingStress,
-  columnRankineConstant,
-  setColumnRankineConstant,
-}) {
-  return (
-    <div className="grid lg:grid-cols-3 gap-6">
-      <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
-        <h2 className="text-xl font-bold text-white mb-5">
-          Column Buckling Inputs
-        </h2>
-
-        <div className="space-y-4">
-          <div>
-            <Label className="text-slate-400">Length L (m)</Label>
-            <Input
-              type="number"
-              value={columnLength}
-              onChange={(e) => setColumnLength(Number(e.target.value))}
-              className="bg-slate-800 border-slate-700 text-white mt-2"
-            />
-          </div>
-
-          <div>
-            <Label className="text-slate-400">Young’s Modulus E (N/mm²)</Label>
-            <Input
-              type="number"
-              value={columnE}
-              onChange={(e) => setColumnE(Number(e.target.value))}
-              className="bg-slate-800 border-slate-700 text-white mt-2"
-            />
-          </div>
-
-          <div>
-            <Label className="text-slate-400">Moment of Inertia I (mm⁴)</Label>
-            <Input
-              type="number"
-              value={columnI}
-              onChange={(e) => setColumnI(Number(e.target.value))}
-              className="bg-slate-800 border-slate-700 text-white mt-2"
-            />
-          </div>
-
-          <div>
-            <Label className="text-slate-400">Area A (mm²)</Label>
-            <Input
-              type="number"
-              value={columnArea}
-              onChange={(e) => setColumnArea(Number(e.target.value))}
-              className="bg-slate-800 border-slate-700 text-white mt-2"
-            />
-          </div>
-
-          <div>
-            <Label className="text-slate-400">End Condition</Label>
-            <Select
-              value={columnEndCondition}
-              onValueChange={setColumnEndCondition}
-            >
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                <SelectItem value="pinnedPinned">Pinned - Pinned</SelectItem>
-                <SelectItem value="fixedFixed">Fixed - Fixed</SelectItem>
-                <SelectItem value="fixedFree">Fixed - Free</SelectItem>
-                <SelectItem value="fixedPinned">Fixed - Pinned</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label className="text-slate-400">
-              Crushing Stress Pc/A (N/mm²)
-            </Label>
-            <Input
-              type="number"
-              value={columnCrushingStress}
-              onChange={(e) =>
-                setColumnCrushingStress(Number(e.target.value))
-              }
-              className="bg-slate-800 border-slate-700 text-white mt-2"
-            />
-          </div>
-
-          <div>
-            <Label className="text-slate-400">Rankine Constant α</Label>
-            <Input
-              type="number"
-              step="0.000001"
-              value={columnRankineConstant}
-              onChange={(e) =>
-                setColumnRankineConstant(Number(e.target.value))
-              }
-              className="bg-slate-800 border-slate-700 text-white mt-2"
-            />
-          </div>
-        </div>
-
-        <Button
-          onClick={() => window.print()}
-          className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export / Print PDF
-        </Button>
-      </Card>
-
-      <div className="lg:col-span-2 space-y-6">
-        <div className="grid md:grid-cols-4 gap-4">
-          <SummaryCard
-            label="K Factor"
-            value={columnResult.effectiveLengthFactor}
-          />
-          <SummaryCard
-            label="Effective Length"
-            value={`${columnResult.effectiveLength} m`}
-          />
-          <SummaryCard
-            label="Slenderness"
-            value={columnResult.slendernessRatio}
-          />
-          <SummaryCard
-            label="Column Type"
-            value={columnResult.columnType}
-          />
-        </div>
-
-        <Card className="bg-slate-900/50 border-slate-800 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Buckling Results
-          </h2>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <ResultRow
-              label="Radius of Gyration"
-              value={`${columnResult.radiusOfGyration} mm`}
-            />
-            <ResultRow
-              label="Euler Critical Load"
-              value={`${columnResult.eulerLoad} kN`}
-            />
-            <ResultRow
-              label="Rankine Load"
-              value={`${columnResult.rankineLoad} kN`}
-            />
-            <ResultRow
-              label="Classification"
-              value={columnResult.columnType}
-            />
-          </div>
-        </Card>
-
-        <Card className="bg-slate-900/50 border-slate-800 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Formula Panel
-          </h2>
-
-          <div className="space-y-3 text-slate-300">
-            <p>
-              Effective length:{' '}
-              <b className="text-orange-400">
-                {columnResult.formulas.effectiveLength}
-              </b>
-            </p>
-            <p>
-              Radius of gyration:{' '}
-              <b className="text-orange-400">
-                {columnResult.formulas.radiusOfGyration}
-              </b>
-            </p>
-            <p>
-              Slenderness ratio:{' '}
-              <b className="text-orange-400">
-                {columnResult.formulas.slendernessRatio}
-              </b>
-            </p>
-            <p>
-              Euler load:{' '}
-              <b className="text-orange-400">
-                {columnResult.formulas.eulerLoad}
-              </b>
-            </p>
-            <p>
-              Rankine load:{' '}
-              <b className="text-orange-400">
-                {columnResult.formulas.rankineLoad}
-              </b>
-            </p>
-          </div>
-        </Card>
-      </div>
-    </div>
-  )
-}
-function ResultRow({ label, value }) {
-  return (
-    <div className="bg-slate-800/60 rounded-xl p-4">
-      <div className="text-xs uppercase tracking-wider text-slate-400 mb-1">
-        {label}
-      </div>
-      <div className="text-lg font-bold text-white">
-        {value}
-      </div>
-    </div>
-  )
-}
+Fix column buckling inputs and safety check
 function TrussDiagram({ trussData }) {
   const width = 760
   const height = 300
