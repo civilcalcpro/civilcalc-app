@@ -72,6 +72,92 @@ export default function PlasterCalculatorPage() {
       Plaster calculator estimates cement and sand quantity for wall plastering.
     </p>
   </div>
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    What is a Plaster Work Calculator?
+  </h2>
+
+  <p className="text-slate-300 leading-7 mb-4">
+    A Plaster Work Calculator is used to estimate the quantity of cement,
+    sand and mortar required for wall and ceiling plastering. Civil engineers,
+    contractors and quantity surveyors use plaster calculations for accurate
+    material estimation and project planning.
+  </p>
+
+  <p className="text-slate-300 leading-7">
+    Accurate plaster estimation helps reduce material wastage and improves
+    construction cost control.
+  </p>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Types of Plaster Work
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li>Internal Wall Plaster</li>
+    <li>External Wall Plaster</li>
+    <li>Ceiling Plaster</li>
+    <li>Cement Plaster</li>
+    <li>Gypsum Plaster</li>
+    <li>Decorative Plaster</li>
+  </ul>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Plaster Quantity Calculation Example
+  </h2>
+
+  <p className="text-slate-300 leading-7">
+    Consider a wall having:
+  </p>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300 mt-4">
+    <li>Length = 5 m</li>
+    <li>Height = 3 m</li>
+    <li>Thickness = 12 mm</li>
+  </ul>
+
+  <p className="text-slate-300 leading-7 mt-4">
+    Area = Length × Height
+    <br />
+    Area = 5 × 3
+    <br />
+    Area = 15 m²
+  </p>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Benefits of Accurate Plaster Estimation
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li>Reduces material wastage</li>
+    <li>Improves project budgeting</li>
+    <li>Speeds up site planning</li>
+    <li>Supports quantity surveying</li>
+    <li>Improves procurement planning</li>
+    <li>Enhances construction efficiency</li>
+  </ul>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Related Calculators
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li><a href="/brickwork-calculator">Brickwork Calculator</a></li>
+    <li><a href="/excavation-calculator">Excavation Calculator</a></li>
+    <li><a href="/concrete-volume-calculator">Concrete Volume Calculator</a></li>
+    <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
+    <li><a href="/footing-design">Footing Design Calculator</a></li>
+  </ul>
+</div>
+
 </section>
     </main>
   );
