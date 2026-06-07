@@ -69,6 +69,34 @@ export default function GlobalSettingsPanel() {
             <option value="aci">ACI / ASCE</option>
           </select>
         </div>
+        <div className="mt-6 p-4 rounded-lg bg-slate-800 border border-slate-700">
+  <h3 className="text-white font-semibold mb-3">
+    Active Configuration
+  </h3>
+
+  <div className="space-y-2 text-sm">
+    <div className="flex justify-between">
+      <span className="text-slate-400">Region</span>
+      <span className="text-white capitalize">
+        {settings.region}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">Units</span>
+      <span className="text-white capitalize">
+        {settings.unitSystem}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">Standard</span>
+      <span className="text-white uppercase">
+        {settings.designStandard}
+      </span>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   )
