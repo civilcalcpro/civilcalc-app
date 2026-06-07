@@ -122,6 +122,82 @@ export default function ColumnDesignPage() {
       </div>
     </div>
   </div>
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    What is RCC Column Design?
+  </h2>
+
+  <p className="text-slate-300 leading-7 mb-4">
+    RCC Column Design is the process of determining the size,
+    reinforcement and load carrying capacity of reinforced concrete
+    columns. Columns are critical structural members that transfer
+    loads from beams and slabs to the foundation.
+  </p>
+
+  <p className="text-slate-300 leading-7">
+    Proper column design ensures structural safety, stability and
+    durability while resisting axial loads and bending moments.
+  </p>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Steps in RCC Column Design
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li>Calculate axial load on column</li>
+    <li>Select preliminary column size</li>
+    <li>Determine concrete grade</li>
+    <li>Calculate reinforcement requirement</li>
+    <li>Check slenderness ratio</li>
+    <li>Verify load carrying capacity</li>
+    <li>Check bending moment effects</li>
+    <li>Finalize reinforcement detailing</li>
+  </ul>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    RCC Column Design Example
+  </h2>
+
+  <p className="text-slate-300 leading-7">
+    Consider a column subjected to an axial load of 1200 kN.
+    Using IS 456:2000, the required column size and reinforcement
+    are calculated to safely resist the applied load.
+  </p>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Advantages of RCC Columns
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li>High compressive strength</li>
+    <li>Excellent durability</li>
+    <li>Fire resistance</li>
+    <li>Long service life</li>
+    <li>Suitable for multi-storey buildings</li>
+    <li>Economical construction</li>
+  </ul>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Related Calculators
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li><a href="/beam-design">RCC Beam Design Calculator</a></li>
+    <li><a href="/footing-design">Footing Design Calculator</a></li>
+    <li><a href="/one-way-slab-calculator">One Way Slab Calculator</a></li>
+    <li><a href="/two-way-slab-calculator">Two Way Slab Calculator</a></li>
+    <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
+  </ul>
+</div>
+
 </section>
     </main>
   );
