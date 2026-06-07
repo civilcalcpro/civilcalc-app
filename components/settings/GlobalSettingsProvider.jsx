@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import { DEFAULT_SETTINGS } from '@/lib/global-settings'
 
 const GlobalSettingsContext = createContext(null)
@@ -19,6 +19,25 @@ export function useGlobalSettings() {
 
 export default function GlobalSettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
+
+useEffect(() => {
+  const saved = localStorage.getItem('civilcalc-settings')
+
+  if (saved) {
+    try {
+      setSettings(JSON.parse(saved))
+    } catch (error) {
+      console.error(error)
+    }
+  }
+}, [])
+
+useEffect(() => {
+  localStorage.setItem(
+    'civilcalc-settings',
+    JSON.stringify(settings)
+  )
+}, [settings])
 
   const updateSettings = (updates) => {
     setSettings((prev) => ({
