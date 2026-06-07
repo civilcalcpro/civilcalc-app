@@ -1,14 +1,21 @@
 export const metadata = {
-  title: 'RCC Beam Design Calculator | CivilCalc Pro',
+  title:
+    'RCC Beam Design Calculator as per IS 456:2000 | CivilCalc Pro',
+
   description:
-    'Free RCC Beam Design Calculator for civil engineers. Calculate beam size, steel reinforcement, loads, bending moment, and IS code based RCC beam design instantly.',
+    'Use CivilCalc Pro RCC Beam Design Calculator to calculate bending moment, beam dimensions, steel reinforcement, load analysis and RCC beam design as per IS 456:2000.',
+
   keywords: [
+    'RCC beam design calculator',
+    'beam design calculator IS 456',
     'RCC beam design',
-    'beam design calculator',
+    'beam reinforcement calculator',
+    'bending moment calculator',
     'civil engineering calculator',
-    'beam analysis',
+    'structural design calculator',
+    'beam design example',
     'IS 456 beam design',
-    'structural design',
+    'reinforced concrete beam design',
   ],
 }
 
