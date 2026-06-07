@@ -133,6 +133,89 @@ export default function OneWaySlabPage() {
       </div>
     </div>
   </div>
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    What is a One-Way Slab?
+  </h2>
+
+  <p className="text-slate-300 leading-7 mb-4">
+    A one-way slab is a reinforced concrete slab that transfers load
+    primarily in one direction. It is commonly used in residential,
+    commercial and industrial buildings where the longer span is more
+    than twice the shorter span.
+  </p>
+
+  <p className="text-slate-300 leading-7">
+    One-way slabs are economical, easy to construct and widely used in
+    RCC building structures.
+  </p>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Steps in One-Way Slab Design
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li>Determine slab span</li>
+    <li>Calculate dead load and live load</li>
+    <li>Compute design load</li>
+    <li>Calculate bending moment</li>
+    <li>Select slab thickness</li>
+    <li>Design reinforcement steel</li>
+    <li>Check shear capacity</li>
+    <li>Verify deflection limits</li>
+  </ul>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    One-Way Slab Design Example
+  </h2>
+
+  <p className="text-slate-300 leading-7">
+    Consider a one-way slab with a span of 4 m carrying a factored load
+    of 12 kN/m².
+  </p>
+
+  <p className="text-slate-300 leading-7 mt-4">
+    Mu = w × L² / 8
+    <br />
+    Mu = 12 × 4² / 8
+    <br />
+    Mu = 24 kNm
+  </p>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Advantages of One-Way Slabs
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li>Simple design process</li>
+    <li>Economical construction</li>
+    <li>Easy reinforcement detailing</li>
+    <li>Suitable for smaller spans</li>
+    <li>Widely used in residential buildings</li>
+    <li>Fast construction speed</li>
+  </ul>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Related Calculators
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li><a href="/beam-design">Beam Design Calculator</a></li>
+    <li><a href="/column-design">Column Design Calculator</a></li>
+    <li><a href="/footing-design">Footing Design Calculator</a></li>
+    <li><a href="/two-way-slab-calculator">Two-Way Slab Calculator</a></li>
+    <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
+  </ul>
+</div>
+
 </section>
     </main>
   );
