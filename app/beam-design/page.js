@@ -132,6 +132,92 @@ export default function BeamDesignPage() {
       </div>
     </div>
   </div>
+<  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      What is RCC Beam Design?
+    </h2>
+
+    <p className="text-slate-300 leading-7 mb-4">
+      RCC Beam Design is the process of determining the dimensions,
+      reinforcement and load carrying capacity of a reinforced concrete beam.
+      Civil engineers design beams to safely resist bending moments, shear
+      forces and deflection caused by applied loads.
+    </p>
+
+    <p className="text-slate-300 leading-7">
+      The design of RCC beams in India is generally performed according to
+      IS 456:2000 using the Limit State Method. Proper beam design ensures
+      structural safety, serviceability and durability throughout the life
+      of the structure.
+    </p>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Steps in RCC Beam Design
+    </h2>
+
+    <ul className="list-disc pl-6 space-y-2 text-slate-300">
+      <li>Determine span length</li>
+      <li>Calculate dead load and live load</li>
+      <li>Compute factored load</li>
+      <li>Calculate bending moment</li>
+      <li>Determine effective depth</li>
+      <li>Design tension reinforcement</li>
+      <li>Check shear capacity</li>
+      <li>Verify deflection limits</li>
+    </ul>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      RCC Beam Design Example
+    </h2>
+
+    <p className="text-slate-300 leading-7">
+      Consider a simply supported beam with a span of 5 m carrying a
+      factored load of 25 kN/m.
+    </p>
+
+    <p className="text-slate-300 leading-7 mt-4">
+      Using IS 456:2000:
+      <br />
+      Mu = wuL² / 8
+      <br />
+      Mu = 25 × 5² / 8
+      <br />
+      Mu = 78.125 kNm
+    </p>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Advantages of RCC Beams
+    </h2>
+
+    <ul className="list-disc pl-6 space-y-2 text-slate-300">
+      <li>High load carrying capacity</li>
+      <li>Excellent durability</li>
+      <li>Fire resistance</li>
+      <li>Economical construction</li>
+      <li>Suitable for residential and commercial structures</li>
+      <li>Long service life</li>
+    </ul>
+  </div>
+
+  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-4">
+      Related Calculators
+    </h2>
+
+    <ul className="list-disc pl-6 space-y-2 text-slate-300">
+      <li><a href="/column-design">RCC Column Design Calculator</a></li>
+      <li><a href="/footing-design">Footing Design Calculator</a></li>
+      <li><a href="/one-way-slab-calculator">One Way Slab Calculator</a></li>
+      <li><a href="/two-way-slab-calculator">Two Way Slab Calculator</a></li>
+      <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
+    </ul>
+  </div>
 </section>
             </main>
   )
