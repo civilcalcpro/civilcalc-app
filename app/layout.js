@@ -2,11 +2,11 @@ import './globals.css'
 
 import { Toaster } from '@/components/ui/sonner'
 import { AuthProvider } from '@/lib/auth-context'
-
+import GlobalSettingsProvider from '@/components/settings/GlobalSettingsProvider'  
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Script from 'next/script'
-
+F
 export const metadata = {
   metadataBase: new URL('https://civilcalcpro.in'),
 
@@ -85,7 +85,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-slate-950 text-white antialiased">
-        <AuthProvider>
+        <GlobalSettingsProvider>
+    <AuthProvider>
           {children}
 
           <Toaster
@@ -96,7 +97,7 @@ export default function RootLayout({ children }) {
           <Analytics />
           <SpeedInsights />
         </AuthProvider>
-
+</GlobalSettingsProvider>
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-WY9TW5Y54J"
