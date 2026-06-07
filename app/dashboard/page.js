@@ -27,6 +27,7 @@ import {
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
+import GlobalSettingsPanel from '@/components/settings/GlobalSettingsPanel'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -116,7 +117,7 @@ export default function DashboardPage() {
           </Link>
         </div>
       </motion.div>
-
+<GlobalSettingsPanel />
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
