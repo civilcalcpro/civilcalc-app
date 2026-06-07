@@ -68,6 +68,92 @@ export default function BrickworkCalculatorPage() {
       Brickwork calculator estimates bricks, cement and sand required for masonry work.
     </p>
   </div>
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    What is a Brickwork Calculator?
+  </h2>
+
+  <p className="text-slate-300 leading-7 mb-4">
+    A Brickwork Calculator is used to estimate the number of bricks,
+    cement and sand required for masonry construction. Civil engineers,
+    contractors and quantity surveyors use brickwork calculations for
+    planning and material estimation.
+  </p>
+
+  <p className="text-slate-300 leading-7">
+    Accurate brickwork estimation helps reduce wastage, improve cost
+    control and simplify construction planning.
+  </p>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Types of Brickwork
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li>English Bond Brickwork</li>
+    <li>Flemish Bond Brickwork</li>
+    <li>Stretcher Bond Brickwork</li>
+    <li>Header Bond Brickwork</li>
+    <li>Garden Wall Bond</li>
+    <li>Facing Brickwork</li>
+  </ul>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Brickwork Calculation Example
+  </h2>
+
+  <p className="text-slate-300 leading-7">
+    Consider a wall with:
+  </p>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300 mt-4">
+    <li>Length = 5 m</li>
+    <li>Height = 3 m</li>
+    <li>Thickness = 0.23 m</li>
+  </ul>
+
+  <p className="text-slate-300 leading-7 mt-4">
+    Wall Volume = Length × Height × Thickness
+    <br />
+    = 5 × 3 × 0.23
+    <br />
+    = 3.45 m³
+  </p>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Benefits of Brickwork Estimation
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li>Improves material planning</li>
+    <li>Reduces wastage</li>
+    <li>Supports cost estimation</li>
+    <li>Improves procurement planning</li>
+    <li>Helps quantity surveyors</li>
+    <li>Improves project budgeting</li>
+  </ul>
+</div>
+
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+  <h2 className="text-2xl font-bold text-white mb-4">
+    Related Calculators
+  </h2>
+
+  <ul className="list-disc pl-6 space-y-2 text-slate-300">
+    <li><a href="/plaster-calculator">Plaster Calculator</a></li>
+    <li><a href="/excavation-calculator">Excavation Calculator</a></li>
+    <li><a href="/concrete-volume-calculator">Concrete Volume Calculator</a></li>
+    <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
+    <li><a href="/footing-design">Footing Design Calculator</a></li>
+  </ul>
+</div>
+
 </section>        
     </main>
   );
