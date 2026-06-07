@@ -132,7 +132,7 @@ export default function BeamDesignPage() {
       </div>
     </div>
   </div>
-<  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
     <h2 className="text-2xl font-bold text-white mb-4">
       What is RCC Beam Design?
     </h2>
