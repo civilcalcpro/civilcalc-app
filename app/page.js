@@ -378,7 +378,7 @@ export default function LandingPage() {
 
       {/* Pricing Section — Removed. CivilCalc Pro is now 100% free. */}
 {/* Engineering Articles */}
-<section className="py-24 px-4 bg-slate-950">
+<section className="py-24 px-4 bg-gradient-to-b from-[#020817] via-[#07112b] to-[#0a1633]">
   <div className="container mx-auto max-w-7xl">
 
     <div className="text-center mb-16">
@@ -430,7 +430,7 @@ export default function LandingPage() {
         }
       ].map((article, idx) => (
         <Link key={idx} href={article.link}>
-          <div className="h-full bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 hover:scale-105 transition-all duration-300 cursor-pointer">
+          <div className="h-full bg-blue-950/30 border border-blue-900/50 rounded-2xl p-8 hover:border-orange-500 hover:scale-105 transition-all duration-300 cursor-pointer">
             <div className="text-orange-500 text-sm font-semibold mb-3">
               ARTICLE
             </div>
