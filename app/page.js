@@ -497,26 +497,7 @@ export default function LandingPage() {
 
   </div>
 </section>
-            <h2 className="text-4xl font-bold mb-4 text-white">
-              Ready to Transform Your Engineering Workflow?
-            </h2>
-           <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
-  RCC design, structural analysis, IS code tools, AI assistant and estimation calculators — free for civil engineers and students.
-</p>
-
-<p className="text-orange-100 mb-8">
-  Available at: <strong>civilcalcpro.in</strong>
-</p>
-            <Link href="/signup">
-              <Button size="lg" className="bg-white text-orange-600 hover:bg-slate-100 text-lg px-8 h-14">
-                Get Started — It&apos;s Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-
+    
       {/* Footer */}
       <footer className="bg-slate-950 border-t border-slate-800 py-12 px-4">
         <div className="container mx-auto">
