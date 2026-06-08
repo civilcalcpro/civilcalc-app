@@ -385,7 +385,96 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section — Removed. CivilCalc Pro is now 100% free. */}
+{/* Civil Engineering Knowledge Hub */}
+<section className="py-20 px-4 bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817]">
+  <div className="container mx-auto max-w-7xl">
+    <div className="text-center mb-14">
+      <h2 className="text-5xl font-bold text-white mb-4">
+        Civil Engineering <span className="text-orange-500">Knowledge Hub</span>
+      </h2>
+      <p className="text-slate-400 text-lg max-w-3xl mx-auto">
+        Learn RCC design, quantity estimation, concrete technology,
+        reinforcement detailing and construction concepts.
+      </p>
+    </div>
 
+    <div className="grid md:grid-cols-3 gap-8">
+
+      <Link href="/rcc-beam-design-example">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+          <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+          <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+            RCC Beam Design Calculation
+          </h3>
+          <p className="text-slate-400">
+            Step-by-step RCC beam design as per IS 456.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/one-way-vs-two-way-slab">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+          <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+          <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+            One-Way vs Two-Way Slab
+          </h3>
+          <p className="text-slate-400">
+            Complete slab design comparison guide.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/m20-concrete-mix-ratio">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+          <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+          <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+            M20 Concrete Mix Ratio
+          </h3>
+          <p className="text-slate-400">
+            Formula, proportions and examples.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/development-length-calculation">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+          <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+          <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+            Development Length
+          </h3>
+          <p className="text-slate-400">
+            Development length formula and RCC concepts.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/lap-length-calculation">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+          <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+          <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+            Lap Length Calculation
+          </h3>
+          <p className="text-slate-400">
+            Practical lap length calculations for RCC members.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/bar-bending-schedule">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+          <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+          <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+            Bar Bending Schedule
+          </h3>
+          <p className="text-slate-400">
+            Complete BBS guide for quantity estimation.
+          </p>
+        </div>
+      </Link>
+
+    </div>
+  </div>
+</section>
       {/* CTA Section */}
       <section
   className="py-20 px-4 bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817]"
