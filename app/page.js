@@ -315,7 +315,10 @@ export default function LandingPage() {
       </section>
 
       {/* Engineering Tools Grid */}
-      <section id="tools" className="py-20 px-4 bg-slate-900/50">
+      <section
+  id="tools"
+  className="py-20 px-4 bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817]"
+>
         <div className="container mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -408,7 +411,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-950 border-t border-slate-800 py-12 px-4">
+      <footer className="bg-[#020817] border-t border-slate-800 py-12 px-4">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
