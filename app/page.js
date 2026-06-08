@@ -453,15 +453,50 @@ export default function LandingPage() {
 
   </div>
 </section>
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-12 text-center"
+  {/* CTA Section */}
+<section className="py-12 px-4 bg-gradient-to-b from-[#07112b] to-[#020817]">
+  <div className="container mx-auto">
+
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="max-w-6xl mx-auto"
+    >
+      <div className="bg-gradient-to-r from-orange-500 via-orange-500 to-orange-600 rounded-3xl p-16 lg:p-24 text-center shadow-2xl">
+
+        <h2 className="text-5xl lg:text-7xl font-bold text-white mb-8 leading-tight">
+          Design RCC Structures
+          <br />
+          In Minutes, Not Hours
+        </h2>
+
+        <p className="text-xl lg:text-2xl text-orange-100 max-w-4xl mx-auto mb-10">
+          Beam Design, Column Design, Footing Design,
+          Quantity Estimation, IS Codes and AI Engineering Assistant —
+          All From One Platform.
+        </p>
+
+        <div className="flex flex-wrap justify-center gap-6 mb-10 text-white text-lg font-medium">
+          <span>✓ 25+ Engineering Calculators</span>
+          <span>✓ RCC Design Tools</span>
+          <span>✓ Quantity Estimation</span>
+        </div>
+
+        <Link href="/signup">
+          <Button
+            size="lg"
+            className="bg-white text-orange-600 hover:bg-slate-100 text-xl px-10 py-7 rounded-xl font-bold"
           >
+            Start Designing Free →
+          </Button>
+        </Link>
+
+      </div>
+    </motion.div>
+
+  </div>
+</section>
             <h2 className="text-4xl font-bold mb-4 text-white">
               Ready to Transform Your Engineering Workflow?
             </h2>
