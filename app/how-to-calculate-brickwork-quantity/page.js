@@ -51,7 +51,7 @@ export default function BrickworkQuantityPage() {
 
             <p className="text-slate-300 leading-8">
               For standard brickwork, approximately 500 bricks are
-              required for 1 m³ of brickwork. :contentReference[oaicite:0]{index=0}
+required for 1 m³ of brickwork.
             </p>
 
             <div className="bg-slate-950 rounded-xl p-4 text-orange-400 font-mono">
@@ -69,8 +69,8 @@ export default function BrickworkQuantityPage() {
             </h2>
 
             <p className="text-slate-300 leading-8">
-              Mortar quantity is generally taken as approximately
-              25–30% of brickwork volume. :contentReference[oaicite:1]{index=1}
+             Mortar quantity is generally taken as approximately
+25–30% of brickwork volume.
             </p>
 
             <div className="bg-slate-950 rounded-xl p-4 text-orange-400 font-mono">
@@ -92,7 +92,7 @@ export default function BrickworkQuantityPage() {
 
             <p className="text-slate-300 mt-4">
               These are commonly used estimation values for Indian
-              brickwork calculations. :contentReference[oaicite:2]{index=2}
+brickwork calculations.
             </p>
           </div>
 
