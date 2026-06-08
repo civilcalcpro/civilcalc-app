@@ -40,7 +40,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-[#020817]">
       {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled ? 'bg-slate-950/95 backdrop-blur-lg border-b border-slate-800' : 'bg-transparent'
@@ -108,7 +108,9 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 overflow-hidden">
+      <section
+  className="pt-32 pb-20 px-4 overflow-hidden bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817]"
+>
         <div className="container mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -236,7 +238,10 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4">
+      <section
+  id="features"
+  className="py-20 px-4 bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817]"
+>
         <div className="container mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -382,13 +387,15 @@ export default function LandingPage() {
       {/* Pricing Section — Removed. CivilCalc Pro is now 100% free. */}
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section
+  className="py-20 px-4 bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817]"
+>
         <div className="container mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-12 text-center"
+            className="max-w-5xl mx-auto bg-gradient-to-r from-orange-500 to-orange-600 rounded-3xl p-12 text-center shadow-2xl"
           >
             <h2 className="text-4xl font-bold mb-4 text-white">
               Ready to Transform Your Engineering Workflow?
@@ -411,7 +418,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#020817] border-t border-slate-800 py-12 px-4">
+      <footer className="bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817] border-t border-slate-800/50 py-12 px-4">
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
