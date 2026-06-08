@@ -378,78 +378,79 @@ export default function LandingPage() {
 
       {/* Pricing Section — Removed. CivilCalc Pro is now 100% free. */}
 {/* Engineering Articles */}
-<section className="py-20 px-4 bg-slate-950">
-  <div className="container mx-auto">
+<section className="py-24 px-4 bg-slate-950">
+  <div className="container mx-auto max-w-7xl">
+
     <div className="text-center mb-16">
-      <h2 className="text-4xl lg:text-5xl font-bold mb-4">
+      <h2 className="text-5xl font-bold mb-4">
         Civil Engineering
         <span className="bg-gradient-to-r from-orange-500 to-orange-300 bg-clip-text text-transparent">
-          {" "}Articles
+          {" "}Knowledge Hub
         </span>
       </h2>
 
-      <p className="text-xl text-slate-400">
-        Learn RCC design, quantity estimation and construction concepts.
+      <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+        Learn RCC design, quantity estimation, concrete technology,
+        reinforcement detailing and construction concepts.
       </p>
     </div>
 
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-      <Link href="/one-way-vs-two-way-slab">
-        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
-          <h3 className="text-xl font-bold mb-2">One-Way vs Two-Way Slab</h3>
-          <p className="text-slate-400">
-            Complete comparison of slab systems.
-          </p>
-        </div>
-      </Link>
+      {[
+        {
+          title: "RCC Beam Design Example",
+          link: "/rcc-beam-design-example",
+          desc: "Step-by-step RCC beam design calculation as per IS 456."
+        },
+        {
+          title: "One-Way vs Two-Way Slab",
+          link: "/one-way-vs-two-way-slab",
+          desc: "Understand slab behavior and design differences."
+        },
+        {
+          title: "M20 Concrete Mix Ratio",
+          link: "/m20-concrete-mix-ratio",
+          desc: "Concrete proportioning guide with examples."
+        },
+        {
+          title: "Development Length",
+          link: "/development-length-calculation",
+          desc: "Ld formula and reinforcement anchorage guide."
+        },
+        {
+          title: "Lap Length Calculation",
+          link: "/lap-length-calculation",
+          desc: "Practical lap length calculations for RCC members."
+        },
+        {
+          title: "Bar Bending Schedule",
+          link: "/bar-bending-schedule-guide",
+          desc: "Complete BBS guide for quantity estimation."
+        }
+      ].map((article, idx) => (
+        <Link key={idx} href={article.link}>
+          <div className="h-full bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 hover:scale-105 transition-all duration-300 cursor-pointer">
+            <div className="text-orange-500 text-sm font-semibold mb-3">
+              ARTICLE
+            </div>
 
-      <Link href="/rcc-beam-design-example">
-        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
-          <h3 className="text-xl font-bold mb-2">RCC Beam Design Example</h3>
-          <p className="text-slate-400">
-            Step-by-step RCC beam design guide.
-          </p>
-        </div>
-      </Link>
+            <h3 className="text-2xl font-bold mb-4">
+              {article.title}
+            </h3>
 
-      <Link href="/m20-concrete-mix-ratio">
-        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
-          <h3 className="text-xl font-bold mb-2">M20 Concrete Mix Ratio</h3>
-          <p className="text-slate-400">
-            Concrete proportion and calculation guide.
-          </p>
-        </div>
-      </Link>
+            <p className="text-slate-400 mb-6">
+              {article.desc}
+            </p>
 
-      <Link href="/development-length-calculation">
-        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
-          <h3 className="text-xl font-bold mb-2">Development Length</h3>
-          <p className="text-slate-400">
-            Learn Ld formula and RCC design concepts.
-          </p>
-        </div>
-      </Link>
-
-      <Link href="/lap-length-calculation">
-        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
-          <h3 className="text-xl font-bold mb-2">Lap Length Calculation</h3>
-          <p className="text-slate-400">
-            RCC lap length formula and examples.
-          </p>
-        </div>
-      </Link>
-
-      <Link href="/bar-bending-schedule-guide">
-        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
-          <h3 className="text-xl font-bold mb-2">Bar Bending Schedule</h3>
-          <p className="text-slate-400">
-            Complete BBS guide for civil engineers.
-          </p>
-        </div>
-      </Link>
-
+            <div className="flex items-center text-orange-400 font-medium">
+              Read Article →
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
+
   </div>
 </section>
       {/* CTA Section */}
