@@ -377,7 +377,81 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section — Removed. CivilCalc Pro is now 100% free. */}
+{/* Engineering Articles */}
+<section className="py-20 px-4 bg-slate-950">
+  <div className="container mx-auto">
+    <div className="text-center mb-16">
+      <h2 className="text-4xl lg:text-5xl font-bold mb-4">
+        Civil Engineering
+        <span className="bg-gradient-to-r from-orange-500 to-orange-300 bg-clip-text text-transparent">
+          {" "}Articles
+        </span>
+      </h2>
 
+      <p className="text-xl text-slate-400">
+        Learn RCC design, quantity estimation and construction concepts.
+      </p>
+    </div>
+
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <Link href="/one-way-vs-two-way-slab">
+        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
+          <h3 className="text-xl font-bold mb-2">One-Way vs Two-Way Slab</h3>
+          <p className="text-slate-400">
+            Complete comparison of slab systems.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/rcc-beam-design-example">
+        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
+          <h3 className="text-xl font-bold mb-2">RCC Beam Design Example</h3>
+          <p className="text-slate-400">
+            Step-by-step RCC beam design guide.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/m20-concrete-mix-ratio">
+        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
+          <h3 className="text-xl font-bold mb-2">M20 Concrete Mix Ratio</h3>
+          <p className="text-slate-400">
+            Concrete proportion and calculation guide.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/development-length-calculation">
+        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
+          <h3 className="text-xl font-bold mb-2">Development Length</h3>
+          <p className="text-slate-400">
+            Learn Ld formula and RCC design concepts.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/lap-length-calculation">
+        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
+          <h3 className="text-xl font-bold mb-2">Lap Length Calculation</h3>
+          <p className="text-slate-400">
+            RCC lap length formula and examples.
+          </p>
+        </div>
+      </Link>
+
+      <Link href="/bar-bending-schedule-guide">
+        <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-6 hover:border-orange-500 transition">
+          <h3 className="text-xl font-bold mb-2">Bar Bending Schedule</h3>
+          <p className="text-slate-400">
+            Complete BBS guide for civil engineers.
+          </p>
+        </div>
+      </Link>
+
+    </div>
+  </div>
+</section>
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto">
