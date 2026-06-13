@@ -631,45 +631,6 @@ const updateItem = (index, field, value) => {
     ₹ {marginAmount.toFixed(2)}
   </span>
 </div>
-<div className="flex justify-between">
-  <span className="text-slate-400">
-    Material Cost
-  </span>
-
-  <span className="text-white">
-    ₹ {materialCost.toFixed(2)}
-  </span>
-</div>
-
-<div className="flex justify-between">
-  <span className="text-slate-400">
-    Labour Cost
-  </span>
-
-  <span className="text-white">
-    ₹ {labourCost.toFixed(2)}
-  </span>
-</div>
-
-<div className="flex justify-between">
-  <span className="text-slate-400">
-    Equipment Cost
-  </span>
-
-  <span className="text-white">
-    ₹ {equipmentCost.toFixed(2)}
-  </span>
-</div>
-
-<div className="flex justify-between">
-  <span className="text-slate-400">
-    Contractor Margin (10%)
-  </span>
-
-  <span className="text-white">
-    ₹ {marginAmount.toFixed(2)}
-  </span>
-</div>
 <div className="border-t border-slate-700 pt-3 flex justify-between">
   <span className="text-lg font-bold text-white">
     Grand Total
