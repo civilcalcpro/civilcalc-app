@@ -308,8 +308,8 @@ const updateItem = (index, field, value) => {
 
     alert('BOQ Draft Saved Successfully')
   } catch (error) {
-    console.error(error)
-    alert('Failed To Save Draft')
+    console.error('Firestore Error:', error)
+    alert(error.message)
   }
 }
   return (
