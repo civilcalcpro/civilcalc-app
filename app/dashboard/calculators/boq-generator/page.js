@@ -15,7 +15,10 @@ import {
 } from '@/components/ui/select'
 export default function BOQGeneratorPage() {
   const [projectName, setProjectName] = useState('')
-
+const [clientName, setClientName] = useState('')
+const [location, setLocation] = useState('')
+const [boqDate, setBoqDate] = useState('')
+const [revisionNo, setRevisionNo] = useState('')
   const [items, setItems] = useState([
     {
   category: 'RCC',
@@ -125,12 +128,44 @@ const updateItem = (index, field, value) => {
       </h1>
 
       <Card className="bg-slate-900/50 border-slate-800 p-6">
-        <Input
-          className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400 mb-6"
-          value={projectName}
-          onChange={(e) => setProjectName(e.target.value)}
-          placeholder="Project Name"
-        />
+       <div className="grid grid-cols-2 gap-4 mb-6">
+
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    value={projectName}
+    onChange={(e) => setProjectName(e.target.value)}
+    placeholder="Project Name"
+  />
+
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    value={clientName}
+    onChange={(e) => setClientName(e.target.value)}
+    placeholder="Client Name"
+  />
+
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    value={location}
+    onChange={(e) => setLocation(e.target.value)}
+    placeholder="Project Location"
+  />
+
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    type="date"
+    value={boqDate}
+    onChange={(e) => setBoqDate(e.target.value)}
+  />
+
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    value={revisionNo}
+    onChange={(e) => setRevisionNo(e.target.value)}
+    placeholder="Revision No"
+  />
+
+</div>
 <div className="grid grid-cols-2 gap-4 mb-6">
 
   <div>
