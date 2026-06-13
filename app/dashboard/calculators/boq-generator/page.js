@@ -40,8 +40,8 @@ export default function BOQGeneratorPage() {
     (sum, item) => sum + calculateAmount(item),
     0
   )
-
-  const gstAmount = subtotal * 0.18
+const [gstPercent, setGstPercent] = useState(18)
+  const gstAmount = subtotal * (gstPercent / 100)
   const grandTotal = subtotal + gstAmount
 
   const addRow = () => {
@@ -90,7 +90,17 @@ export default function BOQGeneratorPage() {
           onChange={(e) => setProjectName(e.target.value)}
           placeholder="Project Name"
         />
-
+<div className="grid grid-cols-2 gap-4 mb-6">
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    type="number"
+    value={gstPercent}
+    onChange={(e) =>
+      setGstPercent(Number(e.target.value))
+    }
+    placeholder="GST %"
+  />
+</div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
