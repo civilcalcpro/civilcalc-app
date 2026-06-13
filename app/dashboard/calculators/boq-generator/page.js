@@ -701,6 +701,12 @@ const updateItem = (index, field, value) => {
   >
     Reset BOQ
   </Button>
+      <Button
+  onClick={saveDraft}
+  className="bg-green-600 hover:bg-green-700"
+>
+  Save Draft
+</Button>
 </div>
       </Card>
 
