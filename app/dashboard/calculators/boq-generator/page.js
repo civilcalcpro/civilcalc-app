@@ -13,6 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { db } from '@/lib/firebase'
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore'
 export default function BOQGeneratorPage() {
   const [projectName, setProjectName] = useState('')
 const [clientName, setClientName] = useState('')
@@ -260,6 +266,42 @@ const getUnitByCategory = (category) => {
   }
 }
 const updateItem = (index, field, value) => {
+  const saveDraft = async () => {
+  try {
+    await addDoc(
+      collection(db, 'boqProjects'),
+      {
+        projectName,
+        clientName,
+        location,
+        boqDate,
+        revisionNo,
+
+        gstPercent,
+        wastagePercent,
+
+        materialRate,
+        labourRate,
+        equipmentRate,
+        contractorMargin,
+
+        subtotal,
+        grandTotal,
+        finalGrandTotal,
+
+        items,
+
+        createdAt: serverTimestamp(),
+      }
+    )
+
+    alert('BOQ Draft Saved Successfully')
+  } catch (error) {
+    console.error(error)
+
+    alert('Failed To Save Draft')
+  }
+}
   const updated = [...items]
 
   updated[index][field] = value
