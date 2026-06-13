@@ -65,16 +65,42 @@ const grandTotal =
     ])
   }
 
-  const deleteRow = (index) => {
-    setItems(items.filter((_, i) => i !== index))
-  }
+const deleteRow = (index) => {
+  setItems(items.filter((_, i) => i !== index))
+}
 
-  const updateItem = (index, field, value) => {
-    const updated = [...items]
-    updated[index][field] = value
-    setItems(updated)
-  }
+const resetBOQ = () => {
+  setProjectName('')
+  setGstPercent(18)
+  setWastagePercent(5)
 
+  setItems([
+    {
+      itemName: '',
+      unit: 'm³',
+      length: '',
+      width: '',
+      height: '',
+      quantity: '',
+      rate: '',
+    },
+  ])
+}
+
+const duplicateRow = (index) => {
+  const itemToCopy = { ...items[index] }
+
+  const updated = [...items]
+  updated.splice(index + 1, 0, itemToCopy)
+
+  setItems(updated)
+}
+
+const updateItem = (index, field, value) => {
+  const updated = [...items]
+  updated[index][field] = value
+  setItems(updated)
+}
   return (
     <div className="p-6 lg:p-10 max-w-7xl">
       <Link
@@ -227,24 +253,42 @@ const grandTotal =
   ₹ {calculateAmount(item).toFixed(2)}
 </td>
 
-                  <td>
-                    <Button
-                      variant="destructive"
-                      onClick={() => deleteRow(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
+                 <td>
+  <div className="flex gap-2">
+    <Button
+      variant="outline"
+      onClick={() => duplicateRow(index)}
+    >
+      Copy
+    </Button>
+
+    <Button
+      variant="destructive"
+      onClick={() => deleteRow(index)}
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
+  </div>
+</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <Button onClick={addRow} className="mt-6">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Item
-        </Button>
+      <div className="flex gap-3 mt-6">
+  <Button onClick={addRow}>
+    <Plus className="h-4 w-4 mr-2" />
+    Add Item
+  </Button>
+
+  <Button
+    variant="outline"
+    onClick={resetBOQ}
+  >
+    Reset BOQ
+  </Button>
+</div>
       </Card>
 
       <Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
