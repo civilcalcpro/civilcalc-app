@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, Plus, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -17,6 +17,9 @@ import { db } from '@/lib/firebase'
 import {
   collection,
   addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
   serverTimestamp,
 } from 'firebase/firestore'
 export default function BOQGeneratorPage() {
@@ -29,6 +32,7 @@ const [revisionNo, setRevisionNo] = useState('')
 const [labourRate, setLabourRate] = useState(0)
 const [equipmentRate, setEquipmentRate] = useState(0)
 const [contractorMargin, setContractorMargin] = useState(10)
+  const [savedProjects, setSavedProjects] = useState([])
   const [items, setItems] = useState([
     {
   category: 'RCC',
@@ -306,12 +310,50 @@ const updateItem = (index, field, value) => {
       }
     )
 
-    alert('BOQ Draft Saved Successfully')
+    await loadProjects()
+
+alert('BOQ Draft Saved Successfully')
   } catch (error) {
     console.error('Firestore Error:', error)
     alert(error.message)
   }
 }
+  const loadProjects = async () => {
+  try {
+    const querySnapshot = await getDocs(
+      collection(db, 'boqProjects')
+    )
+
+    const projects = []
+
+    querySnapshot.forEach((doc) => {
+      projects.push({
+        id: doc.id,
+        ...doc.data(),
+      })
+    })
+
+    setSavedProjects(projects)
+  } catch (error) {
+    console.error(error)
+  }
+}
+  const deleteProject = async (id) => {
+  try {
+    await deleteDoc(
+      doc(db, 'boqProjects', id)
+    )
+
+    await loadProjects()
+
+    alert('Project Deleted')
+  } catch (error) {
+    console.error(error)
+  }
+}
+  useEffect(() => {
+  loadProjects()
+}, [])
   return (
     <div className="p-6 lg:p-10 max-w-7xl">
       <Link
@@ -709,7 +751,50 @@ const updateItem = (index, field, value) => {
 </Button>
 </div>
       </Card>
+{savedProjects.length > 0 && (
+  <Card className="mb-6 bg-slate-900/50 border-slate-800 p-6">
+    <h2 className="text-xl font-bold text-white mb-4">
+      Saved Projects
+    </h2>
 
+    <div className="space-y-3">
+      {savedProjects.map((project) => (
+        <div
+          key={project.id}
+          className="flex justify-between items-center border border-slate-700 rounded-lg p-3"
+        >
+          <div>
+            <p className="text-white font-semibold">
+              {project.projectName || 'Untitled Project'}
+            </p>
+
+            <p className="text-slate-400 text-sm">
+              {project.location || 'No Location'}
+            </p>
+          </div>
+
+          <div className="flex gap-2 items-center">
+
+  <div className="text-green-400 font-semibold">
+    ₹ {(project.finalGrandTotal || 0).toFixed(2)}
+  </div>
+
+  <Button
+    variant="destructive"
+    size="sm"
+    onClick={() =>
+      deleteProject(project.id)
+    }
+  >
+    Delete
+  </Button>
+
+</div>
+        </div>
+      ))}
+    </div>
+  </Card>
+)}
       <Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
         <h2 className="text-xl font-bold text-white mb-4">
           Cost Summary
