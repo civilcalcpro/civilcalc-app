@@ -169,6 +169,11 @@ const totalMaterialCost =
   sandCost +
   aggregateCost +
   steelCost
+  const totalRateAnalysisCost =
+  materialCost +
+  labourCost +
+  equipmentCost +
+  marginAmount
   const addRow = () => {
     setItems([
       ...items,
@@ -950,6 +955,65 @@ const updateItem = (index, field, value) => {
         ₹ {totalMaterialCost.toFixed(0)}
       </span>
     </div>
+  </div>
+</Card>
+        <Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
+  <h2 className="text-xl font-bold text-white mb-4">
+    Rate Analysis Report
+  </h2>
+
+  <div className="space-y-3">
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Material Cost
+      </span>
+
+      <span className="text-white">
+        ₹ {materialCost.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Labour Cost
+      </span>
+
+      <span className="text-white">
+        ₹ {labourCost.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Equipment Cost
+      </span>
+
+      <span className="text-white">
+        ₹ {equipmentCost.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Contractor Margin
+      </span>
+
+      <span className="text-white">
+        ₹ {marginAmount.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="border-t border-slate-700 pt-3 flex justify-between">
+      <span className="text-lg font-bold text-white">
+        Total Rate Analysis
+      </span>
+
+      <span className="text-xl font-bold text-green-400">
+        ₹ {totalRateAnalysisCost.toFixed(2)}
+      </span>
+    </div>
+
   </div>
 </Card>
     </div>
