@@ -37,13 +37,40 @@ const [contractorMargin, setContractorMargin] = useState(10)
   ])
 
   const calculateQuantity = (item) => {
-    const length = Number(item.length) || 0
-    const width = Number(item.width) || 0
-    const height = Number(item.height) || 0
-    const qty = Number(item.quantity) || 0
+  const length = Number(item.length) || 0
+  const width = Number(item.width) || 0
+  const height = Number(item.height) || 0
+  const qty = Number(item.quantity) || 0
 
-    return length * width * height * qty
+  switch (item.category) {
+    case 'Earthwork':
+      return length * width * height * qty
+
+    case 'PCC':
+      return length * width * height * qty
+
+    case 'RCC':
+      return length * width * height * qty
+
+    case 'Brickwork':
+      return length * width * height * qty
+
+    case 'Plaster':
+      return length * height * qty
+
+    case 'Flooring':
+      return length * width * qty
+
+    case 'Painting':
+      return length * height * qty
+
+    case 'Steel':
+      return qty
+
+    default:
+      return length * width * height * qty
   }
+}
 
   const calculateAmount = (item) => {
     const rate = Number(item.rate) || 0
@@ -127,10 +154,36 @@ const duplicateRow = (index) => {
 
   setItems(updated)
 }
+const getUnitByCategory = (category) => {
+  switch (category) {
+    case 'Earthwork':
+    case 'PCC':
+    case 'RCC':
+    case 'Brickwork':
+      return 'm³'
 
+    case 'Plaster':
+    case 'Flooring':
+    case 'Painting':
+      return 'm²'
+
+    case 'Steel':
+      return 'kg'
+
+    default:
+      return 'Nos'
+  }
+}
 const updateItem = (index, field, value) => {
   const updated = [...items]
+
   updated[index][field] = value
+
+  if (field === 'category') {
+    updated[index].unit =
+      getUnitByCategory(value)
+  }
+
   setItems(updated)
 }
   return (
