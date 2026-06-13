@@ -159,6 +159,16 @@ const totalSteel = items
 const cementBags = totalConcrete * 8
 const sandQty = totalConcrete * 0.44
 const aggregateQty = totalConcrete * 0.88
+  const cementCost = cementBags * 420
+const sandCost = sandQty * 1800
+const aggregateCost = aggregateQty * 1400
+const steelCost = totalSteel * 65
+
+const totalMaterialCost =
+  cementCost +
+  sandCost +
+  aggregateCost +
+  steelCost
   const addRow = () => {
     setItems([
       ...items,
@@ -827,7 +837,121 @@ const updateItem = (index, field, value) => {
   </div>
 </Card>
 </Card>
+<Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
+  <h2 className="text-xl font-bold text-white mb-4">
+    Material Requirement Report
+  </h2>
 
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-slate-700 text-slate-400">
+          <th className="text-left py-2">
+            Material
+          </th>
+
+          <th className="text-right py-2">
+            Qty
+          </th>
+
+          <th className="text-right py-2">
+            Unit
+          </th>
+
+          <th className="text-right py-2">
+            Cost
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr className="border-b border-slate-800">
+          <td className="py-2 text-white">
+            Cement
+          </td>
+
+          <td className="text-right text-white">
+            {cementBags.toFixed(0)}
+          </td>
+
+          <td className="text-right text-slate-300">
+            Bags
+          </td>
+
+          <td className="text-right text-green-400">
+            ₹ {cementCost.toFixed(0)}
+          </td>
+        </tr>
+
+        <tr className="border-b border-slate-800">
+          <td className="py-2 text-white">
+            Sand
+          </td>
+
+          <td className="text-right text-white">
+            {sandQty.toFixed(2)}
+          </td>
+
+          <td className="text-right text-slate-300">
+            m³
+          </td>
+
+          <td className="text-right text-green-400">
+            ₹ {sandCost.toFixed(0)}
+          </td>
+        </tr>
+
+        <tr className="border-b border-slate-800">
+          <td className="py-2 text-white">
+            Aggregate
+          </td>
+
+          <td className="text-right text-white">
+            {aggregateQty.toFixed(2)}
+          </td>
+
+          <td className="text-right text-slate-300">
+            m³
+          </td>
+
+          <td className="text-right text-green-400">
+            ₹ {aggregateCost.toFixed(0)}
+          </td>
+        </tr>
+
+        <tr className="border-b border-slate-800">
+          <td className="py-2 text-white">
+            Steel
+          </td>
+
+          <td className="text-right text-white">
+            {totalSteel.toFixed(2)}
+          </td>
+
+          <td className="text-right text-slate-300">
+            kg
+          </td>
+
+          <td className="text-right text-green-400">
+            ₹ {steelCost.toFixed(0)}
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <div className="mt-4 pt-4 border-t border-slate-700 flex justify-between">
+      <span className="text-lg font-bold text-white">
+        Total Material Cost
+      </span>
+
+      <span className="text-xl font-bold text-green-400">
+        ₹ {totalMaterialCost.toFixed(0)}
+      </span>
+    </div>
+  </div>
+</Card>
     </div>
   )
 }
