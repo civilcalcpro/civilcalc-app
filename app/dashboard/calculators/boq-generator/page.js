@@ -41,8 +41,14 @@ export default function BOQGeneratorPage() {
     0
   )
 const [gstPercent, setGstPercent] = useState(18)
+  const [wastagePercent, setWastagePercent] = useState(5)
   const gstAmount = subtotal * (gstPercent / 100)
-  const grandTotal = subtotal + gstAmount
+
+const wastageAmount =
+  subtotal * (wastagePercent / 100)
+
+const grandTotal =
+  subtotal + gstAmount + wastageAmount
 
   const addRow = () => {
     setItems([
@@ -91,15 +97,37 @@ const [gstPercent, setGstPercent] = useState(18)
           placeholder="Project Name"
         />
 <div className="grid grid-cols-2 gap-4 mb-6">
-  <Input
-    className="bg-slate-800 border-slate-700 text-white"
-    type="number"
-    value={gstPercent}
-    onChange={(e) =>
-      setGstPercent(Number(e.target.value))
-    }
-    placeholder="GST %"
-  />
+
+  <div>
+    <label className="block text-sm text-slate-400 mb-2">
+      GST (%)
+    </label>
+
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      type="number"
+      value={gstPercent}
+      onChange={(e) =>
+        setGstPercent(Number(e.target.value))
+      }
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm text-slate-400 mb-2">
+      Wastage (%)
+    </label>
+
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      type="number"
+      value={wastagePercent}
+      onChange={(e) =>
+        setWastagePercent(Number(e.target.value))
+      }
+    />
+  </div>
+
 </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -232,12 +260,25 @@ const [gstPercent, setGstPercent] = useState(18)
             </span>
           </div>
 
-          <div className="flex justify-between">
-            <span className="text-slate-400">GST (18%)</span>
-            <span className="text-white">
-              ₹ {gstAmount.toFixed(2)}
-            </span>
-          </div>
+           <div className="flex justify-between">
+  <span className="text-slate-400">
+    GST ({gstPercent}%)
+  </span>
+
+  <span className="text-white">
+    ₹ {gstAmount.toFixed(2)}
+  </span>
+</div>
+
+<div className="flex justify-between">
+  <span className="text-slate-400">
+    Wastage ({wastagePercent}%)
+  </span>
+
+  <span className="text-white">
+    ₹ {wastageAmount.toFixed(2)}
+  </span>
+</div>
 
           <div className="border-t border-slate-700 pt-3 flex justify-between">
             <span className="text-lg font-bold text-white">
