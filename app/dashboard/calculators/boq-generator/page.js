@@ -185,102 +185,103 @@ const updateItem = (index, field, value) => {
             <tbody>
               {items.map((item, index) => (
                 <tr key={index}>
-                <td>
-  <Select
-    value={item.category}
-    onValueChange={(value) =>
-      updateItem(index, 'category', value)
-    }
-  >
-    <SelectTrigger className="bg-slate-800 border-slate-700 text-white min-w-[140px]">
-      <SelectValue />
-    </SelectTrigger>
+  <td>
+    <Select
+      value={item.category}
+      onValueChange={(value) =>
+        updateItem(index, 'category', value)
+      }
+    >
+      <SelectTrigger className="bg-slate-800 border-slate-700 text-white min-w-[140px]">
+        <SelectValue />
+      </SelectTrigger>
 
-    <SelectContent>
-      <SelectItem value="RCC">RCC</SelectItem>
-      <SelectItem value="PCC">PCC</SelectItem>
-      <SelectItem value="Brickwork">Brickwork</SelectItem>
-      <SelectItem value="Plaster">Plaster</SelectItem>
-      <SelectItem value="Flooring">Flooring</SelectItem>
-      <SelectItem value="Excavation">Excavation</SelectItem>
-      <SelectItem value="Steel">Steel</SelectItem>
-      <SelectItem value="Painting">Painting</SelectItem>
-    </SelectContent>
-  </Select>
-</td>
-                  <td>
-                    <Input
-                      className="bg-slate-800 border-slate-700 text-white"
-                      value={item.itemName}
-                      onChange={(e) =>
-                        updateItem(index, 'itemName', e.target.value)
-                      }
-                    />
-                  </td>
+      <SelectContent>
+        <SelectItem value="Earthwork">Earthwork</SelectItem>
+        <SelectItem value="PCC">PCC</SelectItem>
+        <SelectItem value="RCC">RCC</SelectItem>
+        <SelectItem value="Brickwork">Brickwork</SelectItem>
+        <SelectItem value="Plaster">Plaster</SelectItem>
+        <SelectItem value="Flooring">Flooring</SelectItem>
+        <SelectItem value="Steel">Steel</SelectItem>
+        <SelectItem value="Painting">Painting</SelectItem>
+      </SelectContent>
+    </Select>
+  </td>
 
-                  <td>
-                    <Input
-                      className="bg-slate-800 border-slate-700 text-white"
-                      value={item.unit}
-                      onChange={(e) =>
-                        updateItem(index, 'unit', e.target.value)
-                      }
-                    />
-                  </td>
+  <td>
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      value={item.itemName}
+      onChange={(e) =>
+        updateItem(index, 'itemName', e.target.value)
+      }
+    />
+  </td>
 
-                  <td>
-                    <Input
-                      className="bg-slate-800 border-slate-700 text-white"
-                      value={item.length}
-                      onChange={(e) =>
-                        updateItem(index, 'length', e.target.value)
-                      }
-                    />
-                  </td>
+  <td>
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      value={item.unit}
+      onChange={(e) =>
+        updateItem(index, 'unit', e.target.value)
+      }
+    />
+  </td>
 
-                  <td>
-                    <Input
-                      className="bg-slate-800 border-slate-700 text-white"
-                      value={item.width}
-                      onChange={(e) =>
-                        updateItem(index, 'width', e.target.value)
-                      }
-                    />
-                  </td>
+  <td>
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      value={item.length}
+      onChange={(e) =>
+        updateItem(index, 'length', e.target.value)
+      }
+    />
+  </td>
 
-                  <td>
-                    <Input
-                      className="bg-slate-800 border-slate-700 text-white"
-                      value={item.height}
-                      onChange={(e) =>
-                        updateItem(index, 'height', e.target.value)
-                      }
-                    />
-                  </td>
+  <td>
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      value={item.width}
+      onChange={(e) =>
+        updateItem(index, 'width', e.target.value)
+      }
+    />
+  </td>
 
-                  <td>
-                    <Input
-                      className="bg-slate-800 border-slate-700 text-white"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateItem(index, 'quantity', e.target.value)
-                      }
-                    />
-                  </td>
+  <td>
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      value={item.height}
+      onChange={(e) =>
+        updateItem(index, 'height', e.target.value)
+      }
+    />
+  </td>
 
-                  <td>
-                    <Input
-                      className="bg-slate-800 border-slate-700 text-white"
-                      value={item.rate}
-                      onChange={(e) =>
-                        updateItem(index, 'rate', e.target.value)
-                      }
-                    />
-                  </td>
+  <td>
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      value={item.quantity}
+      onChange={(e) =>
+        updateItem(index, 'quantity', e.target.value)
+      }
+    />
+  </td>
 
-                 <td className="text-white text-center px-3">
-  {calculateQuantity(item).toFixed(2)}
-</td>
+  <td>
+    <Input
+      className="bg-slate-800 border-slate-700 text-white"
+      value={item.rate}
+      onChange={(e) =>
+        updateItem(index, 'rate', e.target.value)
+      }
+    />
+  </td>
+
+  <td className="text-white text-center px-3">
+    {calculateQuantity(item).toFixed(2)}
+  </td>
 
 <td className="text-green-400 text-center font-semibold px-3">
   ₹ {calculateAmount(item).toFixed(2)}
