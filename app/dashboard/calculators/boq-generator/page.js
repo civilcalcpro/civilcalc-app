@@ -110,14 +110,6 @@ const equipmentCost = items.reduce(
       (Number(item.equipmentRate) || 0)),
   0
 )
-  const marginAmount =
-  (materialCost +
-    labourCost +
-    equipmentCost) *
-  0.10
-
-const finalGrandTotal =
-  grandTotal + marginAmount
 const [gstPercent, setGstPercent] = useState(18)
   const [wastagePercent, setWastagePercent] = useState(5)
   const gstAmount = subtotal * (gstPercent / 100)
@@ -127,6 +119,14 @@ const wastageAmount =
 
 const grandTotal =
   subtotal + gstAmount + wastageAmount
+  const marginAmount =
+  (materialCost +
+    labourCost +
+    equipmentCost) *
+  0.10
+
+const finalGrandTotal =
+  grandTotal + marginAmount
   const addRow = () => {
     setItems([
       ...items,
