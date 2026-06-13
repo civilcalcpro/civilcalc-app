@@ -52,6 +52,13 @@ const quickTools = [
   { name: 'Rate Analysis', icon: IndianRupee, href: '/dashboard/calculators/rate-analysis', color: 'green', desc: 'Project cost estimation' },
   { name: 'Unit Converter', icon: ArrowLeftRight, href: '/dashboard/calculators/unit-converter', color: 'purple', desc: 'Length, force, pressure & more' },
   { name: 'AI Engineering Assistant', icon: Bot, href: '/dashboard/ai-assistant', color: 'purple', desc: 'Powered by Claude — ask anything' },
+  {
+  name: 'BOQ Generator',
+  icon: FileText,
+  href: '/dashboard/calculators/boq-generator',
+  color: 'green',
+  desc: 'Professional Bill of Quantities'
+},
   { name: 'IS Code Library', icon: FileText, href: '/dashboard/is-codes', color: 'red', desc: 'IS 456 / 875 / 1893 / 13920 references' },
 ]
 
