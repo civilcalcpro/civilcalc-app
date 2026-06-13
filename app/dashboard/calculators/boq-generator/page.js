@@ -102,8 +102,8 @@ export default function BOQGeneratorPage() {
                 <th>Height</th>
                 <th>Qty</th>
                 <th>Rate</th>
-                <th>Quantity</th>
-                <th>Amount</th>
+               <th className="px-3">Quantity</th>
+<th className="px-3">Amount</th>
                 <th></th>
               </tr>
             </thead>
@@ -181,13 +181,13 @@ export default function BOQGeneratorPage() {
                     />
                   </td>
 
-                  <td className="text-center text-white">
-                    {calculateQuantity(item).toFixed(2)}
-                  </td>
+                 <td className="text-white text-center px-3">
+  {calculateQuantity(item).toFixed(2)}
+</td>
 
-                  <td className="text-center text-green-400 font-semibold">
-                    ₹ {calculateAmount(item).toFixed(2)}
-                  </td>
+<td className="text-green-400 text-center font-semibold px-3">
+  ₹ {calculateAmount(item).toFixed(2)}
+</td>
 
                   <td>
                     <Button
