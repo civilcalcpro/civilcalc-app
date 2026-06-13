@@ -127,23 +127,6 @@ const wastageAmount =
 
 const grandTotal =
   subtotal + gstAmount + wastageAmount
-const materialCost = subtotal * (materialRate / 100)
-const labourCost = subtotal * (labourRate / 100)
-const equipmentCost = subtotal * (equipmentRate / 100)
-
-const marginAmount =
-  (subtotal +
-    materialCost +
-    labourCost +
-    equipmentCost) *
-  (contractorMargin / 100)
-
-const finalGrandTotal =
-  grandTotal +
-  materialCost +
-  labourCost +
-  equipmentCost +
-  marginAmount
   const addRow = () => {
     setItems([
       ...items,
