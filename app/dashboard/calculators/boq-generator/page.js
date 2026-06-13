@@ -351,6 +351,24 @@ alert('BOQ Draft Saved Successfully')
     console.error(error)
   }
 }
+  const openProject = (project) => {
+  setProjectName(project.projectName || '')
+  setClientName(project.clientName || '')
+  setLocation(project.location || '')
+  setBoqDate(project.boqDate || '')
+  setRevisionNo(project.revisionNo || '')
+
+  setGstPercent(project.gstPercent || 18)
+  setWastagePercent(project.wastagePercent || 5)
+
+  setMaterialRate(project.materialRate || 0)
+  setLabourRate(project.labourRate || 0)
+  setEquipmentRate(project.equipmentRate || 0)
+
+  setItems(project.items || [])
+
+  alert('Project Loaded Successfully')
+}
   useEffect(() => {
   loadProjects()
 }, [])
@@ -778,7 +796,14 @@ alert('BOQ Draft Saved Successfully')
   <div className="text-green-400 font-semibold">
     ₹ {(project.finalGrandTotal || 0).toFixed(2)}
   </div>
-
+<Button
+  size="sm"
+  onClick={() =>
+    openProject(project)
+  }
+>
+  Open
+</Button>
   <Button
     variant="destructive"
     size="sm"
