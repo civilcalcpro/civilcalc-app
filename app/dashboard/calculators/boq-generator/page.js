@@ -27,12 +27,18 @@ const [contractorMargin, setContractorMargin] = useState(10)
     {
   category: 'RCC',
   itemName: '',
-  unit: 'm³',
+  unit: getUnitByCategory('RCC'),
+
   length: '',
   width: '',
   height: '',
   quantity: '',
+
   rate: '',
+
+  materialRate: '',
+  labourRate: '',
+  equipmentRate: '',
 }
   ])
 
@@ -81,6 +87,37 @@ const [contractorMargin, setContractorMargin] = useState(10)
     (sum, item) => sum + calculateAmount(item),
     0
   )
+  const materialCost = items.reduce(
+  (sum, item) =>
+    sum +
+    (calculateQuantity(item) *
+      (Number(item.materialRate) || 0)),
+  0
+)
+
+const labourCost = items.reduce(
+  (sum, item) =>
+    sum +
+    (calculateQuantity(item) *
+      (Number(item.labourRate) || 0)),
+  0
+)
+
+const equipmentCost = items.reduce(
+  (sum, item) =>
+    sum +
+    (calculateQuantity(item) *
+      (Number(item.equipmentRate) || 0)),
+  0
+)
+  const marginAmount =
+  (materialCost +
+    labourCost +
+    equipmentCost) *
+  0.10
+
+const finalGrandTotal =
+  grandTotal + marginAmount
 const [gstPercent, setGstPercent] = useState(18)
   const [wastagePercent, setWastagePercent] = useState(5)
   const gstAmount = subtotal * (gstPercent / 100)
@@ -113,12 +150,18 @@ const finalGrandTotal =
       {
   category: 'RCC',
   itemName: '',
-  unit: 'm³',
+  unit: getUnitByCategory('RCC'),
+
   length: '',
   width: '',
   height: '',
   quantity: '',
+
   rate: '',
+
+  materialRate: '',
+  labourRate: '',
+  equipmentRate: '',
 }
     ])
   }
@@ -136,12 +179,18 @@ const resetBOQ = () => {
     {
   category: 'RCC',
   itemName: '',
-  unit: 'm³',
+  unit: getUnitByCategory('RCC'),
+
   length: '',
   width: '',
   height: '',
   quantity: '',
+
   rate: '',
+
+  materialRate: '',
+  labourRate: '',
+  equipmentRate: '',
 }
   ])
 }
@@ -347,6 +396,9 @@ const updateItem = (index, field, value) => {
 <th>Height</th>
 <th>Qty</th>
 <th>Rate</th>
+<th>Material</th>
+<th>Labour</th>
+<th>Equipment</th>        
                <th className="px-3">Quantity</th>
 <th className="px-3">Amount</th>
                 <th></th>
@@ -449,7 +501,35 @@ const updateItem = (index, field, value) => {
       }
     />
   </td>
+<td>
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    value={item.materialRate}
+    onChange={(e) =>
+      updateItem(index, 'materialRate', e.target.value)
+    }
+  />
+</td>
 
+<td>
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    value={item.labourRate}
+    onChange={(e) =>
+      updateItem(index, 'labourRate', e.target.value)
+    }
+  />
+</td>
+
+<td>
+  <Input
+    className="bg-slate-800 border-slate-700 text-white"
+    value={item.equipmentRate}
+    onChange={(e) =>
+      updateItem(index, 'equipmentRate', e.target.value)
+    }
+  />
+</td>
   <td className="text-white text-center px-3">
     {calculateQuantity(item).toFixed(2)}
   </td>
@@ -568,7 +648,45 @@ const updateItem = (index, field, value) => {
     ₹ {marginAmount.toFixed(2)}
   </span>
 </div>
+<div className="flex justify-between">
+  <span className="text-slate-400">
+    Material Cost
+  </span>
 
+  <span className="text-white">
+    ₹ {materialCost.toFixed(2)}
+  </span>
+</div>
+
+<div className="flex justify-between">
+  <span className="text-slate-400">
+    Labour Cost
+  </span>
+
+  <span className="text-white">
+    ₹ {labourCost.toFixed(2)}
+  </span>
+</div>
+
+<div className="flex justify-between">
+  <span className="text-slate-400">
+    Equipment Cost
+  </span>
+
+  <span className="text-white">
+    ₹ {equipmentCost.toFixed(2)}
+  </span>
+</div>
+
+<div className="flex justify-between">
+  <span className="text-slate-400">
+    Contractor Margin (10%)
+  </span>
+
+  <span className="text-white">
+    ₹ {marginAmount.toFixed(2)}
+  </span>
+</div>
 <div className="border-t border-slate-700 pt-3 flex justify-between">
   <span className="text-lg font-bold text-white">
     Grand Total
