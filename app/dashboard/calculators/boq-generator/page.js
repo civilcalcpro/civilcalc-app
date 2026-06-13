@@ -19,6 +19,10 @@ const [clientName, setClientName] = useState('')
 const [location, setLocation] = useState('')
 const [boqDate, setBoqDate] = useState('')
 const [revisionNo, setRevisionNo] = useState('')
+  const [materialRate, setMaterialRate] = useState(0)
+const [labourRate, setLabourRate] = useState(0)
+const [equipmentRate, setEquipmentRate] = useState(0)
+const [contractorMargin, setContractorMargin] = useState(10)
   const [items, setItems] = useState([
     {
   category: 'RCC',
@@ -59,7 +63,23 @@ const wastageAmount =
 
 const grandTotal =
   subtotal + gstAmount + wastageAmount
+const materialCost = subtotal * (materialRate / 100)
+const labourCost = subtotal * (labourRate / 100)
+const equipmentCost = subtotal * (equipmentRate / 100)
 
+const marginAmount =
+  (subtotal +
+    materialCost +
+    labourCost +
+    equipmentCost) *
+  (contractorMargin / 100)
+
+const finalGrandTotal =
+  grandTotal +
+  materialCost +
+  labourCost +
+  equipmentCost +
+  marginAmount
   const addRow = () => {
     setItems([
       ...items,
@@ -194,6 +214,69 @@ const updateItem = (index, field, value) => {
       value={wastagePercent}
       onChange={(e) =>
         setWastagePercent(Number(e.target.value))
+      }
+    />
+  </div>
+
+</div>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+
+  <div>
+    <label className="block text-sm text-slate-400 mb-2">
+      Material Rate (%)
+    </label>
+
+    <Input
+      type="number"
+      className="bg-slate-800 border-slate-700 text-white"
+      value={materialRate}
+      onChange={(e) =>
+        setMaterialRate(Number(e.target.value))
+      }
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm text-slate-400 mb-2">
+      Labour Rate (%)
+    </label>
+
+    <Input
+      type="number"
+      className="bg-slate-800 border-slate-700 text-white"
+      value={labourRate}
+      onChange={(e) =>
+        setLabourRate(Number(e.target.value))
+      }
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm text-slate-400 mb-2">
+      Equipment Rate (%)
+    </label>
+
+    <Input
+      type="number"
+      className="bg-slate-800 border-slate-700 text-white"
+      value={equipmentRate}
+      onChange={(e) =>
+        setEquipmentRate(Number(e.target.value))
+      }
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm text-slate-400 mb-2">
+      Contractor Margin (%)
+    </label>
+
+    <Input
+      type="number"
+      className="bg-slate-800 border-slate-700 text-white"
+      value={contractorMargin}
+      onChange={(e) =>
+        setContractorMargin(Number(e.target.value))
       }
     />
   </div>
@@ -399,7 +482,46 @@ const updateItem = (index, field, value) => {
             </span>
 
             <span className="text-2xl font-bold text-green-400">
-              ₹ {grandTotal.toFixed(2)}
+    <div className="flex justify-between">
+  <span className="text-slate-400">
+    Material Cost
+  </span>
+
+  <span className="text-white">
+    ₹ {materialCost.toFixed(2)}
+  </span>
+</div>
+
+<div className="flex justify-between">
+  <span className="text-slate-400">
+    Labour Cost
+  </span>
+
+  <span className="text-white">
+    ₹ {labourCost.toFixed(2)}
+  </span>
+</div>
+
+<div className="flex justify-between">
+  <span className="text-slate-400">
+    Equipment Cost
+  </span>
+
+  <span className="text-white">
+    ₹ {equipmentCost.toFixed(2)}
+  </span>
+</div>
+
+<div className="flex justify-between">
+  <span className="text-slate-400">
+    Contractor Margin
+  </span>
+
+  <span className="text-white">
+    ₹ {marginAmount.toFixed(2)}
+  </span>
+</div>
+              ₹ {finalGrandTotal.toFixed(2)}
             </span>
           </div>
         </div>
