@@ -21,34 +21,29 @@ export default function BOQGeneratorPage() {
       rate: '',
     },
   ])
-const calculateQuantity = (item) => {
-  const length = parseFloat(item.length || 0)
-  const width = parseFloat(item.width || 0)
-  const height = parseFloat(item.height || 0)
-  const qty = parseFloat(item.quantity || 0)
 
-  return length * width * height * qty
-}
+  const calculateQuantity = (item) => {
+    const length = Number(item.length) || 0
+    const width = Number(item.width) || 0
+    const height = Number(item.height) || 0
+    const qty = Number(item.quantity) || 0
 
-const calculateAmount = (item) => {
-  const quantity = calculateQuantity(item)
-  const rate = parseFloat(item.rate || 0)
+    return length * width * height * qty
+  }
 
-  return quantity * rate
-}
+  const calculateAmount = (item) => {
+    const rate = Number(item.rate) || 0
+    return calculateQuantity(item) * rate
+  }
 
-const subtotal = items.reduce(
-  (sum, item) => sum + calculateAmount(item),
-  0
-)
+  const subtotal = items.reduce(
+    (sum, item) => sum + calculateAmount(item),
+    0
+  )
 
-const gstPercent = 18
+  const gstAmount = subtotal * 0.18
+  const grandTotal = subtotal + gstAmount
 
-const gstAmount =
-  subtotal * gstPercent / 100
-
-const grandTotal =
-  subtotal + gstAmount
   const addRow = () => {
     setItems([
       ...items,
@@ -90,27 +85,27 @@ const grandTotal =
 
       <Card className="bg-slate-900/50 border-slate-800 p-6">
         <Input
+          className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400 mb-6"
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
           placeholder="Project Name"
-          className="mb-6"
         />
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-            <tr className="text-slate-400 border-b border-slate-700">
-  <th>Item</th>
-  <th>Unit</th>
-  <th>Length</th>
-  <th>Width</th>
-  <th>Height</th>
-  <th>Qty</th>
-  <th>Rate</th>
-  <th>Quantity</th>
-  <th>Amount</th>
-  <th></th>
-</tr>
+              <tr className="text-slate-400 border-b border-slate-700">
+                <th>Item</th>
+                <th>Unit</th>
+                <th>Length</th>
+                <th>Width</th>
+                <th>Height</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Quantity</th>
+                <th>Amount</th>
+                <th></th>
+              </tr>
             </thead>
 
             <tbody>
@@ -118,107 +113,86 @@ const grandTotal =
                 <tr key={index}>
                   <td>
                     <Input
+                      className="bg-slate-800 border-slate-700 text-white"
                       value={item.itemName}
                       onChange={(e) =>
-                        updateItem(
-                          index,
-                          'itemName',
-                          e.target.value
-                        )
+                        updateItem(index, 'itemName', e.target.value)
                       }
                     />
                   </td>
 
                   <td>
                     <Input
+                      className="bg-slate-800 border-slate-700 text-white"
                       value={item.unit}
                       onChange={(e) =>
-                        updateItem(
-                          index,
-                          'unit',
-                          e.target.value
-                        )
+                        updateItem(index, 'unit', e.target.value)
                       }
                     />
                   </td>
 
                   <td>
                     <Input
+                      className="bg-slate-800 border-slate-700 text-white"
                       value={item.length}
                       onChange={(e) =>
-                        updateItem(
-                          index,
-                          'length',
-                          e.target.value
-                        )
+                        updateItem(index, 'length', e.target.value)
                       }
                     />
                   </td>
 
                   <td>
                     <Input
+                      className="bg-slate-800 border-slate-700 text-white"
                       value={item.width}
                       onChange={(e) =>
-                        updateItem(
-                          index,
-                          'width',
-                          e.target.value
-                        )
+                        updateItem(index, 'width', e.target.value)
                       }
                     />
                   </td>
 
                   <td>
                     <Input
+                      className="bg-slate-800 border-slate-700 text-white"
                       value={item.height}
                       onChange={(e) =>
-                        updateItem(
-                          index,
-                          'height',
-                          e.target.value
-                        )
+                        updateItem(index, 'height', e.target.value)
                       }
                     />
                   </td>
 
                   <td>
                     <Input
+                      className="bg-slate-800 border-slate-700 text-white"
                       value={item.quantity}
                       onChange={(e) =>
-                        updateItem(
-                          index,
-                          'quantity',
-                          e.target.value
-                        )
+                        updateItem(index, 'quantity', e.target.value)
                       }
                     />
                   </td>
 
                   <td>
                     <Input
+                      className="bg-slate-800 border-slate-700 text-white"
                       value={item.rate}
                       onChange={(e) =>
-                        updateItem(
-                          index,
-                          'rate',
-                          e.target.value
-                        )
+                        updateItem(index, 'rate', e.target.value)
                       }
                     />
                   </td>
-<td className="text-white text-center">
-  {calculateQuantity(item).toFixed(2)}
-</td>
 
-<td className="text-green-400 text-center font-semibold">
-  ₹ {calculateAmount(item).toFixed(2)}
-</td>
+                  <td className="text-center text-white">
+                    {calculateQuantity(item).toFixed(2)}
+                  </td>
+
+                  <td className="text-center text-green-400 font-semibold">
+                    ₹ {calculateAmount(item).toFixed(2)}
+                  </td>
+
                   <td>
                     <Button
                       variant="destructive"
-                      onClick={() =>
-                        deleteRow(index)
-                      }
+                      onClick={() => deleteRow(index)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -229,53 +203,43 @@ const grandTotal =
           </table>
         </div>
 
-        <Button
-          onClick={addRow}
-          className="mt-6"
-        >
+        <Button onClick={addRow} className="mt-6">
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
       </Card>
-            <Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
-  <h2 className="text-xl font-bold text-white mb-4">
-    Cost Summary
-  </h2>
 
-  <div className="space-y-3">
+      <Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
+        <h2 className="text-xl font-bold text-white mb-4">
+          Cost Summary
+        </h2>
 
-    <div className="flex justify-between">
-      <span className="text-slate-400">
-        Subtotal
-      </span>
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <span className="text-slate-400">Subtotal</span>
+            <span className="text-white">
+              ₹ {subtotal.toFixed(2)}
+            </span>
+          </div>
 
-      <span className="text-white">
-        ₹ {subtotal.toFixed(2)}
-      </span>
-    </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">GST (18%)</span>
+            <span className="text-white">
+              ₹ {gstAmount.toFixed(2)}
+            </span>
+          </div>
 
-    <div className="flex justify-between">
-      <span className="text-slate-400">
-        GST (18%)
-      </span>
+          <div className="border-t border-slate-700 pt-3 flex justify-between">
+            <span className="text-lg font-bold text-white">
+              Grand Total
+            </span>
 
-      <span className="text-white">
-        ₹ {gstAmount.toFixed(2)}
-      </span>
-    </div>
-
-    <div className="border-t border-slate-700 pt-3 flex justify-between">
-      <span className="text-lg font-bold text-white">
-        Grand Total
-      </span>
-
-      <span className="text-2xl font-bold text-green-400">
-        ₹ {grandTotal.toFixed(2)}
-      </span>
-    </div>
-
-  </div>
-</Card>
+            <span className="text-2xl font-bold text-green-400">
+              ₹ {grandTotal.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </Card>
     </div>
   )
 }
