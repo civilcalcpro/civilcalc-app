@@ -27,7 +27,7 @@ const [contractorMargin, setContractorMargin] = useState(10)
     {
   category: 'RCC',
   itemName: '',
-  unit: getUnitByCategory('RCC'),
+ unit: 'm³',
 
   length: '',
   width: '',
@@ -133,7 +133,7 @@ const grandTotal =
       {
   category: 'RCC',
   itemName: '',
-  unit: getUnitByCategory('RCC'),
+ unit: 'm³',
 
   length: '',
   width: '',
@@ -162,7 +162,7 @@ const resetBOQ = () => {
     {
   category: 'RCC',
   itemName: '',
-  unit: getUnitByCategory('RCC'),
+  unit: 'm³',
 
   length: '',
   width: '',
