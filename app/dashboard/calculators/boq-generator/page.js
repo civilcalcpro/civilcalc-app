@@ -21,7 +21,34 @@ export default function BOQGeneratorPage() {
       rate: '',
     },
   ])
+const calculateQuantity = (item) => {
+  const length = parseFloat(item.length || 0)
+  const width = parseFloat(item.width || 0)
+  const height = parseFloat(item.height || 0)
+  const qty = parseFloat(item.quantity || 0)
 
+  return length * width * height * qty
+}
+
+const calculateAmount = (item) => {
+  const quantity = calculateQuantity(item)
+  const rate = parseFloat(item.rate || 0)
+
+  return quantity * rate
+}
+
+const subtotal = items.reduce(
+  (sum, item) => sum + calculateAmount(item),
+  0
+)
+
+const gstPercent = 18
+
+const gstAmount =
+  subtotal * gstPercent / 100
+
+const grandTotal =
+  subtotal + gstAmount
   const addRow = () => {
     setItems([
       ...items,
@@ -72,16 +99,18 @@ export default function BOQGeneratorPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-slate-400 border-b border-slate-700">
-                <th>Item</th>
-                <th>Unit</th>
-                <th>Length</th>
-                <th>Width</th>
-                <th>Height</th>
-                <th>Qty</th>
-                <th>Rate</th>
-                <th></th>
-              </tr>
+            <tr className="text-slate-400 border-b border-slate-700">
+  <th>Item</th>
+  <th>Unit</th>
+  <th>Length</th>
+  <th>Width</th>
+  <th>Height</th>
+  <th>Qty</th>
+  <th>Rate</th>
+  <th>Quantity</th>
+  <th>Amount</th>
+  <th></th>
+</tr>
             </thead>
 
             <tbody>
@@ -177,7 +206,13 @@ export default function BOQGeneratorPage() {
                       }
                     />
                   </td>
+<td className="text-white text-center">
+  {calculateQuantity(item).toFixed(2)}
+</td>
 
+<td className="text-green-400 text-center font-semibold">
+  ₹ {calculateAmount(item).toFixed(2)}
+</td>
                   <td>
                     <Button
                       variant="destructive"
@@ -202,6 +237,45 @@ export default function BOQGeneratorPage() {
           Add Item
         </Button>
       </Card>
+            <Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
+  <h2 className="text-xl font-bold text-white mb-4">
+    Cost Summary
+  </h2>
+
+  <div className="space-y-3">
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Subtotal
+      </span>
+
+      <span className="text-white">
+        ₹ {subtotal.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        GST (18%)
+      </span>
+
+      <span className="text-white">
+        ₹ {gstAmount.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="border-t border-slate-700 pt-3 flex justify-between">
+      <span className="text-lg font-bold text-white">
+        Grand Total
+      </span>
+
+      <span className="text-2xl font-bold text-green-400">
+        ₹ {grandTotal.toFixed(2)}
+      </span>
+    </div>
+
+  </div>
+</Card>
     </div>
   )
 }
