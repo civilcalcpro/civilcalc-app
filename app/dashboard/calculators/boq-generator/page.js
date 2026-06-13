@@ -19,6 +19,7 @@ import {
   addDoc,
   getDocs,
   deleteDoc,
+  updateDoc,
   doc,
   serverTimestamp,
 } from 'firebase/firestore'
@@ -33,6 +34,7 @@ const [labourRate, setLabourRate] = useState(0)
 const [equipmentRate, setEquipmentRate] = useState(0)
 const [contractorMargin, setContractorMargin] = useState(10)
   const [savedProjects, setSavedProjects] = useState([])
+  const [currentProjectId, setCurrentProjectId] = useState(null)
   const [items, setItems] = useState([
     {
   category: 'RCC',
@@ -318,6 +320,44 @@ alert('BOQ Draft Saved Successfully')
     alert(error.message)
   }
 }
+  const updateProject = async () => {
+  if (!currentProjectId) {
+    alert('Open a project first')
+    return
+  }
+
+  try {
+    await updateDoc(
+      doc(db, 'boqProjects', currentProjectId),
+      {
+        projectName,
+        clientName,
+        location,
+        boqDate,
+        revisionNo,
+
+        gstPercent,
+        wastagePercent,
+
+        materialRate,
+        labourRate,
+        equipmentRate,
+
+        subtotal,
+        grandTotal,
+        finalGrandTotal,
+
+        items,
+      }
+    )
+
+    await loadProjects()
+
+    alert('Project Updated Successfully')
+  } catch (error) {
+    console.error(error)
+  }
+}
   const loadProjects = async () => {
   try {
     const querySnapshot = await getDocs(
@@ -352,6 +392,8 @@ alert('BOQ Draft Saved Successfully')
   }
 }
   const openProject = (project) => {
+  setCurrentProjectId(project.id)
+
   setProjectName(project.projectName || '')
   setClientName(project.clientName || '')
   setLocation(project.location || '')
@@ -766,6 +808,12 @@ alert('BOQ Draft Saved Successfully')
   className="bg-green-600 hover:bg-green-700"
 >
   Save Draft
+</Button>
+    <Button
+  onClick={updateProject}
+  className="bg-blue-600 hover:bg-blue-700"
+>
+  Update Project
 </Button>
 </div>
       </Card>
