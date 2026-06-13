@@ -134,6 +134,31 @@ const finalGrandTotal =
     item.quantity || 0
   }`
 }
+  const totalConcrete = items
+  .filter(
+    (item) =>
+      item.category === 'RCC' ||
+      item.category === 'PCC'
+  )
+  .reduce(
+    (sum, item) =>
+      sum + calculateQuantity(item),
+    0
+  )
+
+const totalSteel = items
+  .filter(
+    (item) => item.category === 'Steel'
+  )
+  .reduce(
+    (sum, item) =>
+      sum + calculateQuantity(item),
+    0
+  )
+
+const cementBags = totalConcrete * 8
+const sandQty = totalConcrete * 0.44
+const aggregateQty = totalConcrete * 0.88
   const addRow = () => {
     setItems([
       ...items,
@@ -695,6 +720,55 @@ const updateItem = (index, field, value) => {
       </tbody>
     </table>
   </div>
+          <Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
+  <h2 className="text-xl font-bold text-white mb-4">
+    Material Breakdown
+  </h2>
+
+  <div className="space-y-3">
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Cement
+      </span>
+
+      <span className="text-white">
+        {cementBags.toFixed(0)} Bags
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Sand
+      </span>
+
+      <span className="text-white">
+        {sandQty.toFixed(2)} m³
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Aggregate
+      </span>
+
+      <span className="text-white">
+        {aggregateQty.toFixed(2)} m³
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Steel
+      </span>
+
+      <span className="text-white">
+        {totalSteel.toFixed(2)} kg
+      </span>
+    </div>
+
+  </div>
+</Card>
 </Card>
 
     </div>
