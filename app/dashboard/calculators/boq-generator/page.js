@@ -6,20 +6,27 @@ import { ChevronLeft, Plus, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 export default function BOQGeneratorPage() {
   const [projectName, setProjectName] = useState('')
 
   const [items, setItems] = useState([
     {
-      itemName: '',
-      unit: 'm³',
-      length: '',
-      width: '',
-      height: '',
-      quantity: '',
-      rate: '',
-    },
+  category: 'RCC',
+  itemName: '',
+  unit: 'm³',
+  length: '',
+  width: '',
+  height: '',
+  quantity: '',
+  rate: '',
+}
   ])
 
   const calculateQuantity = (item) => {
@@ -54,14 +61,15 @@ const grandTotal =
     setItems([
       ...items,
       {
-        itemName: '',
-        unit: 'm³',
-        length: '',
-        width: '',
-        height: '',
-        quantity: '',
-        rate: '',
-      },
+  category: 'RCC',
+  itemName: '',
+  unit: 'm³',
+  length: '',
+  width: '',
+  height: '',
+  quantity: '',
+  rate: '',
+}
     ])
   }
 
@@ -76,14 +84,15 @@ const resetBOQ = () => {
 
   setItems([
     {
-      itemName: '',
-      unit: 'm³',
-      length: '',
-      width: '',
-      height: '',
-      quantity: '',
-      rate: '',
-    },
+  category: 'RCC',
+  itemName: '',
+  unit: 'm³',
+  length: '',
+  width: '',
+  height: '',
+  quantity: '',
+  rate: '',
+}
   ])
 }
 
@@ -159,13 +168,14 @@ const updateItem = (index, field, value) => {
           <table className="min-w-[1000px] text-sm">
             <thead>
               <tr className="text-slate-400 border-b border-slate-700">
-                <th>Item</th>
-                <th>Unit</th>
-                <th>Length</th>
-                <th>Width</th>
-                <th>Height</th>
-                <th>Qty</th>
-                <th>Rate</th>
+<th>Category</th>
+<th>Item</th>
+<th>Unit</th>
+<th>Length</th>
+<th>Width</th>
+<th>Height</th>
+<th>Qty</th>
+<th>Rate</th>
                <th className="px-3">Quantity</th>
 <th className="px-3">Amount</th>
                 <th></th>
@@ -175,6 +185,29 @@ const updateItem = (index, field, value) => {
             <tbody>
               {items.map((item, index) => (
                 <tr key={index}>
+                <td>
+  <Select
+    value={item.category}
+    onValueChange={(value) =>
+      updateItem(index, 'category', value)
+    }
+  >
+    <SelectTrigger className="bg-slate-800 border-slate-700 text-white min-w-[140px]">
+      <SelectValue />
+    </SelectTrigger>
+
+    <SelectContent>
+      <SelectItem value="RCC">RCC</SelectItem>
+      <SelectItem value="PCC">PCC</SelectItem>
+      <SelectItem value="Brickwork">Brickwork</SelectItem>
+      <SelectItem value="Plaster">Plaster</SelectItem>
+      <SelectItem value="Flooring">Flooring</SelectItem>
+      <SelectItem value="Excavation">Excavation</SelectItem>
+      <SelectItem value="Steel">Steel</SelectItem>
+      <SelectItem value="Painting">Painting</SelectItem>
+    </SelectContent>
+  </Select>
+</td>
                   <td>
                     <Input
                       className="bg-slate-800 border-slate-700 text-white"
