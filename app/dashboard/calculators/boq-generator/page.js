@@ -476,13 +476,7 @@ const updateItem = (index, field, value) => {
   </span>
 </div>
 
-          <div className="border-t border-slate-700 pt-3 flex justify-between">
-            <span className="text-lg font-bold text-white">
-              Grand Total
-            </span>
-
-            <span className="text-2xl font-bold text-green-400">
-    <div className="flex justify-between">
+          <div className="flex justify-between">
   <span className="text-slate-400">
     Material Cost
   </span>
@@ -521,10 +515,16 @@ const updateItem = (index, field, value) => {
     ₹ {marginAmount.toFixed(2)}
   </span>
 </div>
-              ₹ {finalGrandTotal.toFixed(2)}
-            </span>
-          </div>
-        </div>
+
+<div className="border-t border-slate-700 pt-3 flex justify-between">
+  <span className="text-lg font-bold text-white">
+    Grand Total
+  </span>
+
+  <span className="text-2xl font-bold text-green-400">
+    ₹ {finalGrandTotal.toFixed(2)}
+  </span>
+</div>        </div>
       </Card>
     </div>
   )
