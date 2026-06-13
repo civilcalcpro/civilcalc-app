@@ -127,6 +127,13 @@ const grandTotal =
 
 const finalGrandTotal =
   grandTotal + marginAmount
+  const getFormula = (item) => {
+  return `${item.length || 0} × ${
+    item.width || 0
+  } × ${item.height || 0} × ${
+    item.quantity || 0
+  }`
+}
   const addRow = () => {
     setItems([
       ...items,
@@ -641,6 +648,55 @@ const updateItem = (index, field, value) => {
   </span>
 </div>        </div>
       </Card>
+
+<Card className="mt-6 bg-slate-900/50 border-slate-800 p-6">
+  <h2 className="text-xl font-bold text-white mb-4">
+    Detailed Quantity Sheet
+  </h2>
+
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-slate-700 text-slate-400">
+          <th className="text-left py-2">
+            Description
+          </th>
+
+          <th className="text-left py-2">
+            Formula
+          </th>
+
+          <th className="text-right py-2">
+            Result
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {items.map((item, index) => (
+          <tr
+            key={index}
+            className="border-b border-slate-800"
+          >
+            <td className="py-2 text-white">
+              {item.itemName || item.category}
+            </td>
+
+            <td className="py-2 text-slate-300">
+              {getFormula(item)}
+            </td>
+
+            <td className="py-2 text-right text-green-400">
+              {calculateQuantity(item).toFixed(2)}{' '}
+              {item.unit}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</Card>
+
     </div>
   )
 }
