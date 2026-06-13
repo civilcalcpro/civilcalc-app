@@ -223,16 +223,22 @@ const getUnitByCategory = (category) => {
     case 'Earthwork':
     case 'PCC':
     case 'RCC':
-    case 'Brickwork':
+    case 'Masonry':
       return 'm³'
 
     case 'Plaster':
     case 'Flooring':
     case 'Painting':
+    case 'Waterproofing':
+    case 'Formwork':
       return 'm²'
 
     case 'Steel':
+    case 'Reinforcement':
       return 'kg'
+
+    case 'RoadWork':
+      return 'm'
 
     default:
       return 'Nos'
@@ -435,15 +441,66 @@ const updateItem = (index, field, value) => {
       </SelectTrigger>
 
       <SelectContent>
-        <SelectItem value="Earthwork">Earthwork</SelectItem>
-        <SelectItem value="PCC">PCC</SelectItem>
-        <SelectItem value="RCC">RCC</SelectItem>
-        <SelectItem value="Brickwork">Brickwork</SelectItem>
-        <SelectItem value="Plaster">Plaster</SelectItem>
-        <SelectItem value="Flooring">Flooring</SelectItem>
-        <SelectItem value="Steel">Steel</SelectItem>
-        <SelectItem value="Painting">Painting</SelectItem>
-      </SelectContent>
+  <SelectItem value="Earthwork">
+    Earthwork
+  </SelectItem>
+
+  <SelectItem value="PCC">
+    PCC
+  </SelectItem>
+
+  <SelectItem value="RCC">
+    RCC
+  </SelectItem>
+
+  <SelectItem value="Reinforcement">
+    Reinforcement
+  </SelectItem>
+
+  <SelectItem value="Formwork">
+    Formwork/Shuttering
+  </SelectItem>
+
+  <SelectItem value="Masonry">
+    Masonry
+  </SelectItem>
+
+  <SelectItem value="Plaster">
+    Plaster
+  </SelectItem>
+
+  <SelectItem value="Flooring">
+    Flooring
+  </SelectItem>
+
+  <SelectItem value="Painting">
+    Painting
+  </SelectItem>
+
+  <SelectItem value="Waterproofing">
+    Waterproofing
+  </SelectItem>
+
+  <SelectItem value="DoorsWindows">
+    Doors & Windows
+  </SelectItem>
+
+  <SelectItem value="Plumbing">
+    Plumbing
+  </SelectItem>
+
+  <SelectItem value="Electrical">
+    Electrical
+  </SelectItem>
+
+  <SelectItem value="RoadWork">
+    Road Work
+  </SelectItem>
+
+  <SelectItem value="Steel">
+    Steel
+  </SelectItem>
+</SelectContent>
     </Select>
   </td>
 
