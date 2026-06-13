@@ -129,8 +129,8 @@ const grandTotal =
   </div>
 
 </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto pb-2">
+          <table className="min-w-[1000px] text-sm">
             <thead>
               <tr className="text-slate-400 border-b border-slate-700">
                 <th>Item</th>
