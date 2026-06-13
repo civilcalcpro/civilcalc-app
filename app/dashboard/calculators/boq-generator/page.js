@@ -266,6 +266,17 @@ const getUnitByCategory = (category) => {
   }
 }
 const updateItem = (index, field, value) => {
+    const updated = [...items]
+
+  updated[index][field] = value
+
+  if (field === 'category') {
+    updated[index].unit =
+      getUnitByCategory(value)
+  }
+
+  setItems(updated)
+}
   const saveDraft = async () => {
   try {
     await addDoc(
@@ -298,20 +309,8 @@ const updateItem = (index, field, value) => {
     alert('BOQ Draft Saved Successfully')
   } catch (error) {
     console.error(error)
-
     alert('Failed To Save Draft')
   }
-}
-  const updated = [...items]
-
-  updated[index][field] = value
-
-  if (field === 'category') {
-    updated[index].unit =
-      getUnitByCategory(value)
-  }
-
-  setItems(updated)
 }
   return (
     <div className="p-6 lg:p-10 max-w-7xl">
