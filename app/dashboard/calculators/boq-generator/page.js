@@ -35,6 +35,7 @@ const [equipmentRate, setEquipmentRate] = useState(0)
 const [contractorMargin, setContractorMargin] = useState(10)
   const [savedProjects, setSavedProjects] = useState([])
   const [currentProjectId, setCurrentProjectId] = useState(null)
+  const [projectDetailsSaved, setProjectDetailsSaved] = useState(false)
   const [items, setItems] = useState([
     {
   category: 'RCC',
