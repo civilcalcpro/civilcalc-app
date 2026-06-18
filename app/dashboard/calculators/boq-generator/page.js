@@ -33,6 +33,7 @@ export default function BOQGeneratorPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
               placeholder="Project Name"
               value={project.projectName}
               onChange={(e) =>
@@ -44,6 +45,7 @@ export default function BOQGeneratorPage() {
             />
 
             <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
               placeholder="Client Name"
               value={project.clientName}
               onChange={(e) =>
@@ -55,6 +57,7 @@ export default function BOQGeneratorPage() {
             />
 
             <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
               placeholder="Project Location"
               value={project.projectLocation}
               onChange={(e) =>
@@ -66,6 +69,7 @@ export default function BOQGeneratorPage() {
             />
 
             <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
               placeholder="Prepared By"
               value={project.preparedBy}
               onChange={(e) =>
@@ -77,6 +81,7 @@ export default function BOQGeneratorPage() {
             />
 
             <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
               type="date"
               value={project.date}
               onChange={(e) =>
@@ -88,6 +93,7 @@ export default function BOQGeneratorPage() {
             />
 
             <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
               placeholder="Revision Number"
               value={project.revisionNo}
               onChange={(e) =>
