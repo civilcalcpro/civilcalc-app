@@ -7,6 +7,21 @@ import { Input } from '@/components/ui/input'
 
 export default function BOQGeneratorPage() {
   const [projectSaved, setProjectSaved] = useState(false)
+  const [showItemForm, setShowItemForm] = useState(false)
+
+const [boqItems, setBoqItems] = useState([])
+
+const [itemData, setItemData] = useState({
+  category: '',
+  item: '',
+  description: '',
+  unit: '',
+  length: '',
+  width: '',
+  height: '',
+  nos: '',
+  rate: '',
+})
 
   const [project, setProject] = useState({
     projectName: '',
@@ -141,11 +156,83 @@ export default function BOQGeneratorPage() {
           </p>
         </div>
 
-        <Button>
-          + Add BOQ Item
-        </Button>
+        <Button
+        onClick={() => setShowItemForm(true)}
+       >
+         + Add BOQ Item
+       </Button>
 
       </div>
+          {showItemForm && (
+  <div className="mt-6 border-t border-slate-700 pt-6">
+
+    <h3 className="text-white font-bold mb-4">
+      Add BOQ Item
+    </h3>
+
+    <Input
+      className="bg-slate-800 text-white mb-3"
+      placeholder="Category (RCC, PCC, Brickwork)"
+      value={itemData.category}
+      onChange={(e) =>
+        setItemData({
+          ...itemData,
+          category: e.target.value,
+        })
+      }
+    />
+
+    <Input
+      className="bg-slate-800 text-white mb-3"
+      placeholder="Item Name"
+      value={itemData.item}
+      onChange={(e) =>
+        setItemData({
+          ...itemData,
+          item: e.target.value,
+        })
+      }
+    />
+
+    <Input
+      className="bg-slate-800 text-white mb-3"
+      placeholder="Description"
+      value={itemData.description}
+      onChange={(e) =>
+        setItemData({
+          ...itemData,
+          description: e.target.value,
+        })
+      }
+    />
+
+    <Button
+      onClick={() => {
+        setBoqItems([
+          ...boqItems,
+          itemData,
+        ])
+
+        setItemData({
+          category: '',
+          item: '',
+          description: '',
+          unit: '',
+          length: '',
+          width: '',
+          height: '',
+          nos: '',
+          rate: '',
+        })
+
+        setShowItemForm(false)
+      }}
+    >
+      Add To BOQ
+    </Button>
+
+  </div>
+)}
 
     </Card>
 
