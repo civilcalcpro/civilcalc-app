@@ -117,20 +117,37 @@ export default function BOQGeneratorPage() {
   }
 
   return (
-    <div className="p-6 lg:p-10">
-      <h1 className="text-3xl font-bold text-white mb-6">
-        BOQ Builder
-      </h1>
+  <div className="p-6 lg:p-10">
 
-      <Card className="bg-slate-900/50 border-slate-800 p-6">
-        <p className="text-white">
-          Project Saved Successfully
-        </p>
+    <h1 className="text-3xl font-bold text-white mb-2">
+      BOQ Builder
+    </h1>
 
-        <p className="text-slate-400 mt-2">
-          Next Step: Add BOQ Item
-        </p>
-      </Card>
-    </div>
-  )
-}
+    <p className="text-slate-400 mb-6">
+      Project: {project.projectName}
+    </p>
+
+    <Card className="bg-slate-900/50 border-slate-800 p-6">
+
+      <div className="flex justify-between items-center">
+
+        <div>
+          <h2 className="text-xl font-bold text-white">
+            BOQ Items
+          </h2>
+
+          <p className="text-slate-400">
+            Add project items one by one
+          </p>
+        </div>
+
+        <Button>
+          + Add BOQ Item
+        </Button>
+
+      </div>
+
+    </Card>
+
+  </div>
+)
