@@ -59,11 +59,42 @@ const [itemData, setItemData] = useState({
   rate: '',
   amount: 0,
 })
-  const calculatedQuantity =
-  (Number(itemData.length) || 0) *
-  (Number(itemData.width) || 0) *
-  (Number(itemData.height) || 0) *
-  (Number(itemData.nos) || 0)
+ let calculatedQuantity = 0
+
+const length = Number(itemData.length) || 0
+const width = Number(itemData.width) || 0
+const height = Number(itemData.height) || 0
+const nos = Number(itemData.nos) || 0
+
+switch (itemData.category) {
+
+  case 'RCC':
+  case 'PCC':
+  case 'Brickwork':
+    calculatedQuantity =
+      length * width * height * nos
+    break
+
+  case 'Plaster':
+  case 'Painting':
+    calculatedQuantity =
+      length * height * nos
+    break
+
+  case 'Flooring':
+    calculatedQuantity =
+      length * width * nos
+    break
+
+  default:
+    calculatedQuantity =
+      length * width * height * nos
+}
+  const requiresWidth =
+  ['RCC', 'PCC', 'Brickwork', 'Flooring'].includes(itemData.category)
+
+const requiresHeight =
+  ['RCC', 'PCC', 'Brickwork', 'Plaster', 'Painting'].includes(itemData.category)
   const materialDatabase = {
   M20: {
     cement: 8.06,
@@ -374,6 +405,7 @@ const steelQty =
     }
   />
 
+ {requiresWidth && (
   <Input
     className="bg-slate-800 text-white"
     placeholder="Width"
@@ -386,7 +418,9 @@ const steelQty =
       })
     }
   />
+)}
 
+ {requiresHeight && (
   <Input
     className="bg-slate-800 text-white"
     placeholder="Height"
@@ -399,7 +433,7 @@ const steelQty =
       })
     }
   />
-
+)}
   <Input
     className="bg-slate-800 text-white"
     placeholder="Nos"
