@@ -10,6 +10,7 @@ export default function BOQGeneratorPage() {
   const [showItemForm, setShowItemForm] = useState(false)
 
 const [boqItems, setBoqItems] = useState([])
+  const [savedDrafts, setSavedDrafts] = useState([])
   const [editingIndex, setEditingIndex] = useState(null)
 const categoryItems = {
   RCC: [
@@ -178,6 +179,25 @@ const totalSteel = boqItems.reduce(
   (sum, item) => sum + (item.steelQty || 0),
   0
 )
+  const saveDraft = () => {
+
+  const draft = {
+    id: Date.now(),
+
+    project,
+
+    boqItems,
+
+    createdAt: new Date().toLocaleString(),
+  }
+
+  setSavedDrafts([
+    ...savedDrafts,
+    draft,
+  ])
+
+  alert('Draft Saved Successfully')
+}
 const subtotal = boqItems.reduce(
   (sum, item) => sum + (item.amount || 0),
   0
@@ -939,7 +959,15 @@ const grandTotal =
     </div>
 
   </div>
+<div className="mt-6 flex gap-3">
 
+  <Button
+    onClick={saveDraft}
+  >
+    Save Draft
+  </Button>
+
+</div>
 </Card>
           </>
 )}
