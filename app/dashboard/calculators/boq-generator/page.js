@@ -154,6 +154,25 @@ const aggregateQty =
 const steelQty =
   calculatedQuantity *
   (steelRatio[itemData.item] || 0)
+  const totalCement = boqItems.reduce(
+  (sum, item) => sum + (item.cementBags || 0),
+  0
+)
+
+const totalSand = boqItems.reduce(
+  (sum, item) => sum + (item.sandQty || 0),
+  0
+)
+
+const totalAggregate = boqItems.reduce(
+  (sum, item) => sum + (item.aggregateQty || 0),
+  0
+)
+
+const totalSteel = boqItems.reduce(
+  (sum, item) => sum + (item.steelQty || 0),
+  0
+)
 
   const [project, setProject] = useState({
     projectName: '',
@@ -565,24 +584,21 @@ const steelQty =
       return
     }
 
-    const newItem = {
-      ...itemData,
+   const newItem = {
+  ...itemData,
 
-      quantity:
-        (Number(itemData.length) || 0) *
-        (Number(itemData.width) || 0) *
-        (Number(itemData.height) || 0) *
-        (Number(itemData.nos) || 0),
+  quantity:
+    calculatedQuantity,
 
-      amount:
-        (
-          (Number(itemData.length) || 0) *
-          (Number(itemData.width) || 0) *
-          (Number(itemData.height) || 0) *
-          (Number(itemData.nos) || 0)
-        ) *
-        (Number(itemData.rate) || 0),
-    }
+  amount:
+    calculatedQuantity *
+    (Number(itemData.rate) || 0),
+
+  cementBags,
+  sandQty,
+  aggregateQty,
+  steelQty,
+}
 
     if (editingIndex !== null) {
 
@@ -744,6 +760,45 @@ const steelQty =
       </tbody>
 
     </table>
+
+  </div>
+
+</Card>
+<Card className="bg-slate-900/50 border-slate-800 p-6 mt-6">
+
+  <h2 className="text-xl font-bold text-white mb-4">
+    Material Summary
+  </h2>
+
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+    <div>
+      <p className="text-slate-400">Total Cement</p>
+      <p className="text-2xl font-bold text-white">
+        {totalCement.toFixed(2)} Bags
+      </p>
+    </div>
+
+    <div>
+      <p className="text-slate-400">Total Sand</p>
+      <p className="text-2xl font-bold text-white">
+        {totalSand.toFixed(2)} m³
+      </p>
+    </div>
+
+    <div>
+      <p className="text-slate-400">Total Aggregate</p>
+      <p className="text-2xl font-bold text-white">
+        {totalAggregate.toFixed(2)} m³
+      </p>
+    </div>
+
+    <div>
+      <p className="text-slate-400">Total Steel</p>
+      <p className="text-2xl font-bold text-green-400">
+        {totalSteel.toFixed(2)} Kg
+      </p>
+    </div>
 
   </div>
 
