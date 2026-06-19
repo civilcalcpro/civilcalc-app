@@ -829,37 +829,56 @@ const grandTotal =
   <h2 className="text-xl font-bold text-white mb-4">
     Cost Summary
   </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
-  <Input
-    className="bg-slate-800 text-white"
-    type="number"
-    placeholder="GST %"
-    value={gstPercent}
-    onChange={(e) =>
-      setGstPercent(Number(e.target.value))
-    }
-  />
+  <div>
+    <label className="text-slate-400 text-sm block mb-2">
+      GST Percentage (%)
+    </label>
 
-  <Input
-    className="bg-slate-800 text-white"
-    type="number"
-    placeholder="Contractor Margin %"
-    value={contractorMarginPercent}
-    onChange={(e) =>
-      setContractorMarginPercent(Number(e.target.value))
-    }
-  />
+    <Input
+      className="bg-slate-800 text-white"
+      type="number"
+      value={gstPercent}
+      onChange={(e) =>
+        setGstPercent(Number(e.target.value))
+      }
+    />
+  </div>
 
-  <Input
-    className="bg-slate-800 text-white"
-    type="number"
-    placeholder="Wastage %"
-    value={wastagePercent}
-    onChange={(e) =>
-      setWastagePercent(Number(e.target.value))
-    }
-  />
+  <div>
+    <label className="text-slate-400 text-sm block mb-2">
+      Contractor Margin (%)
+    </label>
+
+    <Input
+      className="bg-slate-800 text-white"
+      type="number"
+      value={contractorMarginPercent}
+      onChange={(e) =>
+        setContractorMarginPercent(
+          Number(e.target.value)
+        )
+      }
+    />
+  </div>
+
+  <div>
+    <label className="text-slate-400 text-sm block mb-2">
+      Wastage Percentage (%)
+    </label>
+
+    <Input
+      className="bg-slate-800 text-white"
+      type="number"
+      value={wastagePercent}
+      onChange={(e) =>
+        setWastagePercent(
+          Number(e.target.value)
+        )
+      }
+    />
+  </div>
 
 </div>
 
@@ -877,7 +896,7 @@ const grandTotal =
 
     <div className="flex justify-between">
       <span className="text-slate-400">
-        Wastage (5%)
+       Wastage ({wastagePercent}%)
       </span>
 
       <span className="text-white">
@@ -887,7 +906,7 @@ const grandTotal =
 
     <div className="flex justify-between">
       <span className="text-slate-400">
-        GST (18%)
+       GST ({gstPercent}%)
       </span>
 
       <span className="text-white">
@@ -897,7 +916,7 @@ const grandTotal =
 
     <div className="flex justify-between">
       <span className="text-slate-400">
-        Contractor Margin (10%)
+       Contractor Margin ({contractorMarginPercent}%)
       </span>
 
       <span className="text-white">
