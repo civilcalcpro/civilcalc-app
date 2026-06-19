@@ -803,7 +803,7 @@ const totalSteel = boqItems.reduce(
 </Card>
           </>
 )}
-
+    </Card>
   </div>
 )
 }
