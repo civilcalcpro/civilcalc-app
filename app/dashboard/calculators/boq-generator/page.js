@@ -988,61 +988,6 @@ const grandTotal =
 
 </div>
 </Card>
-      {savedDrafts.length > 0 && (
-
-<Card className="bg-slate-900/50 border-slate-800 p-6 mt-6">
-
-  <h2 className="text-xl font-bold text-white mb-4">
-    Saved Drafts
-  </h2>
-
-  <div className="space-y-3">
-
-    {savedDrafts.map((draft) => (
-
-      <div
-        key={draft.id}
-        className="bg-slate-800 p-4 rounded-lg flex justify-between items-center"
-      >
-
-        <div>
-
-          <p className="text-white font-semibold">
-            {draft.project?.projectName || 'Untitled Project'}
-          </p>
-
-          <p className="text-slate-400 text-sm">
-            {draft.createdAt}
-          </p>
-
-        </div>
-
-        <div className="flex gap-2">
-
-          <Button
-            size="sm"
-          >
-            Load
-          </Button>
-
-          <Button
-            variant="destructive"
-            size="sm"
-          >
-            Delete
-          </Button>
-
-        </div>
-
-      </div>
-
-    ))}
-
-  </div>
-
-</Card>
-
-)}
 
   </>
 )}
