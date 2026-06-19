@@ -1043,7 +1043,6 @@ const grandTotal =
 </Card>
 
 )}
-    </Card>
   </div>
 )
 }
