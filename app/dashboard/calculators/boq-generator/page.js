@@ -206,8 +206,6 @@ localStorage.setItem(
 }
  useEffect(() => {
 
- useEffect(() => {
-
   const drafts =
     localStorage.getItem('boqDrafts')
 
