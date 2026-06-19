@@ -736,7 +736,6 @@ const totalSteel = boqItems.reduce(
         >
           Duplicate
          </Button>
-              </Button>
               <Button
                 variant="destructive"
                 size="sm"
@@ -805,7 +804,6 @@ const totalSteel = boqItems.reduce(
 </Card>
 
 )}
-    </Card>
 
   </div>
 )
