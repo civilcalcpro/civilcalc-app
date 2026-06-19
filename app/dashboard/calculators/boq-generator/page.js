@@ -49,6 +49,7 @@ const [itemData, setItemData] = useState({
   category: '',
   item: '',
   description: '',
+  grade: '',
   unit: '',
   length: '',
   width: '',
@@ -266,6 +267,27 @@ const [itemData, setItemData] = useState({
         })
       }
     />
+    <select
+  className="w-full h-10 rounded-md bg-slate-800 text-white border border-slate-700 mb-3 px-3"
+  value={itemData.grade}
+  onChange={(e) =>
+    setItemData({
+      ...itemData,
+      grade: e.target.value,
+    })
+  }
+>
+  <option value="">Select Concrete Grade</option>
+
+  <option value="M10">M10</option>
+  <option value="M15">M15</option>
+  <option value="M20">M20</option>
+  <option value="M25">M25</option>
+  <option value="M30">M30</option>
+  <option value="M35">M35</option>
+  <option value="M40">M40</option>
+
+</select>
     <Input
   className="bg-slate-800 text-white mb-3"
   placeholder="Unit"
