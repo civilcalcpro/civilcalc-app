@@ -10,7 +10,40 @@ export default function BOQGeneratorPage() {
   const [showItemForm, setShowItemForm] = useState(false)
 
 const [boqItems, setBoqItems] = useState([])
+const categoryItems = {
+  RCC: [
+    'RCC Beam',
+    'RCC Column',
+    'RCC Slab',
+    'RCC Footing',
+    'RCC Staircase',
+  ],
 
+  PCC: [
+    'PCC Bed',
+    'PCC Flooring',
+  ],
+
+  Brickwork: [
+    'Brick Wall',
+    'Half Brick Wall',
+  ],
+
+  Plaster: [
+    'Internal Plaster',
+    'External Plaster',
+  ],
+
+  Flooring: [
+    'Vitrified Tiles',
+    'Granite Flooring',
+  ],
+
+  Painting: [
+    'Internal Painting',
+    'External Painting',
+  ],
+}
 const [itemData, setItemData] = useState({
   category: '',
   item: '',
@@ -20,6 +53,7 @@ const [itemData, setItemData] = useState({
   width: '',
   height: '',
   nos: '',
+  quantity: '',
   rate: '',
 })
 
