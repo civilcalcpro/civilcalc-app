@@ -703,39 +703,52 @@ const totalSteel = boqItems.reduce(
               ₹{Number(row.amount).toFixed(2)}
             </td>
 
-            <td className="p-2">
-            <Button
-             size="sm"
-             className="mr-2"
-            onClick={() => {
+          <td className="p-2">
 
-           setItemData(row)
+  <Button
+    size="sm"
+    className="mr-2"
+    onClick={() => {
+      setItemData(row)
+      setEditingIndex(index)
+      setShowItemForm(true)
+    }}
+  >
+    Edit
+  </Button>
 
-          setEditingIndex(index)
+  <Button
+    size="sm"
+    className="mr-2"
+    onClick={() => {
+      const duplicatedItem = {
+        ...row
+      }
 
-          setShowItemForm(true)
+      setBoqItems([
+        ...boqItems,
+        duplicatedItem
+      ])
+    }}
+  >
+    Duplicate
+  </Button>
 
-             }}
-          >
-           Edit
-         <Button
-         size="sm"
-         className="mr-2"
-       onClick={() => {
+  <Button
+    variant="destructive"
+    size="sm"
+    onClick={() =>
+      setBoqItems(
+        boqItems.filter(
+          (_, i) => i !== index
+        )
+      )
+    }
+  >
+    Delete
+  </Button>
 
-       const duplicatedItem = {
-         ...row
-        }
-
-        setBoqItems([
-      ...boqItems,
-      duplicatedItem
-        ])
-
-      }}
-        >
-          Duplicate
-         </Button>
+</td>
               <Button
                 variant="destructive"
                 size="sm"
