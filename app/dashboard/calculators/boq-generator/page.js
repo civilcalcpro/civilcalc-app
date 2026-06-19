@@ -203,18 +203,32 @@ localStorage.setItem(
 )
   alert('Draft Saved Successfully')
 }
-  useEffect(() => {
+ useEffect(() => {
 
   const drafts =
     localStorage.getItem('boqDrafts')
 
   if (drafts) {
 
-    setSavedDrafts(
+    const parsedDrafts =
       JSON.parse(drafts)
-    )
+
+    setSavedDrafts(parsedDrafts)
+
+    if (parsedDrafts.length > 0) {
+
+      const latestDraft =
+        parsedDrafts[parsedDrafts.length - 1]
+
+      setProject(latestDraft.project)
+
+      setBoqItems(latestDraft.boqItems)
+
+    }
 
   }
+
+}, [])
 
 }, [])
 const subtotal = boqItems.reduce(
