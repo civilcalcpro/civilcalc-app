@@ -643,6 +643,7 @@ const totalSteel = boqItems.reduce(
   </div>
 )}
 {boqItems.length > 0 && (
+  <>
 
 <Card className="bg-slate-900/50 border-slate-800 p-6 mt-6">
 
@@ -800,7 +801,7 @@ const totalSteel = boqItems.reduce(
   </div>
 
 </Card>
-
+          </>
 )}
 
   </div>
