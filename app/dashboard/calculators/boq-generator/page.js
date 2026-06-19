@@ -491,15 +491,7 @@ const [itemData, setItemData] = useState({
               <Button
                 variant="destructive"
                 size="sm"
-                if (
-                !itemData.category ||
-                !itemData.item ||
-                !itemData.description
-                ) {
-               alert('Please fill all required fields')
-              return
-                }
-                onClick={() =>
+                 onClick={() =>
                   setBoqItems(
                     boqItems.filter(
                       (_, i) => i !== index
