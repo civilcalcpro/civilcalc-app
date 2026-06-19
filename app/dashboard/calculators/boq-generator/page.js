@@ -363,34 +363,47 @@ const [itemData, setItemData] = useState({
         setShowItemForm(false)
       }}
     >
-    <div className="bg-slate-800 rounded-lg p-4 mb-4">
+  <Card className="bg-slate-800 border-slate-700 p-4 mb-4">
 
-  <p className="text-white">
-    Quantity:
-    {' '}
-    {(
-      (Number(itemData.length) || 0) *
-      (Number(itemData.width) || 0) *
-      (Number(itemData.height) || 0) *
-      (Number(itemData.nos) || 0)
-    ).toFixed(2)}
-  </p>
+  <div className="grid grid-cols-2 gap-4">
 
-  <p className="text-white mt-2">
-    Amount:
-    ₹
-    {(
-      (
-        (Number(itemData.length) || 0) *
-        (Number(itemData.width) || 0) *
-        (Number(itemData.height) || 0) *
-        (Number(itemData.nos) || 0)
-      ) *
-      (Number(itemData.rate) || 0)
-    ).toFixed(2)}
-  </p>
+    <div>
+      <p className="text-slate-400 text-sm">
+        Calculated Quantity
+      </p>
 
-</div>
+      <p className="text-2xl font-bold text-white">
+        {(
+          (Number(itemData.length) || 0) *
+          (Number(itemData.width) || 0) *
+          (Number(itemData.height) || 0) *
+          (Number(itemData.nos) || 0)
+        ).toFixed(2)}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-slate-400 text-sm">
+        Calculated Amount
+      </p>
+
+      <p className="text-2xl font-bold text-green-400">
+        ₹
+        {(
+          (
+            (Number(itemData.length) || 0) *
+            (Number(itemData.width) || 0) *
+            (Number(itemData.height) || 0) *
+            (Number(itemData.nos) || 0)
+          ) *
+          (Number(itemData.rate) || 0)
+        ).toFixed(2)}
+      </p>
+    </div>
+
+  </div>
+
+</Card>
       Add To BOQ
     </Button>
 
