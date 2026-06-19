@@ -734,21 +734,6 @@ const totalSteel = boqItems.reduce(
     Duplicate
   </Button>
 
-  <Button
-    variant="destructive"
-    size="sm"
-    onClick={() =>
-      setBoqItems(
-        boqItems.filter(
-          (_, i) => i !== index
-        )
-      )
-    }
-  >
-    Delete
-  </Button>
-
-</td>
               <Button
                 variant="destructive"
                 size="sm"
