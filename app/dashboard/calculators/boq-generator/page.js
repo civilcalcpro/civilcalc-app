@@ -992,6 +992,8 @@ const grandTotal =
   </>
 )}
 
+</Card>
+
 </div>
 )
 }
