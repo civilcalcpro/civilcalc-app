@@ -59,6 +59,11 @@ const [itemData, setItemData] = useState({
   rate: '',
   amount: 0,
 })
+  const [gstPercent, setGstPercent] = useState(18)
+
+const [contractorMarginPercent, setContractorMarginPercent] = useState(10)
+
+const [wastagePercent, setWastagePercent] = useState(5)
  let calculatedQuantity = 0
 
 const length = Number(itemData.length) || 0
@@ -173,7 +178,25 @@ const totalSteel = boqItems.reduce(
   (sum, item) => sum + (item.steelQty || 0),
   0
 )
+const subtotal = boqItems.reduce(
+  (sum, item) => sum + (item.amount || 0),
+  0
+)
 
+const gstAmount =
+  subtotal * gstPercent / 100
+
+const contractorMarginAmount =
+  subtotal * contractorMarginPercent / 100
+
+const wastageAmount =
+  subtotal * wastagePercent / 100
+
+const grandTotal =
+  subtotal +
+  gstAmount +
+  contractorMarginAmount +
+  wastageAmount
   const [project, setProject] = useState({
     projectName: '',
     clientName: '',
@@ -796,6 +819,71 @@ const totalSteel = boqItems.reduce(
       <p className="text-2xl font-bold text-green-400">
         {totalSteel.toFixed(2)} Kg
       </p>
+    </div>
+
+  </div>
+
+</Card>
+          <Card className="bg-slate-900/50 border-slate-800 p-6 mt-6">
+
+  <h2 className="text-xl font-bold text-white mb-4">
+    Cost Summary
+  </h2>
+
+  <div className="space-y-3">
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Subtotal
+      </span>
+
+      <span className="text-white">
+        ₹{subtotal.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Wastage (5%)
+      </span>
+
+      <span className="text-white">
+        ₹{wastageAmount.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        GST (18%)
+      </span>
+
+      <span className="text-white">
+        ₹{gstAmount.toFixed(2)}
+      </span>
+    </div>
+
+    <div className="flex justify-between">
+      <span className="text-slate-400">
+        Contractor Margin (10%)
+      </span>
+
+      <span className="text-white">
+        ₹{contractorMarginAmount.toFixed(2)}
+      </span>
+    </div>
+
+    <hr className="border-slate-700" />
+
+    <div className="flex justify-between">
+
+      <span className="text-2xl font-bold text-white">
+        Grand Total
+      </span>
+
+      <span className="text-3xl font-bold text-green-400">
+        ₹{grandTotal.toFixed(2)}
+      </span>
+
     </div>
 
   </div>
