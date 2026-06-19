@@ -53,8 +53,9 @@ const [itemData, setItemData] = useState({
   width: '',
   height: '',
   nos: '',
-  quantity: '',
+  quantity: 0 ,
   rate: '',
+  amount: 0,
 })
 
   const [project, setProject] = useState({
@@ -264,6 +265,81 @@ const [itemData, setItemData] = useState({
         })
       }
     />
+    <Input
+  className="bg-slate-800 text-white mb-3"
+  placeholder="Unit"
+  value={itemData.unit}
+  readOnly
+/>
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+
+  <Input
+    className="bg-slate-800 text-white"
+    placeholder="Length"
+    type="number"
+    value={itemData.length}
+    onChange={(e) =>
+      setItemData({
+        ...itemData,
+        length: e.target.value,
+      })
+    }
+  />
+
+  <Input
+    className="bg-slate-800 text-white"
+    placeholder="Width"
+    type="number"
+    value={itemData.width}
+    onChange={(e) =>
+      setItemData({
+        ...itemData,
+        width: e.target.value,
+      })
+    }
+  />
+
+  <Input
+    className="bg-slate-800 text-white"
+    placeholder="Height"
+    type="number"
+    value={itemData.height}
+    onChange={(e) =>
+      setItemData({
+        ...itemData,
+        height: e.target.value,
+      })
+    }
+  />
+
+  <Input
+    className="bg-slate-800 text-white"
+    placeholder="Nos"
+    type="number"
+    value={itemData.nos}
+    onChange={(e) =>
+      setItemData({
+        ...itemData,
+        nos: e.target.value,
+      })
+    }
+  />
+
+</div>
+
+<Input
+  className="bg-slate-800 text-white mb-3"
+  placeholder="Rate"
+  type="number"
+  value={itemData.rate}
+  onChange={(e) =>
+    setItemData({
+      ...itemData,
+      rate: e.target.value,
+    })
+  }
+/>
 
     <Button
       onClick={() => {
@@ -287,6 +363,34 @@ const [itemData, setItemData] = useState({
         setShowItemForm(false)
       }}
     >
+    <div className="bg-slate-800 rounded-lg p-4 mb-4">
+
+  <p className="text-white">
+    Quantity:
+    {' '}
+    {(
+      (Number(itemData.length) || 0) *
+      (Number(itemData.width) || 0) *
+      (Number(itemData.height) || 0) *
+      (Number(itemData.nos) || 0)
+    ).toFixed(2)}
+  </p>
+
+  <p className="text-white mt-2">
+    Amount:
+    ₹
+    {(
+      (
+        (Number(itemData.length) || 0) *
+        (Number(itemData.width) || 0) *
+        (Number(itemData.height) || 0) *
+        (Number(itemData.nos) || 0)
+      ) *
+      (Number(itemData.rate) || 0)
+    ).toFixed(2)}
+  </p>
+
+</div>
       Add To BOQ
     </Button>
 
