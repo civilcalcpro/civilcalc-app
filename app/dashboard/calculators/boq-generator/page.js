@@ -829,6 +829,39 @@ const grandTotal =
   <h2 className="text-xl font-bold text-white mb-4">
     Cost Summary
   </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+
+  <Input
+    className="bg-slate-800 text-white"
+    type="number"
+    placeholder="GST %"
+    value={gstPercent}
+    onChange={(e) =>
+      setGstPercent(Number(e.target.value))
+    }
+  />
+
+  <Input
+    className="bg-slate-800 text-white"
+    type="number"
+    placeholder="Contractor Margin %"
+    value={contractorMarginPercent}
+    onChange={(e) =>
+      setContractorMarginPercent(Number(e.target.value))
+    }
+  />
+
+  <Input
+    className="bg-slate-800 text-white"
+    type="number"
+    placeholder="Wastage %"
+    value={wastagePercent}
+    onChange={(e) =>
+      setWastagePercent(Number(e.target.value))
+    }
+  />
+
+</div>
 
   <div className="space-y-3">
 
