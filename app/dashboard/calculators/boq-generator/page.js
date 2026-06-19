@@ -204,29 +204,54 @@ const [itemData, setItemData] = useState({
       Add BOQ Item
     </h3>
 
-    <Input
-      className="bg-slate-800 text-white mb-3"
-      placeholder="Category (RCC, PCC, Brickwork)"
-      value={itemData.category}
-      onChange={(e) =>
-        setItemData({
-          ...itemData,
-          category: e.target.value,
-        })
-      }
-    />
+  <select
+  className="w-full h-10 rounded-md bg-slate-800 text-white border border-slate-700 mb-3 px-3"
+  value={itemData.category}
+  onChange={(e) =>
+    setItemData({
+      ...itemData,
+      category: e.target.value,
+      item: '',
+      description: '',
+    })
+  }
+>
+  <option value="">Select Category</option>
 
-    <Input
-      className="bg-slate-800 text-white mb-3"
-      placeholder="Item Name"
-      value={itemData.item}
-      onChange={(e) =>
-        setItemData({
-          ...itemData,
-          item: e.target.value,
-        })
-      }
-    />
+  {Object.keys(categoryItems).map((category) => (
+    <option key={category} value={category}>
+      {category}
+    </option>
+  ))}
+</select>
+  
+    <select
+  className="w-full h-10 rounded-md bg-slate-800 text-white border border-slate-700 mb-3 px-3"
+  value={itemData.item}
+  onChange={(e) =>
+    setItemData({
+      ...itemData,
+      item: e.target.value,
+      description: `${e.target.value} M25 Grade`,
+      unit:
+        itemData.category === 'RCC'
+          ? 'm³'
+          : itemData.category === 'Plaster'
+          ? 'm²'
+          : 'm³',
+    })
+  }
+>
+  <option value="">Select Item</option>
+
+  {(categoryItems[itemData.category] || []).map(
+    (item) => (
+      <option key={item} value={item}>
+        {item}
+      </option>
+    )
+  )}
+</select>
 
     <Input
       className="bg-slate-800 text-white mb-3"
