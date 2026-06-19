@@ -119,6 +119,10 @@ const aggregateQty =
   selectedGrade
     ? calculatedQuantity * selectedGrade.aggregate
     : 0
+ 
+const steelQty =
+  calculatedQuantity *
+  (steelRatio[itemData.item] || 0)
 
   const [project, setProject] = useState({
     projectName: '',
