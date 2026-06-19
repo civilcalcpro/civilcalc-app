@@ -229,8 +229,6 @@ localStorage.setItem(
   }
 
 }, [])
-
-}, [])
 const subtotal = boqItems.reduce(
   (sum, item) => sum + (item.amount || 0),
   0
