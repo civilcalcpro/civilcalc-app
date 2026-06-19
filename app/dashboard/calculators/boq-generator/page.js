@@ -379,7 +379,7 @@ const [itemData, setItemData] = useState({
         setShowItemForm(false)
       }}
     >
-  <Card className="bg-slate-800 border-slate-700 p-4 mb-4">
+  <Card className="bg-slate-800 border-slate-700 p-4 mb-6">
 
   <div className="grid grid-cols-2 gap-4">
 
@@ -491,6 +491,14 @@ const [itemData, setItemData] = useState({
               <Button
                 variant="destructive"
                 size="sm"
+                if (
+                !itemData.category ||
+                !itemData.item ||
+                !itemData.description
+                ) {
+               alert('Please fill all required fields')
+              return
+                }
                 onClick={() =>
                   setBoqItems(
                     boqItems.filter(
