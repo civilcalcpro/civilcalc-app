@@ -10,6 +10,7 @@ export default function BOQGeneratorPage() {
   const [showItemForm, setShowItemForm] = useState(false)
 
 const [boqItems, setBoqItems] = useState([])
+  const [editingIndex, setEditingIndex] = useState(null)
 const categoryItems = {
   RCC: [
     'RCC Beam',
@@ -340,46 +341,7 @@ const [itemData, setItemData] = useState({
     })
   }
 />
-
-    <Button
-      onClick={() => {
-        setBoqItems([
-  ...boqItems,
-  {
-    ...itemData,
-
-    quantity:
-      (Number(itemData.length) || 0) *
-      (Number(itemData.width) || 0) *
-      (Number(itemData.height) || 0) *
-      (Number(itemData.nos) || 0),
-
-    amount:
-      (
-        (Number(itemData.length) || 0) *
-        (Number(itemData.width) || 0) *
-        (Number(itemData.height) || 0) *
-        (Number(itemData.nos) || 0)
-      ) *
-      (Number(itemData.rate) || 0),
-  },
-])
-        setItemData({
-          category: '',
-          item: '',
-          description: '',
-          unit: '',
-          length: '',
-          width: '',
-          height: '',
-          nos: '',
-          rate: '',
-        })
-
-        setShowItemForm(false)
-      }}
-    >
-  <Card className="bg-slate-800 border-slate-700 p-4 mb-6">
+<Card className="bg-slate-800 border-slate-700 p-4 mb-6">
 
   <div className="grid grid-cols-2 gap-4">
 
@@ -420,8 +382,76 @@ const [itemData, setItemData] = useState({
   </div>
 
 </Card>
-      Add To BOQ
-    </Button>
+   <Button
+  onClick={() => {
+
+    if (
+      !itemData.category ||
+      !itemData.item ||
+      !itemData.description
+    ) {
+      alert('Please fill all required fields')
+      return
+    }
+
+    const newItem = {
+      ...itemData,
+
+      quantity:
+        (Number(itemData.length) || 0) *
+        (Number(itemData.width) || 0) *
+        (Number(itemData.height) || 0) *
+        (Number(itemData.nos) || 0),
+
+      amount:
+        (
+          (Number(itemData.length) || 0) *
+          (Number(itemData.width) || 0) *
+          (Number(itemData.height) || 0) *
+          (Number(itemData.nos) || 0)
+        ) *
+        (Number(itemData.rate) || 0),
+    }
+
+    if (editingIndex !== null) {
+
+      const updatedItems = [...boqItems]
+
+      updatedItems[editingIndex] = newItem
+
+      setBoqItems(updatedItems)
+
+      setEditingIndex(null)
+
+    } else {
+
+      setBoqItems([
+        ...boqItems,
+        newItem,
+      ])
+
+    }
+
+    setItemData({
+      category: '',
+      item: '',
+      description: '',
+      unit: '',
+      length: '',
+      width: '',
+      height: '',
+      nos: '',
+      rate: '',
+    })
+
+    setShowItemForm(false)
+
+  }}
+>
+  {editingIndex !== null
+    ? 'Update Item'
+    : 'Add To BOQ'}
+</Button>
 
   </div>
 )}
@@ -487,7 +517,21 @@ const [itemData, setItemData] = useState({
             </td>
 
             <td className="p-2">
+            <Button
+             size="sm"
+             className="mr-2"
+            onClick={() => {
 
+           setItemData(row)
+
+          setEditingIndex(index)
+
+          setShowItemForm(true)
+
+             }}
+          >
+           Edit
+          </Button>
               <Button
                 variant="destructive"
                 size="sm"
