@@ -59,6 +59,66 @@ const [itemData, setItemData] = useState({
   rate: '',
   amount: 0,
 })
+  const calculatedQuantity =
+  (Number(itemData.length) || 0) *
+  (Number(itemData.width) || 0) *
+  (Number(itemData.height) || 0) *
+  (Number(itemData.nos) || 0)
+  const materialDatabase = {
+  M20: {
+    cement: 8.06,
+    sand: 0.44,
+    aggregate: 0.88,
+  },
+
+  M25: {
+    cement: 8.80,
+    sand: 0.42,
+    aggregate: 0.84,
+  },
+
+  M30: {
+    cement: 9.60,
+    sand: 0.40,
+    aggregate: 0.80,
+  },
+
+  M35: {
+    cement: 10.20,
+    sand: 0.38,
+    aggregate: 0.76,
+  },
+
+  M40: {
+    cement: 10.80,
+    sand: 0.36,
+    aggregate: 0.72,
+  },
+}
+  const steelRatio = {
+  'RCC Beam': 100,
+  'RCC Column': 130,
+  'RCC Slab': 80,
+  'RCC Footing': 70,
+  'RCC Staircase': 90,
+}
+  const selectedGrade =
+  materialDatabase[itemData.grade]
+
+const cementBags =
+  selectedGrade
+    ? calculatedQuantity * selectedGrade.cement
+    : 0
+
+const sandQty =
+  selectedGrade
+    ? calculatedQuantity * selectedGrade.sand
+    : 0
+
+const aggregateQty =
+  selectedGrade
+    ? calculatedQuantity * selectedGrade.aggregate
+    : 0
 
   const [project, setProject] = useState({
     projectName: '',
@@ -398,6 +458,57 @@ const [itemData, setItemData] = useState({
           ) *
           (Number(itemData.rate) || 0)
         ).toFixed(2)}
+      </p>
+    </div>
+
+  </div>
+
+</Card>
+   <Card className="bg-slate-800 border-slate-700 p-4 mb-6">
+
+  <h3 className="text-white font-bold mb-4">
+    Material Breakdown
+  </h3>
+
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+    <div>
+      <p className="text-slate-400 text-sm">
+        Cement
+      </p>
+
+      <p className="text-xl font-bold text-white">
+        {cementBags.toFixed(2)} Bags
+      </p>
+    </div>
+
+    <div>
+      <p className="text-slate-400 text-sm">
+        Sand
+      </p>
+
+      <p className="text-xl font-bold text-white">
+        {sandQty.toFixed(2)} m³
+      </p>
+    </div>
+
+    <div>
+      <p className="text-slate-400 text-sm">
+        Aggregate
+      </p>
+
+      <p className="text-xl font-bold text-white">
+        {aggregateQty.toFixed(2)} m³
+      </p>
+    </div>
+
+    <div>
+      <p className="text-slate-400 text-sm">
+        Steel
+      </p>
+
+      <p className="text-xl font-bold text-green-400">
+        {steelQty.toFixed(2)} Kg
       </p>
     </div>
 
