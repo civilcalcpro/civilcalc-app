@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 
 export default function BOQGeneratorPage() {
   const [projectSaved, setProjectSaved] = useState(false)
+  const [showDrafts, setShowDrafts] = useState(true)
   const [showItemForm, setShowItemForm] = useState(false)
 
 const [boqItems, setBoqItems] = useState([])
@@ -205,26 +206,16 @@ localStorage.setItem(
 }
  useEffect(() => {
 
+ useEffect(() => {
+
   const drafts =
     localStorage.getItem('boqDrafts')
 
   if (drafts) {
 
-    const parsedDrafts =
+    setSavedDrafts(
       JSON.parse(drafts)
-
-    setSavedDrafts(parsedDrafts)
-
-    if (parsedDrafts.length > 0) {
-
-      const latestDraft =
-        parsedDrafts[parsedDrafts.length - 1]
-
-      setProject(latestDraft.project)
-
-      setBoqItems(latestDraft.boqItems)
-
-    }
+    )
 
   }
 
@@ -264,6 +255,25 @@ const grandTotal =
         <h1 className="text-3xl font-bold text-white mb-6">
           BOQ Generator
         </h1>
+      <Button
+  className="mb-6"
+  onClick={() => {
+    setShowDrafts(false)
+  }}
+>
+  + New Project
+</Button>
+    {showDrafts && savedDrafts.length > 0 && (
+
+<Card className="bg-slate-900/50 border-slate-800 p-6 mb-6">
+
+  <h2 className="text-xl font-bold text-white mb-4">
+    Saved Drafts
+  </h2>
+
+</Card>
+
+)}
 
         <Card className="bg-slate-900/50 border-slate-800 p-6">
           <h2 className="text-xl font-bold text-white mb-6">
