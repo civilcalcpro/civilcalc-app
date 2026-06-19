@@ -342,14 +342,6 @@ const [itemData, setItemData] = useState({
 />
 
     <Button
-if (
-  !itemData.category ||
-  !itemData.item ||
-  !itemData.description
-) {
-  alert('Please fill all required fields')
-  return
-}
       onClick={() => {
         setBoqItems([
   ...boqItems,
