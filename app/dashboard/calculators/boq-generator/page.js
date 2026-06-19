@@ -531,7 +531,25 @@ const [itemData, setItemData] = useState({
              }}
           >
            Edit
-          </Button>
+         <Button
+         size="sm"
+         className="mr-2"
+       onClick={() => {
+
+       const duplicatedItem = {
+         ...row
+        }
+
+        setBoqItems([
+      ...boqItems,
+      duplicatedItem
+        ])
+
+      }}
+        >
+          Duplicate
+         </Button>
+              </Button>
               <Button
                 variant="destructive"
                 size="sm"
