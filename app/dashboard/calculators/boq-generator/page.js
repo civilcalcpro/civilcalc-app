@@ -149,8 +149,8 @@ const [itemData, setItemData] = useState({
         <div>
           <h2 className="text-xl font-bold text-white">
             BOQ Items
-          </h2>
-
+          </h2
+      
           <p className="text-slate-400">
             Add project items one by one
           </p>
@@ -238,3 +238,4 @@ const [itemData, setItemData] = useState({
 
   </div>
 )
+}
