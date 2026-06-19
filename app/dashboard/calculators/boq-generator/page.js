@@ -344,10 +344,26 @@ const [itemData, setItemData] = useState({
     <Button
       onClick={() => {
         setBoqItems([
-          ...boqItems,
-          itemData,
-        ])
+  ...boqItems,
+  {
+    ...itemData,
 
+    quantity:
+      (Number(itemData.length) || 0) *
+      (Number(itemData.width) || 0) *
+      (Number(itemData.height) || 0) *
+      (Number(itemData.nos) || 0),
+
+    amount:
+      (
+        (Number(itemData.length) || 0) *
+        (Number(itemData.width) || 0) *
+        (Number(itemData.height) || 0) *
+        (Number(itemData.nos) || 0)
+      ) *
+      (Number(itemData.rate) || 0),
+  },
+])
         setItemData({
           category: '',
           item: '',
@@ -409,7 +425,98 @@ const [itemData, setItemData] = useState({
 
   </div>
 )}
+{boqItems.length > 0 && (
 
+<Card className="bg-slate-900/50 border-slate-800 p-6 mt-6">
+
+  <h2 className="text-xl font-bold text-white mb-4">
+    BOQ Table
+  </h2>
+
+  <div className="overflow-x-auto">
+
+    <table className="w-full text-white">
+
+      <thead>
+        <tr className="border-b border-slate-700">
+
+          <th className="text-left p-2">S.No</th>
+          <th className="text-left p-2">Category</th>
+          <th className="text-left p-2">Item</th>
+          <th className="text-left p-2">Description</th>
+          <th className="text-left p-2">Unit</th>
+          <th className="text-left p-2">Qty</th>
+          <th className="text-left p-2">Rate</th>
+          <th className="text-left p-2">Amount</th>
+          <th className="text-left p-2">Action</th>
+
+        </tr>
+      </thead>
+
+      <tbody>
+
+        {boqItems.map((row, index) => (
+
+          <tr
+            key={index}
+            className="border-b border-slate-800"
+          >
+
+            <td className="p-2">{index + 1}</td>
+
+            <td className="p-2">{row.category}</td>
+
+            <td className="p-2">{row.item}</td>
+
+            <td className="p-2">
+              {row.description}
+            </td>
+
+            <td className="p-2">{row.unit}</td>
+
+            <td className="p-2">
+              {Number(row.quantity).toFixed(2)}
+            </td>
+
+            <td className="p-2">
+              ₹{row.rate}
+            </td>
+
+            <td className="p-2 text-green-400">
+              ₹{Number(row.amount).toFixed(2)}
+            </td>
+
+            <td className="p-2">
+
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() =>
+                  setBoqItems(
+                    boqItems.filter(
+                      (_, i) => i !== index
+                    )
+                  )
+                }
+              >
+                Delete
+              </Button>
+
+            </td>
+
+          </tr>
+
+        ))}
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</Card>
+
+)}
     </Card>
 
   </div>
