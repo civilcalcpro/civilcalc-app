@@ -340,24 +340,17 @@ const draft = {
       'Amount'
     ]],
 
-    body: boqItems.map(item => [
+  body: boqItems.map(item => [
 
-      item.category,
+  item.category,
+  item.item,
+  item.description,
+  item.unit,
+  Number(item.quantity).toFixed(2),
+  `Rs. ${Number(item.rate).toFixed(2)}`,
+  `Rs. ${Number(item.amount).toFixed(2)}`
 
-      item.item,
-
-      item.description,
-
-      item.unit,
-
-      item.quantity,
-
-      item.rate,
-
-      item.amount
-
-    ])
-
+])
   })
 
   const finalY =
@@ -374,6 +367,9 @@ const draft = {
   doc.save(
     `${project.projectName || 'BOQ'}_Report.pdf`
   )
+
+}
+  const exportMaterialPDF = () => {
 
 }
 useEffect(() => {
@@ -1298,6 +1294,11 @@ if (!projectSaved && showProjectForm) {
   >
     BOQ PDF
   </Button>
+  <Button
+  onClick={exportMaterialPDF}
+>
+  Material PDF
+</Button>
 
 </div>
 </Card>
