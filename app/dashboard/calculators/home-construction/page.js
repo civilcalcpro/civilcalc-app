@@ -129,7 +129,7 @@ export default function HouseConstructionCostCalculator() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050B1F] text-white px-4 py-6">
+    <div className="min-h-screen bg-[#050B1F] text-white px-6 md:px-8 py-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="rounded-2xl border border-orange-500/30 bg-white/5 p-5 shadow-xl">
           <p className="text-orange-400 text-sm font-semibold">CivilCalc Pro</p>
@@ -154,8 +154,23 @@ export default function HouseConstructionCostCalculator() {
                 <input className="inputBox" placeholder="Location / City" value={project.location} onChange={(e) => updateProject("location", e.target.value)} />
                 <input className="inputBox" placeholder="Plot Area sq ft" value={project.plotArea} onChange={(e) => updateProject("plotArea", e.target.value)} />
                 <input className="inputBox" placeholder="Built-up Area sq ft" value={project.builtUpArea} onChange={(e) => updateProject("builtUpArea", e.target.value)} />
-                <input className="inputBox" placeholder="Number of Floors" value={project.floors} onChange={(e) => updateProject("floors", e.target.value)} />
+              <div>
+  <label className="text-sm text-gray-300 mb-2 block">
+    Number of Floors
+  </label>
 
+  <select
+    className="inputBox"
+    value={project.floors}
+    onChange={(e) => updateProject("floors", e.target.value)}
+  >
+    <option value="1">1 Floor</option>
+    <option value="2">2 Floors</option>
+    <option value="3">3 Floors</option>
+    <option value="4">4 Floors</option>
+    <option value="5">5 Floors</option>
+  </select>
+</div>
                 <select className="inputBox" value={project.constructionType} onChange={(e) => updateProject("constructionType", e.target.value)}>
                   <option>Basic</option>
                   <option>Standard</option>
