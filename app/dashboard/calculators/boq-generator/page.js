@@ -366,10 +366,10 @@ const draft = {
   doc.setFontSize(14)
 
   doc.text(
-    `Grand Total: ₹${grandTotal.toFixed(2)}`,
-    14,
-    finalY
-  )
+  `Grand Total: Rs. ${grandTotal.toFixed(2)}`,
+  14,
+  finalY
+)
 
   doc.save(
     `${project.projectName || 'BOQ'}_Report.pdf`
