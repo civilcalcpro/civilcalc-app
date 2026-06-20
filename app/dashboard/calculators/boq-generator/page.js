@@ -197,7 +197,39 @@ const draft = {
   boqItems,
   createdAt: new Date().toISOString(),
 }
-  const exportToCSV = () => {
+  
+  if (currentDraftId) {
+
+  await updateDoc(
+    doc(db, 'boqProjects', currentDraftId),
+    draft
+  )
+
+  alert('Draft Updated Successfully')
+
+  return
+
+}
+  try {
+
+  await addDoc(
+    collection(db, 'boqProjects'),
+    draft
+  )
+    console.log('FIRESTORE SAVE SUCCESS')
+
+  alert('Draft Saved Successfully')
+
+} catch (error) {
+
+  console.error(error)
+
+  alert('Error Saving Draft')
+
+}
+  
+}
+   const exportToCSV = () => {
 
   let csvContent = ''
 
@@ -241,37 +273,6 @@ const draft = {
   link.click()
   document.body.removeChild(link)
 
-}
-  if (currentDraftId) {
-
-  await updateDoc(
-    doc(db, 'boqProjects', currentDraftId),
-    draft
-  )
-
-  alert('Draft Updated Successfully')
-
-  return
-
-}
-  try {
-
-  await addDoc(
-    collection(db, 'boqProjects'),
-    draft
-  )
-    console.log('FIRESTORE SAVE SUCCESS')
-
-  alert('Draft Saved Successfully')
-
-} catch (error) {
-
-  console.error(error)
-
-  alert('Error Saving Draft')
-
-}
-  
 }
 useEffect(() => {
 
