@@ -371,6 +371,136 @@ const draft = {
 }
   const exportMaterialPDF = () => {
 
+  const doc = new jsPDF()
+
+  doc.setFontSize(18)
+
+  doc.text(
+    'MATERIAL BREAKDOWN REPORT',
+    14,
+    20
+  )
+
+  doc.setFontSize(11)
+
+  doc.text(
+    `Project Name: ${project.projectName}`,
+    14,
+    35
+  )
+
+  doc.text(
+    `Client Name: ${project.clientName}`,
+    14,
+    43
+  )
+
+  let y = 60
+
+  boqItems.forEach((item) => {
+
+    doc.setFontSize(13)
+
+    doc.text(
+      `${item.item}`,
+      14,
+      y
+    )
+
+    y += 8
+
+    doc.setFontSize(11)
+
+    doc.text(
+      `Cement: ${Number(item.cementBags || 0).toFixed(2)} Bags`,
+      20,
+      y
+    )
+
+    y += 8
+
+    doc.text(
+      `Sand: ${Number(item.sandQty || 0).toFixed(2)} m³`,
+      20,
+      y
+    )
+
+    y += 8
+
+    doc.text(
+      `Aggregate: ${Number(item.aggregateQty || 0).toFixed(2)} m³`,
+      20,
+      y
+    )
+
+    y += 8
+
+    doc.text(
+      `Steel: ${Number(item.steelQty || 0).toFixed(2)} Kg`,
+      20,
+      y
+    )
+
+    y += 12
+
+    if (y > 250) {
+
+      doc.addPage()
+
+      y = 20
+
+    }
+
+  })
+
+  y += 10
+
+  doc.setFontSize(15)
+
+  doc.text(
+    'TOTAL MATERIAL SUMMARY',
+    14,
+    y
+  )
+
+  y += 12
+
+  doc.setFontSize(11)
+
+  doc.text(
+    `Total Cement: ${totalCement.toFixed(2)} Bags`,
+    20,
+    y
+  )
+
+  y += 8
+
+  doc.text(
+    `Total Sand: ${totalSand.toFixed(2)} m³`,
+    20,
+    y
+  )
+
+  y += 8
+
+  doc.text(
+    `Total Aggregate: ${totalAggregate.toFixed(2)} m³`,
+    20,
+    y
+  )
+
+  y += 8
+
+  doc.text(
+    `Total Steel: ${totalSteel.toFixed(2)} Kg`,
+    20,
+    y
+  )
+
+  doc.save(
+    `${project.projectName || 'BOQ'}_Material_Report.pdf`
+  )
+
 }
 useEffect(() => {
 
