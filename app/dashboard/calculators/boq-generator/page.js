@@ -310,16 +310,35 @@ if (!projectSaved && !showProjectForm) {
 
       <div className="flex gap-2">
 
-        <Button size="sm">
-          Continue
-        </Button>
+      <Button
+  size="sm"
+  onClick={() => {
+    setProject(draft.project)
+    setBoqItems(draft.boqItems || [])
+    setProjectSaved(true)
+    setShowProjectForm(false)
+    setShowDrafts(false)
+  }}
+>
+  Continue
+</Button>
+       <Button
+  variant="destructive"
+  size="sm"
+  onClick={async () => {
+    await deleteDoc(
+      doc(db, 'boqProjects', draft.id)
+    )
 
-        <Button
-          variant="destructive"
-          size="sm"
-        >
-          Delete
-        </Button>
+    setSavedDrafts(
+      savedDrafts.filter(
+        (item) => item.id !== draft.id
+      )
+    )
+  }}
+>
+  Delete
+</Button>
 
       </div>
 
