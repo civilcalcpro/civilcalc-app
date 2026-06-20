@@ -214,18 +214,24 @@ const draft = {
 }
   
 }
- useEffect(() => {
+useEffect(() => {
 
-  const drafts =
-    localStorage.getItem('boqDrafts')
+  const loadDrafts = async () => {
 
-  if (drafts) {
-
-    setSavedDrafts(
-      JSON.parse(drafts)
+    const snapshot = await getDocs(
+      collection(db, 'boqProjects')
     )
 
+    const drafts = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
+
+    setSavedDrafts(drafts)
+
   }
+
+  loadDrafts()
 
 }, [])
 const subtotal = boqItems.reduce(
@@ -281,7 +287,47 @@ if (!projectSaved && !showProjectForm) {
           <h2 className="text-xl font-bold text-white">
             Saved Drafts
           </h2>
+<div className="space-y-3 mt-4">
 
+  {savedDrafts.map((draft) => (
+
+    <div
+      key={draft.id}
+      className="bg-slate-800 p-4 rounded-lg flex justify-between items-center"
+    >
+
+      <div>
+
+        <p className="text-white font-semibold">
+          {draft.project?.projectName}
+        </p>
+
+        <p className="text-slate-400 text-sm">
+          {draft.createdAt}
+        </p>
+
+      </div>
+
+      <div className="flex gap-2">
+
+        <Button size="sm">
+          Continue
+        </Button>
+
+        <Button
+          variant="destructive"
+          size="sm"
+        >
+          Delete
+        </Button>
+
+      </div>
+
+    </div>
+
+  ))}
+
+</div>
         </Card>
 
       )}
