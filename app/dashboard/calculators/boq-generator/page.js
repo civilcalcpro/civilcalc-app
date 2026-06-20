@@ -502,6 +502,98 @@ const draft = {
   )
 
 }
+  const exportCostPDF = () => {
+
+  const doc = new jsPDF()
+
+  doc.setFontSize(18)
+
+  doc.text(
+    'COST SUMMARY REPORT',
+    14,
+    20
+  )
+
+  doc.setFontSize(11)
+
+  doc.text(
+    `Project Name: ${project.projectName}`,
+    14,
+    35
+  )
+
+  doc.text(
+    `Client Name: ${project.clientName}`,
+    14,
+    43
+  )
+
+  doc.text(
+    `Location: ${project.projectLocation}`,
+    14,
+    51
+  )
+
+  doc.text(
+    `Prepared By: ${project.preparedBy}`,
+    14,
+    59
+  )
+
+  doc.text(
+    `Date: ${project.date}`,
+    14,
+    67
+  )
+
+  autoTable(doc, {
+
+    startY: 85,
+
+    head: [['Cost Item', 'Amount']],
+
+    body: [
+
+      [
+        'Subtotal',
+        `Rs. ${subtotal.toFixed(2)}`
+      ],
+
+      [
+        `Wastage (${wastagePercent}%)`,
+        `Rs. ${wastageAmount.toFixed(2)}`
+      ],
+
+      [
+        `GST (${gstPercent}%)`,
+        `Rs. ${gstAmount.toFixed(2)}`
+      ],
+
+      [
+        `Contractor Margin (${contractorMarginPercent}%)`,
+        `Rs. ${contractorMarginAmount.toFixed(2)}`
+      ]
+
+    ]
+
+  })
+
+  const finalY =
+    doc.lastAutoTable.finalY + 15
+
+  doc.setFontSize(16)
+
+  doc.text(
+    `GRAND TOTAL : Rs. ${grandTotal.toFixed(2)}`,
+    14,
+    finalY
+  )
+
+  doc.save(
+    `${project.projectName || 'BOQ'}_Cost_Report.pdf`
+  )
+
+}
 useEffect(() => {
 
   const loadDrafts = async () => {
@@ -1428,6 +1520,11 @@ if (!projectSaved && showProjectForm) {
   onClick={exportMaterialPDF}
 >
   Material PDF
+</Button>
+  <Button
+  onClick={exportCostPDF}
+>
+  Cost PDF
 </Button>
 
 </div>
