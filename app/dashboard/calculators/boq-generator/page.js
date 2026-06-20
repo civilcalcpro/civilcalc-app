@@ -247,8 +247,40 @@ const grandTotal =
     date: '',
     revisionNo: '',
   })
+if (!projectSaved && !showProjectForm) {
+  return (
+    <div className="p-6 lg:p-10 max-w-5xl mx-auto">
 
-if (!projectSaved) {
+      <h1 className="text-3xl font-bold text-white mb-6">
+        BOQ Generator
+      </h1>
+
+      <Button
+        className="mb-6"
+        onClick={() => {
+          setShowDrafts(false)
+          setShowProjectForm(true)
+        }}
+      >
+        + New Project
+      </Button>
+
+      {showDrafts && savedDrafts.length > 0 && (
+
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+
+          <h2 className="text-xl font-bold text-white">
+            Saved Drafts
+          </h2>
+
+        </Card>
+
+      )}
+
+    </div>
+  )
+}
+if (!projectSaved && showProjectForm) {
     return (
       <div className="p-6 lg:p-10 max-w-5xl mx-auto">
         <h1 className="text-3xl font-bold text-white mb-6">
