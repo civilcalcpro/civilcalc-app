@@ -10,7 +10,8 @@ import {
   addDoc,
   getDocs,
   deleteDoc,
-  doc
+  doc ,
+  updateDoc
 } from 'firebase/firestore'
 export default function BOQGeneratorPage() {
   const [projectSaved, setProjectSaved] = useState(false)
@@ -20,6 +21,7 @@ export default function BOQGeneratorPage() {
 
 const [boqItems, setBoqItems] = useState([])
   const [savedDrafts, setSavedDrafts] = useState([])
+  const [currentDraftId, setCurrentDraftId] = useState(null)
   const [editingIndex, setEditingIndex] = useState(null)
 const categoryItems = {
   RCC: [
@@ -195,6 +197,18 @@ const draft = {
   boqItems,
   createdAt: new Date().toISOString(),
 }
+  if (currentDraftId) {
+
+  await updateDoc(
+    doc(db, 'boqProjects', currentDraftId),
+    draft
+  )
+
+  alert('Draft Updated Successfully')
+
+  return
+
+}
   try {
 
   await addDoc(
@@ -318,6 +332,7 @@ if (!projectSaved && !showProjectForm) {
     setProjectSaved(true)
     setShowProjectForm(false)
     setShowDrafts(false)
+    setCurrentDraftId(draft.id)
   }}
 >
   Continue
@@ -475,7 +490,16 @@ if (!projectSaved && showProjectForm) {
 
   return (
   <div className="p-6 lg:p-10">
-
+<Button
+  variant="outline"
+  className="mb-4"
+  onClick={() => {
+    setProjectSaved(false)
+    setShowProjectForm(true)
+  }}
+>
+  ← Edit Project Details
+</Button>
     <h1 className="text-3xl font-bold text-white mb-2">
       BOQ Builder
     </h1>
