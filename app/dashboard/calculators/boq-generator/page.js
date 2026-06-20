@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 export default function BOQGeneratorPage() {
   const [projectSaved, setProjectSaved] = useState(false)
   const [showDrafts, setShowDrafts] = useState(true)
+  const [showProjectForm, setShowProjectForm] = useState(false)
   const [showItemForm, setShowItemForm] = useState(false)
 
 const [boqItems, setBoqItems] = useState([])
@@ -247,7 +248,7 @@ const grandTotal =
     revisionNo: '',
   })
 
-  if (!projectSaved) {
+if (!projectSaved && showProjectForm) {
     return (
       <div className="p-6 lg:p-10 max-w-5xl mx-auto">
         <h1 className="text-3xl font-bold text-white mb-6">
@@ -255,9 +256,10 @@ const grandTotal =
         </h1>
       <Button
   className="mb-6"
-  onClick={() => {
-    setShowDrafts(false)
-  }}
+ onClick={() => {
+  setShowDrafts(false)
+  setShowProjectForm(true)
+}}
 >
   + New Project
 </Button>
