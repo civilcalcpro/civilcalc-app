@@ -189,6 +189,7 @@ const totalSteel = boqItems.reduce(
   0
 )
 const saveDraft = async () => {
+  console.log('SAVE DRAFT CLICKED')
 const draft = {
   project,
   boqItems,
@@ -200,6 +201,7 @@ const draft = {
     collection(db, 'boqProjects'),
     draft
   )
+    console.log('FIRESTORE SAVE SUCCESS')
 
   alert('Draft Saved Successfully')
 
