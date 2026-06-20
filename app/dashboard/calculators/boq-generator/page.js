@@ -4,7 +4,14 @@ import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
+import { db } from '@/lib/firebase'
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc
+} from 'firebase/firestore'
 export default function BOQGeneratorPage() {
   const [projectSaved, setProjectSaved] = useState(false)
   const [showDrafts, setShowDrafts] = useState(true)
@@ -181,29 +188,27 @@ const totalSteel = boqItems.reduce(
   (sum, item) => sum + (item.steelQty || 0),
   0
 )
-  const saveDraft = () => {
+const saveDraft = async () => {
+const draft = {
+  project,
+  boqItems,
+  createdAt: new Date().toISOString(),
+}
+  try {
 
-  const draft = {
-    id: Date.now(),
+  await addDoc(
+    collection(db, 'boqProjects'),
+    draft
+  )
 
-    project,
-
-    boqItems,
-
-    createdAt: new Date().toLocaleString(),
-  }
-    const updatedDrafts = [
-  ...savedDrafts,
-  draft,
-]
-
-setSavedDrafts(updatedDrafts)
-
-localStorage.setItem(
-  'boqDrafts',
-  JSON.stringify(updatedDrafts)
-)
   alert('Draft Saved Successfully')
+
+} catch (error) {
+
+  console.error(error)
+
+  alert('Error Saving Draft')
+
 }
  useEffect(() => {
 
