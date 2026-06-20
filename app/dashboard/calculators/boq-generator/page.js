@@ -197,6 +197,51 @@ const draft = {
   boqItems,
   createdAt: new Date().toISOString(),
 }
+  const exportToCSV = () => {
+
+  let csvContent = ''
+
+  csvContent += `Project Name,${project.projectName}\n`
+  csvContent += `Client Name,${project.clientName}\n`
+  csvContent += `Project Location,${project.projectLocation}\n`
+  csvContent += `Prepared By,${project.preparedBy}\n`
+  csvContent += `Date,${project.date}\n\n`
+
+  csvContent += 'Category,Item,Description,Unit,Quantity,Rate,Amount\n'
+
+  boqItems.forEach((item) => {
+
+    csvContent += `${item.category},${item.item},${item.description},${item.unit},${item.quantity},${item.rate},${item.amount}\n`
+
+  })
+
+  csvContent += '\n'
+
+  csvContent += `Subtotal,${subtotal}\n`
+  csvContent += `GST (${gstPercent}%),${gstAmount}\n`
+  csvContent += `Wastage (${wastagePercent}%),${wastageAmount}\n`
+  csvContent += `Contractor Margin (${contractorMarginPercent}%),${contractorMarginAmount}\n`
+  csvContent += `Grand Total,${grandTotal}\n`
+
+  const blob = new Blob(
+    [csvContent],
+    { type: 'text/csv;charset=utf-8;' }
+  )
+
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+
+  link.setAttribute('href', url)
+  link.setAttribute(
+    'download',
+    `${project.projectName || 'BOQ'}_Export.csv`
+  )
+
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+}
   if (currentDraftId) {
 
   await updateDoc(
@@ -1137,6 +1182,12 @@ if (!projectSaved && showProjectForm) {
     onClick={saveDraft}
   >
     Save Draft
+  </Button>
+
+  <Button
+    onClick={exportToCSV}
+  >
+    Export CSV
   </Button>
 
 </div>
