@@ -13,6 +13,8 @@ import {
   doc ,
   updateDoc
 } from 'firebase/firestore'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 export default function BOQGeneratorPage() {
   const [projectSaved, setProjectSaved] = useState(false)
   const [showDrafts, setShowDrafts] = useState(true)
@@ -272,6 +274,106 @@ const draft = {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+
+}
+  const exportBOQPDF = () => {
+
+  const doc = new jsPDF()
+
+  doc.setFontSize(18)
+
+  doc.text(
+    'BOQ REPORT',
+    14,
+    20
+  )
+
+  doc.setFontSize(11)
+
+  doc.text(
+    `Project Name: ${project.projectName}`,
+    14,
+    35
+  )
+
+  doc.text(
+    `Client Name: ${project.clientName}`,
+    14,
+    43
+  )
+
+  doc.text(
+    `Location: ${project.projectLocation}`,
+    14,
+    51
+  )
+
+  doc.text(
+    `Prepared By: ${project.preparedBy}`,
+    14,
+    59
+  )
+
+  doc.text(
+    `Date: ${project.date}`,
+    14,
+    67
+  )
+
+  doc.text(
+    `Revision No: ${project.revisionNo}`,
+    14,
+    75
+  )
+
+  autoTable(doc, {
+
+    startY: 90,
+
+    head: [[
+      'Category',
+      'Item',
+      'Description',
+      'Unit',
+      'Qty',
+      'Rate',
+      'Amount'
+    ]],
+
+    body: boqItems.map(item => [
+
+      item.category,
+
+      item.item,
+
+      item.description,
+
+      item.unit,
+
+      item.quantity,
+
+      item.rate,
+
+      item.amount
+
+    ])
+
+  })
+
+  const finalY =
+    doc.lastAutoTable.finalY + 15
+
+  doc.setFontSize(14)
+
+  doc.text(
+    `Grand Total: ₹${grandTotal.toFixed(2)}`,
+    14,
+    finalY
+  )
+
+  doc.save(
+    `${project.projectName || 'BOQ'}_Report.pdf`
+  )
 
 }
 useEffect(() => {
@@ -1177,7 +1279,7 @@ if (!projectSaved && showProjectForm) {
     </div>
 
   </div>
-<div className="mt-6 flex gap-3">
+<div className="mt-6 flex gap-3 flex-wrap">
 
   <Button
     onClick={saveDraft}
@@ -1189,6 +1291,12 @@ if (!projectSaved && showProjectForm) {
     onClick={exportToCSV}
   >
     Export CSV
+  </Button>
+
+  <Button
+    onClick={exportBOQPDF}
+  >
+    BOQ PDF
   </Button>
 
 </div>
