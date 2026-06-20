@@ -59,6 +59,13 @@ const quickTools = [
   color: 'green',
   desc: 'Professional Bill of Quantities'
 },
+  {
+  name: 'House Construction Cost',
+  icon: Building2,
+  href: '/dashboard/calculators/home-construction',
+  color: 'orange',
+  desc: 'Complete house construction cost estimation'
+},
   { name: 'IS Code Library', icon: FileText, href: '/dashboard/is-codes', color: 'red', desc: 'IS 456 / 875 / 1893 / 13920 references' },
 ]
 
