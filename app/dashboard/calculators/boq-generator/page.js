@@ -212,6 +212,8 @@ const draft = {
   alert('Error Saving Draft')
 
 }
+  
+}
  useEffect(() => {
 
   const drafts =
