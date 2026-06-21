@@ -99,6 +99,11 @@ export default function HomeConstructionCalculator() {
     kitchens: "1",
     bathrooms: "2",
     halls: "1",
+    carParking: "0",
+balcony: "0",
+terrace: "0",
+basement: "0",
+lift: "0",
     quality: "Standard",
     state: "",
     city: "",
@@ -182,12 +187,30 @@ const bathroomCost =
 
 const hallCost =
   Number(form.halls || 0) * 40000;
+const parkingCost =
+  Number(form.carParking || 0) * 100000;
 
+const balconyCost =
+  Number(form.balcony || 0) * 50000;
+
+const terraceCost =
+  Number(form.terrace || 0) * 75000;
+
+const basementCost =
+  Number(form.basement || 0) * 400000;
+
+const liftCost =
+  Number(form.lift || 0) * 1000000;
 const roomAdditionalCost =
   bedroomCost +
   kitchenCost +
   bathroomCost +
-  hallCost;
+  hallCost +
+  parkingCost +
+  balconyCost +
+  terraceCost +
+  basementCost +
+  liftCost;
 
 const constructionCost =
   baseConstructionCost +
@@ -303,6 +326,21 @@ const constructionCost =
         Windows: `${Math.ceil(constructionArea / 300)} nos`,
         Cost: money(constructionCost * 0.08),
       },
+      Additional Features: {
+  Parking: form.carParking,
+  Balcony: form.balcony,
+  Terrace: form.terrace,
+  Basement: form.basement,
+  Lift: form.lift,
+
+  Cost: money(
+    parkingCost +
+    balconyCost +
+    terraceCost +
+    basementCost +
+    liftCost
+  ),
+},
     };
 
     const hiddenList = [
@@ -792,6 +830,37 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
     onChange={(v) => updateForm("halls", v)}
   />
 </div>
+      <div className="grid grid-cols-2 gap-3">
+  <Input
+    label="Car Parking / पार्किंग"
+    value={form.carParking}
+    onChange={(v) => updateForm("carParking", v)}
+  />
+
+  <Input
+    label="Balcony / बालकनी"
+    value={form.balcony}
+    onChange={(v) => updateForm("balcony", v)}
+  />
+
+  <Input
+    label="Terrace / टैरेस"
+    value={form.terrace}
+    onChange={(v) => updateForm("terrace", v)}
+  />
+
+  <Input
+    label="Basement / बेसमेंट"
+    value={form.basement}
+    onChange={(v) => updateForm("basement", v)}
+  />
+
+  <Input
+    label="Lift / लिफ्ट"
+    value={form.lift}
+    onChange={(v) => updateForm("lift", v)}
+  />
+</div>
             </Panel>
 
             <Panel title="Step 2 — Construction Type / क्वालिटी">
@@ -887,6 +956,40 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
     Number(form.bathrooms || 0) * 60000
   )}
 />
+  <Mini
+  label="Parking Cost"
+  value={money(
+    Number(form.carParking || 0) * 100000
+  )}
+/>
+
+<Mini
+  label="Balcony Cost"
+  value={money(
+    Number(form.balcony || 0) * 50000
+  )}
+/>
+
+<Mini
+  label="Terrace Cost"
+  value={money(
+    Number(form.terrace || 0) * 75000
+  )}
+/>
+
+<Mini
+  label="Basement Cost"
+  value={money(
+    Number(form.basement || 0) * 400000
+  )}
+/>
+
+<Mini
+  label="Lift Cost"
+  value={money(
+    Number(form.lift || 0) * 1000000
+  )}
+/>
                     <Mini label="Hidden Cost" value={money(result.additionalHiddenCost)} />
                     <Mini label="Construction Area" value={`${result.constructionArea.toFixed(0)} sq ft`} />
                     <Mini label="Cost / Sq Ft" value={money(result.costPerSqFt)} />
@@ -928,6 +1031,30 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
       label="Halls"
       value={form.halls}
     />
+      <Row
+  label="Car Parking"
+  value={form.carParking}
+/>
+
+<Row
+  label="Balcony"
+  value={form.balcony}
+/>
+
+<Row
+  label="Terrace"
+  value={form.terrace}
+/>
+
+<Row
+  label="Basement"
+  value={form.basement}
+/>
+
+<Row
+  label="Lift"
+  value={form.lift}
+/>
   </div>
 </div>
                 </Panel>
@@ -1032,6 +1159,17 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
                     <Row label="Additional Hidden Cost" value={money(result.additionalHiddenCost)} />
                     <Row label="Final Grand Total" value={money(result.grandTotal)} />
                   </div>
+                      <p className="text-xs text-slate-400 mt-2">
+  Optional features like Car Parking, Balcony,
+  Terrace, Basement and Lift are included
+  separately in the estimate when selected.
+</p>
+
+<p className="text-xs text-orange-400">
+  Parking, Balcony, Terrace, Basement aur Lift
+  optional features hain. Agar value 0 hai to
+  unka cost estimate mein add nahi hoga.
+</p>
                 </Panel>
 
                 <Panel title="8. EMI Calculator / लोन EMI">
