@@ -51,15 +51,18 @@ const hiddenDefaults = {
 const costPercentages = {
   Excavation: 3,
   Foundation: 12,
-  "RCC Work": 22,
+  "RCC Work": 20,
   "Brick Work": 10,
   Plaster: 8,
-  Flooring: 10,
-  "Doors & Windows": 9,
+  Flooring: 8,
+  "Doors & Windows": 8,
   Electrical: 7,
   Plumbing: 6,
   Painting: 5,
-  Finishing: 8,
+  Finishing: 5,
+  Bedrooms: 4,
+  Kitchens: 2,
+  Bathrooms: 2,
 };
 
 const COLORS = [
@@ -165,8 +168,30 @@ export default function HomeConstructionCalculator() {
 
     const constructionArea = baseArea * floorCount;
     const costPerSqFt = qualityOptions[form.quality].rate;
-    const constructionCost = constructionArea * costPerSqFt;
+    const baseConstructionCost =
+  constructionArea * costPerSqFt;
 
+const bedroomCost =
+  Number(form.bedrooms || 0) * 50000;
+
+const kitchenCost =
+  Number(form.kitchens || 0) * 80000;
+
+const bathroomCost =
+  Number(form.bathrooms || 0) * 60000;
+
+const hallCost =
+  Number(form.halls || 0) * 40000;
+
+const roomAdditionalCost =
+  bedroomCost +
+  kitchenCost +
+  bathroomCost +
+  hallCost;
+
+const constructionCost =
+  baseConstructionCost +
+  roomAdditionalCost;
     const gstAmount =
       constructionCost * ((Number(hiddenCosts.gstPercent) || 0) / 100);
 
@@ -842,6 +867,26 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
 
                   <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <Mini label="Construction Cost" value={money(result.constructionCost)} />
+              <Mini
+  label="Bedroom Cost"
+  value={money(
+    Number(form.bedrooms || 0) * 50000
+  )}
+/>
+
+<Mini
+  label="Kitchen Cost"
+  value={money(
+    Number(form.kitchens || 0) * 80000
+  )}
+/>
+
+<Mini
+  label="Bathroom Cost"
+  value={money(
+    Number(form.bathrooms || 0) * 60000
+  )}
+/>
                     <Mini label="Hidden Cost" value={money(result.additionalHiddenCost)} />
                     <Mini label="Construction Area" value={`${result.constructionArea.toFixed(0)} sq ft`} />
                     <Mini label="Cost / Sq Ft" value={money(result.costPerSqFt)} />
@@ -858,6 +903,33 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
                     <Mini label="Quality" value={form.quality} />
                     <Mini label="Duration" value={result.timeline.total} />
                   </div>
+  <div className="rounded-2xl bg-white/5 border border-white/10 p-4 mt-4">
+  <h3 className="font-black text-orange-400 mb-3">
+    House Configuration / घर की संरचना
+  </h3>
+
+  <div className="space-y-2">
+    <Row
+      label="Bedrooms"
+      value={form.bedrooms}
+    />
+
+    <Row
+      label="Kitchens"
+      value={form.kitchens}
+    />
+
+    <Row
+      label="Bathrooms"
+      value={form.bathrooms}
+    />
+
+    <Row
+      label="Halls"
+      value={form.halls}
+    />
+  </div>
+</div>
                 </Panel>
 
                 <Panel title="2. Detailed Cost Breakdown / खर्च का विवरण">
