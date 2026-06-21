@@ -402,19 +402,19 @@ const bricks =
         Windows: `${Math.ceil(constructionArea / 300)} nos`,
         Cost: money(constructionCost * 0.08),
       },
-      Additional Features: {
-  Parking: form.carParking,
-  Balcony: form.balcony,
-  Terrace: form.terrace,
-  Basement: form.basement,
-  Lift: form.lift,
+     AdditionalFeatures: {
+  Parking: form.carParking || 0,
+  Balcony: form.balcony || 0,
+  Terrace: form.terrace || 0,
+  Basement: form.basement || 0,
+  Lift: form.lift || 0,
 
   Cost: money(
-    parkingCost +
-    balconyCost +
-    terraceCost +
-    basementCost +
-    liftCost
+    (Number(form.carParking || 0) * 100000) +
+    (Number(form.balcony || 0) * 50000) +
+    (Number(form.terrace || 0) * 75000) +
+    (Number(form.basement || 0) * 400000) +
+    (Number(form.lift || 0) * 1000000)
   ),
 },
     };
