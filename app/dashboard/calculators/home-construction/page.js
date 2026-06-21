@@ -92,6 +92,10 @@ export default function HomeConstructionCalculator() {
     unit: "sqft",
     floors: "Ground",
     customFloors: "",
+    bedrooms: "2",
+    kitchens: "1",
+    bathrooms: "2",
+    halls: "1",
     quality: "Standard",
     state: "",
     city: "",
@@ -287,7 +291,42 @@ export default function HomeConstructionCalculator() {
       [`GST (${hiddenCosts.gstPercent || 0}%)`, gstAmount],
     ];
 
-    const roomRecommendation = getRoomRecommendation(constructionArea);
+  const roomRecommendation = {
+  type: `${form.bedrooms} BHK House`,
+  rooms: [
+    ...Array.from(
+      { length: Number(form.bedrooms || 0) },
+      (_, i) => ({
+        name: `Bedroom ${i + 1}`,
+        size: "12 x 12 ft",
+      })
+    ),
+
+    ...Array.from(
+      { length: Number(form.kitchens || 0) },
+      (_, i) => ({
+        name: `Kitchen ${i + 1}`,
+        size: "10 x 10 ft",
+      })
+    ),
+
+    ...Array.from(
+      { length: Number(form.bathrooms || 0) },
+      (_, i) => ({
+        name: `Bathroom ${i + 1}`,
+        size: "5 x 8 ft",
+      })
+    ),
+
+    ...Array.from(
+      { length: Number(form.halls || 0) },
+      (_, i) => ({
+        name: `Hall ${i + 1}`,
+        size: "15 x 20 ft",
+      })
+    ),
+  ],
+};
     const timeline = getTimeline(constructionArea, floorCount);
 
     const loanAmount = Number(emi.loanAmount) || grandTotal;
@@ -338,6 +377,11 @@ export default function HomeConstructionCalculator() {
       unit: "sqft",
       floors: "Ground",
       customFloors: "",
+       bedrooms: "2",
+  kitchens: "1",
+  bathrooms: "2",
+  halls: "1",
+
       quality: "Standard",
       state: "",
       city: "",
@@ -698,6 +742,31 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
               {form.floors === "Custom" && (
                 <Input label="Custom Floors / मंजिल संख्या" value={form.customFloors} onChange={(v) => updateForm("customFloors", v)} />
               )}
+<div className="grid grid-cols-2 gap-3">
+  <Input
+    label="Bedrooms / बेडरूम"
+    value={form.bedrooms}
+    onChange={(v) => updateForm("bedrooms", v)}
+  />
+
+  <Input
+    label="Kitchens / किचन"
+    value={form.kitchens}
+    onChange={(v) => updateForm("kitchens", v)}
+  />
+
+  <Input
+    label="Bathrooms / टॉयलेट"
+    value={form.bathrooms}
+    onChange={(v) => updateForm("bathrooms", v)}
+  />
+
+  <Input
+    label="Halls / हॉल"
+    value={form.halls}
+    onChange={(v) => updateForm("halls", v)}
+  />
+</div>
             </Panel>
 
             <Panel title="Step 2 — Construction Type / क्वालिटी">
@@ -778,6 +847,14 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
                     <Mini label="Cost / Sq Ft" value={money(result.costPerSqFt)} />
                     <Mini label="Cost / Sq M" value={money(result.costPerSqM)} />
                     <Mini label="Floors" value={result.floorCount} />
+              <Mini
+  label="Configuration"
+  value={`${form.bedrooms}BHK`}
+/>
+  <Mini
+  label="Rooms"
+  value={`${form.bedrooms} Bed | ${form.kitchens} Kitchen | ${form.bathrooms} Bath`}
+/>
                     <Mini label="Quality" value={form.quality} />
                     <Mini label="Duration" value={result.timeline.total} />
                   </div>
