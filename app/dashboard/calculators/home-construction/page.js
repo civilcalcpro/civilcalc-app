@@ -110,6 +110,13 @@ lift: "0",
   });
 
   const [rates, setRates] = useState(defaultRates);
+  const [wastage, setWastage] = useState({
+  cement: 5,
+  steel: 3,
+  sand: 8,
+  aggregate: 8,
+  brick: 5,
+});
   const [hiddenCosts, setHiddenCosts] = useState(hiddenDefaults);
   const [emi, setEmi] = useState({
     loanAmount: "",
@@ -126,6 +133,12 @@ lift: "0",
   const updateForm = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
+  const updateWastage = (field, value) => {
+  setWastage((prev) => ({
+    ...prev,
+    [field]: Number(value) || 0,
+  }));
+};
 
   const updateRate = (field, value) => {
     setRates((prev) => ({ ...prev, [field]: Number(value) || 0 }));
@@ -236,54 +249,117 @@ const constructionCost =
       amount: (constructionCost * percent) / 100,
     }));
 
-    const cementBags = constructionArea * 0.4;
-    const steelKg = constructionArea * 4;
-    const sandCft = constructionArea * 0.045;
-    const aggregateCft = constructionArea * 0.09;
-    const bricks = constructionArea * 8;
+   const cementBase = constructionArea * 0.4;
+const steelBase = constructionArea * 4;
+const sandBase = constructionArea * 0.045;
+const aggregateBase = constructionArea * 0.09;
+const bricksBase = constructionArea * 8;
 
-    const materials = [
-      {
-        name: "Cement / सीमेंट",
-        pdfName: "Cement",
-        qty: cementBags,
-        unit: "Bags",
-        rate: rates.cement,
-        amount: cementBags * rates.cement,
-      },
-      {
-        name: "Steel / स्टील",
-        pdfName: "Steel",
-        qty: steelKg,
-        unit: "Kg",
-        rate: rates.steel,
-        amount: steelKg * rates.steel,
-      },
-      {
-        name: "Sand / रेत",
-        pdfName: "Sand",
-        qty: sandCft,
-        unit: "Cft",
-        rate: rates.sand,
-        amount: sandCft * rates.sand,
-      },
-      {
-        name: "Aggregate / गिट्टी",
-        pdfName: "Aggregate",
-        qty: aggregateCft,
-        unit: "Cft",
-        rate: rates.aggregate,
-        amount: aggregateCft * rates.aggregate,
-      },
-      {
-        name: "Bricks / ईंट",
-        pdfName: "Bricks",
-        qty: bricks,
-        unit: "Nos",
-        rate: rates.brick,
-        amount: bricks * rates.brick,
-      },
-    ];
+const cementBags =
+  cementBase +
+  (cementBase * wastage.cement) / 100;
+
+const steelKg =
+  steelBase +
+  (steelBase * wastage.steel) / 100;
+
+const sandCft =
+  sandBase +
+  (sandBase * wastage.sand) / 100;
+
+const aggregateCft =
+  aggregateBase +
+  (aggregateBase * wastage.aggregate) / 100;
+
+const bricks =
+  bricksBase +
+  (bricksBase * wastage.brick) / 100;
+  const materials = [
+  {
+    name: "Cement / सीमेंट",
+    pdfName: "Cement",
+
+    baseQty: cementBase,
+    wastageQty:
+      (cementBase * wastage.cement) / 100,
+
+    qty: cementBags,
+
+    unit: "Bags",
+    rate: rates.cement,
+
+    amount:
+      cementBags * rates.cement,
+  },
+
+  {
+    name: "Steel / स्टील",
+    pdfName: "Steel",
+
+    baseQty: steelBase,
+    wastageQty:
+      (steelBase * wastage.steel) / 100,
+
+    qty: steelKg,
+
+    unit: "Kg",
+    rate: rates.steel,
+
+    amount:
+      steelKg * rates.steel,
+  },
+
+  {
+    name: "Sand / रेत",
+    pdfName: "Sand",
+
+    baseQty: sandBase,
+    wastageQty:
+      (sandBase * wastage.sand) / 100,
+
+    qty: sandCft,
+
+    unit: "Cft",
+    rate: rates.sand,
+
+    amount:
+      sandCft * rates.sand,
+  },
+
+  {
+    name: "Aggregate / गिट्टी",
+    pdfName: "Aggregate",
+
+    baseQty: aggregateBase,
+    wastageQty:
+      (aggregateBase * wastage.aggregate) / 100,
+
+    qty: aggregateCft,
+
+    unit: "Cft",
+    rate: rates.aggregate,
+
+    amount:
+      aggregateCft * rates.aggregate,
+  },
+
+  {
+    name: "Bricks / ईंट",
+    pdfName: "Bricks",
+
+    baseQty: bricksBase,
+    wastageQty:
+      (bricksBase * wastage.brick) / 100,
+
+    qty: bricks,
+
+    unit: "Nos",
+    rate: rates.brick,
+
+    amount:
+      bricks * rates.brick,
+  },
+];
 
     const boq = {
       Foundation: {
@@ -476,6 +552,7 @@ const constructionCost =
       id: editingId || Date.now(),
       form,
       rates,
+      wastage,
       hiddenCosts,
       emi,
       result,
@@ -506,6 +583,15 @@ const constructionCost =
     setEditingId(project.id);
     setForm(project.form);
     setRates(project.rates || defaultRates);
+    setWastage(
+  project.wastage || {
+    cement: 5,
+    steel: 3,
+    sand: 8,
+    aggregate: 8,
+    brick: 5,
+  }
+);
     setHiddenCosts(project.hiddenCosts || hiddenDefaults);
     setEmi(project.emi || { loanAmount: "", interestRate: "8.5", years: "20" });
     setCalculated(true);
@@ -905,6 +991,43 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
                 <Input label="Steel ₹/kg" value={rates.steel} onChange={(v) => updateRate("steel", v)} />
                 <Input label="Brick ₹/piece" value={rates.brick} onChange={(v) => updateRate("brick", v)} />
               </div>
+                <div className="mt-4">
+  <h3 className="font-bold text-orange-400 mb-3">
+    Material Wastage / सामग्री बर्बादी
+  </h3>
+
+  <div className="grid grid-cols-2 gap-3">
+    <Input
+      label="Cement Wastage %"
+      value={wastage.cement}
+      onChange={(v) => updateWastage("cement", v)}
+    />
+
+    <Input
+      label="Steel Wastage %"
+      value={wastage.steel}
+      onChange={(v) => updateWastage("steel", v)}
+    />
+
+    <Input
+      label="Sand Wastage %"
+      value={wastage.sand}
+      onChange={(v) => updateWastage("sand", v)}
+    />
+
+    <Input
+      label="Aggregate Wastage %"
+      value={wastage.aggregate}
+      onChange={(v) => updateWastage("aggregate", v)}
+    />
+
+    <Input
+      label="Brick Wastage %"
+      value={wastage.brick}
+      onChange={(v) => updateWastage("brick", v)}
+    />
+  </div>
+</div>
               <button
                 onClick={calculate}
                 className="w-full mt-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black py-4"
@@ -1091,7 +1214,17 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
                           <span className="text-orange-400 font-black">{money(m.amount)}</span>
                         </div>
                         <p className="text-sm text-slate-400 mt-2">
-                          Quantity: {m.qty.toFixed(2)} {m.unit}
+                         Base Quantity:
+                        {m.baseQty.toFixed(2)} {m.unit}
+                         <p className="text-sm text-slate-400">
+  Wastage:
+  {m.wastageQty.toFixed(2)} {m.unit}
+</p>
+
+<p className="text-sm text-green-400 font-bold">
+  Final Quantity:
+  {m.qty.toFixed(2)} {m.unit}
+</p>
                         </p>
                         <p className="text-sm text-slate-400">
                           Rate: {money(m.rate)} / {m.unit}
