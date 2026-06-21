@@ -135,35 +135,35 @@ export default function HomeConstructionCalculator() {
 
     const materials = [
       {
-        name: "Cement / सीमेंट",
+        name: "Cement ",
         qty: cementBags,
         unit: "Bags",
         rate: rates.cement,
         amount: cementBags * rates.cement,
       },
       {
-        name: "Steel / स्टील",
+        name: "Steel",
         qty: steelKg,
         unit: "Kg",
         rate: rates.steel,
         amount: steelKg * rates.steel,
       },
       {
-        name: "Sand / रेत",
+        name: "Sand ",
         qty: sandCft,
         unit: "Cft",
         rate: rates.sand,
         amount: sandCft * rates.sand,
       },
       {
-        name: "Aggregate / गिट्टी",
+        name: "Aggregate ",
         qty: aggregateCft,
         unit: "Cft",
         rate: rates.aggregate,
         amount: aggregateCft * rates.aggregate,
       },
       {
-        name: "Bricks / ईंट",
+        name: "Bricks",
         qty: bricks,
         unit: "Nos",
         rate: rates.brick,
