@@ -115,35 +115,49 @@ switch (itemData.category) {
 const requiresHeight =
   ['RCC', 'PCC', 'Brickwork', 'Plaster', 'Painting'].includes(itemData.category)
   const materialDatabase = {
+
+  M10: {
+    cement: 6.70,
+    sand: 0.56,
+    aggregate: 1.12,
+  },
+
+  M15: {
+    cement: 8.00,
+    sand: 0.53,
+    aggregate: 1.06,
+  },
+
   M20: {
-    cement: 8.06,
-    sand: 0.44,
-    aggregate: 0.88,
+    cement: 9.20,
+    sand: 0.46,
+    aggregate: 0.92,
   },
 
   M25: {
-    cement: 8.80,
-    sand: 0.42,
-    aggregate: 0.84,
+    cement: 11.10,
+    sand: 0.39,
+    aggregate: 0.77,
   },
 
   M30: {
-    cement: 9.60,
-    sand: 0.40,
-    aggregate: 0.80,
-  },
-
-  M35: {
-    cement: 10.20,
-    sand: 0.38,
-    aggregate: 0.76,
-  },
-
-  M40: {
-    cement: 10.80,
+    cement: 12.00,
     sand: 0.36,
     aggregate: 0.72,
   },
+
+  M35: {
+    cement: 12.80,
+    sand: 0.34,
+    aggregate: 0.68,
+  },
+
+  M40: {
+    cement: 13.50,
+    sand: 0.32,
+    aggregate: 0.64,
+  },
+
 }
   const steelRatio = {
   'RCC Beam': 100,
