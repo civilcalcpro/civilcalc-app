@@ -73,10 +73,10 @@ const payload = {
 </p>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-             <NumField label={`Width b (${isImperial ? 'in' : 'mm'})`}
+             <NumField label="Width b"
   id="width" value={form.width} onChange={(v) => u('width', v)} unit={isImperial ? 'in' : 'mm'} />
               <NumField
-  label={`Depth D (${isImperial ? 'in' : 'mm'})`}
+  label="Depth D"
   id="depth"
   value={form.depth}
   onChange={(v) => u('depth', v)}
@@ -85,7 +85,7 @@ const payload = {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <NumField
-  label={`Unsupported height (${isImperial ? 'ft' : 'm'})`}
+  label="Unsupported height H"
   id="height"
   value={form.height}
   onChange={(v) => u('height', v)}
@@ -93,7 +93,7 @@ const payload = {
   step="0.1"
 />
               <NumField
-  label={`Axial load Pu (${isImperial ? 'kip' : 'kN'})`}
+  label= "Axial load Pu "
   id="axialLoad"
   value={form.axialLoad}
   onChange={(v) => u('axialLoad', v)}
