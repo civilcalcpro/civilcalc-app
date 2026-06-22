@@ -122,44 +122,7 @@ const payload = {
     'rmc',
   ]}
 />
-    <NumField
-  label="Wastage"
-  id="wastage"
-  value={form.wastage}
-  onChange={(v) => u('wastage', v)}
-  unit="%"
-/>
-
-<NumField
-  label="Cement Rate"
-  id="cementRate"
-  value={form.cementRate}
-  onChange={(v) => u('cementRate', v)}
-  unit="₹/bag"
-/>
-
-<NumField
-  label="Sand Rate"
-  id="sandRate"
-  value={form.sandRate}
-  onChange={(v) => u('sandRate', v)}
-  unit="₹/m³"
-/>
-
-<NumField
-  label="Aggregate Rate"
-  id="aggregateRate"
-  value={form.aggregateRate}
-  onChange={(v) => u('aggregateRate', v)}
-  unit="₹/m³"
-/>
-
-<SelField
-  label="Supply Type"
-  value={form.supplyType}
-  onChange={(v) => u('supplyType', v)}
-  options={['site', 'rmc']}
-/>
+  
             <RunButton loading={loading} onClick={calculate} label="Calculate" />
           </div>
           <div className="mt-6 p-3 rounded-lg bg-slate-800/40 border border-slate-700 text-xs text-slate-400">
