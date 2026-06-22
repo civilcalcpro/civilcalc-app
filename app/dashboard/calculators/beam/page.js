@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { DownloadPDFButton } from '@/components/calc-shell'
-import { useGlobalSettings } from '@/components/GlobalSettingsProvider'
+import { useGlobalSettings } from '@/components/settings/GlobalSettingsProvider'
 
 export default function BeamDesignPage() {
   const { authFetch } = useAuth()
@@ -32,7 +32,8 @@ export default function BeamDesignPage() {
   const update = (k, v) => setForm((p) => ({ ...p, [k]: v }))
 const { settings } = useGlobalSettings()
 
-const isImperial = settings?.unitSystem === 'imperial'
+const isImperial =
+  settings.unitSystem === 'imperial'
   const calculate = async () => {
   setLoading(true)
 
