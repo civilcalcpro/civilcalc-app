@@ -197,7 +197,6 @@ const isImperial =
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <ResultBlock title="Geometry">
-                 <ResultBlock title="Geometry">
   <Row
     k="Beam size"
     v={
@@ -328,7 +327,6 @@ isImperial
    highlight
  />
 
-```
 <Row
   k="IS Code Clause"
   v={result.sideFaceReinforcement.clause}
@@ -362,7 +360,6 @@ isImperial
   k="Note"
   v={result.sideFaceReinforcement.note}
 />
-```
 
   </ResultBlock>
 )}
@@ -379,7 +376,6 @@ isImperial
         }
       />
 
-```
   <Row
     k="Nominal shear stress"
     v={`${result.shear.nominalShear} N/mm²`}
