@@ -42,6 +42,8 @@ const height = isImperial
 const axialLoad = isImperial
   ? parseFloat(form.axialLoad) * 4.44822
   : parseFloat(form.axialLoad)
+      const mmToInSimple = (mm) =>
+  (parseFloat(mm) / 25.4).toFixed(2)
 
 const payload = {
   width,
@@ -193,7 +195,14 @@ const payload = {
   }
 />
                       <Row k="Main bars" v={result.steel.reinforcement} highlight />
-                      <Row k="Ties" v={result.ties.specification} />
+                     <Row
+  k="Ties"
+  v={
+    isImperial
+      ? `${mmToInSimple(result.ties.diameter)} in Ø @ ${mmToInSimple(result.ties.spacing)} in c/c`
+      : result.ties.specification
+  }
+/>
                     </div>
                   </div>
                 </ResultBlock>
