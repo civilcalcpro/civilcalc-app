@@ -53,6 +53,7 @@ const payload = {
 }
       const r = await authFetch('/api/calculate/column', { method: 'POST', body: JSON.stringify(payload) })
       const data = await r.json()
+      console.log('COLUMN RESULT:', data.result)
       if (!r.ok) throw new Error(data.error || 'Failed')
       setResult(data.result)
       setCalculationId(data.calculationId)
