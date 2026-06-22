@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import { DownloadPDFButton } from '@/components/calc-shell'
+import { useGlobalSettings } from '@/components/GlobalSettingsProvider'
 
 export default function BeamDesignPage() {
   const { authFetch } = useAuth()
@@ -27,6 +28,9 @@ export default function BeamDesignPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [calculationId, setCalculationId] = useState(null)
+  const { settings } = useGlobalSettings()
+
+const isImperial = settings?.unitSystem === 'imperial'
 
   const update = (k, v) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -87,14 +91,18 @@ export default function BeamDesignPage() {
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Span (m)" id="span" value={form.span} onChange={(v) => update('span', v)} type="number" step="0.1" />
-              <Field label="Width b (mm)" id="width" value={form.width} onChange={(v) => update('width', v)} />
+             <Field
+  label={`Span (${isImperial ? 'ft' : 'm'})`} id="span" value={form.span} onChange={(v) => update('span', v)} type="number" step="0.1" />
+              <Field
+  label={`Width b (${isImperial ? 'in' : 'mm'})`} id="width" value={form.width} onChange={(v) => update('width', v)} />
             </div>
 
-            <Field label="Overall depth D (mm)" id="depth" value={form.depth} onChange={(v) => update('depth', v)} />
+           <Field
+  label={`Overall Depth D (${isImperial ? 'in' : 'mm'})`} id="depth" value={form.depth} onChange={(v) => update('depth', v)} />
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Dead load (kN/m)" id="deadLoad" value={form.deadLoad} onChange={(v) => update('deadLoad', v)} type="number" step="0.1" />
+             <Field
+  label={`Dead Load (${isImperial ? 'lb/ft' : 'kN/m'})`} id="deadLoad" value={form.deadLoad} onChange={(v) => update('deadLoad', v)} type="number" step="0.1" />
               <Field label="Live load (kN/m)" id="liveLoad" value={form.liveLoad} onChange={(v) => update('liveLoad', v)} type="number" step="0.1" />
             </div>
 
