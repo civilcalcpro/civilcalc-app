@@ -181,7 +181,9 @@ const isImperial =
                         {result.isDesignSafe ? 'Design is Safe' : 'Review Recommended'}
                       </div>
                       <div className="text-xs text-slate-400">
-                        {result.moment.type} · {result.design.beamWidth}×{result.design.beamDepth} mm
+                        {result.moment.type} · isImperial
+  ? `${mmToIn(result.design.beamWidth)} × ${mmToIn(result.design.beamDepth)} in`
+  : `${result.design.beamWidth} × ${result.design.beamDepth} mm`
                       </div>
                     </div>
                   </div>
@@ -195,94 +197,208 @@ const isImperial =
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <ResultBlock title="Geometry">
-                 <Row
-  k="Beam size"
-  v={
-    isImperial
-      ? `${mmToIn(result.design.beamWidth)} × ${mmToIn(result.design.beamDepth)} in`
-      : `${result.design.beamWidth} × ${result.design.beamDepth} mm`
-  }
-/>
-                 <Row
-  k="Effective depth d"
-  v={
-    isImperial
-      ? `${mmToIn(result.design.effectiveDepth)} in`
-      : `${result.design.effectiveDepth} mm`
-  }
-/>
-                  <Row k="Effective span" v={`${result.design.effectiveSpan} m`} />
-                </ResultBlock>
+                 <ResultBlock title="Geometry">
+  <Row
+    k="Beam size"
+    v={
+      isImperial
+        ? `${mmToIn(result.design.beamWidth)} × ${mmToIn(result.design.beamDepth)} in`
+        : `${result.design.beamWidth} × ${result.design.beamDepth} mm`
+    }
+  />
 
-                <ResultBlock title="Loading">
-                  <Row k="Self weight" v={`${result.loads.selfWeight} kN/m`} />
-                  <Row k="Total dead load" v={`${result.loads.totalDeadLoad} kN/m`} />
-                  <Row k="Live load" v={`${result.loads.liveLoad} kN/m`} />
-                  <Row k="Factored load" v={`${result.loads.factoredLoad} kN/m`} highlight />
-                </ResultBlock>
+<Row
+k="Effective depth d"
+v={
+isImperial
+? `${mmToIn(result.design.effectiveDepth)} in`
+: `${result.design.effectiveDepth} mm`
+}
+/>
 
-                <ResultBlock title="Bending">
-                <Row
-  k="Max moment Mu"
-  v={
-    isImperial
-      ? `${kNmToKipFt(result.moment.maximumMoment)} kip-ft`
-      : `${result.moment.maximumMoment} kNm`
-  }
-/>
-              <Row
-  k="Limiting moment"
-  v={
-    isImperial
-      ? `${kNmToKipFt(result.moment.limitingMoment)} kip-ft`
-      : `${result.moment.limitingMoment} kNm`
-  }
-/>
-                  <Row k="Section type" v={result.moment.type} />
-                </ResultBlock>
+<Row
+k="Effective span"
+v={
+isImperial
+? `${mToFt(result.design.effectiveSpan)} ft`
+: `${result.design.effectiveSpan} m`
+}
+/> </ResultBlock>
 
-                <ResultBlock title="Reinforcement">
-                <Row
-  k="Ast required"
+<ResultBlock title="Loading">
+  <Row
+    k="Self weight"
+    v={
+      isImperial
+        ? `${kNmLoadToLbFt(result.loads.selfWeight)} lb/ft`
+        : `${result.loads.selfWeight} kN/m`
+    }
+  />
+
+<Row
+k="Total dead load"
+v={
+isImperial
+? `${kNmLoadToLbFt(result.loads.totalDeadLoad)} lb/ft`
+: `${result.loads.totalDeadLoad} kN/m`
+}
+/>
+
+<Row
+k="Live load"
+v={
+isImperial
+? `${kNmLoadToLbFt(result.loads.liveLoad)} lb/ft`
+: `${result.loads.liveLoad} kN/m`
+}
+/>
+
+<Row
+k="Factored load"
+v={
+isImperial
+? `${kNmLoadToLbFt(result.loads.factoredLoad)} lb/ft`
+: `${result.loads.factoredLoad} kN/m`
+}
+highlight
+/> </ResultBlock>
+
+<ResultBlock title="Bending">
+  <Row
+    k="Max moment Mu"
+    v={
+      isImperial
+        ? `${kNmToKipFt(result.moment.maximumMoment)} kip-ft`
+        : `${result.moment.maximumMoment} kNm`
+    }
+    highlight
+  />
+
+<Row
+k="Limiting moment"
+v={
+isImperial
+? `${kNmToKipFt(result.moment.limitingMoment)} kip-ft`
+: `${result.moment.limitingMoment} kNm`
+}
+/>
+
+  <Row k="Section type" v={result.moment.type} />
+</ResultBlock>
+
+<ResultBlock title="Reinforcement">
+  <Row
+    k="Ast required"
+    v={
+      isImperial
+        ? `${mm2ToIn2(result.steel.requiredAst)} in²`
+        : `${result.steel.requiredAst} mm²`
+    }
+  />
+
+<Row
+k="Ast provided"
+v={
+isImperial
+? `${mm2ToIn2(result.steel.providedAst)} in²`
+: `${result.steel.providedAst} mm²`
+}
+/>
+
+<Row
+ k="Main steel"
+ v={result.steel.reinforcement}
+ highlight
+/>
+
+{result.steel.compressionSteel !== 'Not Required' && (
+<Row
+k="Compression steel"
+v={
+isImperial
+? `${mm2ToIn2(result.steel.compressionSteel)} in²`
+: `${result.steel.compressionSteel} mm²`
+}
+/>
+)} </ResultBlock>
+
+{result.sideFaceReinforcement && ( <ResultBlock title="Side Face Reinforcement" className="sm:col-span-2"> <Row
+   k="Required"
+   v={result.sideFaceReinforcement.required}
+   highlight
+ />
+
+```
+<Row
+  k="IS Code Clause"
+  v={result.sideFaceReinforcement.clause}
+/>
+
+<Row
+  k="Total side face steel"
   v={
     isImperial
-      ? `${mm2ToIn2(result.steel.requiredAst)} in²`
-      : `${result.steel.requiredAst} mm²`
+      ? `${mm2ToIn2(result.sideFaceReinforcement.requiredAstTotal)} in²`
+      : `${result.sideFaceReinforcement.requiredAstTotal} mm²`
   }
 />
-                  <Row
-  k="Ast provided"
+
+<Row
+  k="Steel per face"
   v={
     isImperial
-      ? `${mm2ToIn2(result.steel.providedAst)} in²`
-      : `${result.steel.providedAst} mm²`
+      ? `${mm2ToIn2(result.sideFaceReinforcement.requiredAstEachFace)} in²`
+      : `${result.sideFaceReinforcement.requiredAstEachFace} mm²`
   }
 />
-                  <Row k="Main steel" v={result.steel.reinforcement} highlight />
-                  {result.steel.compressionSteel !== 'Not Required' && (
-                    <Row k="Compression steel" v={`${result.steel.compressionSteel} mm²`} />
-                  )}
-                </ResultBlock>
-{result.sideFaceReinforcement && (
-  <ResultBlock title="Side Face Reinforcement" className="sm:col-span-2">
-    <Row k="Required" v={result.sideFaceReinforcement.required} highlight />
-    <Row k="IS Code Clause" v={result.sideFaceReinforcement.clause} />
-    <Row k="Total side face steel" v={`${result.sideFaceReinforcement.requiredAstTotal} mm²`} />
-    <Row k="Steel per face" v={`${result.sideFaceReinforcement.requiredAstEachFace} mm²`} />
-    <Row k="Specification" v={result.sideFaceReinforcement.specification} highlight />
-    <Row k="Note" v={result.sideFaceReinforcement.note} />
+
+<Row
+  k="Specification"
+  v={result.sideFaceReinforcement.specification}
+  highlight
+/>
+
+<Row
+  k="Note"
+  v={result.sideFaceReinforcement.note}
+/>
+```
+
   </ResultBlock>
 )}
-                <ResultBlock title="Shear & Stirrups" className="sm:col-span-2">
-                  <div className="grid sm:grid-cols-2 gap-x-6">
-                    <div>
-                      <Row k="Max shear Vu" v={`${result.shear.maxShear} kN`} />
-                      <Row k="Nominal shear stress" v={`${result.shear.nominalShear} N/mm²`} />
-                    </div>
-                    <div>
-                      <Row k="Permissible τc" v={`${result.shear.permissibleShear} N/mm²`} />
-                      <Row k="Stirrups" v={result.shear.stirrups} highlight />
-                    </div>
+
+<ResultBlock title="Shear & Stirrups" className="sm:col-span-2">
+  <div className="grid sm:grid-cols-2 gap-x-6">
+    <div>
+      <Row
+        k="Max shear Vu"
+        v={
+          isImperial
+            ? `${kNToKip(result.shear.maxShear)} kip`
+            : `${result.shear.maxShear} kN`
+        }
+      />
+
+```
+  <Row
+    k="Nominal shear stress"
+    v={`${result.shear.nominalShear} N/mm²`}
+  />
+</div>
+
+<div>
+  <Row
+    k="Permissible τc"
+    v={`${result.shear.permissibleShear} N/mm²`}
+  />
+
+  <Row
+    k="Stirrups"
+    v={result.shear.stirrups}
+    highlight
+  />
+</div>
+
                   </div>
                 </ResultBlock>
               </div>
@@ -300,6 +416,10 @@ const mm2ToIn2 = (mm2) => (mm2 / 645.16).toFixed(2)
 const kNmToKipFt = (kNm) => (kNm * 0.73756).toFixed(2)
 
 const kNToKip = (kN) => (kN * 0.224809).toFixed(2)
+const mToFt = (m) => (m * 3.28084).toFixed(2)
+
+const kNmLoadToLbFt = (value) =>
+  (value * 68.5218).toFixed(2)
 function Field({ label, id, value, onChange, type = 'number', step = '1' }) {
   return (
     <div className="space-y-1.5">
