@@ -9,12 +9,21 @@ import {
   CalcShell, NumField, SelField, RunButton, EmptyResult, ResultBlock, Row,
   DownloadPDFButton, ResultsMotion,
 } from '@/components/calc-shell'
-
+import { useGlobalSettings } from '@/components/settings/GlobalSettingsProvider'
 const GRADES = ['M5', 'M7.5', 'M10', 'M15', 'M20', 'M25']
 
 export default function ConcreteVolumePage() {
   const { authFetch } = useAuth()
-  const [form, setForm] = useState({ length: 5000, width: 3000, thickness: 150, grade: 'M20' })
+  const { settings } = useGlobalSettings()
+const isImperial = settings.unitSystem === 'imperial'
+const [form, setForm] = useState({
+  length: 5000,
+  width: 3000,
+  thickness: 150,
+  grade: 'M20',
+  wastage: 5,
+  dryFactor: 1.54,
+})
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [calculationId, setCalculationId] = useState(null)
@@ -23,12 +32,24 @@ export default function ConcreteVolumePage() {
   const calculate = async () => {
     setLoading(true)
     try {
-      const payload = {
-        length: parseFloat(form.length),
-        width: parseFloat(form.width),
-        thickness: parseFloat(form.thickness),
-        grade: form.grade,
-      }
+     const length = isImperial
+  ? parseFloat(form.length) * 304.8
+  : parseFloat(form.length)
+
+const width = isImperial
+  ? parseFloat(form.width) * 304.8
+  : parseFloat(form.width)
+
+const thickness = isImperial
+  ? parseFloat(form.thickness) * 25.4
+  : parseFloat(form.thickness)
+
+const payload = {
+  length,
+  width,
+  thickness,
+  grade: form.grade,
+}
       const r = await authFetch('/api/calculate/concrete-volume', { method: 'POST', body: JSON.stringify(payload) })
       const data = await r.json()
       if (!r.ok) throw new Error(data.error || 'Failed')
@@ -43,11 +64,28 @@ export default function ConcreteVolumePage() {
       <div className="grid lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-2 bg-slate-900/50 border-slate-800 p-6 h-fit">
           <h2 className="text-lg font-semibold text-white mb-1">Inputs</h2>
-          <p className="text-xs text-slate-500 mb-5">Dimensions in millimetres</p>
+         <p className="text-xs text-slate-500 mb-5">
+  {isImperial
+    ? 'Length/width in ft, thickness in inches'
+    : 'Dimensions in millimetres'}
+</p>
           <div className="space-y-4">
-            <NumField label="Length" id="length" value={form.length} onChange={(v) => u('length', v)} unit="mm" />
-            <NumField label="Width" id="width" value={form.width} onChange={(v) => u('width', v)} unit="mm" />
-            <NumField label="Thickness / Depth" id="thickness" value={form.thickness} onChange={(v) => u('thickness', v)} unit="mm" />
+          <NumField label="Length" id="length" value={form.length} onChange={(v) => u('length', v)} unit={isImperial ? 'ft' : 'mm'} />
+            <NumField label="Width" id="width" value={form.width} onChange={(v) => u('width', v)} unit={isImperial ? 'ft' : 'mm'} />
+           <NumField label="Thickness / Depth" id="thickness" value={form.thickness} onChange={(v) => u('thickness', v)} unit={isImperial ? 'in' : 'mm'} />
+  label="Wastage"
+  id="wastage"
+  value={form.wastage}
+  onChange={(v) => u('wastage', v)}
+  unit="%"
+/>
+
+<NumField
+  label="Dry Volume Factor"
+  id="dryFactor"
+  value={form.dryFactor}
+  onChange={(v) => u('dryFactor', v)}
+/>
             <SelField label="Concrete grade" value={form.grade} onChange={(v) => u('grade', v)} options={GRADES} />
             <RunButton loading={loading} onClick={calculate} label="Calculate" />
           </div>
