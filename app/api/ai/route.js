@@ -88,25 +88,7 @@ const TOOLS = [
     url: '/dashboard/calculators/boq-generator'
   }
 ]
-const KNOWLEDGE_BASE = {
-  'm20 concrete':
-    'M20 concrete is a concrete grade having characteristic compressive strength of 20 N/mm² after 28 days curing. It is commonly used for slabs, beams, columns and footings in residential construction.',
 
-  sbc:
-    'SBC means Safe Bearing Capacity of soil. It is the maximum load that soil can safely carry without shear failure or excessive settlement.',
-
-  'plinth beam':
-    'A plinth beam is an RCC beam constructed at plinth level. It connects walls and columns and helps reduce differential settlement cracks.',
-
-  'one way slab':
-    'A one-way slab transfers load mainly in one direction. It generally occurs when longer span divided by shorter span is greater than 2.',
-
-  'two way slab':
-    'A two-way slab transfers load in both directions. It generally occurs when longer span divided by shorter span is less than or equal to 2.',
-
-  boq:
-    'BOQ means Bill of Quantities. It contains item descriptions, units, quantities, rates and total costs used for estimation and tendering.'
-}
 function findTool(prompt) {
   const q = prompt.toLowerCase()
 
