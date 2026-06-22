@@ -260,44 +260,7 @@ const payload = {
 </ResultBlock>
 
 <ResultBlock title="Water"
-<ResultBlock title="Material Cost" className="sm:col-span-2">
-  <Row
-    k="Cement Cost"
-    v={`₹ ${(
-      parseFloat(result.cement.bags) *
-      parseFloat(form.cementRate)
-    ).toFixed(0)}`}
-  />
 
-  <Row
-    k="Sand Cost"
-    v={`₹ ${(
-      parseFloat(result.sand.cum) *
-      parseFloat(form.sandRate)
-    ).toFixed(0)}`}
-  />
-
-  <Row
-    k="Aggregate Cost"
-    v={`₹ ${(
-      parseFloat(result.aggregate.cum) *
-      parseFloat(form.aggregateRate)
-    ).toFixed(0)}`}
-  />
-
-  <Row
-    k="Total Cost"
-    v={`₹ ${(
-      parseFloat(result.cement.bags) *
-      parseFloat(form.cementRate) +
-      parseFloat(result.sand.cum) *
-      parseFloat(form.sandRate) +
-      parseFloat(result.aggregate.cum) *
-      parseFloat(form.aggregateRate)
-    ).toFixed(0)}`}
-    highlight
-  />
-</ResultBlock>
 {form.supplyType === 'rmc' && (
   <ResultBlock title="RMC Order Summary" className="sm:col-span-2">
     <Row
