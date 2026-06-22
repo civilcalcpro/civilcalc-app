@@ -73,19 +73,7 @@ const payload = {
           <NumField label="Length" id="length" value={form.length} onChange={(v) => u('length', v)} unit={isImperial ? 'ft' : 'mm'} />
             <NumField label="Width" id="width" value={form.width} onChange={(v) => u('width', v)} unit={isImperial ? 'ft' : 'mm'} />
            <NumField label="Thickness / Depth" id="thickness" value={form.thickness} onChange={(v) => u('thickness', v)} unit={isImperial ? 'in' : 'mm'} />
-  label="Wastage"
-  id="wastage"
-  value={form.wastage}
-  onChange={(v) => u('wastage', v)}
-  unit="%"
-/>
 
-<NumField
-  label="Dry Volume Factor"
-  id="dryFactor"
-  value={form.dryFactor}
-  onChange={(v) => u('dryFactor', v)}
-/>
             <SelField label="Concrete grade" value={form.grade} onChange={(v) => u('grade', v)} options={GRADES} />
             <RunButton loading={loading} onClick={calculate} label="Calculate" />
           </div>
