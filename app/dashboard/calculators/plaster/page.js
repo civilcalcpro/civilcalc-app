@@ -196,15 +196,18 @@ if (form.unitSystem === 'imperial') {
 <SelField
   label="Unit System"
   value={form.unitSystem}
-  onChange=if (v.includes('Imperial')) {
-  u('unitSystem', 'imperial')
-} else {
-  u('unitSystem', 'metric')
-}
+  onChange={(v) => {
+    if (v.includes('Imperial')) {
+      u('unitSystem', 'imperial')
+    } else {
+      u('unitSystem', 'metric')
+    }
+  }}
   options={[
-  'Metric (m)',
-  'Imperial (ft)'
-]}
+    'Metric (m)',
+    'Imperial (ft)',
+  ]}
+/>
 />
             <div className="grid grid-cols-2 gap-3">
               <NumField
