@@ -352,7 +352,12 @@ isImperial
 
 <Row
   k="Specification"
-  v={result.sideFaceReinforcement.specification}
+  v={
+    isImperial &&
+    result.sideFaceReinforcement.specification.includes('10 mm')
+      ? '0.39 in Ø @ 3.94 in c/c on both faces'
+      : result.sideFaceReinforcement.specification
+  }
   highlight
 />
 
@@ -376,17 +381,25 @@ isImperial
         }
       />
 
-  <Row
-    k="Nominal shear stress"
-    v={`${result.shear.nominalShear} N/mm²`}
-  />
+ <Row
+  k="Nominal shear stress"
+  v={
+    isImperial
+      ? `${(result.shear.nominalShear * 145.038).toFixed(3)} psi`
+      : `${result.shear.nominalShear} N/mm²`
+  }
+/>
 </div>
 
 <div>
-  <Row
-    k="Permissible τc"
-    v={`${result.shear.permissibleShear} N/mm²`}
-  />
+ <Row
+  k="Permissible τc"
+  v={
+    isImperial
+      ? `${(result.shear.permissibleShear * 145.038).toFixed(3)} psi`
+      : `${result.shear.permissibleShear} N/mm²`
+  }
+/>
 
   <Row
     k="Stirrups"
