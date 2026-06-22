@@ -106,25 +106,87 @@ const payload = {
                   </div>
                 </ResultBlock>
                 <ResultBlock title="Volume">
-                  <Row k="Wet volume" v={`${result.wetVolume} m³`} />
-                  <Row k="Dry volume (×1.54)" v={`${result.dryVolume} m³`} highlight />
-                </ResultBlock>
-                <ResultBlock title="Cement">
-                  <Row k="Bags (50 kg)" v={`${result.cement.bags} bags`} highlight />
-                  <Row k="Weight" v={`${result.cement.kg} kg`} />
-                  <Row k="Volume" v={`${result.cement.cum} m³`} />
-                </ResultBlock>
-                <ResultBlock title="Sand (Fine Aggregate)">
-                  <Row k="Volume" v={`${result.sand.cum} m³`} highlight />
-                  <Row k="Volume" v={`${result.sand.cft} cft`} />
-                </ResultBlock>
-                <ResultBlock title="Coarse Aggregate">
-                  <Row k="Volume" v={`${result.aggregate.cum} m³`} highlight />
-                  <Row k="Volume" v={`${result.aggregate.cft} cft`} />
-                </ResultBlock>
-                <ResultBlock title="Water" className="sm:col-span-2">
-                  <Row k="Water required" v={`${result.water.litres} litres`} highlight />
-                </ResultBlock>
+  <Row
+    k="Wet volume"
+    v={
+      isImperial
+        ? `${m3ToFt3(result.wetVolume)} ft³`
+        : `${result.wetVolume} m³`
+    }
+  />
+
+  <Row
+    k="Dry volume (×1.54)"
+    v={
+      isImperial
+        ? `${m3ToFt3(result.dryVolume)} ft³`
+        : `${result.dryVolume} m³`
+    }
+    highlight
+  />
+</ResultBlock>
+
+<ResultBlock title="Cement">
+  <Row k="Bags (50 kg)" v={`${result.cement.bags} bags`} highlight />
+
+  <Row
+    k="Weight"
+    v={
+      isImperial
+        ? `${kgToLb(result.cement.kg)} lb`
+        : `${result.cement.kg} kg`
+    }
+  />
+
+  <Row
+    k="Volume"
+    v={
+      isImperial
+        ? `${m3ToFt3(result.cement.cum)} ft³`
+        : `${result.cement.cum} m³`
+    }
+  />
+</ResultBlock>
+
+<ResultBlock title="Sand (Fine Aggregate)">
+  <Row
+    k="Volume"
+    v={
+      isImperial
+        ? `${m3ToFt3(result.sand.cum)} ft³`
+        : `${result.sand.cum} m³`
+    }
+    highlight
+  />
+
+  <Row k="Volume (cft)" v={`${result.sand.cft} cft`} />
+</ResultBlock>
+
+<ResultBlock title="Coarse Aggregate">
+  <Row
+    k="Volume"
+    v={
+      isImperial
+        ? `${m3ToFt3(result.aggregate.cum)} ft³`
+        : `${result.aggregate.cum} m³`
+    }
+    highlight
+  />
+
+  <Row k="Volume (cft)" v={`${result.aggregate.cft} cft`} />
+</ResultBlock>
+
+<ResultBlock title="Water" className="sm:col-span-2">
+  <Row
+    k="Water required"
+    v={
+      isImperial
+        ? `${litreToGal(result.water.litres)} gallons`
+        : `${result.water.litres} litres`
+    }
+    highlight
+  />
+</ResultBlock>
               </div>
             </ResultsMotion>
           )}
@@ -133,3 +195,11 @@ const payload = {
     </CalcShell>
   )
 }
+const m3ToFt3 = (m3) =>
+  (parseFloat(m3) * 35.3147).toFixed(2)
+
+const kgToLb = (kg) =>
+  (parseFloat(kg) * 2.20462).toFixed(2)
+
+const litreToGal = (litre) =>
+  (parseFloat(litre) * 0.264172).toFixed(2)
