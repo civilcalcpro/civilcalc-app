@@ -198,14 +198,14 @@ if (form.unitSystem === 'imperial') {
   value={form.unitSystem}
   onChange={(v) => {
     if (v.includes('Imperial')) {
-      u('unitSystem', 'imperial ')
+      u('unitSystem', 'imperial (ft) ')
     } else {
-      u('unitSystem', 'metric  ')
+      u('unitSystem', 'metric (m) ')
     }
   }}
   options={[
-    'Metric ',
-    'Imperial ',
+    'Metric (m)',
+    'Imperial (ft)',
   ]}
 />
             <div className="grid grid-cols-2 gap-3">
