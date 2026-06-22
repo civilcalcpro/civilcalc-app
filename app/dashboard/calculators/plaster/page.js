@@ -101,7 +101,12 @@ if (form.unitSystem === 'imperial') {
 
       const cementCost = cementBags * n(form.cementRate)
       const sandCost = sandCft * n(form.sandRate)
-      const labourCost = netArea * n(form.labourRate)
+      const labourCost = netArea * labourRate
+      let labourRate = n(form.labourRate)
+
+if (form.unitSystem === 'imperial') {
+  labourRate = labourRate * 10.7639
+}
       const totalCost = cementCost + sandCost + labourCost
 
       const finalResult = {
@@ -191,8 +196,15 @@ if (form.unitSystem === 'imperial') {
 <SelField
   label="Unit System"
   value={form.unitSystem}
-  onChange={(v) => u('unitSystem', v)}
-  options={['metric', 'imperial']}
+  onChange=if (v.includes('Imperial')) {
+  u('unitSystem', 'imperial')
+} else {
+  u('unitSystem', 'metric')
+}
+  options={[
+  'Metric (m)',
+  'Imperial (ft)'
+]}
 />
             <div className="grid grid-cols-2 gap-3">
               <NumField
@@ -243,7 +255,7 @@ if (form.unitSystem === 'imperial') {
                 id="windowArea"
                 value={form.windowArea}
                 onChange={(v) => u('windowArea', v)}
-                unit="m²"
+                unit={form.unitSystem === 'imperial' ? 'ft²' : 'm²'}
                 step="0.1"
               />
             </div>
@@ -286,7 +298,7 @@ if (form.unitSystem === 'imperial') {
                   id="labourRate"
                   value={form.labourRate}
                   onChange={(v) => u('labourRate', v)}
-                  unit="₹/m²"
+                 unit={form.unitSystem === 'imperial' ? '₹/ft²' : '₹/m²'}
                   step="1"
                 />
               </div>
@@ -338,7 +350,9 @@ if (form.unitSystem === 'imperial') {
   k="Net Plaster Area"
   v={
     form.unitSystem === 'imperial'
-      ? `${m2ToFt2(Number(result.area.net)).toFixed(2)} ft²`
+      ? `${form.unitSystem === 'imperial'
+  ? `${(Number(result.area.net) * 10.7639).toFixed(2)} ft²`
+  : `${result.area.net} m²`} ft²`
       : `${result.area.net} m²`
   }
   highlight
