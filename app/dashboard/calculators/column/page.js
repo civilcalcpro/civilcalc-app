@@ -199,7 +199,7 @@ const payload = {
   k="Ties"
   v={
     isImperial
-      ? `${mmToInSimple(result.ties.diameter)} in Ø @ ${mmToInSimple(result.ties.spacing)} in c/c`
+      ? `${mmToIn(result.ties.diameter)} in Ø @ ${mmToIn(result.ties.spacing)} in c/c`
       : result.ties.specification
   }
 />
