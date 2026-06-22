@@ -110,8 +110,11 @@ const isImperial =
         {/* Input form */}
         <Card className="lg:col-span-2 bg-slate-900/50 border-slate-800 p-6 h-fit">
           <h2 className="text-lg font-semibold text-white mb-1">Inputs</h2>
-          <p className="text-xs text-slate-500 mb-5">All dimensions in mm, loads in kN/m, span in m</p>
-
+        <p className="text-xs text-slate-500 mb-5">
+  {isImperial
+    ? 'All dimensions in inches, loads in lb/ft, span in ft'
+    : 'All dimensions in mm, loads in kN/m, span in m'}
+</p>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
              <Field
@@ -192,8 +195,22 @@ const isImperial =
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <ResultBlock title="Geometry">
-                  <Row k="Beam size" v={`${result.design.beamWidth} × ${result.design.beamDepth} mm`} />
-                  <Row k="Effective depth d" v={`${result.design.effectiveDepth} mm`} />
+                 <Row
+  k="Beam size"
+  v={
+    isImperial
+      ? `${mmToIn(result.design.beamWidth)} × ${mmToIn(result.design.beamDepth)} in`
+      : `${result.design.beamWidth} × ${result.design.beamDepth} mm`
+  }
+/>
+                 <Row
+  k="Effective depth d"
+  v={
+    isImperial
+      ? `${mmToIn(result.design.effectiveDepth)} in`
+      : `${result.design.effectiveDepth} mm`
+  }
+/>
                   <Row k="Effective span" v={`${result.design.effectiveSpan} m`} />
                 </ResultBlock>
 
@@ -205,14 +222,42 @@ const isImperial =
                 </ResultBlock>
 
                 <ResultBlock title="Bending">
-                  <Row k="Max moment Mu" v={`${result.moment.maximumMoment} kNm`} highlight />
-                  <Row k="Limiting moment" v={`${result.moment.limitingMoment} kNm`} />
+                <Row
+  k="Max moment Mu"
+  v={
+    isImperial
+      ? `${kNmToKipFt(result.moment.maximumMoment)} kip-ft`
+      : `${result.moment.maximumMoment} kNm`
+  }
+/>
+              <Row
+  k="Limiting moment"
+  v={
+    isImperial
+      ? `${kNmToKipFt(result.moment.limitingMoment)} kip-ft`
+      : `${result.moment.limitingMoment} kNm`
+  }
+/>
                   <Row k="Section type" v={result.moment.type} />
                 </ResultBlock>
 
                 <ResultBlock title="Reinforcement">
-                  <Row k="Ast required" v={`${result.steel.requiredAst} mm²`} />
-                  <Row k="Ast provided" v={`${result.steel.providedAst} mm²`} />
+                <Row
+  k="Ast required"
+  v={
+    isImperial
+      ? `${mm2ToIn2(result.steel.requiredAst)} in²`
+      : `${result.steel.requiredAst} mm²`
+  }
+/>
+                  <Row
+  k="Ast provided"
+  v={
+    isImperial
+      ? `${mm2ToIn2(result.steel.providedAst)} in²`
+      : `${result.steel.providedAst} mm²`
+  }
+/>
                   <Row k="Main steel" v={result.steel.reinforcement} highlight />
                   {result.steel.compressionSteel !== 'Not Required' && (
                     <Row k="Compression steel" v={`${result.steel.compressionSteel} mm²`} />
@@ -248,7 +293,13 @@ const isImperial =
     </div>
   )
 }
+const mmToIn = (mm) => (mm / 25.4).toFixed(2)
 
+const mm2ToIn2 = (mm2) => (mm2 / 645.16).toFixed(2)
+
+const kNmToKipFt = (kNm) => (kNm * 0.73756).toFixed(2)
+
+const kNToKip = (kN) => (kN * 0.224809).toFixed(2)
 function Field({ label, id, value, onChange, type = 'number', step = '1' }) {
   return (
     <div className="space-y-1.5">
