@@ -208,7 +208,6 @@ if (form.unitSystem === 'imperial') {
     'Imperial',
   ]}
 />
-/>
             <div className="grid grid-cols-2 gap-3">
               <NumField
                 label="No. of walls"
