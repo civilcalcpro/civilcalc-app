@@ -191,8 +191,7 @@ const payload = {
     }
     highlight
   />
-</ResultBlock>
-                title="Volume">
+</ResultBlock>  title="Volume">
   <Row
     k="Wet volume"
     v={
