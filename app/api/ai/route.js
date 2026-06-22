@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { KNOWLEDGE_BASE } from '@/lib/civil-knowledge'
 const TOOLS = [
   {
     keywords: [
@@ -116,16 +117,28 @@ function findTool(prompt) {
   )
 }
 
-function searchKnowledge(prompt) {
-  const q = prompt.toLowerCase()
+function searchKnowledge(query) {
+  const q = query.toLowerCase()
 
-  const match = Object.entries(
-    KNOWLEDGE_BASE
-  ).find(([key]) =>
-    q.includes(key.toLowerCase())
-  )
+  let bestMatch = null
+  let highestScore = 0
 
-  return match?.[1] || null
+  for (const item of KNOWLEDGE_BASE) {
+    let score = 0
+
+    for (const keyword of item.keywords) {
+      if (q.includes(keyword.toLowerCase())) {
+        score++
+      }
+    }
+
+    if (score > highestScore) {
+      highestScore = score
+      bestMatch = item
+    }
+  }
+
+  return bestMatch?.answer || null
 }
 function fallbackAnswer(prompt) {
   const tool = findTool(prompt)
