@@ -100,13 +100,15 @@ if (form.unitSystem === 'imperial') {
       const sandCft = sandVolume * 35.3147
 
       const cementCost = cementBags * n(form.cementRate)
-      const sandCost = sandCft * n(form.sandRate)
-      const labourCost = netArea * labourRate
-      let labourRate = n(form.labourRate)
+const sandCost = sandCft * n(form.sandRate)
+
+let labourRate = n(form.labourRate)
 
 if (form.unitSystem === 'imperial') {
   labourRate = labourRate * 10.7639
 }
+
+const labourCost = netArea * labourRate
       const totalCost = cementCost + sandCost + labourCost
 
       const finalResult = {
@@ -196,17 +198,8 @@ if (form.unitSystem === 'imperial') {
 <SelField
   label="Unit System"
   value={form.unitSystem}
-  onChange={(v) => {
-    if (v === 'Imperial') {
-      u('unitSystem', 'imperial')
-    } else {
-      u('unitSystem', 'metric')
-    }
-  }}
-  options={[
-    'Metric',
-    'Imperial',
-  ]}
+  onChange={(v) => u('unitSystem', v)}
+  options={['metric', 'imperial']}
 />
             <div className="grid grid-cols-2 gap-3">
               <NumField
@@ -352,9 +345,7 @@ if (form.unitSystem === 'imperial') {
   k="Net Plaster Area"
   v={
     form.unitSystem === 'imperial'
-      ? `${form.unitSystem === 'imperial'
-  ? `${(Number(result.area.net) * 10.7639).toFixed(2)} ft²`
-  : `${result.area.net} m²`} ft²`
+      ? `${(Number(result.area.net) * 10.7639).toFixed(2)} ft²`
       : `${result.area.net} m²`
   }
   highlight
