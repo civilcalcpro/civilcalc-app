@@ -242,6 +242,44 @@ const payload = {
         : `${result.wetVolume} m³`
     }
   />
+    <ResultBlock title="Material Cost" className="sm:col-span-2">
+  <Row
+    k="Cement Cost"
+    v={`₹ ${(
+      Number(result.cement.bags) *
+      Number(form.cementRate)
+    ).toFixed(0)}`}
+  />
+
+  <Row
+    k="Sand Cost"
+    v={`₹ ${(
+      Number(result.sand.cum) *
+      Number(form.sandRate)
+    ).toFixed(0)}`}
+  />
+
+  <Row
+    k="Aggregate Cost"
+    v={`₹ ${(
+      Number(result.aggregate.cum) *
+      Number(form.aggregateRate)
+    ).toFixed(0)}`}
+  />
+
+  <Row
+    k="Total Material Cost"
+    v={`₹ ${(
+      Number(result.cement.bags) *
+      Number(form.cementRate) +
+      Number(result.sand.cum) *
+      Number(form.sandRate) +
+      Number(result.aggregate.cum) *
+      Number(form.aggregateRate)
+    ).toFixed(0)}`}
+    highlight
+  />
+</ResultBlock>
 
   <Row
     k="Wastage"
