@@ -28,28 +28,50 @@ export default function BeamDesignPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [calculationId, setCalculationId] = useState(null)
-  const { settings } = useGlobalSettings()
-
-const isImperial = settings?.unitSystem === 'imperial'
 
   const update = (k, v) => setForm((p) => ({ ...p, [k]: v }))
+const { settings } = useGlobalSettings()
 
+const isImperial = settings?.unitSystem === 'imperial'
   const calculate = async () => {
-    setLoading(true)
-    try {
-      const payload = {
-        span: parseFloat(form.span),
-        width: parseFloat(form.width),
-        depth: parseFloat(form.depth),
-        deadLoad: parseFloat(form.deadLoad),
-        liveLoad: parseFloat(form.liveLoad),
-        grade: form.grade,
-        steelGrade: form.steelGrade,
-      }
-      const res = await authFetch('/api/calculate/beam', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
+  setLoading(true)
+
+  try {
+
+    const span = isImperial
+      ? parseFloat(form.span) * 0.3048
+      : parseFloat(form.span)
+
+    const width = isImperial
+      ? parseFloat(form.width) * 25.4
+      : parseFloat(form.width)
+
+    const depth = isImperial
+      ? parseFloat(form.depth) * 25.4
+      : parseFloat(form.depth)
+
+    const deadLoad = isImperial
+      ? parseFloat(form.deadLoad) * 0.0145939
+      : parseFloat(form.deadLoad)
+
+    const liveLoad = isImperial
+      ? parseFloat(form.liveLoad) * 0.0145939
+      : parseFloat(form.liveLoad)
+
+    const payload = {
+      span,
+      width,
+      depth,
+      deadLoad,
+      liveLoad,
+      grade: form.grade,
+      steelGrade: form.steelGrade,
+    }
+
+    const res = await authFetch('/api/calculate/beam', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Calculation failed')
       setResult(data.result)
@@ -103,7 +125,8 @@ const isImperial = settings?.unitSystem === 'imperial'
             <div className="grid grid-cols-2 gap-3">
              <Field
   label={`Dead Load (${isImperial ? 'lb/ft' : 'kN/m'})`} id="deadLoad" value={form.deadLoad} onChange={(v) => update('deadLoad', v)} type="number" step="0.1" />
-              <Field label="Live load (kN/m)" id="liveLoad" value={form.liveLoad} onChange={(v) => update('liveLoad', v)} type="number" step="0.1" />
+              <Field
+  label={`Live Load (${isImperial ? 'lb/ft' : 'kN/m'})`} id="liveLoad" value={form.liveLoad} onChange={(v) => update('liveLoad', v)} type="number" step="0.1" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
