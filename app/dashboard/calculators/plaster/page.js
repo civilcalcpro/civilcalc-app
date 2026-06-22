@@ -198,14 +198,14 @@ if (form.unitSystem === 'imperial') {
   value={form.unitSystem}
   onChange={(v) => {
     if (v.includes('Imperial')) {
-      u('unitSystem', 'imperial')
+      u('unitSystem', 'imperial ')
     } else {
-      u('unitSystem', 'metric')
+      u('unitSystem', 'metric  ')
     }
   }}
   options={[
-    'Metric (m)',
-    'Imperial (ft)',
+    'Metric ',
+    'Imperial ',
   ]}
 />
             <div className="grid grid-cols-2 gap-3">
@@ -231,7 +231,7 @@ if (form.unitSystem === 'imperial') {
               id="thickness"
               value={form.thickness}
               onChange={(v) => u('thickness', v)}
-              unit={form.unitSystem === 'imperial' ? 'mm' : 'in'}
+              unit= "mm"
               step="1"
             />
 
