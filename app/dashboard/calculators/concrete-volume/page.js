@@ -272,7 +272,7 @@ const payload = {
     highlight
   />
 </ResultBlock>
-      <ResultBlock title="Order Summary" className="sm:col-span-2">
+    <ResultBlock title="Order Summary" className="sm:col-span-2">
   <Row
     k="Concrete Required"
     v={
@@ -281,6 +281,28 @@ const payload = {
         : `${result.wetVolume} m³`
     }
   />
+
+  <Row
+    k="Wastage"
+    v={`${form.wastage || 5}%`}
+  />
+
+  <Row
+    k="Final Quantity"
+    v={
+      isImperial
+        ? `${m3ToFt3(
+            parseFloat(result.wetVolume) *
+            (1 + (form.wastage || 5) / 100)
+          )} ft³`
+        : `${(
+            parseFloat(result.wetVolume) *
+            (1 + (form.wastage || 5) / 100)
+          ).toFixed(2)} m³`
+    }
+    highlight
+  />
+</ResultBlock>
     <ResultBlock title="Material Cost" className="sm:col-span-2">
   <Row
     k="Cement Cost"
