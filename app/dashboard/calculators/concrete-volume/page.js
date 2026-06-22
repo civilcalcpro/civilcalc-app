@@ -21,8 +21,14 @@ const [form, setForm] = useState({
   width: 3000,
   thickness: 150,
   grade: 'M20',
+
   wastage: 5,
-  dryFactor: 1.54,
+
+  cementRate: 420,
+  sandRate: 1800,
+  aggregateRate: 1400,
+
+  supplyType: 'site',
 })
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
@@ -75,6 +81,47 @@ const payload = {
            <NumField label="Thickness / Depth" id="thickness" value={form.thickness} onChange={(v) => u('thickness', v)} unit={isImperial ? 'in' : 'mm'} />
 
             <SelField label="Concrete grade" value={form.grade} onChange={(v) => u('grade', v)} options={GRADES} />
+  <NumField
+  label="Wastage"
+  id="wastage"
+  value={form.wastage}
+  onChange={(v) => u('wastage', v)}
+  unit="%"
+/>
+
+<NumField
+  label="Cement Rate"
+  id="cementRate"
+  value={form.cementRate}
+  onChange={(v) => u('cementRate', v)}
+  unit="₹/bag"
+/>
+
+<NumField
+  label="Sand Rate"
+  id="sandRate"
+  value={form.sandRate}
+  onChange={(v) => u('sandRate', v)}
+  unit="₹/m³"
+/>
+
+<NumField
+  label="Aggregate Rate"
+  id="aggregateRate"
+  value={form.aggregateRate}
+  onChange={(v) => u('aggregateRate', v)}
+  unit="₹/m³"
+/>
+
+<SelField
+  label="Supply Type"
+  value={form.supplyType}
+  onChange={(v) => u('supplyType', v)}
+  options={[
+    'site',
+    'rmc',
+  ]}
+/>
             <RunButton loading={loading} onClick={calculate} label="Calculate" />
           </div>
           <div className="mt-6 p-3 rounded-lg bg-slate-800/40 border border-slate-700 text-xs text-slate-400">
@@ -159,7 +206,6 @@ const payload = {
     highlight
   />
 
-  <Row k="Volume (cft)" v={`${result.sand.cft} cft`} />
 </ResultBlock>
 
 <ResultBlock title="Coarse Aggregate">
@@ -173,10 +219,70 @@ const payload = {
     highlight
   />
 
-  <Row k="Volume (cft)" v={`${result.aggregate.cft} cft`} />
 </ResultBlock>
 
-<ResultBlock title="Water" className="sm:col-span-2">
+<ResultBlock title="Water"
+<ResultBlock title="Material Cost" className="sm:col-span-2">
+  <Row
+    k="Cement Cost"
+    v={`₹ ${(
+      parseFloat(result.cement.bags) *
+      parseFloat(form.cementRate)
+    ).toFixed(0)}`}
+  />
+
+  <Row
+    k="Sand Cost"
+    v={`₹ ${(
+      parseFloat(result.sand.cum) *
+      parseFloat(form.sandRate)
+    ).toFixed(0)}`}
+  />
+
+  <Row
+    k="Aggregate Cost"
+    v={`₹ ${(
+      parseFloat(result.aggregate.cum) *
+      parseFloat(form.aggregateRate)
+    ).toFixed(0)}`}
+  />
+
+  <Row
+    k="Total Cost"
+    v={`₹ ${(
+      parseFloat(result.cement.bags) *
+      parseFloat(form.cementRate) +
+      parseFloat(result.sand.cum) *
+      parseFloat(form.sandRate) +
+      parseFloat(result.aggregate.cum) *
+      parseFloat(form.aggregateRate)
+    ).toFixed(0)}`}
+    highlight
+  />
+</ResultBlock>
+{form.supplyType === 'rmc' && (
+  <ResultBlock title="RMC Order Summary" className="sm:col-span-2">
+    <Row
+      k="Required Concrete"
+      v={`${result.wetVolume} m³`}
+    />
+
+    <Row
+      k="Wastage"
+      v={`${form.wastage}%`}
+    />
+
+    <Row
+      k="Recommended Order Quantity"
+      v={`${(
+        parseFloat(result.wetVolume) *
+        (1 + parseFloat(form.wastage) / 100)
+      ).toFixed(2)} m³`}
+      highlight
+    />
+  </ResultBlock>
+)}
+      className="sm:col-span-2">
   <Row
     k="Water required"
     v={
