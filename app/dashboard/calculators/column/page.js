@@ -112,17 +112,21 @@ const payload = {
           {!result && <EmptyResult icon={Building2} />}
           {result && (
             <ResultsMotion initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <SafetyBanner safe={result.isDesignSafe} subtitle={`${result.design.columnType} · ${result.design.columnSize}`} />
+              <SafetyBanner safe={result.isDesignSafe} subtitle={
+  isImperial
+    ? `${result.design.columnType} · ${mmToIn(parseFloat(result.design.columnSize.split('mm × ')[0]))} × ${mmToIn(parseFloat(result.design.columnSize.split('mm × ')[1]))} in`
+    : `${result.design.columnType} · ${result.design.columnSize}`
+}/>
               <div className="flex justify-end">
                 <DownloadPDFButton type="column" inputs={form} result={result} calculationId={calculationId} />
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <ResultBlock title="Geometry">
-                  <Row
+                 <Row
   k="Column size"
   v={
     isImperial
-      ? `${mmToIn(result.design.width)} × ${mmToIn(result.design.depth)} in`
+      ? `${mmToIn(parseFloat(result.design.columnSize.split('mm × ')[0]))} × ${mmToIn(parseFloat(result.design.columnSize.split('mm × ')[1]))} in`
       : result.design.columnSize
   }
 />
@@ -146,11 +150,11 @@ const payload = {
                   <Row k="Type" v={result.design.columnType} />
                 </ResultBlock>
                 <ResultBlock title="Loading">
-                  <Row
+                 <Row
   k="Applied load Pu"
   v={
     isImperial
-      ? `${kNToKip(result.loading.appliedLoad / 1000)} kip`
+      ? `${(result.loading.appliedLoad / 4448.22).toFixed(2)} kip`
       : `${(result.loading.appliedLoad / 1000).toFixed(2)} kN`
   }
   highlight
