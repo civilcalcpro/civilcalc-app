@@ -261,28 +261,7 @@ const payload = {
 
 <ResultBlock title="Water"
 
-{form.supplyType === 'rmc' && (
-  <ResultBlock title="RMC Order Summary" className="sm:col-span-2">
-    <Row
-      k="Required Concrete"
-      v={`${result.wetVolume} m³`}
-    />
 
-    <Row
-      k="Wastage"
-      v={`${form.wastage}%`}
-    />
-
-    <Row
-      k="Recommended Order Quantity"
-      v={`${(
-        parseFloat(result.wetVolume) *
-        (1 + parseFloat(form.wastage) / 100)
-      ).toFixed(2)} m³`}
-      highlight
-    />
-  </ResultBlock>
-)}
       className="sm:col-span-2">
   <Row
     k="Water required"
