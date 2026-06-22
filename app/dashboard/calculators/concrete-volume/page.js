@@ -29,6 +29,7 @@ const [form, setForm] = useState({
   aggregateRate: 1400,
 
   supplyType: 'site',
+  concreteType: 'Slab',
 })
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
@@ -122,8 +123,22 @@ const payload = {
     'rmc',
   ]}
 />
+    <SelField
+  label="Concrete Type"
+  value={form.concreteType}
+  onChange={(v) => u('concreteType', v)}
+  options={[
+    'Slab',
+    'Beam',
+    'Column',
+    'Footing',
+    'PCC',
+    'Custom',
+  ]}
+/>
   
-            <RunButton loading={loading} onClick={calculate} label="Calculate" />
+            <RunButton 
+    loading={loading} onClick={calculate} label="Calculate" />
           </div>
           <div className="mt-6 p-3 rounded-lg bg-slate-800/40 border border-slate-700 text-xs text-slate-400">
             <span className="text-orange-400 font-semibold">Nominal mix ratios (IS 456):</span>
@@ -153,7 +168,31 @@ const payload = {
                     <Row k="Water / Cement" v={result.mix.waterCementRatio} />
                   </div>
                 </ResultBlock>
-                <ResultBlock title="Volume">
+      <ResultBlock title="Recommendation">
+  <Row
+    k="Concrete Type"
+    v={form.concreteType}
+  />
+
+  <Row
+    k="Recommended Grade"
+    v={
+      form.concreteType === 'PCC'
+        ? 'M10'
+        : form.concreteType === 'Slab'
+        ? 'M20'
+        : form.concreteType === 'Beam'
+        ? 'M25'
+        : form.concreteType === 'Column'
+        ? 'M25'
+        : form.concreteType === 'Footing'
+        ? 'M20'
+        : 'User Choice'
+    }
+    highlight
+  />
+</ResultBlock>
+                title="Volume">
   <Row
     k="Wet volume"
     v={
@@ -302,6 +341,23 @@ const payload = {
     highlight
   />
 </ResultBlock>
+      {form.supplyType === 'rmc' && (
+  <ResultBlock title="RMC Order">
+    <Row
+      k="Recommended Order"
+      v={`${(
+        parseFloat(result.wetVolume) *
+        (1 + form.wastage / 100)
+      ).toFixed(2)} m³`}
+      highlight
+    />
+
+    <Row
+      k="Note"
+      v="Includes wastage allowance for site conditions"
+    />
+  </ResultBlock>
+)}
               </div>
             </ResultsMotion>
           )}
