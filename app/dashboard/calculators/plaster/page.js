@@ -30,6 +30,7 @@ export default function PlasterPage() {
     cementRate: 400,
     sandRate: 45,
     labourRate: 80,
+    unitSystem: 'metric',
   })
 
   const [loading, setLoading] = useState(false)
@@ -44,18 +45,31 @@ export default function PlasterPage() {
   }
 
   const round = (v, d = 2) => Number(v || 0).toFixed(d)
+  const ftToM = (ft) => ft * 0.3048
+const m2ToFt2 = (m2) => m2 * 10.7639
+const m3ToFt3 = (m3) => m3 * 35.3147
 
   const calc = () => {
     setLoading(true)
 
     try {
-      const length = n(form.length)
-      const height = n(form.height)
+      let length = n(form.length)
+let height = n(form.height)
+
+if (form.unitSystem === 'imperial') {
+  length = ftToM(length)
+  height = ftToM(height)
+}
       const walls = n(form.walls)
       const sides = n(form.sides)
       const thickness = n(form.thickness)
-      const doorArea = n(form.doorArea)
-      const windowArea = n(form.windowArea)
+      let doorArea = n(form.doorArea)
+let windowArea = n(form.windowArea)
+
+if (form.unitSystem === 'imperial') {
+  doorArea = doorArea / 10.7639
+  windowArea = windowArea / 10.7639
+}
       const wastage = n(form.wastage)
 
       if (length <= 0 || height <= 0 || walls <= 0 || sides <= 0 || thickness <= 0) {
@@ -161,7 +175,7 @@ export default function PlasterPage() {
                 id="length"
                 value={form.length}
                 onChange={(v) => u('length', v)}
-                unit="m"
+                unit={form.unitSystem === 'imperial' ? 'ft' : 'm'}
                 step="0.1"
               />
 
@@ -170,11 +184,16 @@ export default function PlasterPage() {
                 id="height"
                 value={form.height}
                 onChange={(v) => u('height', v)}
-                unit="m"
+                unit={form.unitSystem === 'imperial' ? 'ft' : 'm'}
                 step="0.1"
               />
             </div>
-
+<SelField
+  label="Unit System"
+  value={form.unitSystem}
+  onChange={(v) => u('unitSystem', v)}
+  options={['metric', 'imperial']}
+/>
             <div className="grid grid-cols-2 gap-3">
               <NumField
                 label="No. of walls"
@@ -198,7 +217,7 @@ export default function PlasterPage() {
               id="thickness"
               value={form.thickness}
               onChange={(v) => u('thickness', v)}
-              unit="mm"
+              unit={form.unitSystem === 'imperial' ? 'mm' : 'in'}
               step="1"
             />
 
@@ -215,7 +234,7 @@ export default function PlasterPage() {
                 id="doorArea"
                 value={form.doorArea}
                 onChange={(v) => u('doorArea', v)}
-                unit="m²"
+                unit={form.unitSystem === 'imperial' ? 'ft²' : 'm²'}
                 step="0.1"
               />
 
@@ -297,20 +316,64 @@ export default function PlasterPage() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <ResultBlock title="Area Summary">
-                  <Row k="Gross Area" v={`${result.area.gross} m²`} />
-                  <Row k="Deductions" v={`${result.area.deduction} m²`} />
-                  <Row k="Net Plaster Area" v={`${result.area.net} m²`} highlight />
+                  <Row
+  k="Gross Area"
+  v={
+    form.unitSystem === 'imperial'
+      ? `${m2ToFt2(Number(result.area.gross)).toFixed(2)} ft²`
+      : `${result.area.gross} m²`
+  }
+/>
+
+<Row
+  k="Deductions"
+  v={
+    form.unitSystem === 'imperial'
+      ? `${m2ToFt2(Number(result.area.deduction)).toFixed(2)} ft²`
+      : `${result.area.deduction} m²`
+  }
+/>
+
+<Row
+  k="Net Plaster Area"
+  v={
+    form.unitSystem === 'imperial'
+      ? `${m2ToFt2(Number(result.area.net)).toFixed(2)} ft²`
+      : `${result.area.net} m²`
+  }
+  highlight
+/>
                   <Row k="Sides plastered" v={result.inputs.sides} />
                 </ResultBlock>
 
                 <ResultBlock title="Volume">
-                  <Row k="Wet volume" v={`${result.volume.wetVolume} m³`} />
-                  <Row k="Dry volume" v={`${result.volume.dryVolume} m³`} />
-                  <Row
-                    k="Dry volume with wastage"
-                    v={`${result.volume.dryVolumeWithWastage} m³`}
-                    highlight
-                  />
+                 <Row
+  k="Wet volume"
+  v={
+    form.unitSystem === 'imperial'
+      ? `${m3ToFt3(Number(result.volume.wetVolume)).toFixed(2)} ft³`
+      : `${result.volume.wetVolume} m³`
+  }
+/>
+
+<Row
+  k="Dry volume"
+  v={
+    form.unitSystem === 'imperial'
+      ? `${m3ToFt3(Number(result.volume.dryVolume)).toFixed(2)} ft³`
+      : `${result.volume.dryVolume} m³`
+  }
+/>
+
+<Row
+  k="Dry volume with wastage"
+  v={
+    form.unitSystem === 'imperial'
+      ? `${m3ToFt3(Number(result.volume.dryVolumeWithWastage)).toFixed(2)} ft³`
+      : `${result.volume.dryVolumeWithWastage} m³`
+  }
+  highlight
+/>
                 </ResultBlock>
 
                 <ResultBlock title="Cement">
@@ -320,8 +383,15 @@ export default function PlasterPage() {
                 </ResultBlock>
 
                 <ResultBlock title="Sand">
-                  <Row k="Volume" v={`${result.sand.cum} m³`} />
-                  <Row k="Volume" v={`${result.sand.cft} cft`} highlight />
+                  <Row
+  k="Volume"
+  v={
+    form.unitSystem === 'imperial'
+      ? `${result.sand.cft} cft`
+      : `${result.sand.cum} m³`
+  }
+  highlight
+/>
                   <Row k="Cost" v={`₹${result.sand.cost}`} />
                 </ResultBlock>
 
