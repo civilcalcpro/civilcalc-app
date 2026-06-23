@@ -79,7 +79,7 @@ const navGroups = [
   },
 ]
 
-const LINKEDIN_URL = 'https://www.linkedin.com/in/civilcal-pro-6ba230411'
+const LINKEDIN_URL =  'https://www.linkedin.com/in/civilcalc-pro-6ba230411/'
 
 export default function DashboardLayout({ children }) {
   const { user, loading, logout } = useAuth()
@@ -183,16 +183,15 @@ export default function DashboardLayout({ children }) {
       </nav>
 
       <div className="p-3 border-t border-slate-800 space-y-2">
-        <a
-          href={LINKEDIN_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white text-xs transition"
-        >
-          <Linkedin className="h-3.5 w-3.5" />
-          <span>Follow on LinkedIn</span>
-        </a>
-
+     <a
+  href={LINKEDIN_URL}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="flex items-center justify-center gap-2 w-full border border-slate-700 rounded-lg py-3 text-slate-300 hover:text-[#70b5f9] hover:border-[#70b5f9] transition"
+>
+  <Linkedin className="h-4 w-4" />
+  Follow on LinkedIn
+</a>
         <div className="flex items-center justify-between px-2 py-2 rounded-lg bg-slate-900/50">
           <div className="flex items-center">
             <div className="h-9 w-9 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center text-sm font-bold">
