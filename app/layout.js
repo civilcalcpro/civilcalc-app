@@ -14,9 +14,9 @@ export const metadata = {
     google: '-39KadMQidRHVAfg4YFM1we0tudJtd9k8MrIM0j5Mz4',
   },
 
-  title: {
+    title: {
     default: 'CivilCalc Pro — Civil Engineering Calculators & Structural Analysis',
-    template: '%s | CivilCalc Pro',
+    template: '%s',
   },
 
   description:
