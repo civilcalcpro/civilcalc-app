@@ -38,38 +38,119 @@ import {
   Tooltip,
 } from 'recharts'
 
-const quickTools = [
-  { name: 'RCC Beam Design', icon: Ruler, href: '/dashboard/calculators/beam', color: 'orange', desc: 'Singly/doubly reinforced beam per IS 456' },
-  { name: 'Column Design', icon: Building2, href: '/dashboard/calculators/column', color: 'blue', desc: 'Axially loaded RCC column' },
-  { name: 'One-Way Slab', icon: HardHat, href: '/dashboard/calculators/slab', color: 'yellow', desc: 'Simply-supported one-way slab' },
-  { name: 'Two-Way Slab', icon: Grid3x3, href: '/dashboard/calculators/two-way-slab', color: 'red', desc: 'Simply-supported two-way slab (Table 27)' },
-  { name: 'Footing Design', icon: Anchor, href: '/dashboard/calculators/footing', color: 'purple', desc: 'Isolated square footing' },
-  { name: 'Concrete & Mix', icon: Boxes, href: '/dashboard/calculators/concrete-volume', color: 'green', desc: 'Nominal mix C : S : A per grade' },
-  { name: 'Steel Weight', icon: Ruler, href: '/dashboard/calculators/steel-weight', color: 'orange', desc: 'D²/162 bar weight calculator' },
-  { name: 'Brickwork', icon: Layers, href: '/dashboard/calculators/brickwork', color: 'red', desc: 'Brick count + mortar take-off' },
-  { name: 'Plaster Work', icon: Paintbrush, href: '/dashboard/calculators/plaster', color: 'yellow', desc: 'Cement & sand for plaster' },
-  {name : 'Tile calculator ', icon : Grid3x3 , href: '/dashboard/calculators/tile' , color: 'orange', desc: 'tile calculation and cost estimation ' },
-  {name : 'paint calculator ', icon : Paintbrush, href:'/dashboard/calculators/paint', color : 'yellow' ,desc : 'Paintwork calculation and cost estimation' } ,
-  { name: 'Excavation', icon: Shovel, href: '/dashboard/calculators/excavation', color: 'blue', desc: 'Earthwork volume & truck loads' },
-  { name: 'Rate Analysis', icon: IndianRupee, href: '/dashboard/calculators/rate-analysis', color: 'green', desc: 'Project cost estimation' },
-  { name: 'Unit Converter', icon: ArrowLeftRight, href: '/dashboard/calculators/unit-converter', color: 'purple', desc: 'Length, force, pressure & more' },
-  { name: 'AI Engineering Assistant', icon: Bot, href: '/dashboard/ai-assistant', color: 'purple', desc: 'Powered by Claude — ask anything' },
-  {
-  name: 'BOQ Generator',
-  icon: FileText,
-  href: '/dashboard/calculators/boq-generator',
-  color: 'green',
-  desc: 'Professional Bill of Quantities'
-},
-  {
-  name: 'House Construction Cost',
-  icon: Building2,
-  href: '/dashboard/calculators/home-construction',
-  color: 'orange',
-  desc: 'Complete house construction cost estimation'
-},
-  { name: 'IS Code Library', icon: FileText, href: '/dashboard/is-codes', color: 'red', desc: 'IS 456 / 875 / 1893 / 13920 references' },
-]
+const calculationMeta = {
+  'beam-design': {
+    label: 'RCC Beam Design',
+    category: 'design',
+  },
+  'column-design': {
+    label: 'Column Design',
+    category: 'design',
+  },
+  'one-way-slab': {
+    label: 'One-Way Slab',
+    category: 'design',
+  },
+  'two-way-slab': {
+    label: 'Two-Way Slab',
+    category: 'design',
+  },
+  footing: {
+    label: 'Footing Design',
+    category: 'design',
+  },
+  'concrete-volume': {
+    label: 'Concrete Volume',
+    category: 'calculation',
+  },
+  'steel-weight': {
+    label: 'Steel Weight',
+    category: 'calculation',
+  },
+  brickwork: {
+    label: 'Brickwork Calculator',
+    category: 'calculation',
+  },
+  'plaster-work': {
+    label: 'Plaster Calculator',
+    category: 'calculation',
+  },
+  plaster: {
+    label: 'Plaster Calculator',
+    category: 'calculation',
+  },
+  excavation: {
+    label: 'Excavation Calculator',
+    category: 'calculation',
+  },
+  'tile-calculator': {
+    label: 'Tile Calculator',
+    category: 'calculation',
+  },
+  'paint-calculator': {
+    label: 'Paint Calculator',
+    category: 'calculation',
+  },
+  'home-construction': {
+    label: 'Home Construction Cost',
+    category: 'estimate',
+  },
+  'rate-analysis': {
+    label: 'Rate Analysis',
+    category: 'estimate',
+  },
+}
+
+function formatCalculationName(type) {
+  if (!type) return 'Calculation'
+
+  if (calculationMeta[type]?.label) {
+    return calculationMeta[type].label
+  }
+
+  return type
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function getCalculationStatus(calculation) {
+  const type = calculation?.type
+  const meta = calculationMeta[type]
+  const results = calculation?.results || {}
+
+  if (meta?.category === 'estimate') {
+    return {
+      label: 'Estimated',
+      className: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    }
+  }
+
+  if (meta?.category === 'calculation') {
+    return {
+      label: 'Completed',
+      className: 'text-green-400 bg-green-500/10 border-green-500/20',
+    }
+  }
+
+  if (results?.isDesignSafe === false) {
+    return {
+      label: 'Review',
+      className: 'text-red-400 bg-red-500/10 border-red-500/20',
+    }
+  }
+
+  if (results?.isDesignSafe === true) {
+    return {
+      label: 'Safe',
+      className: 'text-green-400 bg-green-500/10 border-green-500/20',
+    }
+  }
+
+  return {
+    label: 'Completed',
+    className: 'text-green-400 bg-green-500/10 border-green-500/20',
+  }
+}
 
 export default function DashboardPage() {
   const { user, authFetch } = useAuth()
@@ -218,17 +299,37 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="space-y-3">
-            {calcs.slice(0, 5).map((c) => (
-              <div key={c.calculationId} className="flex items-center justify-between py-2 border-b border-slate-800/80 last:border-0">
-                <div className="min-w-0">
-                  <div className="text-sm text-white capitalize truncate">{c.type.replace(/-/g, ' ')}</div>
-                  <div className="text-xs text-slate-500">{new Date(c.createdAt).toLocaleString('en-IN')}</div>
+                        {calcs.slice(0, 5).map((c, index) => {
+              const status = getCalculationStatus(c)
+
+              return (
+                <div
+                  key={c.calculationId || c._id || index}
+                  className="flex items-center justify-between gap-3 py-3 border-b border-slate-800/80 last:border-0"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm text-white font-medium truncate">
+                      {formatCalculationName(c.type)}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {new Date(c.createdAt).toLocaleString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full border font-semibold ${status.className}`}
+                  >
+                    {status.label}
+                  </div>
                 </div>
-                <div className={`text-xs font-medium ${c.results?.isDesignSafe === false ? 'text-red-400' : 'text-green-400'}`}>
-                  {c.results?.isDesignSafe === false ? 'Review' : 'Safe'}
-                </div>
-              </div>
-            ))}
+              )
+            })}
             {calcs.length === 0 && (
               <div className="text-sm text-slate-500 py-8 text-center">
                 No calculations yet.
