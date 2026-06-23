@@ -57,14 +57,23 @@ const nextConfig = {
 
   async headers() {
     return [
+      // Protect ALL pages — no one can embed your site in an iframe (clickjacking protection)
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Frame-Options", value: "ALLOWALL" },
-          { key: "Content-Security-Policy", value: "frame-ancestors *;" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self';" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      // Allow CORS only for your API routes (not the whole site)
+      {
+        source: "/api/(.*)",
+        headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: process.env.CORS_ORIGINS || "*",
+            value: process.env.CORS_ORIGINS || "https://civilcalcpro.in",
           },
           {
             key: "Access-Control-Allow-Methods",
@@ -72,7 +81,7 @@ const nextConfig = {
           },
           {
             key: "Access-Control-Allow-Headers",
-            value: "*",
+            value: "Content-Type, Authorization",
           },
         ],
       },
