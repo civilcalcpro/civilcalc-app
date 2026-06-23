@@ -1,9 +1,24 @@
 export const metadata = {
-  title: 'Brickwork Calculator Online | Brick Quantity Calculator',
+  title: 'Brickwork Calculator | CivilCalc Pro',
   description:
-    'Calculate brick quantity, mortar volume, cement bags and sand required for brick masonry walls using CivilCalc Pro.',
+    'Free online brickwork calculator for civil engineers and contractors. Calculate number of bricks, mortar quantity, wall volume, and construction material estimation.',
   alternates: {
     canonical: 'https://civilcalcpro.in/brickwork-calculator',
+  },
+  openGraph: {
+    title: 'Brickwork Calculator | CivilCalc Pro',
+    description:
+      'Free online brickwork calculator for civil engineers and contractors. Calculate number of bricks, mortar quantity, wall volume, and construction material estimation.',
+    url: 'https://civilcalcpro.in/brickwork-calculator',
+    siteName: 'CivilCalc Pro',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Brickwork Calculator | CivilCalc Pro',
+    description:
+      'Free online brickwork calculator for civil engineers and contractors. Calculate number of bricks, mortar quantity, wall volume, and construction material estimation.',
   },
   robots: {
     index: true,
