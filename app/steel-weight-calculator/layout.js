@@ -1,9 +1,24 @@
 export const metadata = {
-  title: 'Steel Weight Calculator Online | Bar Weight Formula',
+  title: 'Steel Weight Calculator | Bar Weight Formula | CivilCalc Pro',
   description:
-    'Calculate steel bar weight using D²/162 formula for 6mm, 8mm, 10mm, 12mm, 16mm, 20mm and other reinforcement bars.',
+    'Free online steel weight calculator using D²/162 formula. Calculate reinforcement bar weight for 6mm, 8mm, 10mm, 12mm, 16mm, 20mm and more.',
   alternates: {
     canonical: 'https://civilcalcpro.in/steel-weight-calculator',
+  },
+  openGraph: {
+    title: 'Steel Weight Calculator | Bar Weight Formula | CivilCalc Pro',
+    description:
+      'Free online steel weight calculator using D²/162 formula. Calculate reinforcement bar weight for 6mm, 8mm, 10mm, 12mm, 16mm, 20mm and more.',
+    url: 'https://civilcalcpro.in/steel-weight-calculator',
+    siteName: 'CivilCalc Pro',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Steel Weight Calculator | Bar Weight Formula | CivilCalc Pro',
+    description:
+      'Free online steel weight calculator using D²/162 formula. Calculate reinforcement bar weight for 6mm, 8mm, 10mm, 12mm, 16mm, 20mm and more.',
   },
   robots: {
     index: true,
