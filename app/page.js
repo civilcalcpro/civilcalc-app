@@ -61,7 +61,7 @@ export default function LandingPage() {
               <Link href="#features" className="text-slate-300 hover:text-white transition">Features</Link>
               <Link href="#tools" className="text-slate-300 hover:text-white transition">Tools</Link>
               <Link href="/dashboard" className="text-slate-300 hover:text-white transition">Dashboard</Link>
-              <a href="https://www.linkedin.com/in/civilcal-pro-6ba230411" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-[#70b5f9] transition" title="Follow on LinkedIn">
+              <a href="https://www.linkedin.com/in/civilcalc-pro-6ba230411" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-[#70b5f9] transition" title="Follow on LinkedIn">
                 <Linkedin className="h-5 w-5" />
               </a>
               <Link href="/login">
@@ -550,7 +550,7 @@ export default function LandingPage() {
 </li>
 
 <li>
-  <Link href="/Terms & Conditions" className="hover:text-white">
+  <Link href="/terms-and-conditions" className="hover:text-white">
     Terms & Conditions
   </Link>
 </li>
