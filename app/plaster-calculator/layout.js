@@ -1,9 +1,24 @@
 export const metadata = {
-  title: 'Plaster Calculator Online | Cement Sand Quantity',
+  title: 'Plaster Calculator | Cement Sand Quantity | CivilCalc Pro',
   description:
-    'Calculate plaster area, cement bags, sand quantity and cost for internal and external wall plaster work.',
+    'Free online plaster calculator to calculate plaster area, cement bags, sand quantity and cost for internal and external wall plaster work.',
   alternates: {
     canonical: 'https://civilcalcpro.in/plaster-calculator',
+  },
+  openGraph: {
+    title: 'Plaster Calculator | Cement Sand Quantity | CivilCalc Pro',
+    description:
+      'Free online plaster calculator to calculate plaster area, cement bags, sand quantity and cost for internal and external wall plaster work.',
+    url: 'https://civilcalcpro.in/plaster-calculator',
+    siteName: 'CivilCalc Pro',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Plaster Calculator | Cement Sand Quantity | CivilCalc Pro',
+    description:
+      'Free online plaster calculator to calculate plaster area, cement bags, sand quantity and cost for internal and external wall plaster work.',
   },
   robots: {
     index: true,
