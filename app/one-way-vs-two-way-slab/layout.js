@@ -1,9 +1,24 @@
 export const metadata = {
-  title: 'How to Calculate Brickwork Quantity | CivilCalc Pro',
+  title: 'One-Way Slab vs Two-Way Slab | Complete Comparison | CivilCalc Pro',
   description:
-    'Learn how to calculate brickwork quantity, number of bricks, mortar volume, cement and sand requirement for brick masonry.',
+    'Learn the difference between one-way slab and two-way slab with span ratio, reinforcement details, design criteria, advantages, disadvantages and practical examples.',
   alternates: {
-    canonical: 'https://civilcalcpro.in/how-to-calculate-brickwork-quantity',
+    canonical: 'https://civilcalcpro.in/one-way-vs-two-way-slab',
+  },
+  openGraph: {
+    title: 'One-Way Slab vs Two-Way Slab | Complete Comparison | CivilCalc Pro',
+    description:
+      'Learn the difference between one-way slab and two-way slab with span ratio, reinforcement details, design criteria, advantages, disadvantages and practical examples.',
+    url: 'https://civilcalcpro.in/one-way-vs-two-way-slab',
+    siteName: 'CivilCalc Pro',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'One-Way Slab vs Two-Way Slab | Complete Comparison | CivilCalc Pro',
+    description:
+      'Learn the difference between one-way slab and two-way slab with span ratio, reinforcement details, design criteria, advantages, disadvantages and practical examples.',
   },
   robots: {
     index: true,
