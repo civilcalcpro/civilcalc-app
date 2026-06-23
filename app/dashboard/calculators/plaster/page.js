@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Paintbrush } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/auth-context'
+import { saveCalculationHistory } from '@/lib/calculation-history'
 import {
   CalcShell,
   NumField,
@@ -17,6 +19,7 @@ import {
 } from '@/components/calc-shell'
 
 export default function PlasterPage() {
+    const { authFetch } = useAuth()
   const [form, setForm] = useState({
     length: 4,
     height: 3,
@@ -151,8 +154,14 @@ const labourCost = netArea * labourRate
         },
       }
 
-      setResult(finalResult)
-      setCalculationId(null)
+            setResult(finalResult)
+
+      saveCalculationHistory(authFetch, 'plaster-work', form, finalResult).then(
+        (id) => {
+          if (id) setCalculationId(id)
+        }
+      )
+
       toast.success('Calculated')
     } catch (e) {
       toast.error(e.message || 'Calculation failed')
