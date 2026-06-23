@@ -47,9 +47,6 @@ export const metadata = {
   creator: 'CivilCalc Pro',
   publisher: 'CivilCalc Pro',
 
-  alternates: {
-    canonical: 'https://civilcalcpro.in',
-  },
 
   openGraph: {
     title: 'CivilCalc Pro',
