@@ -1,9 +1,24 @@
 export const metadata = {
-  title: 'RCC Column Design Calculator Online | CivilCalc Pro',
+  title: 'RCC Column Design Calculator | CivilCalc Pro',
   description:
-    'Calculate RCC column design, axial load capacity, reinforcement requirement and design checks using CivilCalc Pro column calculator.',
+    'Free online RCC column design calculator for civil engineers and students. Calculate column dimensions, axial loads, reinforcement steel, bending moments, and structural design as per IS 456.',
   alternates: {
     canonical: 'https://civilcalcpro.in/column-design',
+  },
+  openGraph: {
+    title: 'RCC Column Design Calculator | CivilCalc Pro',
+    description:
+      'Free online RCC column design calculator for civil engineers and students. Calculate column dimensions, axial loads, reinforcement steel, bending moments, and structural design as per IS 456.',
+    url: 'https://civilcalcpro.in/column-design',
+    siteName: 'CivilCalc Pro',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'RCC Column Design Calculator | CivilCalc Pro',
+    description:
+      'Free online RCC column design calculator for civil engineers and students. Calculate column dimensions, axial loads, reinforcement steel, bending moments, and structural design as per IS 456.',
   },
   robots: {
     index: true,
