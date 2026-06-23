@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Shovel, Truck, IndianRupee, ShieldAlert, Clock, Ruler } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import { useAuth } from '@/lib/auth-context'
+import { saveCalculationHistory } from '@/lib/calculation-history'
 import {
   CalcShell,
   NumField,
@@ -80,6 +82,7 @@ function KpiCard({ icon: Icon, title, value, sub }) {
 }
 
 export default function ExcavationPage() {
+    const { authFetch } = useAuth()
   const [form, setForm] = useState({
     unitSystem: 'metric',
     excavationType: 'Open Excavation / खुली खुदाई',
@@ -154,7 +157,7 @@ export default function ExcavationPage() {
         'Avoid water accumulation inside excavation. / खुदाई में पानी जमा न होने दें।',
       ]
 
-      setResult({
+            const finalResult = {
         site: {
           length,
           width,
@@ -193,9 +196,15 @@ export default function ExcavationPage() {
           safetyStatus,
           safetyNotes,
         },
-      })
+      }
 
-      setCalculationId(Date.now())
+      setResult(finalResult)
+
+      saveCalculationHistory(authFetch, 'excavation', form, finalResult).then(
+        (id) => {
+          if (id) setCalculationId(id)
+        }
+      )
     } catch (e) {
       console.error(e)
     } finally {
