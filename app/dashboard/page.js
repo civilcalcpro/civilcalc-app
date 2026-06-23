@@ -21,6 +21,7 @@ import {
   Layers,
   Shovel,
   Paintbrush,
+  paintroller,
   IndianRupee,
   ArrowLeftRight,
 } from 'lucide-react'
