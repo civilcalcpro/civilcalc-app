@@ -301,7 +301,9 @@ const saveDraft = async () => {
     console.error(error)
     alert('Error Saving Draft')
   }
-}   const exportToCSV = () => {
+};
+
+const exportToCSV = () => {
 
   let csvContent = ''
 
