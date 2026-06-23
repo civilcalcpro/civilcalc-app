@@ -15,7 +15,9 @@ import {
 } from 'firebase/firestore'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { useAuth } from '@/lib/auth-context'
 export default function BOQGeneratorPage() {
+    const { authFetch } = useAuth()
   const [projectSaved, setProjectSaved] = useState(false)
   const [showDrafts, setShowDrafts] = useState(true)
   const [showProjectForm, setShowProjectForm] = useState(false)
@@ -208,44 +210,98 @@ const totalSteel = boqItems.reduce(
 )
 const saveDraft = async () => {
   console.log('SAVE DRAFT CLICKED')
-const draft = {
-  project,
-  boqItems,
-  createdAt: new Date().toISOString(),
-}
-  
+
+  const draft = {
+    project,
+    boqItems,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+
+  const syncProjectToDashboard = async (firestoreDraftId) => {
+    try {
+      const subtotalValue = boqItems.reduce(
+        (sum, item) => sum + (item.amount || 0),
+        0
+      )
+
+      const gstAmountValue =
+        subtotalValue * gstPercent / 100
+
+      const contractorMarginAmountValue =
+        subtotalValue * contractorMarginPercent / 100
+
+      const wastageAmountValue =
+        subtotalValue * wastagePercent / 100
+
+      const grandTotalValue =
+        subtotalValue +
+        gstAmountValue +
+        contractorMarginAmountValue +
+        wastageAmountValue
+
+      await authFetch('/api/projects/save', {
+        method: 'POST',
+        body: JSON.stringify({
+          source: 'boq-generator',
+          firestoreDraftId,
+          project,
+          boqItems,
+          itemCount: boqItems.length,
+          totals: {
+            subtotal: subtotalValue,
+            gstPercent,
+            gstAmount: gstAmountValue,
+            contractorMarginPercent,
+            contractorMarginAmount: contractorMarginAmountValue,
+            wastagePercent,
+            wastageAmount: wastageAmountValue,
+            grandTotal: grandTotalValue,
+          },
+        }),
+      })
+    } catch (error) {
+      console.error('Dashboard project sync failed:', error)
+    }
+  }
+
   if (currentDraftId) {
+    try {
+      await updateDoc(
+        doc(db, 'boqProjects', currentDraftId),
+        draft
+      )
 
-  await updateDoc(
-    doc(db, 'boqProjects', currentDraftId),
-    draft
-  )
+      await syncProjectToDashboard(currentDraftId)
 
-  alert('Draft Updated Successfully')
+      alert('Draft Updated Successfully')
 
-  return
+      return
+    } catch (error) {
+      console.error(error)
+      alert('Error Updating Draft')
+      return
+    }
+  }
 
-}
   try {
+    const docRef = await addDoc(
+      collection(db, 'boqProjects'),
+      draft
+    )
 
-  await addDoc(
-    collection(db, 'boqProjects'),
-    draft
-  )
+    setCurrentDraftId(docRef.id)
+
+    await syncProjectToDashboard(docRef.id)
+
     console.log('FIRESTORE SAVE SUCCESS')
 
-  alert('Draft Saved Successfully')
-
-} catch (error) {
-
-  console.error(error)
-
-  alert('Error Saving Draft')
-
-}
-  
-}
-   const exportToCSV = () => {
+    alert('Draft Saved Successfully')
+  } catch (error) {
+    console.error(error)
+    alert('Error Saving Draft')
+  }
+}   const exportToCSV = () => {
 
   let csvContent = ''
 
@@ -724,6 +780,14 @@ if (!projectSaved && !showProjectForm) {
     await deleteDoc(
       doc(db, 'boqProjects', draft.id)
     )
+
+    try {
+      await authFetch(`/api/projects/${draft.id}`, {
+        method: 'DELETE',
+      })
+    } catch (error) {
+      console.error('Dashboard project delete sync failed:', error)
+    }
 
     setSavedDrafts(
       savedDrafts.filter(
