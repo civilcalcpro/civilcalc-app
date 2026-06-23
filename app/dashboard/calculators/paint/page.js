@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Paintbrush, Ruler, IndianRupee, Layers, Boxes } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/auth-context'
+import { saveCalculationHistory } from '@/lib/calculation-history'
 import {
   CalcShell,
   NumField,
