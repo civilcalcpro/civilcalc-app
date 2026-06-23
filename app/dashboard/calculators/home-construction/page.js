@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useAuth } from '@/lib/auth-context'
+import { saveCalculationHistory } from '@/lib/calculation-history'
 import {
   PieChart,
   Pie,
@@ -80,8 +82,10 @@ const COLORS = [
 ];
 
 export default function HomeConstructionCalculator() {
+    const { authFetch } = useAuth()
   const [screen, setScreen] = useState("home");
   const [calculated, setCalculated] = useState(false);
+    const [calculationId, setCalculationId] = useState(null);
   const [savedProjects, setSavedProjects] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [openBoq, setOpenBoq] = useState("Foundation");
@@ -533,12 +537,29 @@ const bricks =
     setScreen("calculator");
   };
 
-  const calculate = () => {
+    const calculate = () => {
     if (!form.builtUpArea && (!form.plotLength || !form.plotWidth)) {
       alert("Please enter Built-up Area or Plot Length + Plot Width.");
       return;
     }
+
     setCalculated(true);
+
+    saveCalculationHistory(
+      authFetch,
+      'home-construction',
+      {
+        form,
+        rates,
+        wastage,
+        hiddenCosts,
+        emi,
+      },
+      result
+    ).then((id) => {
+      if (id) setCalculationId(id)
+    })
+
     setTimeout(() => {
       const el = document.getElementById("results-section");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
