@@ -550,7 +550,7 @@ export default function LandingPage() {
 </li>
 
 <li>
-  <Link href="/terms-of-service" className="hover:text-white">
+  <Link href="/Terms & Conditions" className="hover:text-white">
     Terms & Conditions
   </Link>
 </li>
