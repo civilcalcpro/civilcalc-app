@@ -47,6 +47,7 @@ function KpiCard({ icon: Icon, title, value, sub }) {
 }
 
 export default function PaintCalculatorPage() {
+    const { authFetch } = useAuth()
   const [form, setForm] = useState({
     unitSystem: 'metric',
     paintType: 'Interior Wall / अंदर की दीवार',
@@ -108,7 +109,7 @@ export default function PaintCalculatorPage() {
       const labourCost = netArea * labourRate
       const totalCost = paintCost + primerCost + puttyCost + labourCost
 
-      setResult({
+            const finalResult = {
         input: {
           paintType: form.paintType.split('/')[0].trim(),
           unitSystem: form.unitSystem,
@@ -150,9 +151,15 @@ export default function PaintCalculatorPage() {
           totalCost,
           areaUnit,
         },
-      })
+      }
 
-      setCalculationId(Date.now())
+      setResult(finalResult)
+
+      saveCalculationHistory(authFetch, 'paint-calculator', form, finalResult).then(
+        (id) => {
+          if (id) setCalculationId(id)
+        }
+      )
       toast.success('Paint quantity calculated')
     } catch (err) {
       toast.error('Calculation failed')
