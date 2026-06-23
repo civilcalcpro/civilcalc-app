@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Layers, Plus, Trash2, FileDown } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/auth-context'
+import { saveCalculationHistory } from '@/lib/calculation-history'
 import {
   CalcShell,
   NumField,
@@ -78,6 +80,7 @@ function getDisplaySize(widthM, heightM, unitSystem) {
 }
 
 export default function BrickworkPage() {
+    const { authFetch } = useAuth()
   const [form, setForm] = useState({
     unitSystem: 'metric',
     length: 4,
@@ -100,7 +103,7 @@ export default function BrickworkPage() {
   const [customOpenings, setCustomOpenings] = useState([])
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
-
+  const [calculationId, setCalculationId] = useState(null)
   const updateForm = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
@@ -274,7 +277,7 @@ export default function BrickworkPage() {
         deduction: getOpeningVolume(item),
       }))
 
-      setResult({
+           const finalResult = {
         unitSystem: form.unitSystem,
         wall: {
           area: round(wallArea, 3),
@@ -325,7 +328,21 @@ export default function BrickworkPage() {
           bricks: 'Brick Quantity = Net Volume / Nominal Brick Volume + Wastage',
           mortar: 'Mortar Wet Volume = Net Brickwork Volume × 30%',
         },
-      })
+      }
+
+      setResult(finalResult)
+
+      saveCalculationHistory(
+        authFetch,
+        'brickwork',
+        {
+          form,
+          doors,
+          windows,
+          customOpenings,
+        },
+        finalResult
+      )
 
       toast.success('Brickwork calculated successfully')
     } catch (error) {
