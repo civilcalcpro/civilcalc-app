@@ -11,6 +11,11 @@ const nextConfig = {
 
   async redirects() {
     return [
+            {
+        source: '/terms-of-service',
+        destination: '/terms-and-conditions',
+        permanent: true,
+      },
       {
         source: '/column',
         destination: '/column-design',
