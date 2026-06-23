@@ -1,85 +1,128 @@
 export default function sitemap() {
   const baseUrl = 'https://civilcalcpro.in'
 
-  return [
+  const pages = [
     {
-      url: baseUrl,
-      lastModified: new Date(),
+      path: '',
+      priority: 1.0,
+      changeFrequency: 'weekly',
     },
-
     {
-      url: `${baseUrl}/beam-design`,
-      lastModified: new Date(),
+      path: '/beam-design',
+      priority: 0.9,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/column-design`,
-      lastModified: new Date(),
+      path: '/column-design',
+      priority: 0.9,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/footing-design`,
-      lastModified: new Date(),
+      path: '/footing-design',
+      priority: 0.9,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/one-way-slab-calculator`,
-      lastModified: new Date(),
+      path: '/one-way-slab-calculator',
+      priority: 0.9,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/two-way-slab-calculator`,
-      lastModified: new Date(),
+      path: '/two-way-slab-calculator',
+      priority: 0.9,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/concrete-volume-calculator`,
-      lastModified: new Date(),
+      path: '/concrete-volume-calculator',
+      priority: 0.85,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/steel-weight-calculator`,
-      lastModified: new Date(),
+      path: '/steel-weight-calculator',
+      priority: 0.85,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/brickwork-calculator`,
-      lastModified: new Date(),
+      path: '/brickwork-calculator',
+      priority: 0.85,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/plaster-calculator`,
-      lastModified: new Date(),
+      path: '/plaster-calculator',
+      priority: 0.85,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/excavation-calculator`,
-      lastModified: new Date(),
+      path: '/excavation-calculator',
+      priority: 0.85,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/dashboard/calculators/rate-analysis`,
-      lastModified: new Date(),
+      path: '/bar-bending-schedule-guide',
+      priority: 0.8,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/dashboard/calculators/unit-converter`,
-      lastModified: new Date(),
+      path: '/development-length-calculation',
+      priority: 0.8,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/dashboard/calculators/structural-analysis`,
-      lastModified: new Date(),
+      path: '/lap-length-calculation',
+      priority: 0.8,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/privacy-policy`,
-      lastModified: new Date(),
+      path: '/m20-concrete-mix-ratio',
+      priority: 0.8,
+      changeFrequency: 'monthly',
     },
-
     {
-      url: `${baseUrl}/terms-of-service`,
-      lastModified: new Date(),
+      path: '/rcc-beam-design-example',
+      priority: 0.8,
+      changeFrequency: 'monthly',
+    },
+    {
+      path: '/steel-weight-calculation-formula',
+      priority: 0.8,
+      changeFrequency: 'monthly',
+    },
+    {
+      path: '/one-way-vs-two-way-slab',
+      priority: 0.75,
+      changeFrequency: 'monthly',
+    },
+    {
+      path: '/how-to-calculate-brickwork-quantity',
+      priority: 0.75,
+      changeFrequency: 'monthly',
+    },
+    {
+      path: '/pricing',
+      priority: 0.6,
+      changeFrequency: 'monthly',
+    },
+    {
+      path: '/contact-us',
+      priority: 0.5,
+      changeFrequency: 'yearly',
+    },
+    {
+      path: '/privacy-policy',
+      priority: 0.3,
+      changeFrequency: 'yearly',
+    },
+    {
+      path: '/terms-and-conditions',
+      priority: 0.3,
+      changeFrequency: 'yearly',
     },
   ]
+
+  return pages.map((page) => ({
+    url: `${baseUrl}${page.path}`,
+    lastModified: new Date(),
+    changeFrequency: page.changeFrequency,
+    priority: page.priority,
+  }))
 }
