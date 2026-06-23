@@ -61,6 +61,7 @@ const navGroups = [
       { href: '/dashboard/calculators/plaster', label: 'Plaster Work', icon: Paintbrush },
       { href: '/dashboard/calculators/excavation', label: 'Excavation', icon: Shovel },
       { href: '/dashboard/calculators/tile', label: 'Tile Calculator', icon: Grid3x3 },
+      { href: '/dashboard/calculators/paint', label: 'Paint Calculator', icon: Paintbrush },
       { href: '/dashboard/calculators/rate-analysis', label: 'Rate Analysis', icon: IndianRupee },
     ],
   },
