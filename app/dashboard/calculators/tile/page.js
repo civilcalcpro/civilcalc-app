@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Grid3x3, Boxes, IndianRupee, Ruler, Layers } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/auth-context'
+import { saveCalculationHistory } from '@/lib/calculation-history'
 import {
   CalcShell,
   NumField,
@@ -52,6 +54,7 @@ function KpiCard({ icon: Icon, title, value, sub }) {
 }
 
 export default function TileCalculatorPage() {
+    const { authFetch } = useAuth()
   const [form, setForm] = useState({
     unitSystem: 'metric',
     areaType: 'Floor Tile / फ्लोर टाइल',
@@ -124,7 +127,7 @@ export default function TileCalculatorPage() {
       const adhesiveBags = Math.ceil(netAreaSqM / 5)
       const groutKg = Math.ceil(netAreaSqM * 0.35)
 
-      setResult({
+            const finalResult = {
         input: {
           areaType: form.areaType.split('/')[0].trim(),
           unitSystem: form.unitSystem,
@@ -177,9 +180,16 @@ export default function TileCalculatorPage() {
           groutKg,
           areaUnit,
         },
-      })
+      }
 
-      setCalculationId(Date.now())
+      setResult(finalResult)
+
+      saveCalculationHistory(authFetch, 'tile-calculator', form, finalResult).then(
+        (id) => {
+          if (id) setCalculationId(id)
+        }
+      )
+
       toast.success('Tile quantity calculated')
     } catch (err) {
       toast.error('Calculation failed')
