@@ -395,7 +395,56 @@ export async function POST(request) {
         { headers: corsHeaders }
       )
     }
+    if (path === 'projects/save') {
+      const db = await getDb()
+      const userId = getStableUserId(request)
 
+      const firestoreDraftId = body.firestoreDraftId || null
+      const projectId = body.projectId || firestoreDraftId || uuidv4()
+
+      const projectData = {
+        projectId,
+        firestoreDraftId,
+        source: body.source || 'manual',
+        userId,
+        title:
+          body.project?.projectName ||
+          body.projectName ||
+          'Untitled Project',
+        project: body.project || {},
+        boqItems: body.boqItems || [],
+        itemCount:
+          Number(body.itemCount) ||
+          Number(body.boqItems?.length) ||
+          0,
+        totals: body.totals || {},
+        updatedAt: new Date(),
+      }
+
+      const filter = firestoreDraftId
+        ? { userId, firestoreDraftId }
+        : { userId, projectId }
+
+      await db.collection('projects').updateOne(
+        filter,
+        {
+          $set: projectData,
+          $setOnInsert: {
+            createdAt: new Date(),
+          },
+        },
+        { upsert: true }
+      )
+
+      return NextResponse.json(
+        {
+          success: true,
+          projectId,
+          project: projectData,
+        },
+        { headers: corsHeaders }
+      )
+    }
     if (path === 'ai/chat') {
       const { message } = body
 
@@ -482,6 +531,41 @@ export async function POST(request) {
   }
 }
 
-export async function DELETE() {
-  return NextResponse.json({ deleted: 1 }, { headers: corsHeaders })
+export async function DELETE(request) {
+  try {
+    const { pathname } = new URL(request.url)
+    const path = pathname.replace('/api/', '')
+    const userId = getStableUserId(request)
+
+    if (path.startsWith('projects/')) {
+      const firestoreDraftId = decodeURIComponent(
+        path.replace('projects/', '')
+      )
+
+      const db = await getDb()
+
+      const result = await db.collection('projects').deleteOne({
+        userId,
+        firestoreDraftId,
+      })
+
+      return NextResponse.json(
+        {
+          success: true,
+          deleted: result.deletedCount,
+        },
+        { headers: corsHeaders }
+      )
+    }
+
+    return NextResponse.json(
+      { deleted: 0 },
+      { headers: corsHeaders }
+    )
+  } catch (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500, headers: corsHeaders }
+    )
+  }
 }
