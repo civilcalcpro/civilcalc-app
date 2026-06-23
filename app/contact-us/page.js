@@ -28,7 +28,7 @@ export default function ContactUsPage() {
                 href="mailto:civilcalc592005@gmail.com"
                 className="text-orange-400 hover:text-orange-300"
               >
-                sujalkalal227@gmail.com
+                civilcal592005@gmail.com.com
               </a>
             </div>
           </div>
