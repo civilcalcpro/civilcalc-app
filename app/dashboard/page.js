@@ -48,6 +48,7 @@ const quickTools = [
   { name: 'Steel Weight', icon: Ruler, href: '/dashboard/calculators/steel-weight', color: 'orange', desc: 'D²/162 bar weight calculator' },
   { name: 'Brickwork', icon: Layers, href: '/dashboard/calculators/brickwork', color: 'red', desc: 'Brick count + mortar take-off' },
   { name: 'Plaster Work', icon: Paintbrush, href: '/dashboard/calculators/plaster', color: 'yellow', desc: 'Cement & sand for plaster' },
+  {name : 'Tile calculator ', icon : Grid3x3 , href: '/dashboard/calculators/tile' , color: 'orange', desc: 'tile calculation and cost estimation ' },
   { name: 'Excavation', icon: Shovel, href: '/dashboard/calculators/excavation', color: 'blue', desc: 'Earthwork volume & truck loads' },
   { name: 'Rate Analysis', icon: IndianRupee, href: '/dashboard/calculators/rate-analysis', color: 'green', desc: 'Project cost estimation' },
   { name: 'Unit Converter', icon: ArrowLeftRight, href: '/dashboard/calculators/unit-converter', color: 'purple', desc: 'Length, force, pressure & more' },
