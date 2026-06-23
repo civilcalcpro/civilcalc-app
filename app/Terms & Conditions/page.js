@@ -144,7 +144,7 @@ export default function TermsAndConditionsPage() {
             </h2>
 
             <div className="mt-4 p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <p>Email: sujalkalal227@gmail.com</p>
+              <p>Email: civilcal592005@gmail.com.com</p>
               <p>Website: https://civilcalcpro.in</p>
             </div>
           </section>
