@@ -64,7 +64,110 @@ export default function BOQGeneratorPage() {
             View Quantity Estimation Tools
           </Link>
         </div>
+        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
+          <p className="text-orange-400 font-semibold mb-3">
+            QUICK ANSWER
+          </p>
 
+          <h2 className="text-3xl font-bold mb-5">
+            What is a BOQ Generator?
+          </h2>
+
+          <p className="text-slate-300 leading-8 mb-4">
+            A BOQ Generator is an online tool used to create a Bill of
+            Quantities for construction projects. It helps engineers,
+            contractors and estimators add work items, calculate quantities,
+            enter unit rates, calculate item amounts and prepare a structured
+            project cost summary.
+          </p>
+
+          <div className="overflow-x-auto mt-6">
+            <table className="w-full border border-slate-800 text-left">
+              <thead className="bg-slate-900">
+                <tr>
+                  <th className="border border-slate-800 p-3 text-white">
+                    BOQ Field
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Meaning
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Example
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="text-slate-300">
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Item Description
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Work item details
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    RCC M20 concrete in footing
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Unit
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Measurement unit
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    m³, m², kg, nos
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Quantity
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Measured work quantity
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    12.50 m³
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Rate
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Cost per unit
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    ₹6,500 per m³
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Amount
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Quantity × Rate
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    ₹81,250
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-slate-400 leading-7 mt-5">
+            Example: If RCC concrete quantity is 12.5 m³ and rate is ₹6,500 per
+            m³, the BOQ amount will be 12.5 × 6,500 = ₹81,250. This helps in
+            construction cost estimation, tendering, billing and project
+            planning.
+          </p>
+        </section>
         <section className="grid md:grid-cols-3 gap-6 mb-16">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-2xl font-bold mb-3">Project Details</h2>
