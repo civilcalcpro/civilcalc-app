@@ -34,9 +34,9 @@ const tools = [
     href: "/concrete-volume-calculator",
   },
   {
-    title: "Steel Weight Calculator",
-    desc: "Calculate steel bar weight using diameter, length and standard steel weight formula.",
-    href: "/steel-weight-calculator",
+    title: "Home Construction Cost Calculator",
+    desc: "Estimate complete house construction cost using built-up area, number of floors, construction quality, material rates, labour cost and detailed cost breakdown.",
+    href: "/login?redirect=/dashboard/calculators/home-construction",
   },
   {
     title: "Brickwork Calculator",
@@ -59,7 +59,6 @@ const tools = [
     href: "/m20-concrete-mix-ratio",
   },
 ];
-
 export default function QuantityEstimationCalculatorsPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
