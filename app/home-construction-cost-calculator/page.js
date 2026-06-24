@@ -64,7 +64,86 @@ export default function HomeConstructionCostCalculatorPage() {
             View Quantity Estimation Tools
           </Link>
         </div>
+        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
+          <p className="text-orange-400 font-semibold mb-3">
+            QUICK ANSWER
+          </p>
 
+          <h2 className="text-3xl font-bold mb-5">
+            How much does it cost to build a house?
+          </h2>
+
+          <p className="text-slate-300 leading-8 mb-4">
+            House construction cost is commonly estimated by multiplying the
+            built-up area by the construction cost per square foot. The final
+            cost depends on location, construction quality, material rates,
+            labour charges, number of floors, structural design and finishing
+            specifications.
+          </p>
+
+          <div className="overflow-x-auto mt-6">
+            <table className="w-full border border-slate-800 text-left">
+              <thead className="bg-slate-900">
+                <tr>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Construction Quality
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Approx. Cost per sq ft
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Suitable For
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="text-slate-300">
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Economy
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    ₹1,400 – ₹1,700 per sq ft
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Basic residential construction
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Standard
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    ₹1,700 – ₹2,200 per sq ft
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Common house construction
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Premium
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    ₹2,200 – ₹3,000+ per sq ft
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Better finishing and premium materials
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-slate-400 leading-7 mt-5">
+            Example: If built-up area is 1,000 sq ft and construction quality is
+            standard at ₹1,800 per sq ft, approximate construction cost will be
+            around ₹18,00,000. This is only an estimate and should be checked
+            with local rates and project drawings.
+          </p>
+        </section>
         <section className="grid md:grid-cols-3 gap-6 mb-16">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-2xl font-bold mb-3">Area Based Estimate</h2>
