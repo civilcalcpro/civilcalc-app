@@ -460,7 +460,7 @@ export default function LandingPage() {
         </div>
       </Link>
 
-      <Link href="/bar-bending-schedule">
+      <Link href="/bar-bending-schedule-guide">
         <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
           <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
           <h3 className="text-2xl font-bold text-white mt-3 mb-4">
