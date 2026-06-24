@@ -233,6 +233,28 @@ export default function CivilEngineeringCalculatorsPage() {
               Open Quantity Estimation Calculators
             </Link>
           </section>
+            <section className="mb-16 rounded-2xl border border-slate-800 bg-slate-900 p-8">
+            <p className="text-orange-400 font-semibold mb-3">
+              REINFORCEMENT TOOLS
+            </p>
+
+            <h2 className="text-3xl font-bold mb-4">
+              Reinforcement Calculators
+            </h2>
+
+            <p className="text-slate-300 leading-8 mb-6 max-w-4xl">
+              Calculate steel weight, understand development length, lap length,
+              bar bending schedule, reinforcement quantity and RCC steel
+              requirements using CivilCalc Pro reinforcement calculators.
+            </p>
+
+            <Link
+              href="/reinforcement-calculators"
+              className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold"
+            >
+              Open Reinforcement Calculators
+            </Link>
+          </section>
           {categories.map((category) => (
             <section key={category} className="mb-14">
               <h2 className="text-3xl font-bold mb-6">{category}</h2>
