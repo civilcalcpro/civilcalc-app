@@ -55,10 +55,10 @@ export default function DevelopmentLengthCalculationPage() {
         </p>
 
         <Link
-          href="/login?redirect=/dashboard/calculators/development-length"
+          href="/steel-weight-calculator"
           className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
         >
-          Open Development Length Calculator
+          Open Steel Weight Calculator
         </Link>
 
         <section className="space-y-8">
