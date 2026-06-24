@@ -54,10 +54,10 @@ export default function LapLengthCalculationPage() {
         </p>
 
         <Link
-          href="/login?redirect=/dashboard/calculators/lap-length"
+          href="/steel-weight-calculator"
           className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
         >
-          Open Lap Length Calculator
+          Open Steel Weight Calculator
         </Link>
 
         <section className="space-y-8">
