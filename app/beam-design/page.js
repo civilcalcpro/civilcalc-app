@@ -1,231 +1,202 @@
+import Link from "next/link";
+
 export const metadata = {
-  title:
-    'RCC Beam Design Calculator as per IS 456:2000 | CivilCalc Pro',
-
+  title: 'RCC Beam Design Calculator as per IS 456:2000 | CivilCalc Pro',
   description:
-    'Use CivilCalc Pro RCC Beam Design Calculator to calculate bending moment, beam dimensions, steel reinforcement, load analysis and RCC beam design as per IS 456:2000.',
-
-  keywords: [
-    'RCC beam design calculator',
-    'beam design calculator IS 456',
-    'RCC beam design',
-    'beam reinforcement calculator',
-    'bending moment calculator',
-    'civil engineering calculator',
-    'structural design calculator',
-    'beam design example',
-    'IS 456 beam design',
-    'reinforced concrete beam design',
-  ],
+    'Free online RCC beam design calculator for civil engineers and students. Calculate bending moment, shear force, effective depth, reinforcement steel and RCC beam design as per IS 456:2000.',
+  alternates: {
+    canonical: 'https://civilcalcpro.in/beam-design',
+  },
+  openGraph: {
+    title: 'RCC Beam Design Calculator as per IS 456:2000 | CivilCalc Pro',
+    description:
+      'Free online RCC beam design calculator for civil engineers and students. Calculate bending moment, shear force, effective depth, reinforcement steel and RCC beam design as per IS 456:2000.',
+    url: 'https://civilcalcpro.in/beam-design',
+    siteName: 'CivilCalc Pro',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'RCC Beam Design Calculator as per IS 456:2000 | CivilCalc Pro',
+    description:
+      'Free online RCC beam design calculator for civil engineers and students. Calculate bending moment, shear force, effective depth, reinforcement steel and RCC beam design as per IS 456:2000.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+    },
+  },
 }
 
 export default function BeamDesignPage() {
   return (
-<main className="min-h-screen bg-slate-950 text-white p-10">
-  <div className="max-w-6xl mx-auto">
-    <p className="text-orange-400 font-semibold mb-2">RCC CALCULATOR</p>
-
-    <h1 className="text-5xl font-bold mb-4">Beam Design</h1>
-
-    <p className="text-slate-400 text-lg mb-8">
-      Singly / doubly reinforced rectangular beam — limit state method per IS 456:2000
-    </p>
-
-    <div className="grid md:grid-cols-2 gap-8">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-        <h2 className="text-2xl font-semibold mb-4">
-          RCC Beam Design Calculator
-        </h2>
-
-        <p className="text-slate-300 mb-4">
-          Calculate beam dimensions, reinforcement steel, loads, bending moments,
-          and structural design as per IS codes.
+    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+      <div className="max-w-5xl mx-auto">
+        <p className="text-orange-400 font-semibold mb-3">
+          RCC STRUCTURAL DESIGN TOOL
         </p>
 
-        <ul className="list-disc pl-6 space-y-2 text-slate-300">
-          <li>Beam load calculations</li>
-          <li>Bending moment calculation</li>
-          <li>Steel reinforcement estimation</li>
-          <li>IS 456 based RCC design</li>
-          <li>Fast structural analysis</li>
-        </ul>
-      </div>
+        <h1 className="text-5xl font-bold mb-6">
+          RCC Beam Design Calculator
+        </h1>
 
-      <div className="bg-slate-900 border border-dashed border-slate-700 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-        <div className="text-orange-400 font-semibold mb-3">
-          FULL CALCULATOR ACCESS
+        <p className="text-slate-300 text-lg mb-10">
+          Free online RCC beam design calculator for civil engineers and students.
+          Calculate bending moment, shear force, effective depth, reinforcement
+          steel, and RCC beam design as per IS 456:2000.
+        </p>
+
+        <Link
+          href="/login?redirect=/dashboard/calculators/beam"
+          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
+        >
+          Open Beam Design Calculator
+        </Link>
+
+        <div className="grid md:grid-cols-2 gap-10">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">Features</h2>
+
+            <ul className="space-y-3 text-slate-300">
+              <li>• RCC beam design calculation</li>
+              <li>• Bending moment calculation</li>
+              <li>• Shear force calculation</li>
+              <li>• Effective depth estimation</li>
+              <li>• Steel reinforcement calculation</li>
+              <li>• IS 456:2000 based beam design</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-4">
+              Why Use CivilCalc Pro?
+            </h2>
+
+            <p className="text-slate-300 leading-8">
+              CivilCalc Pro helps civil engineers design RCC beams quickly using
+              professional structural calculation tools. Useful for students,
+              site engineers, structural consultants, and construction professionals.
+            </p>
+          </div>
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">
-          Login to use the real Beam Design Calculator
-        </h2>
+        <section className="mt-16 space-y-8">
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              RCC Beam Design Formula
+            </h2>
 
-        <p className="text-slate-400 mb-6">
-          Run design checks, calculate reinforcement, view results,
-          and generate PDF reports.
-        </p>
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+              Mu = wuL² / 8
+            </div>
 
-        <a
-          href="/login"
-          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold"
-        >
-          Login to Use Calculator
-        </a>
+            <p className="text-slate-300 mt-4 leading-7">
+              For a simply supported beam with uniformly distributed load,
+              maximum bending moment is calculated using wuL² / 8.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              What is RCC Beam Design?
+            </h2>
+
+            <p className="text-slate-300 leading-7 mb-4">
+              RCC beam design is the process of designing a reinforced concrete
+              beam to safely resist bending moment, shear force, dead load, live
+              load and other structural loads. Concrete carries compression and
+              steel reinforcement carries tension.
+            </p>
+
+            <p className="text-slate-300 leading-7">
+              RCC beams are used in residential buildings, commercial buildings,
+              structural frames, lintels, roof beams and floor beam systems.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Steps in RCC Beam Design
+            </h2>
+
+            <ul className="list-disc pl-6 space-y-2 text-slate-300">
+              <li>Determine beam span and support condition</li>
+              <li>Calculate dead load and live load</li>
+              <li>Calculate factored load</li>
+              <li>Calculate bending moment</li>
+              <li>Calculate shear force</li>
+              <li>Determine effective depth</li>
+              <li>Design main reinforcement steel</li>
+              <li>Design shear reinforcement or stirrups</li>
+              <li>Check deflection, spacing and development length</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Beam Design Example
+            </h2>
+
+            <p className="text-slate-300 leading-7">
+              Consider a simply supported RCC beam with span 4 m and factored load
+              25 kN/m.
+            </p>
+
+            <p className="text-slate-300 leading-7 mt-4">
+              Maximum Bending Moment = wuL² / 8
+              <br />
+              Mu = 25 × 4² / 8
+              <br />
+              Mu = 50 kNm
+            </p>
+
+            <p className="text-slate-300 leading-7 mt-4">
+              Shear Force = wuL / 2
+              <br />
+              Vu = 25 × 4 / 2
+              <br />
+              Vu = 50 kN
+            </p>
+          </div>
+
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Important Checks in Beam Design
+            </h2>
+
+            <ul className="list-disc pl-6 space-y-2 text-slate-300">
+              <li>Bending moment capacity check</li>
+              <li>Shear force check</li>
+              <li>Minimum reinforcement check</li>
+              <li>Maximum reinforcement limit</li>
+              <li>Deflection check</li>
+              <li>Development length check</li>
+              <li>Clear cover and spacing check</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Related Calculators
+            </h2>
+
+            <ul className="list-disc pl-6 space-y-2 text-slate-300">
+              <li><a href="/column-design">Column Design Calculator</a></li>
+              <li><a href="/footing-design">Footing Design Calculator</a></li>
+              <li><a href="/one-way-slab-calculator">One Way Slab Calculator</a></li>
+              <li><a href="/two-way-slab-calculator">Two Way Slab Calculator</a></li>
+              <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
+            </ul>
+          </div>
+        </section>
       </div>
-    </div>
-  </div>
-<section className="mt-16 space-y-8">
-  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-4">
-      RCC Beam Design Formula
-    </h2>
-
-    <p className="text-slate-300 leading-7 mb-4">
-      RCC beam design is used to calculate bending moment, shear force,
-      effective depth and reinforcement required for a reinforced concrete beam.
-    </p>
-
-    <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
-      Mu = 1.5 × w × L² / 8
-    </div>
-  </div>
-
-  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-4">
-      IS Code Used for Beam Design
-    </h2>
-
-    <p className="text-slate-300 leading-7">
-      This RCC beam design calculator follows the limit state design method
-      based on IS 456:2000. Civil engineers use this code for reinforced
-      concrete beam design, slab design, column design and footing design.
-    </p>
-  </div>
-
-  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-4">
-      Frequently Asked Questions
-    </h2>
-
-    <div className="space-y-5 text-slate-300">
-      <div>
-        <h3 className="font-semibold text-white">
-          What is RCC beam design?
-        </h3>
-        <p>
-          RCC beam design is the process of selecting beam dimensions and
-          steel reinforcement to safely resist bending and shear forces.
-        </p>
-      </div>
-
-      <div>
-        <h3 className="font-semibold text-white">
-          Which IS code is used for RCC beam design?
-        </h3>
-        <p>
-          IS 456:2000 is commonly used for reinforced concrete beam design
-          in India.
-        </p>
-      </div>
-
-      <div>
-        <h3 className="font-semibold text-white">
-          What is bending moment in beam design?
-        </h3>
-        <p>
-          Bending moment is the internal moment developed in a beam due to
-          applied loads. It is used to calculate required steel reinforcement.
-        </p>
-      </div>
-    </div>
-  </div>
-<div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-4">
-      What is RCC Beam Design?
-    </h2>
-
-    <p className="text-slate-300 leading-7 mb-4">
-      RCC Beam Design is the process of determining the dimensions,
-      reinforcement and load carrying capacity of a reinforced concrete beam.
-      Civil engineers design beams to safely resist bending moments, shear
-      forces and deflection caused by applied loads.
-    </p>
-
-    <p className="text-slate-300 leading-7">
-      The design of RCC beams in India is generally performed according to
-      IS 456:2000 using the Limit State Method. Proper beam design ensures
-      structural safety, serviceability and durability throughout the life
-      of the structure.
-    </p>
-  </div>
-
-  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-4">
-      Steps in RCC Beam Design
-    </h2>
-
-    <ul className="list-disc pl-6 space-y-2 text-slate-300">
-      <li>Determine span length</li>
-      <li>Calculate dead load and live load</li>
-      <li>Compute factored load</li>
-      <li>Calculate bending moment</li>
-      <li>Determine effective depth</li>
-      <li>Design tension reinforcement</li>
-      <li>Check shear capacity</li>
-      <li>Verify deflection limits</li>
-    </ul>
-  </div>
-
-  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-4">
-      RCC Beam Design Example
-    </h2>
-
-    <p className="text-slate-300 leading-7">
-      Consider a simply supported beam with a span of 5 m carrying a
-      factored load of 25 kN/m.
-    </p>
-
-    <p className="text-slate-300 leading-7 mt-4">
-      Using IS 456:2000:
-      <br />
-      Mu = wuL² / 8
-      <br />
-      Mu = 25 × 5² / 8
-      <br />
-      Mu = 78.125 kNm
-    </p>
-  </div>
-
-  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-4">
-      Advantages of RCC Beams
-    </h2>
-
-    <ul className="list-disc pl-6 space-y-2 text-slate-300">
-      <li>High load carrying capacity</li>
-      <li>Excellent durability</li>
-      <li>Fire resistance</li>
-      <li>Economical construction</li>
-      <li>Suitable for residential and commercial structures</li>
-      <li>Long service life</li>
-    </ul>
-  </div>
-
-  <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-4">
-      Related Calculators
-    </h2>
-
-    <ul className="list-disc pl-6 space-y-2 text-slate-300">
-      <li><a href="/column-design">RCC Column Design Calculator</a></li>
-      <li><a href="/footing-design">Footing Design Calculator</a></li>
-      <li><a href="/one-way-slab-calculator">One Way Slab Calculator</a></li>
-      <li><a href="/two-way-slab-calculator">Two Way Slab Calculator</a></li>
-      <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
-    </ul>
-  </div>
-</section>
-            </main>
-  )
+    </main>
+  );
 }
