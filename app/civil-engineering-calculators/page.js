@@ -188,7 +188,29 @@ export default function CivilEngineeringCalculatorsPage() {
               </p>
             </div>
           </div>
+          <section className="mb-16 rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8">
+            <p className="text-orange-400 font-semibold mb-3">
+              RCC DESIGN TOOLS
+            </p>
 
+            <h2 className="text-3xl font-bold mb-4">
+              RCC Design Calculators
+            </h2>
+
+            <p className="text-slate-300 leading-8 mb-6 max-w-4xl">
+              Use RCC design calculators for beam design, column design,
+              footing design, one way slab, two way slab and reinforcement
+              calculations. This section groups all RCC structural design tools
+              in one place.
+            </p>
+
+            <Link
+              href="/rcc-design-calculators"
+              className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold"
+            >
+              Open RCC Design Calculators
+            </Link>
+          </section>
           {categories.map((category) => (
             <section key={category} className="mb-14">
               <h2 className="text-3xl font-bold mb-6">{category}</h2>
