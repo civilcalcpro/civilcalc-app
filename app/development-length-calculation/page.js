@@ -1,119 +1,183 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Development Length Calculation | Ld Formula in RCC",
+  title: 'Development Length Calculation | Ld Formula | CivilCalc Pro',
   description:
-    "Learn development length calculation, Ld formula, importance in RCC design and worked examples as per IS 456.",
-};
+    'Learn development length calculation in RCC design with formula, bond stress, bar diameter, design stress and practical examples as per IS 456.',
+  alternates: {
+    canonical: 'https://civilcalcpro.in/development-length-calculation',
+  },
+  openGraph: {
+    title: 'Development Length Calculation | Ld Formula | CivilCalc Pro',
+    description:
+      'Learn development length calculation in RCC design with formula, bond stress, bar diameter, design stress and practical examples as per IS 456.',
+    url: 'https://civilcalcpro.in/development-length-calculation',
+    siteName: 'CivilCalc Pro',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Development Length Calculation | Ld Formula | CivilCalc Pro',
+    description:
+      'Learn development length calculation in RCC design with formula, bond stress, bar diameter, design stress and practical examples as per IS 456.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+    },
+  },
+}
 
-export default function DevelopmentLengthPage() {
+export default function DevelopmentLengthCalculationPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
       <div className="max-w-5xl mx-auto">
+        <p className="text-orange-400 font-semibold mb-3">
+          RCC DESIGN GUIDE
+        </p>
 
         <h1 className="text-5xl font-bold mb-6">
           Development Length Calculation
         </h1>
 
         <p className="text-slate-300 text-lg mb-10">
-          Development Length (Ld) is one of the most important concepts
-          in reinforced concrete design. It ensures that reinforcement
-          bars develop their full strength before slipping from concrete.
+          Learn how to calculate development length in RCC design using bar
+          diameter, design stress, bond stress and IS 456 based formula.
+          Development length is important for safe transfer of stress between
+          steel reinforcement and concrete.
         </p>
 
+        <Link
+          href="/login?redirect=/dashboard/calculators/development-length"
+          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
+        >
+          Open Development Length Calculator
+        </Link>
+
         <section className="space-y-8">
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-3xl font-bold mb-4">
-              What is Development Length?
-            </h2>
-
-            <p className="text-slate-300 leading-8">
-              Development length is the minimum length of reinforcement
-              required to transfer stress from steel to concrete through
-              bond action.
-            </p>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-3xl font-bold mb-4">
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
               Development Length Formula
             </h2>
 
-            <div className="bg-slate-950 rounded-xl p-4 text-orange-400 font-mono text-lg">
-              Ld = (Φ × 0.87fy) / (4 × τbd)
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
+              Ld = φ × σs / 4τbd
             </div>
 
-            <p className="text-slate-300 mt-4">
-              Where:
-            </p>
-
-            <ul className="list-disc pl-6 text-slate-300 mt-2 space-y-2">
-              <li>Φ = Bar Diameter</li>
-              <li>fy = Yield Strength of Steel</li>
-              <li>τbd = Design Bond Stress</li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-3xl font-bold mb-4">
-              Development Length Example
-            </h2>
-
-            <p className="text-slate-300 leading-8">
-              Consider:
-            </p>
-
-            <ul className="list-disc pl-6 text-slate-300 mt-4 space-y-2">
-              <li>Bar Diameter = 16 mm</li>
-              <li>Steel Grade = Fe500</li>
-              <li>Concrete Grade = M20</li>
-            </ul>
-
-            <p className="text-slate-300 mt-4">
-              Substitute values into the formula to determine the
-              required anchorage length.
+            <p className="text-slate-300 mt-4 leading-7">
+              Where φ is the diameter of reinforcement bar, σs is the stress in
+              steel, and τbd is the design bond stress.
             </p>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-3xl font-bold mb-4">
-              Why Development Length is Important
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              What is Development Length?
             </h2>
 
-            <ul className="list-disc pl-6 text-slate-300 space-y-2">
-              <li>Prevents bar slippage</li>
+            <p className="text-slate-300 leading-7 mb-4">
+              Development length is the minimum length of reinforcement bar that
+              must be embedded in concrete to develop the full design stress in
+              steel. It ensures proper bond between concrete and reinforcement.
+            </p>
+
+            <p className="text-slate-300 leading-7">
+              If development length is insufficient, the reinforcement may slip
+              before reaching its required strength, which can reduce structural
+              safety.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Importance of Development Length
+            </h2>
+
+            <ul className="list-disc pl-6 space-y-2 text-slate-300">
+              <li>Ensures proper bond between concrete and steel</li>
+              <li>Prevents bar slippage under load</li>
+              <li>Helps transfer stress safely</li>
               <li>Improves structural safety</li>
-              <li>Ensures full stress transfer</li>
-              <li>Required by IS 456</li>
-              <li>Critical in beam-column joints</li>
+              <li>Required in beams, slabs, columns and footings</li>
+              <li>Important for RCC detailing and bar bending schedule</li>
             </ul>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-3xl font-bold mb-4">
-              Related Articles
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Development Length Calculation Example
             </h2>
 
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/rcc-beam-design-example"
-                className="text-orange-400 hover:text-orange-300"
-              >
-                RCC Beam Design Example
-              </Link>
+            <p className="text-slate-300 leading-7">
+              Consider a 16 mm diameter reinforcement bar with steel stress of
+              415 N/mm² and design bond stress of 1.6 N/mm².
+            </p>
 
-              <Link
-                href="/m20-concrete-mix-ratio"
-                className="text-orange-400 hover:text-orange-300"
-              >
-                M20 Concrete Mix Ratio
-              </Link>
-            </div>
+            <p className="text-slate-300 leading-7 mt-4">
+              Ld = φ × σs / 4τbd
+              <br />
+              Ld = 16 × 415 / 4 × 1.6
+              <br />
+              Ld = 1037.5 mm
+            </p>
+
+            <p className="text-slate-300 leading-7 mt-4">
+              Therefore, the required development length is approximately
+              1038 mm.
+            </p>
           </div>
 
-        </section>
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Where Development Length is Used
+            </h2>
 
+            <ul className="list-disc pl-6 space-y-2 text-slate-300">
+              <li>Beam reinforcement anchorage</li>
+              <li>Column reinforcement detailing</li>
+              <li>Slab reinforcement design</li>
+              <li>Footing reinforcement anchorage</li>
+              <li>Bar curtailment zones</li>
+              <li>Lap splice and reinforcement joints</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Factors Affecting Development Length
+            </h2>
+
+            <ul className="list-disc pl-6 space-y-2 text-slate-300">
+              <li>Diameter of reinforcement bar</li>
+              <li>Grade of steel</li>
+              <li>Grade of concrete</li>
+              <li>Design bond stress</li>
+              <li>Type of bar surface</li>
+              <li>Stress developed in reinforcement</li>
+            </ul>
+          </div>
+
+          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Related Calculators
+            </h2>
+
+            <ul className="list-disc pl-6 space-y-2 text-slate-300">
+              <li><a href="/lap-length-calculation">Lap Length Calculation</a></li>
+              <li><a href="/bar-bending-schedule-guide">Bar Bending Schedule Guide</a></li>
+              <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
+              <li><a href="/beam-design">Beam Design Calculator</a></li>
+              <li><a href="/column-design">Column Design Calculator</a></li>
+            </ul>
+          </div>
+        </section>
       </div>
     </main>
   );
