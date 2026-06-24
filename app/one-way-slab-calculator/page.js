@@ -50,7 +50,7 @@ export default function OneWaySlabCalculatorPage() {
         </p>
 
         <Link
-          href="/login?redirect=/dashboard/calculators/one-way-slab"
+          href="/login?redirect=/dashboard/calculators/slab"
           className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
         >
           Open One Way Slab Calculator
