@@ -53,11 +53,11 @@ export default function BarBendingScheduleGuidePage() {
           reinforcement details, and practical examples.
         </p>
 
-        <Link
-          href="/steel-weight-calculator"
+                <Link
+          href="/login?redirect=/dashboard/calculators/bbs-generator"
           className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
         >
-          Open Steel Weight Calculator
+          Open BBS Generator
         </Link>
 
         <section className="space-y-8">
