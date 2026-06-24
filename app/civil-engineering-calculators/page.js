@@ -67,7 +67,7 @@ const calculators = [
   {
     title: "Home Construction Cost Calculator",
     desc: "Estimate complete house construction cost with built-up area, floors, quality type, material rates and cost breakdown.",
-    href: "/login?redirect=/dashboard/calculators/home-construction",
+    href: "/home-construction-cost-calculator",
     category: "Quantity Estimation",
   },
   {
