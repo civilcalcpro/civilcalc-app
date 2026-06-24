@@ -103,7 +103,7 @@ const calculators = [
   {
     title: "BOQ Generator",
     desc: "Prepare professional Bill of Quantities with project details, item quantity, rate, amount, material summary and report export.",
-    href: "/login?redirect=/dashboard/calculators/boq-generator",
+    href: "/boq-generator",
     category: "Project & Cost Estimation",
   },
   {
