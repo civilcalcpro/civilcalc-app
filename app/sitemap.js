@@ -33,6 +33,11 @@ export default function sitemap() {
   changeFrequency: 'weekly',
 },
     {
+  path: '/home-construction-cost-calculator',
+  priority: 0.9,
+  changeFrequency: 'weekly',
+},
+    {
       path: '/beam-design',
       priority: 0.9,
       changeFrequency: 'monthly',
