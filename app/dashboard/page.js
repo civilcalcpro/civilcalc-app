@@ -142,8 +142,14 @@ const quickTools = [
     icon: Bot,
     href: '/dashboard/ai-assistant',
     color: 'purple',
-    desc: 'Powered by Claude — ask anything',
+    desc: 'HEllo engineers ',
   },
+  name:'BBS Genarator',
+  icon: Ruler,
+  href: '/dashboard/calculators/bbs-generator',
+  color:'yellow',
+  desc:'Smart BBS Calculator with detailed tables',
+  }
   {
     name: 'BOQ Generator',
     icon: FileText,
