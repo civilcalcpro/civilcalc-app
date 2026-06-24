@@ -32,31 +32,37 @@ const tools = [
     title: "Steel Weight Calculator",
     desc: "Calculate reinforcement steel bar weight using diameter, length and standard steel weight formula.",
     href: "/steel-weight-calculator",
+    action: "Open Calculator →",
+  },
+  {
+    title: "Bar Bending Schedule Generator",
+    desc: "Create professional BBS reports with bar mark, diameter, cutting length, quantity, steel weight and reinforcement schedule.",
+    href: "/login?redirect=/dashboard/calculators/bbs-generator",
+    action: "Open BBS Generator →",
   },
   {
     title: "Steel Weight Calculation Formula",
     desc: "Learn the steel weight formula D²/162 and how to calculate bar weight for RCC work.",
     href: "/steel-weight-calculation-formula",
+    action: "Read Guide →",
   },
   {
-    title: "Development Length Calculation",
+    title: "Development Length Guide",
     desc: "Understand development length formula, anchorage length and RCC reinforcement bond requirements.",
     href: "/development-length-calculation",
+    action: "Read Guide →",
   },
   {
-    title: "Lap Length Calculation",
-    desc: "Learn lap length calculation for reinforcement bars in beams, columns, slabs and RCC members.",
+    title: "Lap Length Guide",
+    desc: "Learn lap length requirements for reinforcement bars in beams, columns, slabs and RCC members.",
     href: "/lap-length-calculation",
-  },
-  {
-    title: "Bar Bending Schedule Guide",
-    desc: "Learn BBS preparation, bar mark, cutting length, bend deduction and reinforcement scheduling basics.",
-    href: "/bar-bending-schedule-guide",
+    action: "Read Guide →",
   },
   {
     title: "RCC Beam Design Calculator",
     desc: "Calculate RCC beam design values including bending moment, shear force and reinforcement steel.",
     href: "/beam-design",
+    action: "Open Calculator →",
   },
 ];
 
@@ -109,8 +115,8 @@ export default function ReinforcementCalculatorsPage() {
               <p className="text-slate-300 leading-7">{tool.desc}</p>
 
               <p className="mt-5 text-orange-400 font-semibold">
-                Open Tool →
-              </p>
+  {tool.action}
+</p>
             </Link>
           ))}
         </section>
