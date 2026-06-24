@@ -36,8 +36,53 @@ export const metadata = {
 }
 
 export default function BarBendingScheduleGuidePage() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is Bar Bending Schedule?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Bar Bending Schedule, also called BBS, is a reinforcement schedule used in RCC construction. It lists bar mark, diameter, shape, cutting length, number of bars and total steel weight required for structural members.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Why is BBS used in construction?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "BBS is used to calculate reinforcement quantity, reduce steel wastage, plan cutting and bending work, prepare estimates, manage site reinforcement and improve construction accuracy.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How is steel weight calculated in BBS?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Steel weight is commonly calculated using the formula D squared divided by 162 multiplied by total length, where D is bar diameter in millimeters and length is in meters.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Which details are included in a BBS?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A BBS usually includes bar mark, member name, bar diameter, number of bars, shape, cutting length, total length, unit weight and total steel weight.",
+        },
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+          <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
       <div className="max-w-5xl mx-auto">
         <p className="text-orange-400 font-semibold mb-3">
           RCC STEEL DETAILING GUIDE
