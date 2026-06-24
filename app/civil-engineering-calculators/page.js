@@ -255,6 +255,28 @@ export default function CivilEngineeringCalculatorsPage() {
               Open Reinforcement Calculators
             </Link>
           </section>
+            <section className="mb-16 rounded-2xl border border-slate-800 bg-slate-900 p-8">
+            <p className="text-orange-400 font-semibold mb-3">
+              CONSTRUCTION MATERIAL TOOLS
+            </p>
+
+            <h2 className="text-3xl font-bold mb-4">
+              Construction Material Calculators
+            </h2>
+
+            <p className="text-slate-300 leading-8 mb-6 max-w-4xl">
+              Calculate concrete volume, steel weight, brickwork quantity,
+              plaster materials, cement, sand, aggregate and excavation quantity
+              using CivilCalc Pro construction material calculators.
+            </p>
+
+            <Link
+              href="/construction-material-calculators"
+              className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold"
+            >
+              Open Construction Material Calculators
+            </Link>
+          </section>
           {categories.map((category) => (
             <section key={category} className="mb-14">
               <h2 className="text-3xl font-bold mb-6">{category}</h2>
