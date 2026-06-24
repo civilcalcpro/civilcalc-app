@@ -59,7 +59,115 @@ export default function BarBendingScheduleGuidePage() {
         >
           Open BBS Generator
         </Link>
+        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
+          <p className="text-orange-400 font-semibold mb-3">
+            QUICK ANSWER
+          </p>
 
+          <h2 className="text-3xl font-bold mb-5">
+            What is a Bar Bending Schedule?
+          </h2>
+
+          <p className="text-slate-300 leading-8 mb-4">
+            Bar Bending Schedule, also called BBS, is a detailed reinforcement
+            schedule used in RCC construction. It shows bar mark, bar diameter,
+            shape, length, number of bars, cutting length and total steel weight
+            required for beams, columns, slabs, footings and other RCC members.
+          </p>
+
+          <p className="text-slate-300 leading-8 mb-6">
+            BBS helps civil engineers, site engineers, bar benders and
+            contractors reduce steel wastage, plan reinforcement cutting,
+            prepare steel quantity estimates and manage construction work
+            more accurately.
+          </p>
+
+          <div className="overflow-x-auto mt-6">
+            <table className="w-full border border-slate-800 text-left">
+              <thead className="bg-slate-900">
+                <tr>
+                  <th className="border border-slate-800 p-3 text-white">
+                    BBS Field
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Meaning
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Example
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="text-slate-300">
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Bar Mark
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Identification number for each bar type
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    B1, B2, C1
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Diameter
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Reinforcement bar size
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    8 mm, 10 mm, 12 mm, 16 mm
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Number of Bars
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Total bars required for that item
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    6 bars
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Cutting Length
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Final length of one bar after bends and hooks
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    4.25 m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Steel Weight
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Total weight of reinforcement bars
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    37.74 kg
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-slate-400 leading-7 mt-5">
+            Example: If 6 bars of 12 mm diameter have cutting length 4.25 m,
+            total length is 25.5 m. Steel weight can be calculated using
+            D²/162 × length = 12²/162 × 25.5 = 22.67 kg approximately.
+          </p>
+        </section>
         <section className="space-y-8">
           <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-2xl font-bold text-white mb-4">
