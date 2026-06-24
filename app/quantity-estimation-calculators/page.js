@@ -38,6 +38,11 @@ const tools = [
     desc: "Estimate complete house construction cost using built-up area, number of floors, construction quality, material rates, labour cost and detailed cost breakdown.",
     href: "/home-construction-cost-calculator",
   },
+    {
+    title: "BOQ Generator",
+    desc: "Prepare professional Bill of Quantities with project details, item quantity, unit rate, amount, material summary and construction cost summary.",
+    href: "/boq-generator",
+  },
   {
     title: "Brickwork Calculator",
     desc: "Estimate number of bricks, mortar quantity, cement and sand required for brick masonry.",
