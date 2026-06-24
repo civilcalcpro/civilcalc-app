@@ -30,8 +30,45 @@ export const metadata = {
 };
 
 export default function HomeConstructionCostCalculatorPage() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "How is home construction cost calculated?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Home construction cost is commonly calculated by multiplying built-up area by construction cost per square foot. The final estimate depends on location, quality, material rates, labour charges, number of floors and finishing specifications.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What details are needed for house construction estimate?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Basic details include built-up area, number of floors, location, construction quality, cement rate, sand rate, steel rate, brick rate, aggregate rate and labour cost.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is this calculator useful before building a house?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, a home construction cost calculator helps homeowners, engineers and contractors get an approximate budget idea before construction. Final cost should be verified with drawings, site conditions and current local market rates.",
+        },
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+          <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
       <div className="max-w-6xl mx-auto">
         <p className="text-orange-400 font-semibold mb-3">
           HOUSE CONSTRUCTION COST ESTIMATOR
