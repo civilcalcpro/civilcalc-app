@@ -249,6 +249,14 @@ export default function OneWayVsTwoWaySlabPage() {
               <li><a href="/concrete-volume-calculator">Concrete Volume Calculator</a></li>
             </ul>
           </div>
+                          <div className="mt-10 text-center">
+            <Link
+              href="/civil-engineering-calculators"
+              className="inline-block border border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white transition px-6 py-3 rounded-xl font-semibold"
+            >
+              View All Civil Engineering Calculators
+            </Link>
+          </div>
         </section>
       </div>
     </main>
