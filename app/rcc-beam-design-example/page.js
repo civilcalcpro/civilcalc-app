@@ -36,8 +36,53 @@ export const metadata = {
 }
 
 export default function RCCBeamDesignExamplePage() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "How is an RCC beam designed?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "An RCC beam is designed by calculating loads, bending moment, shear force, effective depth and required reinforcement. The design depends on span, load, concrete grade, steel grade, cover and beam size.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What is the bending moment formula for a simply supported RCC beam?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "For a simply supported RCC beam carrying uniformly distributed load, maximum bending moment is commonly calculated using Mu equals wu L squared divided by 8.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What is the shear force formula for a simply supported beam?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "For a simply supported beam carrying uniformly distributed load, maximum shear force is commonly calculated using Vu equals wu L divided by 2.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Which inputs are required for RCC beam design?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Common inputs for RCC beam design include beam span, beam width, beam depth, concrete grade, steel grade, cover, dead load, live load and support condition.",
+        },
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+          <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
       <div className="max-w-5xl mx-auto">
         <p className="text-orange-400 font-semibold mb-3">
           RCC BEAM DESIGN GUIDE
@@ -60,7 +105,111 @@ export default function RCCBeamDesignExamplePage() {
         >
           Open Beam Design Calculator
         </Link>
+        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
+          <p className="text-orange-400 font-semibold mb-3">
+            QUICK ANSWER
+          </p>
 
+          <h2 className="text-3xl font-bold mb-5">
+            How to design an RCC beam?
+          </h2>
+
+          <p className="text-slate-300 leading-8 mb-4">
+            RCC beam design is done by calculating loads, bending moment, shear
+            force, effective depth and required reinforcement. For a simply
+            supported RCC beam carrying uniformly distributed load, maximum
+            bending moment is commonly calculated using Mu = wuL² / 8 and shear
+            force is calculated using Vu = wuL / 2.
+          </p>
+
+          <div className="overflow-x-auto mt-6">
+            <table className="w-full border border-slate-800 text-left">
+              <thead className="bg-slate-900">
+                <tr>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Design Item
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Formula / Value
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Result
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="text-slate-300">
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Beam Span
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    L
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    4 m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Factored Load
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    wu
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    25 kN/m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Bending Moment
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Mu = wuL² / 8
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    50 kNm
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Shear Force
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Vu = wuL / 2
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    50 kN
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Effective Depth
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    Overall depth - cover - half bar diameter
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    417 mm
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-slate-400 leading-7 mt-5">
+            Example: For a simply supported beam of 4 m span with 25 kN/m
+            factored load, bending moment is 25 × 4² / 8 = 50 kNm and shear
+            force is 25 × 4 / 2 = 50 kN. After this, reinforcement is selected
+            based on bending moment, effective depth, concrete grade and steel
+            grade.
+          </p>
+        </section>
         <section className="space-y-8">
           <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-2xl font-bold text-white mb-4">
