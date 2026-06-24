@@ -216,15 +216,15 @@ export default function BarBendingScheduleGuidePage() {
             </ul>
           </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+                    <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-2xl font-bold text-white mb-4">
-              Related Calculators
+              Related Tools
             </h2>
 
             <ul className="list-disc pl-6 space-y-2 text-slate-300">
               <li><a href="/steel-weight-calculator">Steel Weight Calculator</a></li>
-              <li><a href="/development-length-calculation">Development Length Calculation</a></li>
-              <li><a href="/lap-length-calculation">Lap Length Calculation</a></li>
+              <li><a href="/reinforcement-calculators">Reinforcement Calculators</a></li>
+              <li><a href="/rcc-design-calculators">RCC Design Calculators</a></li>
               <li><a href="/beam-design">Beam Design Calculator</a></li>
               <li><a href="/column-design">Column Design Calculator</a></li>
             </ul>
