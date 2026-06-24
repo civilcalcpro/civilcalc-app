@@ -1,126 +1,175 @@
 export const metadata = {
-  title: 'Privacy Policy',
+  title: 'Privacy Policy | CivilCalc Pro',
   description:
-    'Privacy Policy for CivilCalc Pro - Learn how we collect, use, and protect your information.',
+    'Read the CivilCalc Pro Privacy Policy to understand how we handle user data, account information, analytics, cookies, and website usage information.',
+  alternates: {
+    canonical: 'https://civilcalcpro.in/privacy-policy',
+  },
+  openGraph: {
+    title: 'Privacy Policy | CivilCalc Pro',
+    description:
+      'Read the CivilCalc Pro Privacy Policy to understand how we handle user data, account information, analytics, cookies, and website usage information.',
+    url: 'https://civilcalcpro.in/privacy-policy',
+    siteName: 'CivilCalc Pro',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Privacy Policy | CivilCalc Pro',
+    description:
+      'Read the CivilCalc Pro Privacy Policy to understand how we handle user data, account information, analytics, cookies, and website usage information.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+    },
+  },
 }
 
 export default function PrivacyPolicyPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="max-w-4xl mx-auto px-6 py-16">
-        <h1 className="text-4xl font-bold mb-4">Privacy Policy</h1>
-
-        <p className="text-slate-400 mb-10">
-          Last Updated: {new Date().toLocaleDateString('en-IN')}
+        <p className="text-orange-400 font-semibold mb-3">
+          CIVILCALC PRO PRIVACY POLICY
         </p>
 
-        <div className="space-y-8 text-slate-300 leading-7">
-          <section>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              Introduction
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          Privacy Policy
+        </h1>
+
+        <p className="text-slate-400 mb-10 text-lg leading-8">
+          This Privacy Policy explains how CivilCalc Pro collects, uses, protects,
+          and manages information when you use our website, civil engineering
+          calculators, dashboard, AI assistant, project tools, and related services.
+        </p>
+
+        <div className="space-y-6">
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-2xl font-semibold mb-3">
+              1. Information We Collect
             </h2>
-            <p>
-              CivilCalc Pro respects your privacy and is committed to protecting
-              your personal information. This Privacy Policy explains how we
-              collect, use, and safeguard information when you use our website
-              and engineering tools.
+
+            <p className="text-slate-300 leading-7">
+              CivilCalc Pro may collect basic account information, calculator
+              inputs, project details, saved calculation data, analytics data,
+              device information, browser information, and usage activity to
+              provide and improve our services.
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              Information We Collect
-            </h2>
-            <p>
-              We may collect information that you voluntarily provide when
-              creating an account, contacting us, or using certain features of
-              CivilCalc Pro.
-            </p>
-
-            <ul className="list-disc ml-6 mt-3 space-y-2">
-              <li>Name and email address</li>
-              <li>Account information</li>
-              <li>Calculation history</li>
-              <li>Website usage analytics</li>
-              <li>Technical device information</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              How We Use Information
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-2xl font-semibold mb-3">
+              2. How We Use Information
             </h2>
 
-            <ul className="list-disc ml-6 space-y-2">
-              <li>Provide engineering calculation tools</li>
-              <li>Improve website performance and user experience</li>
-              <li>Respond to support requests</li>
-              <li>Maintain platform security</li>
-              <li>Analyze website traffic and usage patterns</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              Cookies & Analytics
-            </h2>
-
-            <p>
-              CivilCalc Pro uses cookies, Google Analytics, Microsoft Clarity,
-              and similar technologies to understand website performance and
-              improve user experience.
+            <p className="text-slate-300 leading-7">
+              We use collected information to operate the platform, provide
+              engineering calculators, save user projects, generate reports,
+              improve website performance, enhance user experience, detect
+              technical issues, and improve CivilCalc Pro features.
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              Data Security
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-2xl font-semibold mb-3">
+              3. Calculator and Project Data
             </h2>
 
-            <p>
-              We implement reasonable security measures to protect your
-              information. However, no method of internet transmission is 100%
-              secure.
+            <p className="text-slate-300 leading-7">
+              When users create projects or perform calculations, the entered
+              values and generated results may be stored to provide project
+              history, saved reports, dashboard insights, and continuity across
+              sessions.
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              Third-Party Services
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-2xl font-semibold mb-3">
+              4. Cookies and Analytics
             </h2>
 
-            <p>
-              CivilCalc Pro may use trusted third-party services such as Google
-              Analytics, Vercel Analytics, Microsoft Clarity, and authentication
-              providers to operate the platform.
+            <p className="text-slate-300 leading-7">
+              CivilCalc Pro may use cookies, analytics tools, and performance
+              tracking services to understand website usage, monitor traffic,
+              improve page speed, fix errors, and enhance product experience.
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              Your Rights
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-2xl font-semibold mb-3">
+              5. Data Security
             </h2>
 
-            <p>
-              You may request access, correction, or deletion of your personal
-              information by contacting us.
+            <p className="text-slate-300 leading-7">
+              We take reasonable technical and organizational measures to protect
+              user information. However, no online platform can guarantee complete
+              security, and users should avoid submitting highly sensitive
+              information unless required.
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold text-white mb-3">
-              Contact Us
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-2xl font-semibold mb-3">
+              6. Third-Party Services
             </h2>
 
-            <p>
-              If you have questions regarding this Privacy Policy, please
-              contact:
+            <p className="text-slate-300 leading-7">
+              CivilCalc Pro may use third-party services for hosting, analytics,
+              authentication, database storage, email delivery, payments, and
+              performance monitoring. These services may process limited data
+              according to their own privacy policies.
+            </p>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-2xl font-semibold mb-3">
+              7. User Responsibility
+            </h2>
+
+            <p className="text-slate-300 leading-7">
+              Users are responsible for the accuracy of the information they
+              enter into calculators and project forms. CivilCalc Pro provides
+              engineering assistance tools, but professional judgement and
+              verification are required before using results in real construction
+              work.
+            </p>
+          </section>
+
+          <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-2xl font-semibold mb-3">
+              8. Changes to This Policy
+            </h2>
+
+            <p className="text-slate-300 leading-7">
+              We may update this Privacy Policy from time to time to reflect
+              changes in our platform, features, legal requirements, or business
+              operations. Updated versions will be posted on this page.
+            </p>
+          </section>
+
+          <section className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-6">
+            <h2 className="text-2xl font-semibold mb-3 text-orange-400">
+              Contact
+            </h2>
+
+            <p className="text-slate-300 leading-7">
+              For privacy-related questions or support, contact us at:
             </p>
 
-            <div className="mt-4 p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <p>Email: civilcal592005@gmail.com.com</p>
-              <p>Website: https://civilcalcpro.in</p>
-            </div>
+            <a
+              href="mailto:civilcalc592005@gmail.com"
+              className="inline-block mt-3 text-orange-400 hover:text-orange-300 font-medium"
+            >
+              civilcalc592005@gmail.com
+            </a>
           </section>
         </div>
       </div>
