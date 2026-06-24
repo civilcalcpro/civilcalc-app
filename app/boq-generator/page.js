@@ -30,8 +30,53 @@ export const metadata = {
 };
 
 export default function BOQGeneratorPage() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is a BOQ Generator?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A BOQ Generator is an online tool used to create a Bill of Quantities for construction projects. It helps calculate item quantities, unit rates, item amounts and project cost summary.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What is BOQ in construction?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "BOQ stands for Bill of Quantities. It is a construction document that lists work item descriptions, units, quantities, rates and amounts for project cost estimation, tendering and billing.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Who uses BOQ in civil engineering?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "BOQ is commonly used by civil engineers, contractors, quantity surveyors, estimators, site engineers and construction companies for quantity estimation, tendering, billing and project cost planning.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How is BOQ amount calculated?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "BOQ amount is calculated by multiplying item quantity by unit rate. For example, if quantity is 12.5 cubic meters and rate is 6500 per cubic meter, amount will be 81250.",
+        },
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+          <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
       <div className="max-w-6xl mx-auto">
         <p className="text-orange-400 font-semibold mb-3">
           BILL OF QUANTITIES GENERATOR
