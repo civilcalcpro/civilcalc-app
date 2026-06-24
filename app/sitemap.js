@@ -18,6 +18,11 @@ export default function sitemap() {
   changeFrequency: 'weekly',
 },
     {
+  path: '/quantity-estimation-calculators',
+  priority: 0.9,
+  changeFrequency: 'weekly',
+},
+    {
       path: '/beam-design',
       priority: 0.9,
       changeFrequency: 'monthly',
