@@ -125,6 +125,55 @@ const CATEGORY_LIBRARY = {
       rate: 8500,
       defaultGrade: 'M25',
     },
+        {
+      name: 'RCC Lintel',
+      description:
+        'Reinforced cement concrete lintel over door and window openings including concrete and steel reinforcement estimate.',
+      unit: 'm³',
+      rate: 8200,
+      defaultGrade: 'M20',
+    },
+    {
+      name: 'RCC Chajja',
+      description:
+        'Reinforced cement concrete chajja projection above door/window for weather protection including concrete and reinforcement estimate.',
+      unit: 'm³',
+      rate: 8500,
+      defaultGrade: 'M20',
+    },
+    {
+      name: 'RCC Sill Band',
+      description:
+        'Reinforced cement concrete sill band at window sill level including concrete and reinforcement estimate.',
+      unit: 'm³',
+      rate: 8000,
+      defaultGrade: 'M20',
+    },
+    {
+      name: 'RCC Plinth Beam',
+      description:
+        'Reinforced cement concrete plinth beam at plinth level including concrete and steel reinforcement estimate.',
+      unit: 'm³',
+      rate: 8500,
+      defaultGrade: 'M25',
+    },
+    {
+      name: 'RCC Tie Beam',
+      description:
+        'Reinforced cement concrete tie beam connecting structural members including concrete and reinforcement estimate.',
+      unit: 'm³',
+      rate: 8500,
+      defaultGrade: 'M25',
+    },
+    {
+      name: 'RCC Roof Beam',
+      description:
+        'Reinforced cement concrete roof beam including concrete and steel reinforcement estimate.',
+      unit: 'm³',
+      rate: 8600,
+      defaultGrade: 'M25',
+    },
+    
   ],
 
   Brickwork: [
@@ -135,7 +184,7 @@ const CATEGORY_LIBRARY = {
       unit: 'm³',
       rate: 6500,
     },
-    {
+     {
       name: 'Half Brick Wall 115mm',
       description:
         'Half brick masonry work in cement mortar for 115mm thick partition wall including curing.',
@@ -273,6 +322,12 @@ const RCC_STEEL_RATIO = {
   'RCC Slab': 80,
   'RCC Footing': 70,
   'RCC Staircase': 90,
+  'RCC Lintel': 90,
+  'RCC Chajja': 80,
+  'RCC Sill Band': 70,
+  'RCC Plinth Beam': 110,
+  'RCC Tie Beam': 100,
+  'RCC Roof Beam': 110,
 }
 
 const numberValue = (value) => Number(value) || 0
@@ -482,7 +537,69 @@ const calculateMaterials = (item, quantity) => {
 
   return materials
 }
+const SMART_SUGGESTIONS = {
+  Brickwork: [
+    'RCC Lintel',
+    'RCC Sill Band',
+    'Internal Plaster 12mm',
+    'External Plaster 15mm',
+    'Internal Painting',
+  ],
 
+  'Brickwork 230mm Wall': [
+    'RCC Lintel',
+    'RCC Sill Band',
+    'Internal Plaster 12mm',
+    'External Plaster 15mm',
+    'Internal Painting',
+  ],
+
+  'Half Brick Wall 115mm': [
+    'RCC Lintel',
+    'Internal Plaster 12mm',
+    'Internal Painting',
+  ],
+
+  'RCC Slab': [
+    'Terrace Waterproofing',
+    'Internal Plaster 12mm',
+    'External Painting',
+  ],
+
+  'RCC Footing': [
+    'PCC Bed',
+    'RCC Column',
+    'RCC Plinth Beam',
+  ],
+
+  'RCC Column': [
+    'RCC Beam',
+    'RCC Slab',
+    'Brickwork 230mm Wall',
+  ],
+
+  'RCC Beam': [
+    'RCC Slab',
+    'Brickwork 230mm Wall',
+    'Internal Plaster 12mm',
+  ],
+
+  Flooring: [
+    'Internal Painting',
+    'Door Installation',
+    'Window Installation',
+  ],
+
+  Plaster: [
+    'Internal Painting',
+    'External Painting',
+  ],
+
+  Painting: [
+    'Door Installation',
+    'Window Installation',
+  ],
+}
 export default function BOQGeneratorPage() {
   const { authFetch } = useAuth()
 
@@ -514,7 +631,13 @@ export default function BOQGeneratorPage() {
     () => calculateMaterials(itemData, calculatedQuantity),
     [itemData, calculatedQuantity]
   )
-
+  const smartSuggestions = useMemo(() => {
+    return (
+      SMART_SUGGESTIONS[itemData.item] ||
+      SMART_SUGGESTIONS[itemData.category] ||
+      []
+    )
+  }, [itemData.item, itemData.category])
   const subtotal = useMemo(
     () => boqItems.reduce((sum, item) => sum + numberValue(item.amount), 0),
     [boqItems]
@@ -553,7 +676,33 @@ export default function BOQGeneratorPage() {
       ),
     [boqItems]
   )
+  const categoryCostSummary = useMemo(() => {
+    const grouped = boqItems.reduce((summary, item) => {
+      const category = item.category || 'Other'
+      const amount = numberValue(item.amount)
 
+      if (!summary[category]) {
+        summary[category] = {
+          category,
+          amount: 0,
+          itemCount: 0,
+          percentage: 0,
+        }
+      }
+
+      summary[category].amount += amount
+      summary[category].itemCount += 1
+
+      return summary
+    }, {})
+
+    return Object.values(grouped)
+      .map((row) => ({
+        ...row,
+        percentage: subtotal > 0 ? (row.amount / subtotal) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+  }, [boqItems, subtotal])
   const totals = {
     subtotal,
     gstPercent,
@@ -895,7 +1044,45 @@ export default function BOQGeneratorPage() {
     addProjectDetailsTable(docPdf, 43)
 
     let nextY = docPdf.lastAutoTable.finalY + 10
+        docPdf.setTextColor(5, 11, 31)
+    docPdf.setFont('helvetica', 'bold')
+    docPdf.setFontSize(14)
+    docPdf.text('Category-wise Cost Summary', 14, nextY)
 
+    autoTable(docPdf, {
+      startY: nextY + 5,
+      theme: 'grid',
+      head: [['Category', 'Items', 'Amount', 'Share']],
+      body: categoryCostSummary.map((row) => [
+        cleanText(row.category),
+        row.itemCount,
+        formatPdfMoney(row.amount),
+        `${row.percentage.toFixed(1)}%`,
+      ]),
+      headStyles: {
+        fillColor: [5, 11, 31],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      columnStyles: {
+        1: { halign: 'center' },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+      },
+    })
+
+    nextY = docPdf.lastAutoTable.finalY + 10
+
+    if (nextY > 215) {
+      docPdf.addPage()
+      addPdfHeader(docPdf, 'Professional Bill of Quantities Report')
+      nextY = 38
+    }
     docPdf.setTextColor(5, 11, 31)
     docPdf.setFont('helvetica', 'bold')
     docPdf.setFontSize(14)
@@ -1056,15 +1243,31 @@ export default function BOQGeneratorPage() {
     docPdf.setFontSize(8.5)
     docPdf.setTextColor(71, 85, 105)
     docPdf.text(
-      [
-        '1. RCC steel is estimated only for RCC items using standard kg/m³ thumb ratios.',
-        '2. Brickwork, plaster, flooring, painting, waterproofing and excavation do not include steel automatically.',
-        '3. Brick quantity uses practical thumb rules with 5% wastage.',
-        '4. Final BOQ values should be verified by a qualified engineer as per drawings and site specifications.',
+          [
+        '1. All quantities are calculated in standard metric units commonly used in Indian BOQ practice.',
+        '2. RCC steel is estimated only for RCC items using standard kg/m³ thumb ratios.',
+        '3. Brickwork, plaster, flooring, painting, waterproofing and excavation do not include steel automatically.',
+        '4. Brick quantity uses practical thumb rules with 5% wastage.',
+        '5. Final BOQ values should be verified with approved drawings, specifications and site measurements.',
       ],
       14,
       nextY + 7
     )
+        const signatureY = nextY + 48
+
+    if (signatureY < 265) {
+      docPdf.setDrawColor(120, 120, 120)
+
+      docPdf.line(14, signatureY, 75, signatureY)
+      docPdf.line(130, signatureY, 190, signatureY)
+
+      docPdf.setTextColor(71, 85, 105)
+      docPdf.setFont('helvetica', 'normal')
+      docPdf.setFontSize(9)
+
+      docPdf.text('Prepared By', 14, signatureY + 6)
+      docPdf.text('Checked / Approved By', 130, signatureY + 6)
+    }
 
     addPdfFooter(docPdf)
 
@@ -1801,6 +2004,36 @@ export default function BOQGeneratorPage() {
                     </div>
                   </div>
                 </Card>
+                                    {smartSuggestions.length > 0 && (
+                  <Card className="mt-4 border-orange-500/20 bg-orange-500/10 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-bold text-white">
+                          Smart Suggestions
+                        </h3>
+
+                        <p className="mt-1 text-sm text-orange-100/80">
+                          Is item ke saath ye BOQ items bhi commonly required hote hain.
+                        </p>
+                      </div>
+
+                      <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-bold text-white">
+                        Recommended
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {smartSuggestions.map((suggestion) => (
+                        <span
+                          key={suggestion}
+                          className="rounded-full border border-orange-500/30 bg-slate-950/60 px-3 py-2 text-xs font-semibold text-orange-200"
+                        >
+                          + {suggestion}
+                        </span>
+                      ))}
+                    </div>
+                  </Card>
+                )}
 
                 <div className="mt-5 flex flex-wrap gap-3">
                   <Button
@@ -2124,7 +2357,61 @@ export default function BOQGeneratorPage() {
                 </Button>
               </div>
             </Card>
+            <Card className="border-slate-800 bg-slate-950/80 p-5">
+              <h2 className="text-xl font-bold text-white">
+                Category-wise Cost
+              </h2>
 
+              <p className="mt-1 text-sm text-slate-400">
+                Work category ke hisaab se total amount.
+              </p>
+
+              <div className="mt-4 space-y-3">
+                {categoryCostSummary.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    Add BOQ items to see category-wise cost.
+                  </p>
+                ) : (
+                  categoryCostSummary.map((row) => (
+                    <div
+                      key={row.category}
+                      className="rounded-2xl border border-slate-800 bg-slate-900 p-3"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-white">
+                            {row.category}
+                          </p>
+
+                          <p className="text-xs text-slate-500">
+                            {row.itemCount} item
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="font-bold text-orange-400">
+                            {formatMoney(row.amount)}
+                          </p>
+
+                          <p className="text-xs text-slate-500">
+                            {row.percentage.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+                        <div
+                          className="h-full rounded-full bg-orange-500"
+                          style={{
+                            width: `${Math.min(row.percentage, 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
             <Card className="border-slate-800 bg-slate-950/80 p-5">
               <h2 className="text-xl font-bold text-white">Material Summary</h2>
 
