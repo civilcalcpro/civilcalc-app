@@ -59,7 +59,9 @@ export default function LandingPage() {
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8">
               <Link href="#features" className="text-slate-300 hover:text-white transition">Features</Link>
-              <Link href="#tools" className="text-slate-300 hover:text-white transition">Tools</Link>
+              <Link href="/civil-engineering-calculators" className="text-slate-300 hover:text-white transition">
+  Calculators
+</Link>
               <Link href="/dashboard" className="text-slate-300 hover:text-white transition">Dashboard</Link>
               <a href="https://www.linkedin.com/in/civilcalc-pro-6ba230411" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-[#70b5f9] transition" title="Follow on LinkedIn">
                 <Linkedin className="h-5 w-5" />
@@ -91,7 +93,9 @@ export default function LandingPage() {
               className="md:hidden mt-4 pb-4 space-y-4"
             >
               <Link href="#features" className="block text-slate-300 hover:text-white">Features</Link>
-              <Link href="#tools" className="block text-slate-300 hover:text-white">Tools</Link>
+              <Link href="/civil-engineering-calculators" className="block text-slate-300 hover:text-white">
+  Calculators
+</Link>
               <Link href="/dashboard" className="block text-slate-300 hover:text-white">Dashboard</Link>
               <a href="https://www.linkedin.com/in/civilcal-pro-6ba230411" target="_blank" rel="noopener noreferrer" className="flex items-center text-slate-300 hover:text-[#70b5f9]">
                 <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
@@ -143,7 +147,7 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="#tools">
+                <Link href="/civil-engineering-calculators">
                   <Button size="lg" variant="outline" className="border-slate-700 bg-slate-900/40 text-white hover:bg-slate-800 hover:text-white text-lg px-8 h-14 w-full sm:w-auto">
                     Explore Calculators
                     <ChevronRight className="ml-2 h-5 w-5" />
@@ -526,7 +530,11 @@ export default function LandingPage() {
               <h4 className="font-bold mb-4">Product</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li><Link href="#features" className="hover:text-white">Features</Link></li>
-                <li><Link href="#tools" className="hover:text-white">Tools</Link></li>
+                <li>
+  <Link href="/civil-engineering-calculators" className="hover:text-white">
+    Calculators
+  </Link>
+</li>
                 <li><Link href="/dashboard" className="hover:text-white">Dashboard</Link></li>
               </ul>
             </div>
