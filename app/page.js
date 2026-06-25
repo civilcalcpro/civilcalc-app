@@ -97,7 +97,7 @@ export default function LandingPage() {
   Calculators
 </Link>
               <Link href="/dashboard" className="block text-slate-300 hover:text-white">Dashboard</Link>
-              <a href="https://www.linkedin.com/in/civilcal-pro-6ba230411" target="_blank" rel="noopener noreferrer" className="flex items-center text-slate-300 hover:text-[#70b5f9]">
+              <a href="https://www.linkedin.com/in/civilcalc-pro-6ba230411" target="_blank" rel="noopener noreferrer" className="flex items-center text-slate-300 hover:text-[#70b5f9]">
                 <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
               </a>
               <Link href="/login" className="block text-slate-300 hover:text-white">Login</Link>
@@ -141,19 +141,6 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/signup">
-                  <Button size="lg" className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-lg px-8 h-14 w-full sm:w-auto">
-                    Get Started — It&apos;s Free
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="/civil-engineering-calculators">
-                  <Button size="lg" variant="outline" className="border-slate-700 bg-slate-900/40 text-white hover:bg-slate-800 hover:text-white text-lg px-8 h-14 w-full sm:w-auto">
-                    Explore Calculators
-                    <ChevronRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
 
              <div className="mt-12 grid grid-cols-3 gap-6">
   <div>
@@ -237,6 +224,70 @@ export default function LandingPage() {
                 </motion.div>
               </div>
             </motion.div>
+          </div>
+        </div>
+            </section>
+
+      {/* Public Proof Section */}
+      <section className="py-16 px-4 bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817]">
+        <div className="container mx-auto">
+          <div className="max-w-6xl mx-auto rounded-3xl border border-orange-500/30 bg-orange-500/5 p-8 lg:p-10">
+            <div className="grid lg:grid-cols-2 gap-10 items-center">
+              <div>
+                <p className="text-orange-400 font-semibold mb-3">
+                  BUILT FOR INDIAN CIVIL ENGINEERS
+                </p>
+
+                <h2 className="text-3xl lg:text-5xl font-bold mb-5 leading-tight">
+                  CivilCalc Pro is more than a calculator website.
+                </h2>
+
+                <p className="text-slate-300 leading-8 text-lg">
+                  It combines RCC design calculators, quantity estimation tools,
+                  BOQ generator, home construction cost calculator, AI civil
+                  engineering assistant, IS code learning and instant reports in
+                  one web-based platform.
+                </p>
+
+                <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                  <Link href="/why-civilcalc-pro">
+                    <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6 h-12 w-full sm:w-auto">
+                      See Why CivilCalc Pro
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+
+                  <Link href="/boq-generator">
+                    <Button variant="outline" className="border-slate-700 bg-slate-900/40 text-white hover:bg-slate-800 hover:text-white px-6 h-12 w-full sm:w-auto">
+                      Explore BOQ Generator
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                {[
+                  "25+ civil engineering calculators",
+                  "RCC beam, column, slab and footing tools",
+                  "BOQ generator for project estimation",
+                  "Home construction cost calculator",
+                  "Steel, brickwork, plaster and excavation tools",
+                  "AI civil engineering assistant",
+                  "IS code learning support",
+                  "No app install required",
+                ].map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-900/70 p-4"
+                  >
+                    <Check className="h-5 w-5 text-orange-400 mt-0.5 shrink-0" />
+                    <p className="text-slate-300 text-sm leading-6">
+                      {item}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -543,8 +594,16 @@ export default function LandingPage() {
               <h4 className="font-bold mb-4">Resources</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li><Link href="/dashboard" className="hover:text-white">Dashboard</Link></li>
-                <li><Link href="#" className="hover:text-white">Documentation</Link></li>
-                <li><Link href="#" className="hover:text-white">IS Codes</Link></li>
+                                <li>
+                  <Link href="/why-civilcalc-pro" className="hover:text-white">
+                    Documentation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/login?redirect=/dashboard/is-codes" className="hover:text-white">
+                    IS Codes
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -580,7 +639,7 @@ export default function LandingPage() {
   </p>
 </div>
             <a
-              href="https://www.linkedin.com/in/civilcal-pro-6ba230411"
+              href="https://www.linkedin.com/in/civilcalc-pro-6ba230411"
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/60 border border-slate-800 hover:border-[#0a66c2]/60 hover:bg-[#0a66c2]/10 transition"
