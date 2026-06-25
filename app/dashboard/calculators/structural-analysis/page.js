@@ -24,22 +24,26 @@ import {
 import { analyzeTruss } from '@/lib/engineering/truss-analysis'
 import { columnBuckling } from '@/lib/engineering/column-buckling'
 import { momentAreaAnalysis } from '@/lib/engineering/moment-area'
+
 export default function StructuralAnalysisPage() {
   const [activeModule, setActiveModule] = useState('beam')
-const [columnLength, setColumnLength] = useState(3)
-const [columnSectionType, setColumnSectionType] = useState('rectangular')
-const [columnWidth, setColumnWidth] = useState(300)
-const [columnDepth, setColumnDepth] = useState(450)
-const [columnDiameter, setColumnDiameter] = useState(300)
-const [columnMaterial, setColumnMaterial] = useState('rcc')
-const [columnEndCondition, setColumnEndCondition] = useState('pinnedPinned')
-const [columnAppliedLoad, setColumnAppliedLoad] = useState(500)
+
+  const [columnLength, setColumnLength] = useState(3)
+  const [columnSectionType, setColumnSectionType] = useState('rectangular')
+  const [columnWidth, setColumnWidth] = useState(300)
+  const [columnDepth, setColumnDepth] = useState(450)
+  const [columnDiameter, setColumnDiameter] = useState(300)
+  const [columnMaterial, setColumnMaterial] = useState('rcc')
+  const [columnEndCondition, setColumnEndCondition] = useState('pinnedPinned')
+  const [columnAppliedLoad, setColumnAppliedLoad] = useState(500)
+
   const [momentAreaSpan, setMomentAreaSpan] = useState(6)
-const [momentAreaE, setMomentAreaE] = useState(200000)
-const [momentAreaI, setMomentAreaI] = useState(300000000)
-const [momentAreaPointLoad, setMomentAreaPointLoad] = useState(20)
-const [momentAreaPointPosition, setMomentAreaPointPosition] = useState(3)
-const [momentAreaUDL, setMomentAreaUDL] = useState(0)
+  const [momentAreaE, setMomentAreaE] = useState(200000)
+  const [momentAreaI, setMomentAreaI] = useState(300000000)
+  const [momentAreaPointLoad, setMomentAreaPointLoad] = useState(20)
+  const [momentAreaPointPosition, setMomentAreaPointPosition] = useState(3)
+  const [momentAreaUDL, setMomentAreaUDL] = useState(0)
+
   const [structureType, setStructureType] = useState('simply-supported')
   const [span, setSpan] = useState(6)
   const [width, setWidth] = useState(300)
@@ -60,268 +64,271 @@ const [momentAreaUDL, setMomentAreaUDL] = useState(0)
   ])
 
   const [trussData, setTrussData] = useState({
-  joints: [
-    { id: 'A', x: 0, y: 0 },
-    { id: 'B', x: 4, y: 0 },
-    { id: 'C', x: 2, y: 3 },
-  ],
-  members: [
-    { id: 'AB', start: 'A', end: 'B', area: 1000, E: 200000 },
-    { id: 'AC', start: 'A', end: 'C', area: 1000, E: 200000 },
-    { id: 'BC', start: 'B', end: 'C', area: 1000, E: 200000 },
-  ],
-  supports: [
-    { joint: 'A', type: 'pin' },
-    { joint: 'B', type: 'roller-y' },
-  ],
-  loads: [
-    { joint: 'C', fx: 0, fy: -20 },
-  ],
-})
-
-const updateTrussJoint = (index, field, value) => {
-  setTrussData((prev) => ({
-    ...prev,
-    joints: prev.joints.map((joint, i) =>
-      i === index
-        ? {
-            ...joint,
-            [field]: field === 'id' ? value.toUpperCase() : Number(value),
-          }
-        : joint
-    ),
-  }))
-}
-
-const addTrussJoint = () => {
-  const nextId = String.fromCharCode(65 + trussData.joints.length)
-
-  setTrussData((prev) => ({
-    ...prev,
     joints: [
-      ...prev.joints,
-      { id: nextId, x: 0, y: 0 },
+      { id: 'A', x: 0, y: 0 },
+      { id: 'B', x: 4, y: 0 },
+      { id: 'C', x: 2, y: 3 },
     ],
-  }))
-}
-
-const removeTrussJoint = (index) => {
-  if (trussData.joints.length <= 2) return
-
-  const removedJoint = trussData.joints[index]?.id
-
-  setTrussData((prev) => ({
-    ...prev,
-    joints: prev.joints.filter((_, i) => i !== index),
-    members: prev.members.filter(
-      (member) =>
-        member.start !== removedJoint && member.end !== removedJoint
-    ),
-    supports: prev.supports.filter(
-      (support) => support.joint !== removedJoint
-    ),
-    loads: prev.loads.filter((load) => load.joint !== removedJoint),
-  }))
-}
-
-const updateTrussMember = (index, field, value) => {
-  setTrussData((prev) => ({
-    ...prev,
-    members: prev.members.map((member, i) =>
-      i === index
-        ? {
-            ...member,
-            [field]:
-              field === 'area' || field === 'E'
-                ? Number(value)
-                : value,
-          }
-        : member
-    ),
-  }))
-}
-
-const addTrussMember = () => {
-  const firstJoint = trussData.joints[0]?.id || 'A'
-  const secondJoint = trussData.joints[1]?.id || 'B'
-
-  setTrussData((prev) => ({
-    ...prev,
     members: [
-      ...prev.members,
-      {
-        id: `M${prev.members.length + 1}`,
-        start: firstJoint,
-        end: secondJoint,
-        area: 1000,
-        E: 200000,
-      },
+      { id: 'AB', start: 'A', end: 'B', area: 1000, E: 200000 },
+      { id: 'AC', start: 'A', end: 'C', area: 1000, E: 200000 },
+      { id: 'BC', start: 'B', end: 'C', area: 1000, E: 200000 },
     ],
-  }))
-}
-
-const removeTrussMember = (index) => {
-  setTrussData((prev) => ({
-    ...prev,
-    members: prev.members.filter((_, i) => i !== index),
-  }))
-}
-
-const updateTrussSupport = (index, field, value) => {
-  setTrussData((prev) => ({
-    ...prev,
-    supports: prev.supports.map((support, i) =>
-      i === index ? { ...support, [field]: value } : support
-    ),
-  }))
-}
-
-const addTrussSupport = () => {
-  setTrussData((prev) => ({
-    ...prev,
     supports: [
-      ...prev.supports,
-      {
-        joint: prev.joints[0]?.id || 'A',
-        type: 'roller-y',
-      },
+      { joint: 'A', type: 'pin' },
+      { joint: 'B', type: 'roller-y' },
     ],
-  }))
-}
-
-const removeTrussSupport = (index) => {
-  setTrussData((prev) => ({
-    ...prev,
-    supports: prev.supports.filter((_, i) => i !== index),
-  }))
-}
-
-const updateTrussLoad = (index, field, value) => {
-  setTrussData((prev) => ({
-    ...prev,
-    loads: prev.loads.map((load, i) =>
-      i === index
-        ? {
-            ...load,
-            [field]:
-              field === 'fx' || field === 'fy'
-                ? Number(value)
-                : value,
-          }
-        : load
-    ),
-  }))
-}
-
-const addTrussLoad = () => {
-  setTrussData((prev) => ({
-    ...prev,
     loads: [
-      ...prev.loads,
-      {
-        joint: prev.joints[0]?.id || 'A',
-        fx: 0,
-        fy: -10,
-      },
+      { joint: 'C', fx: 0, fy: -20 },
     ],
-  }))
-}
+  })
 
-const removeTrussLoad = (index) => {
-  setTrussData((prev) => ({
-    ...prev,
-    loads: prev.loads.filter((_, i) => i !== index),
-  }))
-}
+  const updateTrussJoint = (index, field, value) => {
+    setTrussData((prev) => ({
+      ...prev,
+      joints: prev.joints.map((joint, i) =>
+        i === index
+          ? {
+              ...joint,
+              [field]: field === 'id' ? value.toUpperCase() : Number(value),
+            }
+          : joint
+      ),
+    }))
+  }
+
+  const addTrussJoint = () => {
+    const nextId = String.fromCharCode(65 + trussData.joints.length)
+
+    setTrussData((prev) => ({
+      ...prev,
+      joints: [
+        ...prev.joints,
+        { id: nextId, x: 0, y: 0 },
+      ],
+    }))
+  }
+
+  const removeTrussJoint = (index) => {
+    if (trussData.joints.length <= 2) return
+
+    const removedJoint = trussData.joints[index]?.id
+
+    setTrussData((prev) => ({
+      ...prev,
+      joints: prev.joints.filter((_, i) => i !== index),
+      members: prev.members.filter(
+        (member) =>
+          member.start !== removedJoint && member.end !== removedJoint
+      ),
+      supports: prev.supports.filter(
+        (support) => support.joint !== removedJoint
+      ),
+      loads: prev.loads.filter((load) => load.joint !== removedJoint),
+    }))
+  }
+
+  const updateTrussMember = (index, field, value) => {
+    setTrussData((prev) => ({
+      ...prev,
+      members: prev.members.map((member, i) =>
+        i === index
+          ? {
+              ...member,
+              [field]:
+                field === 'area' || field === 'E'
+                  ? Number(value)
+                  : value,
+            }
+          : member
+      ),
+    }))
+  }
+
+  const addTrussMember = () => {
+    const firstJoint = trussData.joints[0]?.id || 'A'
+    const secondJoint = trussData.joints[1]?.id || 'B'
+
+    setTrussData((prev) => ({
+      ...prev,
+      members: [
+        ...prev.members,
+        {
+          id: `M${prev.members.length + 1}`,
+          start: firstJoint,
+          end: secondJoint,
+          area: 1000,
+          E: 200000,
+        },
+      ],
+    }))
+  }
+
+  const removeTrussMember = (index) => {
+    setTrussData((prev) => ({
+      ...prev,
+      members: prev.members.filter((_, i) => i !== index),
+    }))
+  }
+
+  const updateTrussSupport = (index, field, value) => {
+    setTrussData((prev) => ({
+      ...prev,
+      supports: prev.supports.map((support, i) =>
+        i === index ? { ...support, [field]: value } : support
+      ),
+    }))
+  }
+
+  const addTrussSupport = () => {
+    setTrussData((prev) => ({
+      ...prev,
+      supports: [
+        ...prev.supports,
+        {
+          joint: prev.joints[0]?.id || 'A',
+          type: 'roller-y',
+        },
+      ],
+    }))
+  }
+
+  const removeTrussSupport = (index) => {
+    setTrussData((prev) => ({
+      ...prev,
+      supports: prev.supports.filter((_, i) => i !== index),
+    }))
+  }
+
+  const updateTrussLoad = (index, field, value) => {
+    setTrussData((prev) => ({
+      ...prev,
+      loads: prev.loads.map((load, i) =>
+        i === index
+          ? {
+              ...load,
+              [field]:
+                field === 'fx' || field === 'fy'
+                  ? Number(value)
+                  : value,
+            }
+          : load
+      ),
+    }))
+  }
+
+  const addTrussLoad = () => {
+    setTrussData((prev) => ({
+      ...prev,
+      loads: [
+        ...prev.loads,
+        {
+          joint: prev.joints[0]?.id || 'A',
+          fx: 0,
+          fy: -10,
+        },
+      ],
+    }))
+  }
+
+  const removeTrussLoad = (index) => {
+    setTrussData((prev) => ({
+      ...prev,
+      loads: prev.loads.filter((_, i) => i !== index),
+    }))
+  }
 
   const trussResult = useMemo(() => {
     return analyzeTruss(trussData)
   }, [trussData])
-const columnResult = useMemo(() => {
-  const L = Number(columnLength) || 1
-  const b = Number(columnWidth) || 300
-  const d = Number(columnDepth) || 450
-  const dia = Number(columnDiameter) || 300
-  const appliedLoad = Number(columnAppliedLoad) || 0
 
-  const isRectangular = columnSectionType === 'rectangular'
+  const columnResult = useMemo(() => {
+    const L = Number(columnLength) || 1
+    const b = Number(columnWidth) || 300
+    const d = Number(columnDepth) || 450
+    const dia = Number(columnDiameter) || 300
+    const appliedLoad = Number(columnAppliedLoad) || 0
 
-  const area = isRectangular
-    ? b * d
-    : (Math.PI * dia * dia) / 4
+    const isRectangular = columnSectionType === 'rectangular'
 
-  const I = isRectangular
-    ? (b * Math.pow(d, 3)) / 12
-    : (Math.PI * Math.pow(dia, 4)) / 64
+    const area = isRectangular
+      ? b * d
+      : (Math.PI * dia * dia) / 4
 
-  const E = columnMaterial === 'steel' ? 200000 : 25000
-  const crushingStress = columnMaterial === 'steel' ? 250 : 25
-  const rankineConstant = columnMaterial === 'steel' ? 1 / 7500 : 1 / 1600
+    const I = isRectangular
+      ? (b * Math.pow(d, 3)) / 12
+      : (Math.PI * Math.pow(dia, 4)) / 64
 
-  const result = columnBuckling({
-    length: L,
-    E,
-    I,
-    area,
-    endCondition: columnEndCondition,
-    crushingStress,
-    rankineConstant,
-  })
+    const E = columnMaterial === 'steel' ? 200000 : 25000
+    const crushingStress = columnMaterial === 'steel' ? 250 : 25
+    const rankineConstant = columnMaterial === 'steel' ? 1 / 7500 : 1 / 1600
 
-  const safeLoad =
-    result.rankineLoad !== 'Not calculated'
-      ? Number(result.rankineLoad)
-      : Number(result.eulerLoad)
+    const result = columnBuckling({
+      length: L,
+      E,
+      I,
+      area,
+      endCondition: columnEndCondition,
+      crushingStress,
+      rankineConstant,
+    })
 
-  return {
-    ...result,
-    area: area.toFixed(2),
-    momentOfInertia: I.toFixed(2),
-    material: columnMaterial === 'steel' ? 'Steel' : 'RCC',
-    appliedLoad: appliedLoad.toFixed(2),
-    safeLoad: safeLoad.toFixed(2),
-    safetyStatus: appliedLoad <= safeLoad ? 'Safe' : 'Unsafe',
-  }
-}, [
-  columnLength,
-  columnSectionType,
-  columnWidth,
-  columnDepth,
-  columnDiameter,
-  columnMaterial,
-  columnEndCondition,
-  columnAppliedLoad,
-])
+    const safeLoad =
+      result.rankineLoad !== 'Not calculated'
+        ? Number(result.rankineLoad)
+        : Number(result.eulerLoad)
+
+    return {
+      ...result,
+      area: area.toFixed(2),
+      momentOfInertia: I.toFixed(2),
+      material: columnMaterial === 'steel' ? 'Steel' : 'RCC',
+      appliedLoad: appliedLoad.toFixed(2),
+      safeLoad: safeLoad.toFixed(2),
+      safetyStatus: appliedLoad <= safeLoad ? 'Safe' : 'Unsafe',
+    }
+  }, [
+    columnLength,
+    columnSectionType,
+    columnWidth,
+    columnDepth,
+    columnDiameter,
+    columnMaterial,
+    columnEndCondition,
+    columnAppliedLoad,
+  ])
+
   const momentAreaResult = useMemo(() => {
-  return momentAreaAnalysis({
-    span: momentAreaSpan,
-    E: momentAreaE,
-    I: momentAreaI,
-    pointLoads: [
-      {
-        P: momentAreaPointLoad,
-        x: momentAreaPointPosition,
-      },
-    ],
-    udls:
-      Number(momentAreaUDL) > 0
-        ? [
-            {
-              w: momentAreaUDL,
-              start: 0,
-              end: momentAreaSpan,
-            },
-          ]
-        : [],
-  })
-}, [
-  momentAreaSpan,
-  momentAreaE,
-  momentAreaI,
-  momentAreaPointLoad,
-  momentAreaPointPosition,
-  momentAreaUDL,
-])
+    return momentAreaAnalysis({
+      span: momentAreaSpan,
+      E: momentAreaE,
+      I: momentAreaI,
+      pointLoads: [
+        {
+          P: momentAreaPointLoad,
+          x: momentAreaPointPosition,
+        },
+      ],
+      udls:
+        Number(momentAreaUDL) > 0
+          ? [
+              {
+                w: momentAreaUDL,
+                start: 0,
+                end: momentAreaSpan,
+              },
+            ]
+          : [],
+    })
+  }, [
+    momentAreaSpan,
+    momentAreaE,
+    momentAreaI,
+    momentAreaPointLoad,
+    momentAreaPointPosition,
+    momentAreaUDL,
+  ])
+
   const result = useMemo(() => {
     const L = Number(span) || 1
     const b = Number(width) || 300
@@ -560,26 +567,28 @@ const columnResult = useMemo(() => {
             <Triangle className="h-4 w-4 mr-2" />
             Truss Analysis
           </Button>
-              <Button
-  onClick={() => setActiveModule('column')}
-  className={
-    activeModule === 'column'
-      ? 'bg-orange-500 hover:bg-orange-600'
-      : 'bg-slate-800 hover:bg-slate-700'
-  }
->
-  Column Buckling
-</Button>
-    <Button
-  onClick={() => setActiveModule('moment-area')}
-  className={
-    activeModule === 'moment-area'
-      ? 'bg-orange-500 hover:bg-orange-600'
-      : 'bg-slate-800 hover:bg-slate-700'
-  }
->
-  Moment Area
-</Button>
+
+          <Button
+            onClick={() => setActiveModule('column')}
+            className={
+              activeModule === 'column'
+                ? 'bg-orange-500 hover:bg-orange-600'
+                : 'bg-slate-800 hover:bg-slate-700'
+            }
+          >
+            Column Buckling
+          </Button>
+
+          <Button
+            onClick={() => setActiveModule('moment-area')}
+            className={
+              activeModule === 'moment-area'
+                ? 'bg-orange-500 hover:bg-orange-600'
+                : 'bg-slate-800 hover:bg-slate-700'
+            }
+          >
+            Moment Area
+          </Button>
         </div>
       </div>
 
@@ -615,87 +624,65 @@ const columnResult = useMemo(() => {
 
       {activeModule === 'truss' && (
         <TrussModule
-  trussData={trussData}
-  trussResult={trussResult}
-  updateTrussJoint={updateTrussJoint}
-  addTrussJoint={addTrussJoint}
-  removeTrussJoint={removeTrussJoint}
-  updateTrussMember={updateTrussMember}
-  addTrussMember={addTrussMember}
-  removeTrussMember={removeTrussMember}
-  updateTrussSupport={updateTrussSupport}
-  addTrussSupport={addTrussSupport}
-  removeTrussSupport={removeTrussSupport}
-  updateTrussLoad={updateTrussLoad}
-  addTrussLoad={addTrussLoad}
-  removeTrussLoad={removeTrussLoad}
-/>
+          trussData={trussData}
+          trussResult={trussResult}
+          updateTrussJoint={updateTrussJoint}
+          addTrussJoint={addTrussJoint}
+          removeTrussJoint={removeTrussJoint}
+          updateTrussMember={updateTrussMember}
+          addTrussMember={addTrussMember}
+          removeTrussMember={removeTrussMember}
+          updateTrussSupport={updateTrussSupport}
+          addTrussSupport={addTrussSupport}
+          removeTrussSupport={removeTrussSupport}
+          updateTrussLoad={updateTrussLoad}
+          addTrussLoad={addTrussLoad}
+          removeTrussLoad={removeTrussLoad}
+        />
       )}
-    {activeModule === 'column' && (
-<ColumnBucklingModule
-  columnResult={columnResult}
-  columnLength={columnLength}
-  setColumnLength={setColumnLength}
-  columnSectionType={columnSectionType}
-  setColumnSectionType={setColumnSectionType}
-  columnWidth={columnWidth}
-  setColumnWidth={setColumnWidth}
-  columnDepth={columnDepth}
-  setColumnDepth={setColumnDepth}
-  columnDiameter={columnDiameter}
-  setColumnDiameter={setColumnDiameter}
-  columnMaterial={columnMaterial}
-  setColumnMaterial={setColumnMaterial}
-  columnEndCondition={columnEndCondition}
-  setColumnEndCondition={setColumnEndCondition}
-  columnAppliedLoad={columnAppliedLoad}
-  setColumnAppliedLoad={setColumnAppliedLoad}
-/>
-)}
-    {activeModule === 'moment-area' && (
-  <MomentAreaModule
-    result={momentAreaResult}
-    span={momentAreaSpan}
-    setSpan={setMomentAreaSpan}
-    E={momentAreaE}
-    setE={setMomentAreaE}
-    I={momentAreaI}
-    setI={setMomentAreaI}
-    pointLoad={momentAreaPointLoad}
-    setPointLoad={setMomentAreaPointLoad}
-    pointPosition={momentAreaPointPosition}
-    setPointPosition={setMomentAreaPointPosition}
-    udl={momentAreaUDL}
-    setUDL={setMomentAreaUDL}
-  />
-)}
+
+      {activeModule === 'column' && (
+        <ColumnBucklingModule
+          columnResult={columnResult}
+          columnLength={columnLength}
+          setColumnLength={setColumnLength}
+          columnSectionType={columnSectionType}
+          setColumnSectionType={setColumnSectionType}
+          columnWidth={columnWidth}
+          setColumnWidth={setColumnWidth}
+          columnDepth={columnDepth}
+          setColumnDepth={setColumnDepth}
+          columnDiameter={columnDiameter}
+          setColumnDiameter={setColumnDiameter}
+          columnMaterial={columnMaterial}
+          setColumnMaterial={setColumnMaterial}
+          columnEndCondition={columnEndCondition}
+          setColumnEndCondition={setColumnEndCondition}
+          columnAppliedLoad={columnAppliedLoad}
+          setColumnAppliedLoad={setColumnAppliedLoad}
+        />
+      )}
+
+      {activeModule === 'moment-area' && (
+        <MomentAreaModule
+          result={momentAreaResult}
+          span={momentAreaSpan}
+          setSpan={setMomentAreaSpan}
+          E={momentAreaE}
+          setE={setMomentAreaE}
+          I={momentAreaI}
+          setI={setMomentAreaI}
+          pointLoad={momentAreaPointLoad}
+          setPointLoad={setMomentAreaPointLoad}
+          pointPosition={momentAreaPointPosition}
+          setPointPosition={setMomentAreaPointPosition}
+          udl={momentAreaUDL}
+          setUDL={setMomentAreaUDL}
+        />
+      )}
     </div>
   )
 }
-
-
-function roundValue(value, decimals = 2) {
-  const number = Number(value)
-
-  if (!Number.isFinite(number)) return '0.00'
-
-  return number.toFixed(decimals)
-}
-
-function getNumber(value, fallback = 0) {
-  const number = Number(value)
-  return Number.isFinite(number) ? number : fallback
-}
-
-function cloneBeamResult(result) {
-  return {
-    ...result,
-    points: result.points.map((point) => ({ ...point })),
-    criticalMomentPoint: { ...result.criticalMomentPoint },
-    deflectionCurve: result.deflectionCurve?.map((point) => ({ ...point })) || [],
-  }
-}
-
 function calculateBeamDeflectionFromMomentDiagram({
   points,
   E,
@@ -726,7 +713,8 @@ function calculateBeamDeflectionFromMomentDiagram({
 
     rawSlope[index] = rawSlope[index - 1] + averageCurvature * dx
     rawDeflection[index] =
-      rawDeflection[index - 1] + ((rawSlope[index - 1] + rawSlope[index]) / 2) * dx
+      rawDeflection[index - 1] +
+      ((rawSlope[index - 1] + rawSlope[index]) / 2) * dx
   }
 
   let deflections = rawDeflection
@@ -1217,7 +1205,6 @@ function buildExamAnswerText({
 
   return lines.join('\n')
 }
-
 function BeamModule({
   structureType,
   setStructureType,
@@ -1246,30 +1233,65 @@ function BeamModule({
   removeMoment,
 }) {
   const [calculatedResult, setCalculatedResult] = useState(null)
-  const [calculatedSignature, setCalculatedSignature] = useState('')
-  const [activeOutputTab, setActiveOutputTab] = useState('final')
+  const [activeResultTab, setActiveResultTab] = useState('final')
   const [validationError, setValidationError] = useState('')
+  const [calculatedSignature, setCalculatedSignature] = useState('')
   const [copyStatus, setCopyStatus] = useState('')
 
-  const currentSignature = useMemo(
-    () =>
-      getBeamInputSignature({
+  const currentSignature = getBeamInputSignature({
+    structureType,
+    span,
+    width,
+    depth,
+    E,
+    I,
+    pointLoads,
+    udls,
+    moments,
+  })
+
+  const inputsChanged =
+    Boolean(calculatedResult) && currentSignature !== calculatedSignature
+
+  const selectedResult = calculatedResult
+  const formulaPanel = selectedResult
+    ? buildBeamFormulaList({
         structureType,
-        span,
-        width,
-        depth,
-        E,
-        I,
+        result: selectedResult,
         pointLoads,
         udls,
         moments,
-      }),
-    [structureType, span, width, depth, E, I, pointLoads, udls, moments]
-  )
+      })
+    : null
 
-  const hasCalculated = Boolean(calculatedResult)
-  const isOutdated = hasCalculated && calculatedSignature !== currentSignature
-  const displayResult = calculatedResult
+  const stepSolution = selectedResult
+    ? buildBeamStepSolution({
+        structureType,
+        result: selectedResult,
+        pointLoads,
+        udls,
+        moments,
+      })
+    : []
+
+  const examAnswerText = selectedResult
+    ? buildExamAnswerText({
+        structureType,
+        result: selectedResult,
+        pointLoads,
+        udls,
+        moments,
+      })
+    : ''
+
+  const keyTable = selectedResult
+    ? getBeamKeyTable({
+        result: selectedResult,
+        pointLoads,
+        udls,
+        moments,
+      })
+    : []
 
   const handleCalculate = () => {
     const error = validateBeamInputs({
@@ -1285,32 +1307,23 @@ function BeamModule({
     if (error) {
       setValidationError(error)
       setCalculatedResult(null)
+      setCalculatedSignature('')
       return
     }
 
     setValidationError('')
-    setCopyStatus('')
-    setCalculatedResult(cloneBeamResult(result))
+    setCalculatedResult(result)
     setCalculatedSignature(currentSignature)
-    setActiveOutputTab('final')
+    setActiveResultTab('final')
+    setCopyStatus('')
   }
 
   const handleCopyExamAnswer = async () => {
-    if (!displayResult) return
-
-    const examAnswer = buildExamAnswerText({
-      structureType,
-      result: displayResult,
-      pointLoads,
-      udls,
-      moments,
-    })
-
     try {
-      await navigator.clipboard.writeText(examAnswer)
-      setCopyStatus('Exam answer copied.')
-    } catch {
-      setCopyStatus('Copy failed. You can select and copy manually.')
+      await navigator.clipboard.writeText(examAnswerText)
+      setCopyStatus('Copied')
+    } catch (error) {
+      setCopyStatus('Copy failed')
     }
   }
 
@@ -1323,25 +1336,20 @@ function BeamModule({
               <h2 className="text-xl font-bold text-white">
                 Student Inputs
               </h2>
-              <p className="text-slate-400 text-sm mt-1">
-                Enter data first, then click Calculate Result.
+              <p className="text-xs text-slate-400 mt-1">
+                Enter values first, then click Calculate Result.
               </p>
             </div>
-            <span className="text-xs bg-orange-500/15 text-orange-300 border border-orange-500/30 px-3 py-1 rounded-full">
-              Student Mode
+
+            <span className="bg-orange-500/10 border border-orange-500/30 text-orange-300 text-xs px-3 py-1 rounded-full">
+              Exam Solver
             </span>
           </div>
 
           <div className="space-y-4">
             <div>
-              <Label className="text-slate-400">Structure Type</Label>
-              <Select
-                value={structureType}
-                onValueChange={(value) => {
-                  setStructureType(value)
-                  setValidationError('')
-                }}
-              >
+              <Label className="text-slate-400">Beam Type</Label>
+              <Select value={structureType} onValueChange={setStructureType}>
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-2">
                   <SelectValue />
                 </SelectTrigger>
@@ -1355,7 +1363,8 @@ function BeamModule({
                 </SelectContent>
               </Select>
               <p className="text-xs text-slate-500 mt-2">
-                Exact student output is enabled for simply supported and cantilever beams.
+                Fixed, continuous and overhanging beams should be added only with
+                exact solver logic.
               </p>
             </div>
 
@@ -1403,7 +1412,7 @@ function BeamModule({
               </div>
 
               <div>
-                <Label className="text-slate-400">I override (mm⁴)</Label>
+                <Label className="text-slate-400">I Override (mm⁴)</Label>
                 <Input
                   type="number"
                   value={I}
@@ -1421,7 +1430,7 @@ function BeamModule({
                 >
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-slate-500 text-xs">
+                      <Label className="text-slate-400 text-xs">
                         Load P (kN)
                       </Label>
                       <Input
@@ -1436,7 +1445,7 @@ function BeamModule({
                     </div>
 
                     <div>
-                      <Label className="text-slate-500 text-xs">
+                      <Label className="text-slate-400 text-xs">
                         Position x (m)
                       </Label>
                       <Input
@@ -1463,7 +1472,7 @@ function BeamModule({
                   className="bg-slate-800/60 rounded-xl p-3 space-y-2"
                 >
                   <div>
-                    <Label className="text-slate-500 text-xs">
+                    <Label className="text-slate-400 text-xs">
                       UDL w (kN/m)
                     </Label>
                     <Input
@@ -1479,7 +1488,7 @@ function BeamModule({
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-slate-500 text-xs">
+                      <Label className="text-slate-400 text-xs">
                         Start (m)
                       </Label>
                       <Input
@@ -1494,7 +1503,7 @@ function BeamModule({
                     </div>
 
                     <div>
-                      <Label className="text-slate-500 text-xs">
+                      <Label className="text-slate-400 text-xs">
                         End (m)
                       </Label>
                       <Input
@@ -1522,7 +1531,7 @@ function BeamModule({
                 >
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-slate-500 text-xs">
+                      <Label className="text-slate-400 text-xs">
                         Moment M (kNm)
                       </Label>
                       <Input
@@ -1537,7 +1546,7 @@ function BeamModule({
                     </div>
 
                     <div>
-                      <Label className="text-slate-500 text-xs">
+                      <Label className="text-slate-400 text-xs">
                         Position x (m)
                       </Label>
                       <Input
@@ -1558,20 +1567,14 @@ function BeamModule({
             </LoadSection>
 
             {validationError && (
-              <div className="bg-red-950/40 border border-red-800 rounded-xl p-4 text-red-200 text-sm">
+              <div className="bg-red-950/40 border border-red-800 rounded-xl p-4 text-sm text-red-200">
                 {validationError}
-              </div>
-            )}
-
-            {isOutdated && (
-              <div className="bg-yellow-950/40 border border-yellow-700 rounded-xl p-4 text-yellow-200 text-sm">
-                Inputs changed after calculation. Click Calculate Result again to update the output.
               </div>
             )}
 
             <Button
               onClick={handleCalculate}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold"
             >
               <Calculator className="h-4 w-4 mr-2" />
               Calculate Result
@@ -1582,16 +1585,23 @@ function BeamModule({
               className="w-full bg-slate-800 hover:bg-slate-700"
             >
               <Download className="h-4 w-4 mr-2" />
-              Export / Print PDF
+              Download Student Solution PDF
             </Button>
           </div>
         </Card>
 
         <div className="lg:col-span-2 space-y-6">
           <Card className="bg-slate-900/50 border-slate-800 p-6">
-            <h2 className="text-xl font-bold text-white mb-4">
-              Structure Diagram
-            </h2>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  Beam Diagram
+                </h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  Visual representation of supports and applied loads.
+                </p>
+              </div>
+            </div>
 
             <BeamDiagram
               L={result.L}
@@ -1602,413 +1612,413 @@ function BeamModule({
             />
           </Card>
 
-          {!hasCalculated ? (
+          {!selectedResult && (
             <Card className="bg-slate-900/50 border-slate-800 p-8 text-center">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center mb-4">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mb-4">
                 <Calculator className="h-7 w-7 text-orange-400" />
               </div>
+
               <h2 className="text-2xl font-bold text-white">
                 Enter inputs and calculate
               </h2>
-              <p className="text-slate-400 mt-2 max-w-xl mx-auto">
-                Result cards, SFD/BMD data, formula used and exam-style answer will appear after calculation.
+
+              <p className="text-slate-400 mt-2 max-w-2xl mx-auto">
+                Result cards, SFD/BMD, step-by-step solution, formulas and exam
+                answer format will appear after clicking Calculate Result.
               </p>
             </Card>
-          ) : (
+          )}
+
+          {selectedResult && (
             <>
+              {inputsChanged && (
+                <Card className="bg-yellow-950/30 border-yellow-700 p-4">
+                  <p className="text-yellow-200 text-sm">
+                    Inputs changed after calculation. Click Calculate Result
+                    again to update the output.
+                  </p>
+                </Card>
+              )}
+
               <div className="grid md:grid-cols-4 gap-4">
-                <SummaryCard label="RA" value={`${roundValue(displayResult.RA)} kN`} />
-                <SummaryCard label="RB / Fixed M" value={
-                  structureType === 'cantilever'
-                    ? `${roundValue(displayResult.fixedMoment)} kNm`
-                    : `${roundValue(displayResult.RB)} kN`
-                } />
+                <SummaryCard
+                  label="Total Load"
+                  value={`${roundValue(selectedResult.totalLoad)} kN`}
+                />
+                <SummaryCard
+                  label="RA"
+                  value={`${roundValue(selectedResult.RA)} kN`}
+                />
+                <SummaryCard
+                  label={structureType === 'cantilever' ? 'Fixed Moment' : 'RB'}
+                  value={
+                    structureType === 'cantilever'
+                      ? `${roundValue(selectedResult.fixedMoment)} kNm`
+                      : `${roundValue(selectedResult.RB)} kN`
+                  }
+                />
                 <SummaryCard
                   label="Max BM"
                   value={`${roundValue(
-                    Math.max(
-                      Math.abs(displayResult.maxMoment),
-                      Math.abs(displayResult.minMoment)
-                    )
+                    Math.abs(selectedResult.criticalMomentPoint.M)
                   )} kNm`}
-                />
-                <SummaryCard
-                  label="Deflection"
-                  value={`${roundValue(displayResult.maxDeflection)} mm`}
                 />
               </div>
 
-              <Card className="bg-slate-900/50 border-slate-800 p-5">
-                <div className="flex flex-wrap gap-2">
-                  <OutputTabButton
-                    active={activeOutputTab === 'final'}
-                    onClick={() => setActiveOutputTab('final')}
-                  >
-                    Final Output
-                  </OutputTabButton>
-                  <OutputTabButton
-                    active={activeOutputTab === 'solution'}
-                    onClick={() => setActiveOutputTab('solution')}
-                  >
-                    Step-by-Step Solution
-                  </OutputTabButton>
-                  <OutputTabButton
-                    active={activeOutputTab === 'formula'}
-                    onClick={() => setActiveOutputTab('formula')}
-                  >
-                    Formula Used
-                  </OutputTabButton>
-                  <OutputTabButton
-                    active={activeOutputTab === 'exam'}
-                    onClick={() => setActiveOutputTab('exam')}
-                  >
-                    Exam Answer Format
-                  </OutputTabButton>
-                  <OutputTabButton
-                    active={activeOutputTab === 'data'}
-                    onClick={() => setActiveOutputTab('data')}
-                  >
-                    SFD / BMD Data
-                  </OutputTabButton>
+              <div className="grid md:grid-cols-4 gap-4">
+                <SummaryCard
+                  label="Max SF"
+                  value={`${roundValue(
+                    Math.max(
+                      Math.abs(selectedResult.maxShear),
+                      Math.abs(selectedResult.minShear)
+                    )
+                  )} kN`}
+                />
+                <SummaryCard
+                  label="Critical Section"
+                  value={`${roundValue(
+                    selectedResult.criticalMomentPoint.x
+                  )} m`}
+                />
+                <SummaryCard
+                  label="Max Deflection"
+                  value={`${roundValue(selectedResult.maxDeflection)} mm`}
+                />
+                <SummaryCard
+                  label="Deflection At"
+                  value={`${roundValue(selectedResult.deflectionLocation)} m`}
+                />
+              </div>
+
+              <Card className="bg-slate-900/50 border-slate-800 p-6">
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <StudentTabButton
+                    label="Final Output"
+                    active={activeResultTab === 'final'}
+                    onClick={() => setActiveResultTab('final')}
+                  />
+                  <StudentTabButton
+                    label="Step-by-Step Solution"
+                    active={activeResultTab === 'steps'}
+                    onClick={() => setActiveResultTab('steps')}
+                  />
+                  <StudentTabButton
+                    label="Formula Used"
+                    active={activeResultTab === 'formula'}
+                    onClick={() => setActiveResultTab('formula')}
+                  />
+                  <StudentTabButton
+                    label="Exam Answer Format"
+                    active={activeResultTab === 'exam'}
+                    onClick={() => setActiveResultTab('exam')}
+                  />
+                  <StudentTabButton
+                    label="SFD / BMD Data"
+                    active={activeResultTab === 'data'}
+                    onClick={() => setActiveResultTab('data')}
+                  />
                 </div>
-              </Card>
 
-              {activeOutputTab === 'final' && (
-                <BeamFinalOutput
-                  result={displayResult}
-                  structureType={structureType}
-                  pointLoads={pointLoads}
-                  udls={udls}
-                  moments={moments}
-                />
-              )}
+                {activeResultTab === 'final' && (
+                  <div className="space-y-5">
+                    <div className="bg-slate-800/60 rounded-2xl p-5">
+                      <h3 className="text-white font-bold text-lg mb-2">
+                        Final Output
+                      </h3>
 
-              {activeOutputTab === 'solution' && (
-                <BeamStepSolution
-                  result={displayResult}
-                  structureType={structureType}
-                  pointLoads={pointLoads}
-                  udls={udls}
-                  moments={moments}
-                />
-              )}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <ResultRow
+                          label="Support Reaction RA"
+                          value={`${roundValue(selectedResult.RA)} kN`}
+                        />
+                        <ResultRow
+                          label={
+                            structureType === 'cantilever'
+                              ? 'Support Reaction RB'
+                              : 'Support Reaction RB'
+                          }
+                          value={`${roundValue(selectedResult.RB)} kN`}
+                        />
+                        <ResultRow
+                          label="Maximum Shear Force"
+                          value={`${roundValue(
+                            Math.max(
+                              Math.abs(selectedResult.maxShear),
+                              Math.abs(selectedResult.minShear)
+                            )
+                          )} kN`}
+                        />
+                        <ResultRow
+                          label="Maximum Bending Moment"
+                          value={`${roundValue(
+                            Math.abs(selectedResult.criticalMomentPoint.M)
+                          )} kNm`}
+                        />
+                        <ResultRow
+                          label="Maximum Deflection"
+                          value={`${roundValue(
+                            selectedResult.maxDeflection
+                          )} mm`}
+                        />
+                        <ResultRow
+                          label="Critical Point"
+                          value={`x = ${roundValue(
+                            selectedResult.criticalMomentPoint.x
+                          )} m`}
+                        />
+                      </div>
+                    </div>
 
-              {activeOutputTab === 'formula' && (
-                <FormulaUsedSection
-                  result={displayResult}
-                  structureType={structureType}
-                  pointLoads={pointLoads}
-                  udls={udls}
-                  moments={moments}
-                />
-              )}
+                    <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-5">
+                      <h3 className="text-orange-300 font-bold mb-2">
+                        Student Tip
+                      </h3>
+                      <p className="text-slate-300 leading-7">
+                        Shear force changes suddenly at point load. Under UDL,
+                        shear force changes gradually. Bending moment is
+                        generally maximum where shear force becomes zero or
+                        changes sign.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-              {activeOutputTab === 'exam' && (
-                <ExamAnswerSection
-                  result={displayResult}
-                  structureType={structureType}
-                  pointLoads={pointLoads}
-                  udls={udls}
-                  moments={moments}
-                  copyStatus={copyStatus}
-                  onCopy={handleCopyExamAnswer}
-                />
-              )}
+                {activeResultTab === 'steps' && (
+                  <div className="space-y-4">
+                    <h3 className="text-white font-bold text-lg">
+                      Step-by-Step Solution
+                    </h3>
 
-              {activeOutputTab === 'data' && (
-                <SfdBmdDataSection
-                  result={displayResult}
-                  pointLoads={pointLoads}
-                  udls={udls}
-                  moments={moments}
-                />
-              )}
+                    <div className="space-y-3 text-slate-300 leading-7">
+                      {stepSolution.map((step, index) => (
+                        <div
+                          key={index}
+                          className="bg-slate-800/60 rounded-xl p-4"
+                        >
+                          <span className="text-orange-400 font-semibold">
+                            Step {index + 1}:
+                          </span>{' '}
+                          {step}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-              <Card className="bg-slate-900/50 border-slate-800 p-6">
-                <h2 className="text-xl font-bold text-white mb-4">
-                  Shear Force Diagram
-                </h2>
+                {activeResultTab === 'formula' && (
+                  <div className="space-y-5">
+                    <div>
+                      <h3 className="text-white font-bold text-lg">
+                        Formula Used
+                      </h3>
+                      <p className="text-slate-400 mt-1">
+                        Case detected: {formulaPanel.specialCase.title}
+                      </p>
+                    </div>
 
-                <Diagram points={displayResult.points} type="V" label="SFD" />
-              </Card>
+                    <div className="bg-slate-800/60 rounded-2xl p-5">
+                      <h4 className="text-orange-300 font-semibold mb-2">
+                        Concept Explanation
+                      </h4>
+                      <p className="text-slate-300 leading-7">
+                        Support reaction nikalne ke liye pehle total vertical
+                        load ko balance karte hain, fir ek support ke about
+                        moment lete hain. SFD force balance se banta hai aur
+                        BMD section moment equation se banta hai.
+                      </p>
+                    </div>
 
-              <Card className="bg-slate-900/50 border-slate-800 p-6">
-                <h2 className="text-xl font-bold text-white mb-4">
-                  Bending Moment Diagram
-                </h2>
+                    <div className="space-y-3">
+                      {formulaPanel.formulas.map((item, index) => (
+                        <div
+                          key={index}
+                          className="bg-slate-800/60 rounded-xl p-4"
+                        >
+                          <div className="text-orange-400 font-semibold">
+                            {item.title}
+                          </div>
+                          <div className="text-white font-bold mt-1">
+                            {item.formula}
+                          </div>
+                          <div className="text-slate-400 text-sm mt-2">
+                            {item.meaning}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                <Diagram points={displayResult.points} type="M" label="BMD" />
-              </Card>
+                {activeResultTab === 'exam' && (
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-white font-bold text-lg">
+                          Exam Answer Format
+                        </h3>
+                        <p className="text-slate-400 text-sm mt-1">
+                          Notebook-style answer for students.
+                        </p>
+                      </div>
 
-              <Card className="bg-slate-900/50 border-slate-800 p-6">
-                <h2 className="text-xl font-bold text-white mb-4">
-                  Deflection Curve
-                </h2>
+                      <Button
+                        onClick={handleCopyExamAnswer}
+                        className="bg-orange-500 hover:bg-orange-600"
+                      >
+                        Copy Exam Answer
+                      </Button>
+                    </div>
 
-                <DeflectionCurve points={displayResult.deflectionCurve || []} />
+                    {copyStatus && (
+                      <p className="text-sm text-orange-300">{copyStatus}</p>
+                    )}
+
+                    <pre className="bg-slate-950 border border-slate-800 rounded-2xl p-5 text-slate-200 whitespace-pre-wrap leading-7 text-sm overflow-x-auto">
+{examAnswerText}
+                    </pre>
+                  </div>
+                )}
+
+                {activeResultTab === 'data' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-white font-bold text-lg">
+                        SFD / BMD Data Points
+                      </h3>
+                      <p className="text-slate-400 text-sm mt-1">
+                        Important diagram points for drawing shear force and
+                        bending moment diagram.
+                      </p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-slate-300">
+                        <thead>
+                          <tr className="border-b border-slate-800 text-slate-400">
+                            <th className="text-left py-3">Point</th>
+                            <th className="text-left py-3">Distance x</th>
+                            <th className="text-left py-3">Shear Force</th>
+                            <th className="text-left py-3">Bending Moment</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {keyTable.map((row, index) => (
+                            <tr
+                              key={`${row.x}-${index}`}
+                              className="border-b border-slate-800/70"
+                            >
+                              <td className="py-3 text-orange-400 font-semibold">
+                                {index + 1}
+                              </td>
+                              <td className="py-3">{roundValue(row.x)} m</td>
+                              <td className="py-3">
+                                {roundValue(row.shear)} kN
+                              </td>
+                              <td className="py-3">
+                                {roundValue(row.moment)} kNm
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <Card className="bg-slate-950 border-slate-800 p-5">
+                        <h3 className="text-white font-bold mb-4">
+                          Shear Force Diagram
+                        </h3>
+                        <Diagram
+                          points={selectedResult.points}
+                          type="V"
+                          label="SFD"
+                        />
+                      </Card>
+
+                      <Card className="bg-slate-950 border-slate-800 p-5">
+                        <h3 className="text-white font-bold mb-4">
+                          Bending Moment Diagram
+                        </h3>
+                        <Diagram
+                          points={selectedResult.points}
+                          type="M"
+                          label="BMD"
+                        />
+                      </Card>
+                    </div>
+
+                    <Card className="bg-slate-950 border-slate-800 p-5">
+                      <h3 className="text-white font-bold mb-4">
+                        Deflection Curve
+                      </h3>
+                      <DeflectionCurve points={selectedResult.deflectionCurve} />
+                    </Card>
+                  </div>
+                )}
               </Card>
             </>
           )}
         </div>
       </div>
-    </>
-  )
-}
 
-function OutputTabButton({ active, onClick, children }) {
-  return (
-    <Button
-      onClick={onClick}
-      className={
-        active
-          ? 'bg-orange-500 hover:bg-orange-600'
-          : 'bg-slate-800 hover:bg-slate-700'
-      }
-    >
-      {children}
-    </Button>
-  )
-}
+      {selectedResult && (
+        <section className="mt-10 grid lg:grid-cols-3 gap-6">
+          <Card className="bg-slate-900/50 border-slate-800 p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              Solved Examples Library
+            </h2>
 
-function BeamFinalOutput({
-  result,
-  structureType,
-  pointLoads,
-  udls,
-  moments,
-}) {
-  const specialCase = getBeamSpecialCase({
-    structureType,
-    result,
-    pointLoads,
-    udls,
-    moments,
-  })
-
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 p-6">
-      <h2 className="text-xl font-bold text-white mb-4">
-        Final Output
-      </h2>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <ResultRow label="Beam Case" value={specialCase.title} />
-        <ResultRow label="Total Load" value={`${roundValue(result.totalLoad)} kN`} />
-        <ResultRow label="Left Reaction RA" value={`${roundValue(result.RA)} kN`} />
-        <ResultRow
-          label={structureType === 'cantilever' ? 'Fixed End Moment' : 'Right Reaction RB'}
-          value={
-            structureType === 'cantilever'
-              ? `${roundValue(result.fixedMoment)} kNm`
-              : `${roundValue(result.RB)} kN`
-          }
-        />
-        <ResultRow
-          label="Maximum Shear Force"
-          value={`${roundValue(
-            Math.max(Math.abs(result.maxShear), Math.abs(result.minShear))
-          )} kN`}
-        />
-        <ResultRow
-          label="Maximum Bending Moment"
-          value={`${roundValue(Math.abs(result.criticalMomentPoint.M))} kNm`}
-        />
-        <ResultRow
-          label="Critical Section"
-          value={`x = ${roundValue(result.criticalMomentPoint.x)} m`}
-        />
-        <ResultRow
-          label="Maximum Deflection"
-          value={`${roundValue(result.maxDeflection)} mm at x = ${roundValue(
-            result.deflectionLocation
-          )} m`}
-        />
-      </div>
-
-      <div className="mt-5 bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-slate-300 leading-7">
-        <p>
-          <b className="text-orange-400">Student Tip:</b> {specialCase.note}
-        </p>
-        <p className="mt-2">
-          <b className="text-orange-400">Deflection:</b> {specialCase.deflectionNote}
-        </p>
-      </div>
-    </Card>
-  )
-}
-
-function BeamStepSolution({
-  result,
-  structureType,
-  pointLoads,
-  udls,
-  moments,
-}) {
-  const steps = buildBeamStepSolution({
-    structureType,
-    result,
-    pointLoads,
-    udls,
-    moments,
-  })
-
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 p-6">
-      <h2 className="text-xl font-bold text-white mb-4">
-        Step-by-Step Solution
-      </h2>
-
-      <div className="space-y-3 text-slate-300 leading-7">
-        {steps.map((step, index) => (
-          <div
-            key={index}
-            className="bg-slate-800/50 border border-slate-700 rounded-xl p-4"
-          >
-            <span className="text-orange-400 font-semibold">
-              Step {index + 1}:
-            </span>{' '}
-            {step}
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
-}
-
-function FormulaUsedSection({
-  result,
-  structureType,
-  pointLoads,
-  udls,
-  moments,
-}) {
-  const { specialCase, formulas } = buildBeamFormulaList({
-    structureType,
-    result,
-    pointLoads,
-    udls,
-    moments,
-  })
-
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 p-6">
-      <h2 className="text-xl font-bold text-white mb-4">
-        Formula Used
-      </h2>
-
-      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 text-orange-100 mb-5">
-        <b>Detected case:</b> {specialCase.title}
-      </div>
-
-      <div className="space-y-4">
-        {formulas.map((item, index) => (
-          <div
-            key={index}
-            className="bg-slate-800/50 border border-slate-700 rounded-xl p-4"
-          >
-            <div className="text-white font-semibold">
-              {index + 1}. {item.title}
+            <div className="space-y-3 text-sm text-slate-300">
+              <ExampleItem title="Simply Supported Beam + Center Point Load" />
+              <ExampleItem title="Simply Supported Beam + Full Span UDL" />
+              <ExampleItem title="Cantilever Beam + Free End Point Load" />
+              <ExampleItem title="Cantilever Beam + Full Span UDL" />
+              <ExampleItem title="General Beam + Multiple Loads" />
             </div>
-            <div className="text-orange-400 font-bold mt-1">
-              {item.formula}
+          </Card>
+
+          <Card className="bg-slate-900/50 border-slate-800 p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              Theory Explanation
+            </h2>
+
+            <div className="space-y-4 text-slate-300 leading-7 text-sm">
+              <p>
+                Support reactions occur because the beam must satisfy force and
+                moment equilibrium.
+              </p>
+              <p>
+                Shear force changes suddenly at a point load and changes
+                linearly under UDL.
+              </p>
+              <p>
+                Bending moment is maximum where shear force becomes zero or
+                changes sign.
+              </p>
+              <p>
+                Deflection depends on loading, span, Young’s modulus and moment
+                of inertia.
+              </p>
             </div>
-            <div className="text-slate-400 text-sm mt-2">
-              {item.meaning}
+          </Card>
+
+          <Card className="bg-slate-900/50 border-slate-800 p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              Coming Next
+            </h2>
+
+            <div className="space-y-3 text-sm text-slate-300">
+              <ExampleItem title="Overhanging Beam Exact Solver" />
+              <ExampleItem title="Fixed Beam Solver" />
+              <ExampleItem title="Continuous Beam Solver" />
+              <ExampleItem title="Macaulay Method" />
+              <ExampleItem title="Influence Line Diagram" />
             </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  )
-}
-
-function ExamAnswerSection({
-  result,
-  structureType,
-  pointLoads,
-  udls,
-  moments,
-  copyStatus,
-  onCopy,
-}) {
-  const examAnswer = buildExamAnswerText({
-    structureType,
-    result,
-    pointLoads,
-    udls,
-    moments,
-  })
-
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-xl font-bold text-white">
-          Exam Answer Format
-        </h2>
-
-        <Button
-          onClick={onCopy}
-          className="bg-orange-500 hover:bg-orange-600"
-        >
-          Copy Exam Answer
-        </Button>
-      </div>
-
-      {copyStatus && (
-        <div className="mb-4 text-sm text-green-300 bg-green-950/30 border border-green-800 rounded-xl p-3">
-          {copyStatus}
-        </div>
+          </Card>
+        </section>
       )}
-
-      <pre className="bg-slate-950 border border-slate-800 rounded-xl p-5 text-slate-200 whitespace-pre-wrap leading-7 overflow-x-auto">
-        {examAnswer}
-      </pre>
-    </Card>
-  )
-}
-
-function SfdBmdDataSection({ result, pointLoads, udls, moments }) {
-  const rows = getBeamKeyTable({ result, pointLoads, udls, moments })
-
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 p-6">
-      <h2 className="text-xl font-bold text-white mb-4">
-        SFD / BMD Key Data
-      </h2>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-slate-300">
-          <thead>
-            <tr className="border-b border-slate-800 text-slate-400">
-              <th className="text-left py-3">Point</th>
-              <th className="text-left py-3">Distance x</th>
-              <th className="text-left py-3">Shear Force</th>
-              <th className="text-left py-3">Bending Moment</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {rows.map((row, index) => (
-              <tr
-                key={`${row.x}-${index}`}
-                className="border-b border-slate-800/70"
-              >
-                <td className="py-3 font-semibold text-orange-400">
-                  {index + 1}
-                </td>
-                <td className="py-3">{roundValue(row.x)} m</td>
-                <td className="py-3">{roundValue(row.shear)} kN</td>
-                <td className="py-3">{roundValue(row.moment)} kNm</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <p className="text-slate-500 text-xs mt-4">
-        Table shows support, load, UDL boundary, critical moment and deflection locations.
-      </p>
-    </Card>
+    </>
   )
 }
 function TrussModule({
@@ -2029,12 +2039,39 @@ function TrussModule({
 }) {
   const jointOptions = trussData.joints.map((joint) => joint.id)
 
+  const safeResult = trussResult || {
+    ok: false,
+    error: 'Truss result not available.',
+    summary: {
+      joints: 0,
+      members: 0,
+      reactions: 0,
+      determinacy: 'Not checked',
+    },
+    reactions: [],
+    memberForces: [],
+    displacements: [],
+    steps: [],
+    formulas: {},
+  }
+
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
-        <h2 className="text-xl font-bold text-white mb-5">
-          Truss Inputs
-        </h2>
+        <div className="flex items-start justify-between gap-3 mb-5">
+          <div>
+            <h2 className="text-xl font-bold text-white">
+              Truss Inputs
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">
+              Add joints, members, supports and joint loads.
+            </p>
+          </div>
+
+          <span className="bg-orange-500/10 border border-orange-500/30 text-orange-300 text-xs px-3 py-1 rounded-full">
+            Student Mode
+          </span>
+        </div>
 
         <div className="space-y-6 text-sm text-slate-300">
           <div>
@@ -2165,37 +2202,37 @@ function TrussModule({
                     </Select>
                   </div>
 
-                <div className="grid grid-cols-2 gap-2">
-  <div>
-    <Label className="text-slate-400 text-xs">
-      Area A (mm²)
-    </Label>
-    <Input
-      type="number"
-      value={member.area || 1000}
-      onChange={(e) =>
-        updateTrussMember(index, 'area', e.target.value)
-      }
-      placeholder="Area mm²"
-      className="bg-slate-900 border-slate-700 text-white mt-1"
-    />
-  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-slate-400 text-xs">
+                        Area A (mm²)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={member.area || 1000}
+                        onChange={(e) =>
+                          updateTrussMember(index, 'area', e.target.value)
+                        }
+                        placeholder="Area mm²"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
 
-  <div>
-    <Label className="text-slate-400 text-xs">
-      Elastic Modulus E (N/mm²)
-    </Label>
-    <Input
-      type="number"
-      value={member.E || 200000}
-      onChange={(e) =>
-        updateTrussMember(index, 'E', e.target.value)
-      }
-      placeholder="E N/mm²"
-      className="bg-slate-900 border-slate-700 text-white mt-1"
-    />
-  </div>
-</div>
+                    <div>
+                      <Label className="text-slate-400 text-xs">
+                        Elastic Modulus E (N/mm²)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={member.E || 200000}
+                        onChange={(e) =>
+                          updateTrussMember(index, 'E', e.target.value)
+                        }
+                        placeholder="E N/mm²"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
+                  </div>
 
                   <RemoveButton onClick={() => removeTrussMember(index)} />
                 </div>
@@ -2308,36 +2345,36 @@ function TrussModule({
                   </Select>
 
                   <div className="grid grid-cols-2 gap-2">
-  <div>
-    <Label className="text-slate-400 text-xs">
-      Horizontal Load Fx (kN)
-    </Label>
-    <Input
-      type="number"
-      value={load.fx}
-      onChange={(e) =>
-        updateTrussLoad(index, 'fx', e.target.value)
-      }
-      placeholder="Right + / Left -"
-      className="bg-slate-900 border-slate-700 text-white mt-1"
-    />
-  </div>
+                    <div>
+                      <Label className="text-slate-400 text-xs">
+                        Horizontal Load Fx (kN)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={load.fx}
+                        onChange={(e) =>
+                          updateTrussLoad(index, 'fx', e.target.value)
+                        }
+                        placeholder="Right + / Left -"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
 
-  <div>
-    <Label className="text-slate-400 text-xs">
-      Vertical Load Fy (kN)
-    </Label>
-    <Input
-      type="number"
-      value={load.fy}
-      onChange={(e) =>
-        updateTrussLoad(index, 'fy', e.target.value)
-      }
-      placeholder="Up + / Down -"
-      className="bg-slate-900 border-slate-700 text-white mt-1"
-    />
-  </div>
-</div>
+                    <div>
+                      <Label className="text-slate-400 text-xs">
+                        Vertical Load Fy (kN)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={load.fy}
+                        onChange={(e) =>
+                          updateTrussLoad(index, 'fy', e.target.value)
+                        }
+                        placeholder="Up + / Down -"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
+                  </div>
 
                   <RemoveButton onClick={() => removeTrussLoad(index)} />
                 </div>
@@ -2364,32 +2401,32 @@ function TrussModule({
           <TrussDiagram trussData={trussData} />
         </Card>
 
-        {!trussResult.ok && (
+        {!safeResult.ok && (
           <Card className="bg-red-950/40 border-red-800 p-5">
             <h3 className="text-red-300 font-semibold mb-2">
               Analysis Error
             </h3>
             <p className="text-red-200 text-sm">
-              {trussResult.error}
+              {safeResult.error}
             </p>
           </Card>
         )}
 
         <div className="grid md:grid-cols-4 gap-4">
-          <SummaryCard label="Joints" value={trussResult.summary.joints} />
-          <SummaryCard label="Members" value={trussResult.summary.members} />
-          <SummaryCard label="Reactions" value={trussResult.summary.reactions} />
-          <SummaryCard label="Type" value={trussResult.summary.determinacy} />
+          <SummaryCard label="Joints" value={safeResult.summary?.joints || 0} />
+          <SummaryCard label="Members" value={safeResult.summary?.members || 0} />
+          <SummaryCard label="Reactions" value={safeResult.summary?.reactions || 0} />
+          <SummaryCard label="Type" value={safeResult.summary?.determinacy || 'N/A'} />
         </div>
 
-        {trussResult.reactions?.length > 0 && (
+        {safeResult.reactions?.length > 0 && (
           <Card className="bg-slate-900/50 border-slate-800 p-6">
             <h2 className="text-xl font-bold text-white mb-4">
               Support Reactions
             </h2>
 
             <div className="grid md:grid-cols-3 gap-3">
-              {trussResult.reactions.map((reaction, index) => (
+              {safeResult.reactions.map((reaction, index) => (
                 <div
                   key={index}
                   className="bg-slate-800/60 rounded-xl p-4"
@@ -2427,7 +2464,7 @@ function TrussModule({
               </thead>
 
               <tbody>
-                {trussResult.memberForces.map((member) => (
+                {(safeResult.memberForces || []).map((member) => (
                   <tr
                     key={member.member}
                     className="border-b border-slate-800/70"
@@ -2459,7 +2496,7 @@ function TrussModule({
           </div>
         </Card>
 
-        {trussResult.displacements?.length > 0 && (
+        {safeResult.displacements?.length > 0 && (
           <Card className="bg-slate-900/50 border-slate-800 p-6">
             <h2 className="text-xl font-bold text-white mb-4">
               Joint Displacements
@@ -2477,7 +2514,7 @@ function TrussModule({
                 </thead>
 
                 <tbody>
-                  {trussResult.displacements.map((item) => (
+                  {safeResult.displacements.map((item) => (
                     <tr
                       key={item.joint}
                       className="border-b border-slate-800/70"
@@ -2502,7 +2539,7 @@ function TrussModule({
           </h2>
 
           <div className="space-y-3 text-slate-300 leading-7">
-            {trussResult.steps.map((step, index) => (
+            {(safeResult.steps || []).map((step, index) => (
               <p key={index}>
                 <span className="text-orange-400 font-semibold">
                   Step {index + 1}:
@@ -2510,6 +2547,12 @@ function TrussModule({
                 {step}
               </p>
             ))}
+
+            {(!safeResult.steps || safeResult.steps.length === 0) && (
+              <p className="text-slate-400">
+                Steps will appear after valid truss analysis.
+              </p>
+            )}
           </div>
         </Card>
 
@@ -2522,37 +2565,31 @@ function TrussModule({
             <p>
               Determinacy:{' '}
               <b className="text-orange-400">
-                {trussResult.formulas.determinacy}
+                {safeResult.formulas?.determinacy || 'm + r = 2j'}
               </b>
             </p>
             <p>
               Joint equilibrium X:{' '}
               <b className="text-orange-400">
-                {trussResult.formulas.jointEquilibriumX}
+                {safeResult.formulas?.jointEquilibriumX || 'ΣFx = 0'}
               </b>
             </p>
             <p>
               Joint equilibrium Y:{' '}
               <b className="text-orange-400">
-                {trussResult.formulas.jointEquilibriumY}
-              </b>
-            </p>
-            <p>
-              Stiffness equation:{' '}
-              <b className="text-orange-400">
-                {trussResult.formulas.stiffnessEquation}
+                {safeResult.formulas?.jointEquilibriumY || 'ΣFy = 0'}
               </b>
             </p>
             <p>
               Member force:{' '}
               <b className="text-orange-400">
-                {trussResult.formulas.memberForce}
+                {safeResult.formulas?.memberForce || 'F = AE/L × deformation'}
               </b>
             </p>
             <p>
               Member stress:{' '}
               <b className="text-orange-400">
-                {trussResult.formulas.memberStress}
+                {safeResult.formulas?.memberStress || 'Stress = Force / Area'}
               </b>
             </p>
           </div>
@@ -2561,6 +2598,7 @@ function TrussModule({
     </div>
   )
 }
+
 function ColumnBucklingModule({
   columnResult,
   columnLength,
@@ -2583,7 +2621,9 @@ function ColumnBucklingModule({
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
-        <h2 className="text-xl font-bold text-white mb-5">Column Buckling Inputs</h2>
+        <h2 className="text-xl font-bold text-white mb-5">
+          Column Buckling Inputs
+        </h2>
 
         <div className="space-y-4">
           <InputBox label="Length L (m)" value={columnLength} setValue={setColumnLength} />
@@ -2638,7 +2678,11 @@ function ColumnBucklingModule({
             </Select>
           </div>
 
-          <InputBox label="Applied Load (kN)" value={columnAppliedLoad} setValue={setColumnAppliedLoad} />
+          <InputBox
+            label="Applied Load (kN)"
+            value={columnAppliedLoad}
+            setValue={setColumnAppliedLoad}
+          />
         </div>
 
         <Button
@@ -2659,7 +2703,9 @@ function ColumnBucklingModule({
         </div>
 
         <Card className="bg-slate-900/50 border-slate-800 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Buckling Results</h2>
+          <h2 className="text-xl font-bold text-white mb-4">
+            Buckling Results
+          </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
             <ResultRow label="Radius of Gyration" value={`${columnResult.radiusOfGyration} mm`} />
@@ -2670,37 +2716,24 @@ function ColumnBucklingModule({
             <ResultRow label="Safe / Unsafe" value={columnResult.safetyStatus} />
           </div>
         </Card>
+
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <h2 className="text-xl font-bold text-white mb-4">
+            Formula Used
+          </h2>
+
+          <div className="space-y-3 text-slate-300 leading-7">
+            <p><b className="text-orange-400">Euler Load:</b> Pcr = π²EI / Le²</p>
+            <p><b className="text-orange-400">Radius of Gyration:</b> r = √(I/A)</p>
+            <p><b className="text-orange-400">Slenderness Ratio:</b> λ = Le / r</p>
+            <p><b className="text-orange-400">Rankine Load:</b> P = σcA / (1 + a(L/k)²)</p>
+          </div>
+        </Card>
       </div>
     </div>
   )
 }
 
-function ResultRow({ label, value }) {
-  return (
-    <div className="bg-slate-800/60 rounded-xl p-4">
-      <div className="text-xs uppercase tracking-wider text-slate-400 mb-1">
-        {label}
-      </div>
-      <div className="text-lg font-bold text-white">
-        {value}
-      </div>
-    </div>
-  )
-}
-
-function InputBox({ label, value, setValue }) {
-  return (
-    <div>
-      <Label className="text-slate-400">{label}</Label>
-      <Input
-        type="number"
-        value={value}
-        onChange={(e) => setValue(Number(e.target.value))}
-        className="bg-slate-800 border-slate-700 text-white mt-2"
-      />
-    </div>
-  )
-}
 function MomentAreaModule({
   result,
   span,
@@ -2716,6 +2749,21 @@ function MomentAreaModule({
   udl,
   setUDL,
 }) {
+  const safeResult = result || {
+    reactions: { RA: 0, RB: 0 },
+    summary: {
+      totalLoad: 0,
+      maxMoment: 0,
+      maxMomentLocation: 0,
+      slopeDifference: 0,
+      tangentialDeviation: 0,
+      maxDeflectionLocation: 0,
+      maxDeflection: 0,
+    },
+    steps: [],
+    formulas: {},
+  }
+
   return (
     <div className="grid lg:grid-cols-3 gap-6">
       <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
@@ -2743,10 +2791,10 @@ function MomentAreaModule({
 
       <div className="lg:col-span-2 space-y-6">
         <div className="grid md:grid-cols-4 gap-4">
-          <SummaryCard label="RA" value={`${result.reactions.RA} kN`} />
-          <SummaryCard label="RB" value={`${result.reactions.RB} kN`} />
-          <SummaryCard label="Max Moment" value={`${result.summary.maxMoment} kNm`} />
-          <SummaryCard label="Max Deflection" value={`${result.summary.maxDeflection} mm`} />
+          <SummaryCard label="RA" value={`${safeResult.reactions?.RA || 0} kN`} />
+          <SummaryCard label="RB" value={`${safeResult.reactions?.RB || 0} kN`} />
+          <SummaryCard label="Max Moment" value={`${safeResult.summary?.maxMoment || 0} kNm`} />
+          <SummaryCard label="Max Deflection" value={`${safeResult.summary?.maxDeflection || 0} mm`} />
         </div>
 
         <Card className="bg-slate-900/50 border-slate-800 p-6">
@@ -2755,12 +2803,12 @@ function MomentAreaModule({
           </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
-            <ResultRow label="Total Load" value={`${result.summary.totalLoad} kN`} />
-            <ResultRow label="Max Moment Location" value={`${result.summary.maxMomentLocation} m`} />
-            <ResultRow label="Slope Difference" value={`${result.summary.slopeDifference} rad`} />
-            <ResultRow label="Tangential Deviation" value={`${result.summary.tangentialDeviation} mm`} />
-            <ResultRow label="Max Deflection Location" value={`${result.summary.maxDeflectionLocation} m`} />
-            <ResultRow label="Maximum Deflection" value={`${result.summary.maxDeflection} mm`} />
+            <ResultRow label="Total Load" value={`${safeResult.summary?.totalLoad || 0} kN`} />
+            <ResultRow label="Max Moment Location" value={`${safeResult.summary?.maxMomentLocation || 0} m`} />
+            <ResultRow label="Slope Difference" value={`${safeResult.summary?.slopeDifference || 0} rad`} />
+            <ResultRow label="Tangential Deviation" value={`${safeResult.summary?.tangentialDeviation || 0} mm`} />
+            <ResultRow label="Max Deflection Location" value={`${safeResult.summary?.maxDeflectionLocation || 0} m`} />
+            <ResultRow label="Maximum Deflection" value={`${safeResult.summary?.maxDeflection || 0} mm`} />
           </div>
         </Card>
 
@@ -2770,7 +2818,7 @@ function MomentAreaModule({
           </h2>
 
           <div className="space-y-3 text-slate-300 leading-7">
-            {result.steps.map((step, index) => (
+            {(safeResult.steps || []).map((step, index) => (
               <p key={index}>
                 <span className="text-orange-400 font-semibold">
                   Step {index + 1}:
@@ -2778,6 +2826,12 @@ function MomentAreaModule({
                 {step}
               </p>
             ))}
+
+            {(!safeResult.steps || safeResult.steps.length === 0) && (
+              <p className="text-slate-400">
+                Steps will appear after valid moment area analysis.
+              </p>
+            )}
           </div>
         </Card>
 
@@ -2787,10 +2841,22 @@ function MomentAreaModule({
           </h2>
 
           <div className="space-y-3 text-slate-300">
-            <p><b className="text-orange-400">Theorem 1:</b> {result.formulas.theorem1}</p>
-            <p><b className="text-orange-400">Theorem 2:</b> {result.formulas.theorem2}</p>
-            <p><b className="text-orange-400">Curvature:</b> {result.formulas.curvature}</p>
-            <p><b className="text-orange-400">Deflection:</b> {result.formulas.deflection}</p>
+            <p>
+              <b className="text-orange-400">Theorem 1:</b>{' '}
+              {safeResult.formulas?.theorem1 || 'Change in slope = Area of M/EI diagram'}
+            </p>
+            <p>
+              <b className="text-orange-400">Theorem 2:</b>{' '}
+              {safeResult.formulas?.theorem2 || 'Tangential deviation = First moment of M/EI diagram area'}
+            </p>
+            <p>
+              <b className="text-orange-400">Curvature:</b>{' '}
+              {safeResult.formulas?.curvature || '1/R = M/EI'}
+            </p>
+            <p>
+              <b className="text-orange-400">Deflection:</b>{' '}
+              {safeResult.formulas?.deflection || 'EI d²y/dx² = M'}
+            </p>
           </div>
         </Card>
       </div>
@@ -2828,6 +2894,19 @@ function TrussDiagram({ trussData }) {
       viewBox={`0 0 ${width} ${height}`}
       className="w-full bg-slate-950 rounded-xl border border-slate-800"
     >
+      <defs>
+        <marker
+          id="trussLoadArrow"
+          markerWidth="10"
+          markerHeight="10"
+          refX="5"
+          refY="5"
+          orient="auto"
+        >
+          <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444" />
+        </marker>
+      </defs>
+
       {trussData.members.map((member) => {
         const start = getJoint(member.start)
         const end = getJoint(member.end)
@@ -2871,75 +2950,62 @@ function TrussDiagram({ trussData }) {
       ))}
 
       {trussData.loads.map((load, index) => {
-  const joint = getJoint(load.joint)
-  if (!joint) return null
+        const joint = getJoint(load.joint)
+        if (!joint) return null
 
-  const x = scaleX(joint.x)
-  const y = scaleY(joint.y)
+        const x = scaleX(joint.x)
+        const y = scaleY(joint.y)
+        const fx = Number(load.fx) || 0
+        const fy = Number(load.fy) || 0
 
-  const fx = Number(load.fx) || 0
-  const fy = Number(load.fy) || 0
+        return (
+          <g key={index}>
+            {fx !== 0 && (
+              <g>
+                <line
+                  x1={fx > 0 ? x - 60 : x + 60}
+                  y1={y}
+                  x2={fx > 0 ? x - 18 : x + 18}
+                  y2={y}
+                  stroke="#ef4444"
+                  strokeWidth="3"
+                  markerEnd="url(#trussLoadArrow)"
+                />
+                <text
+                  x={fx > 0 ? x - 68 : x + 25}
+                  y={y - 10}
+                  fill="#fca5a5"
+                  fontSize="12"
+                >
+                  Fx {fx} kN
+                </text>
+              </g>
+            )}
 
-  return (
-    <g key={index}>
-      {fx !== 0 && (
-        <g>
-          <line
-            x1={fx > 0 ? x - 60 : x + 60}
-            y1={y}
-            x2={fx > 0 ? x - 18 : x + 18}
-            y2={y}
-            stroke="#ef4444"
-            strokeWidth="3"
-            markerEnd="url(#trussLoadArrow)"
-          />
-          <text
-            x={fx > 0 ? x - 68 : x + 25}
-            y={y - 10}
-            fill="#fca5a5"
-            fontSize="12"
-          >
-            Fx {fx} kN
-          </text>
-        </g>
-      )}
-
-      {fy !== 0 && (
-        <g>
-          <line
-            x1={x}
-            y1={fy > 0 ? y + 60 : y - 60}
-            x2={x}
-            y2={fy > 0 ? y + 18 : y - 18}
-            stroke="#ef4444"
-            strokeWidth="3"
-            markerEnd="url(#trussLoadArrow)"
-          />
-          <text
-            x={x + 10}
-            y={fy > 0 ? y + 55 : y - 45}
-            fill="#fca5a5"
-            fontSize="12"
-          >
-            Fy {fy} kN
-          </text>
-        </g>
-      )}
-    </g>
-  )
-})}
-      <defs>
-        <marker
-          id="trussLoadArrow"
-          markerWidth="10"
-          markerHeight="10"
-          refX="5"
-          refY="5"
-          orient="auto"
-        >
-          <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444" />
-        </marker>
-      </defs>
+            {fy !== 0 && (
+              <g>
+                <line
+                  x1={x}
+                  y1={fy > 0 ? y + 60 : y - 60}
+                  x2={x}
+                  y2={fy > 0 ? y + 18 : y - 18}
+                  stroke="#ef4444"
+                  strokeWidth="3"
+                  markerEnd="url(#trussLoadArrow)"
+                />
+                <text
+                  x={x + 10}
+                  y={fy > 0 ? y + 55 : y - 45}
+                  fill="#fca5a5"
+                  fontSize="12"
+                >
+                  Fy {fy} kN
+                </text>
+              </g>
+            )}
+          </g>
+        )
+      })}
     </svg>
   )
 }
@@ -2993,23 +3059,85 @@ function SummaryCard({ label, value }) {
   )
 }
 
+function StudentTabButton({ label, active, onClick }) {
+  return (
+    <Button
+      onClick={onClick}
+      className={
+        active
+          ? 'bg-orange-500 hover:bg-orange-600 text-white'
+          : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+      }
+    >
+      {label}
+    </Button>
+  )
+}
+
+function ExampleItem({ title }) {
+  return (
+    <div className="bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-3">
+      <div className="text-slate-200 font-medium">{title}</div>
+    </div>
+  )
+}
+
 function BeamDiagram({ L, structureType, pointLoads, udls, moments }) {
   const svgWidth = 760
-  const svgHeight = 210
+  const svgHeight = 230
   const x0 = 70
   const x1 = 690
-  const y = 105
-  const scale = (x) => x0 + (x / L) * (x1 - x0)
+  const y = 115
+  const safeL = Number(L) > 0 ? Number(L) : 1
+  const scale = (x) => x0 + (Number(x) / safeL) * (x1 - x0)
 
   return (
     <svg
       viewBox={`0 0 ${svgWidth} ${svgHeight}`}
       className="w-full bg-slate-950 rounded-xl border border-slate-800"
     >
-      <line x1={x0} y1={y} x2={x1} y2={y} stroke="#f97316" strokeWidth="6" />
+      <defs>
+        <marker
+          id="blueArrow"
+          markerWidth="10"
+          markerHeight="10"
+          refX="5"
+          refY="5"
+          orient="auto"
+        >
+          <path d="M0,0 L10,5 L0,10 Z" fill="#38bdf8" />
+        </marker>
+
+        <marker
+          id="redArrow"
+          markerWidth="10"
+          markerHeight="10"
+          refX="5"
+          refY="5"
+          orient="auto"
+        >
+          <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444" />
+        </marker>
+      </defs>
+
+      <line
+        x1={x0}
+        y1={y}
+        x2={x1}
+        y2={y}
+        stroke="#f97316"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
 
       {structureType === 'cantilever' ? (
-        <rect x={x0 - 15} y={y - 45} width="18" height="90" fill="#94a3b8" />
+        <>
+          <rect x={x0 - 18} y={y - 50} width="18" height="100" fill="#94a3b8" />
+          <line x1={x0 - 18} y1={y - 50} x2={x0 - 35} y2={y - 35} stroke="#64748b" />
+          <line x1={x0 - 18} y1={y - 25} x2={x0 - 35} y2={y - 10} stroke="#64748b" />
+          <line x1={x0 - 18} y1={y} x2={x0 - 35} y2={y + 15} stroke="#64748b" />
+          <line x1={x0 - 18} y1={y + 25} x2={x0 - 35} y2={y + 40} stroke="#64748b" />
+        </>
       ) : (
         <>
           <polygon
@@ -3017,26 +3145,37 @@ function BeamDiagram({ L, structureType, pointLoads, udls, moments }) {
             fill="#94a3b8"
           />
           <circle cx={x1} cy={y + 22} r="12" fill="#94a3b8" />
+          <line x1={x1 - 18} y1={y + 36} x2={x1 + 18} y2={y + 36} stroke="#94a3b8" />
         </>
       )}
 
-      <text x={x0 - 10} y={y + 65} fill="#cbd5e1">
+      <text x={x0 - 10} y={y + 70} fill="#cbd5e1">
         A
       </text>
-      <text x={x1 - 10} y={y + 65} fill="#cbd5e1">
+      <text x={x1 - 10} y={y + 70} fill="#cbd5e1">
         B
       </text>
-      <text x={(x0 + x1) / 2 - 25} y={185} fill="#cbd5e1">
-        L = {L} m
+      <text x={(x0 + x1) / 2 - 25} y={210} fill="#cbd5e1">
+        L = {roundValue(safeL)} m
       </text>
 
       {udls.map((load) => {
+        const w = Number(load.w) || 0
+        if (w <= 0) return null
+
         const xs = scale(Number(load.start) || 0)
         const xe = scale(Number(load.end) || 0)
 
         return (
           <g key={load.id}>
-            <line x1={xs} y1={35} x2={xe} y2={35} stroke="#38bdf8" strokeWidth="3" />
+            <line
+              x1={xs}
+              y1={35}
+              x2={xe}
+              y2={35}
+              stroke="#38bdf8"
+              strokeWidth="3"
+            />
 
             {Array.from({ length: 8 }).map((_, i) => {
               const x = xs + ((xe - xs) * i) / 7
@@ -3047,7 +3186,7 @@ function BeamDiagram({ L, structureType, pointLoads, udls, moments }) {
                   x1={x}
                   y1={35}
                   x2={x}
-                  y2={88}
+                  y2={90}
                   stroke="#38bdf8"
                   strokeWidth="2"
                   markerEnd="url(#blueArrow)"
@@ -3055,121 +3194,107 @@ function BeamDiagram({ L, structureType, pointLoads, udls, moments }) {
               )
             })}
 
-            <text x={(xs + xe) / 2 - 25} y={25} fill="#38bdf8">
-              {load.w} kN/m
+            <text
+              x={(xs + xe) / 2 - 35}
+              y={28}
+              fill="#7dd3fc"
+              fontSize="12"
+              fontWeight="700"
+            >
+              {w} kN/m
             </text>
           </g>
         )
       })}
 
       {pointLoads.map((load) => {
+        const P = Number(load.P) || 0
+        if (P <= 0) return null
+
         const x = scale(Number(load.x) || 0)
 
         return (
           <g key={load.id}>
             <line
               x1={x}
-              y1={25}
+              y1={30}
               x2={x}
-              y2={88}
+              y2={92}
               stroke="#ef4444"
               strokeWidth="3"
               markerEnd="url(#redArrow)"
             />
-
-            <text x={x - 22} y={20} fill="#fca5a5">
-              {load.P} kN
+            <text
+              x={x - 24}
+              y={22}
+              fill="#fca5a5"
+              fontSize="12"
+              fontWeight="700"
+            >
+              {P} kN
             </text>
           </g>
         )
       })}
 
       {moments.map((moment) => {
+        const M = Number(moment.M) || 0
+        if (M === 0) return null
+
         const x = scale(Number(moment.x) || 0)
 
         return (
           <g key={moment.id}>
             <path
-              d={`M ${x - 18} ${y - 28} A 22 22 0 1 1 ${x + 18} ${y - 28}`}
+              d={`M ${x - 22} ${y - 35} A 25 25 0 1 1 ${x + 22} ${y - 35}`}
               fill="none"
               stroke="#a78bfa"
               strokeWidth="3"
+              markerEnd="url(#redArrow)"
             />
-
-            <text x={x - 20} y={y - 45} fill="#c4b5fd">
-              {moment.M} kNm
+            <text
+              x={x - 28}
+              y={y - 48}
+              fill="#c4b5fd"
+              fontSize="12"
+              fontWeight="700"
+            >
+              {M} kNm
             </text>
           </g>
         )
       })}
-
-      <defs>
-        <marker id="redArrow" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-          <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444" />
-        </marker>
-
-        <marker id="blueArrow" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-          <path d="M0,0 L10,5 L0,10 Z" fill="#38bdf8" />
-        </marker>
-      </defs>
     </svg>
   )
 }
 
 function Diagram({ points, type, label }) {
   const width = 760
-  const height = 240
+  const height = 260
   const padding = 45
-  const values = points.map((p) => p[type])
-  const maxAbs = Math.max(...values.map((v) => Math.abs(v)), 1)
 
-  const xScale = (i) =>
-    padding + (i / (points.length - 1)) * (width - 2 * padding)
-
-  const yScale = (v) =>
-    height / 2 - (v / maxAbs) * (height / 2 - padding)
-
-  const path = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(p[type])}`)
-    .join(' ')
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="w-full bg-slate-950 rounded-xl border border-slate-800"
-    >
-      <line
-        x1={padding}
-        y1={height / 2}
-        x2={width - padding}
-        y2={height / 2}
-        stroke="#64748b"
-      />
-      <path d={path} fill="none" stroke="#f97316" strokeWidth="3" />
-
-      <text x={20} y={25} fill="#cbd5e1">
-        {label}
-      </text>
-      <text x={20} y={50} fill="#94a3b8">
-        Max: {Math.max(...values).toFixed(2)}
-      </text>
-      <text x={20} y={70} fill="#94a3b8">
-        Min: {Math.min(...values).toFixed(2)}
-      </text>
-    </svg>
+  const safePoints = points?.length ? points : [{ x: 0, V: 0, M: 0 }]
+  const values = safePoints.map((point) =>
+    type === 'V' ? Number(point.V) || 0 : Number(point.M) || 0
   )
-}
 
-function DeflectionCurve({ points }) {
-  const width = 760
-  const height = 160
-  const padding = 45
+  const maxAbs = Math.max(...values.map((value) => Math.abs(value)), 1)
+  const maxX = Math.max(...safePoints.map((point) => Number(point.x) || 0), 1)
 
-  const path = points
-    .map((p, i) => {
-      const x = padding + (i / (points.length - 1)) * (width - 2 * padding)
-      const y = 65 + 35 * Math.sin((Math.PI * i) / (points.length - 1))
-      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+  const scaleX = (x) =>
+    padding + (Number(x) / maxX) * (width - 2 * padding)
+
+  const zeroY = height / 2
+
+  const scaleY = (value) =>
+    zeroY - (Number(value) / maxAbs) * (height / 2 - padding)
+
+  const path = safePoints
+    .map((point, index) => {
+      const x = scaleX(point.x)
+      const value = type === 'V' ? point.V : point.M
+      const y = scaleY(value)
+      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`
     })
     .join(' ')
 
@@ -3180,16 +3305,164 @@ function DeflectionCurve({ points }) {
     >
       <line
         x1={padding}
-        y1={65}
+        y1={zeroY}
         x2={width - padding}
-        y2={65}
-        stroke="#64748b"
-        strokeDasharray="6 6"
+        y2={zeroY}
+        stroke="#475569"
+        strokeWidth="1.5"
       />
-      <path d={path} fill="none" stroke="#38bdf8" strokeWidth="3" />
-      <text x={20} y={25} fill="#cbd5e1">
-        Deflected Shape
+
+      <line
+        x1={padding}
+        y1={padding}
+        x2={padding}
+        y2={height - padding}
+        stroke="#475569"
+        strokeWidth="1.5"
+      />
+
+      <path
+        d={path}
+        fill="none"
+        stroke="#f97316"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {safePoints
+        .filter((_, index) => index % Math.max(Math.floor(safePoints.length / 8), 1) === 0)
+        .map((point, index) => {
+          const value = type === 'V' ? point.V : point.M
+          const x = scaleX(point.x)
+          const y = scaleY(value)
+
+          return (
+            <circle
+              key={index}
+              cx={x}
+              cy={y}
+              r="3"
+              fill="#f97316"
+            />
+          )
+        })}
+
+      <text x={padding} y={24} fill="#cbd5e1" fontSize="13" fontWeight="700">
+        {label}
+      </text>
+
+      <text x={width - 105} y={height - 18} fill="#94a3b8" fontSize="12">
+        Span x (m)
+      </text>
+
+      <text x={padding + 8} y={zeroY - 8} fill="#94a3b8" fontSize="12">
+        0
+      </text>
+
+      <text x={width - 150} y={28} fill="#f97316" fontSize="12">
+        Max scale: ±{roundValue(maxAbs)} {type === 'V' ? 'kN' : 'kNm'}
       </text>
     </svg>
   )
+}
+
+function DeflectionCurve({ points }) {
+  const width = 760
+  const height = 240
+  const padding = 45
+  const safePoints = points?.length ? points : [{ x: 0, y: 0 }]
+
+  const values = safePoints.map((point) => Number(point.y) || 0)
+  const maxAbs = Math.max(...values.map((value) => Math.abs(value)), 1)
+  const maxX = Math.max(...safePoints.map((point) => Number(point.x) || 0), 1)
+
+  const scaleX = (x) =>
+    padding + (Number(x) / maxX) * (width - 2 * padding)
+
+  const zeroY = height / 2
+
+  const scaleY = (value) =>
+    zeroY - (Number(value) / maxAbs) * (height / 2 - padding)
+
+  const path = safePoints
+    .map((point, index) => {
+      const x = scaleX(point.x)
+      const y = scaleY(point.y)
+      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`
+    })
+    .join(' ')
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full bg-slate-950 rounded-xl border border-slate-800"
+    >
+      <line
+        x1={padding}
+        y1={zeroY}
+        x2={width - padding}
+        y2={zeroY}
+        stroke="#475569"
+        strokeWidth="1.5"
+      />
+
+      <path
+        d={path}
+        fill="none"
+        stroke="#38bdf8"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      <text x={padding} y={24} fill="#cbd5e1" fontSize="13" fontWeight="700">
+        Deflection Curve
+      </text>
+
+      <text x={width - 180} y={28} fill="#38bdf8" fontSize="12">
+        Max scale: ±{roundValue(maxAbs)} mm
+      </text>
+    </svg>
+  )
+}
+
+function ResultRow({ label, value }) {
+  return (
+    <div className="bg-slate-800/60 rounded-xl p-4">
+      <div className="text-xs uppercase tracking-wider text-slate-400 mb-1">
+        {label}
+      </div>
+      <div className="text-lg font-bold text-white">
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function InputBox({ label, value, setValue }) {
+  return (
+    <div>
+      <Label className="text-slate-400">{label}</Label>
+      <Input
+        type="number"
+        value={value}
+        onChange={(e) => setValue(Number(e.target.value))}
+        className="bg-slate-800 border-slate-700 text-white mt-2"
+      />
+    </div>
+  )
+}
+
+function getNumber(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : 0
+}
+
+function roundValue(value, digits = 2) {
+  const number = Number(value)
+
+  if (!Number.isFinite(number)) return '0.00'
+
+  return number.toFixed(digits)
 }
