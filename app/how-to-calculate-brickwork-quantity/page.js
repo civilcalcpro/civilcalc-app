@@ -36,8 +36,53 @@ export const metadata = {
 }
 
 export default function HowToCalculateBrickworkQuantityPage() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "How do you calculate brickwork quantity?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Brickwork quantity is calculated by multiplying wall length, wall height and wall thickness. The formula is length multiplied by height multiplied by thickness.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How many bricks are required in 1 cubic meter of brickwork?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Approximately 500 standard modular bricks are required for 1 cubic meter of brickwork, including mortar joints.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What is the formula for number of bricks?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "The approximate number of bricks is calculated by multiplying brickwork volume by 500. For example, if brickwork volume is 3.45 cubic meters, bricks required are 3.45 multiplied by 500, which equals 1725 bricks.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What thickness is used for a 230 mm brick wall?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "For a 230 mm brick wall, wall thickness is usually taken as 0.23 meter while calculating brickwork volume.",
+        },
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+          <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
       <div className="max-w-5xl mx-auto">
         <p className="text-orange-400 font-semibold mb-3">
           BRICKWORK QUANTITY GUIDE
@@ -59,7 +104,121 @@ export default function HowToCalculateBrickworkQuantityPage() {
         >
           Open Brickwork Calculator
         </Link>
+        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
+          <p className="text-orange-400 font-semibold mb-3">
+            QUICK ANSWER
+          </p>
 
+          <h2 className="text-3xl font-bold mb-5">
+            How to calculate brickwork quantity?
+          </h2>
+
+          <p className="text-slate-300 leading-8 mb-4">
+            Brickwork quantity is calculated by multiplying wall length, wall
+            height and wall thickness. After calculating brickwork volume, the
+            approximate number of bricks can be calculated by multiplying the
+            volume by 500 bricks per cubic meter for standard modular bricks.
+          </p>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 my-6">
+            <p className="text-xl font-bold text-white mb-2">
+              Brickwork Volume = Length × Height × Thickness
+            </p>
+            <p className="text-xl font-bold text-white mb-2">
+              Number of Bricks = Brickwork Volume × 500
+            </p>
+            <p className="text-slate-400">
+              For a 230 mm wall, thickness is usually taken as 0.23 m.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto mt-6">
+            <table className="w-full border border-slate-800 text-left">
+              <thead className="bg-slate-900">
+                <tr>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Item
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Formula / Value
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Example Result
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="text-slate-300">
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Wall Length
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    L
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    5 m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Wall Height
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    H
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    3 m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Wall Thickness
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    T
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    0.23 m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Brickwork Volume
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    5 × 3 × 0.23
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    3.45 m³
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Number of Bricks
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    3.45 × 500
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    1,725 bricks
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-slate-400 leading-7 mt-5">
+            Example: For a wall of 5 m length, 3 m height and 230 mm thickness,
+            brickwork volume is 5 × 3 × 0.23 = 3.45 m³. Approximate bricks
+            required are 3.45 × 500 = 1,725 bricks. Wastage can be added
+            separately based on site condition.
+          </p>
+        </section>
         <section className="space-y-8">
           <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-2xl font-bold text-white mb-4">
