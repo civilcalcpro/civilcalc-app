@@ -36,8 +36,48 @@ export const metadata = {
 }
 
 export default function PlasterCalculatorPage() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "How is plaster quantity calculated?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Plaster quantity is calculated by multiplying wall length and height to get plaster area. Then plaster area is multiplied by plaster thickness to get wet mortar volume.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What is the formula for plaster calculation?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "The basic plaster calculation formula is plaster area equals length multiplied by height. Wet volume equals plaster area multiplied by plaster thickness. Dry volume is commonly taken as wet volume multiplied by 1.33.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What thickness is used for wall plaster?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "For common internal wall plaster, 12 mm thickness is often used, which is taken as 0.012 meter in plaster quantity calculation.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How much cement and sand is required for plaster?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Cement and sand quantity for plaster depends on plaster area, thickness and mortar ratio such as 1:4, 1:5 or 1:6. First calculate dry volume, then divide materials according to the selected ratio.",
+        },
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+    
       <div className="max-w-5xl mx-auto">
         <h1 className="text-5xl font-bold mb-6">
           Plaster Work Calculator
@@ -55,7 +95,137 @@ export default function PlasterCalculatorPage() {
         >
           Open Plaster Calculator
         </Link>
+        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
+          <p className="text-orange-400 font-semibold mb-3">
+            QUICK ANSWER
+          </p>
 
+          <h2 className="text-3xl font-bold mb-5">
+            How to calculate plaster quantity?
+          </h2>
+
+          <p className="text-slate-300 leading-8 mb-4">
+            Plaster quantity is calculated by multiplying wall length and wall
+            height to get plaster area. After calculating plaster area, mortar
+            volume is calculated using plaster thickness. Cement and sand
+            quantities are then calculated based on the selected mortar ratio,
+            such as 1:4, 1:5 or 1:6.
+          </p>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 my-6">
+            <p className="text-xl font-bold text-white mb-2">
+              Plaster Area = Length × Height
+            </p>
+            <p className="text-xl font-bold text-white mb-2">
+              Wet Volume = Area × Thickness
+            </p>
+            <p className="text-xl font-bold text-white mb-2">
+              Dry Volume = Wet Volume × 1.33
+            </p>
+            <p className="text-slate-400">
+              For 12 mm plaster, thickness is taken as 0.012 m.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto mt-6">
+            <table className="w-full border border-slate-800 text-left">
+              <thead className="bg-slate-900">
+                <tr>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Item
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Formula / Value
+                  </th>
+                  <th className="border border-slate-800 p-3 text-white">
+                    Example Result
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="text-slate-300">
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Wall Length
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    L
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    10 m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Wall Height
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    H
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    3 m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Plaster Area
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    10 × 3
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    30 m²
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Plaster Thickness
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    12 mm
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    0.012 m
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Wet Volume
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    30 × 0.012
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    0.36 m³
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="border border-slate-800 p-3">
+                    Dry Volume
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    0.36 × 1.33
+                  </td>
+                  <td className="border border-slate-800 p-3">
+                    0.48 m³
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-slate-400 leading-7 mt-5">
+            Example: For a wall of 10 m length and 3 m height, plaster area is
+            30 m². For 12 mm plaster thickness, wet volume is 0.36 m³ and dry
+            volume is approximately 0.48 m³. Cement and sand are then calculated
+            based on mortar ratio.
+          </p>
+        </section>
         <div className="grid md:grid-cols-2 gap-10">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
             <h2 className="text-2xl font-bold mb-4">Features</h2>
