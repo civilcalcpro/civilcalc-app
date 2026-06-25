@@ -155,11 +155,7 @@ export default function LandingPage() {
                   </Button>
                 </Link>
 
-                <Link href="/why-civilcalc-pro">
-                  <Button size="lg" variant="outline" className="border-orange-500/70 bg-orange-500/10 text-orange-300 hover:bg-orange-500 hover:text-white text-lg px-8 h-14 w-full sm:w-auto">
-                    Why CivilCalc Pro?
-                  </Button>
-                </Link>
+                
               </div>
 
               <div className="mt-12 grid grid-cols-3 gap-6">
