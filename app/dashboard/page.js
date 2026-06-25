@@ -89,6 +89,13 @@ const quickTools = [
     desc: 'D²/162 bar weight calculator',
   },
   {
+  name: 'Development Length',
+  icon: Ruler,
+  href: '/dashboard/calculators/development-length',
+  color: 'blue',
+  desc: 'Ld anchorage length calculator',
+},
+  {
     name: 'Brickwork',
     icon: Layers,
     href: '/dashboard/calculators/brickwork',
