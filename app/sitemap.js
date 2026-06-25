@@ -114,11 +114,12 @@ export default function sitemap() {
   changeFrequency: "weekly",
   priority: 0.95,
 },
-    {
-      path: '/development-length-calculation',
-      priority: 0.8,
-      changeFrequency: 'monthly',
-    },
+  {
+  url: `${baseUrl}/development-length-calculation`,
+  lastModified: new Date(),
+  changeFrequency: "weekly",
+  priority: 0.9,
+},
     {
       path: '/lap-length-calculation',
       priority: 0.8,
