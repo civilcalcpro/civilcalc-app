@@ -103,6 +103,12 @@ export default function sitemap() {
       changeFrequency: 'monthly',
     },
     {
+  url: `${baseUrl}/home-construction-cost-calculator`,
+  lastModified: new Date(),
+  changeFrequency: "monthly",
+  priority: 1.0,
+},
+    {
       path: '/development-length-calculation',
       priority: 0.8,
       changeFrequency: 'monthly',
