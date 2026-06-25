@@ -96,6 +96,13 @@ const quickTools = [
   desc: 'Ld anchorage length calculator',
 },
   {
+  name: 'Lap Length',
+  icon: Ruler,
+  href: '/dashboard/calculators/lap-length',
+  color: 'purple',
+  desc: 'RCC bar overlap length calculator',
+},
+  {
     name: 'Brickwork',
     icon: Layers,
     href: '/dashboard/calculators/brickwork',
