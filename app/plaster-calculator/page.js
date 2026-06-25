@@ -77,7 +77,12 @@ export default function PlasterCalculatorPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
-    
+          <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema),
+        }}
+      />
       <div className="max-w-5xl mx-auto">
         <h1 className="text-5xl font-bold mb-6">
           Plaster Work Calculator
