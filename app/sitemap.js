@@ -8,6 +8,11 @@ export default function sitemap() {
       changeFrequency: 'weekly',
     },
     {
+  path: '/why-civilcalc-pro',
+  priority: 0.9,
+  changeFrequency: 'weekly',
+},
+    {
       path: '/civil-engineering-calculators',
       priority: 0.95,
       changeFrequency: 'weekly',
