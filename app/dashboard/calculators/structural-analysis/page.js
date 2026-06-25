@@ -373,7 +373,7 @@ const columnResult = useMemo(() => {
     }
 
     const points = []
-    const n = 120
+    const n = 400
 
     for (let i = 0; i <= n; i++) {
       const x = (L * i) / n
@@ -431,50 +431,14 @@ const columnResult = useMemo(() => {
 
     const maxReaction = Math.max(Math.abs(RA), Math.abs(RB))
 
-    const totalUDL = udls.reduce((sum, load) => {
-      const w = Number(load.w) || 0
-      const length = Math.max(
-        (Number(load.end) || 0) - (Number(load.start) || 0),
-        0
-      )
+    const deflectionData = calculateBeamDeflectionFromMomentDiagram({
+      points,
+      E: EVal,
+      I: Icalc,
+      structureType,
+    })
 
-      return sum + w * length
-    }, 0)
-
-    const pointDeflection = pointLoads.reduce((sum, load) => {
-      const P = Number(load.P) || 0
-      const a = Number(load.x) || 0
-      const mmL = L * 1000
-      const mma = a * 1000
-      const mmb = mmL - mma
-
-      if (structureType === 'cantilever') {
-        return (
-          sum +
-          (P * 1000 * Math.pow(mma, 2) * (3 * mmL - mma)) /
-            (6 * EVal * Icalc)
-        )
-      }
-
-      return (
-        sum +
-        (P *
-          1000 *
-          mma *
-          mmb *
-          Math.sqrt(
-            Math.max(mmL * mmL - mma * mma - mmb * mmb, 0)
-          )) /
-          (9 * Math.sqrt(3) * EVal * Icalc)
-      )
-    }, 0)
-
-    const udlDeflection = totalUDL
-      ? (5 * (totalUDL / L) * Math.pow(L * 1000, 4)) /
-        (384 * EVal * Icalc)
-      : 0
-
-    const maxDeflection = Math.abs(pointDeflection + udlDeflection)
+    const maxDeflection = deflectionData.maxDeflection
 
     return {
       L,
@@ -493,6 +457,9 @@ const columnResult = useMemo(() => {
       criticalMomentPoint,
       maxReaction,
       maxDeflection,
+      deflectionLocation: deflectionData.location,
+      deflectionCurve: deflectionData.curve,
+      deflectionMethod: deflectionData.method,
     }
   }, [structureType, span, width, depth, E, I, pointLoads, udls, moments])
 
@@ -706,6 +673,551 @@ const columnResult = useMemo(() => {
   )
 }
 
+
+function roundValue(value, decimals = 2) {
+  const number = Number(value)
+
+  if (!Number.isFinite(number)) return '0.00'
+
+  return number.toFixed(decimals)
+}
+
+function getNumber(value, fallback = 0) {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : fallback
+}
+
+function cloneBeamResult(result) {
+  return {
+    ...result,
+    points: result.points.map((point) => ({ ...point })),
+    criticalMomentPoint: { ...result.criticalMomentPoint },
+    deflectionCurve: result.deflectionCurve?.map((point) => ({ ...point })) || [],
+  }
+}
+
+function calculateBeamDeflectionFromMomentDiagram({
+  points,
+  E,
+  I,
+  structureType,
+}) {
+  if (!points?.length || !Number(E) || !Number(I)) {
+    return {
+      maxDeflection: 0,
+      location: 0,
+      curve: [],
+      method: 'Deflection not calculated because E or I is missing.',
+    }
+  }
+
+  const xs = points.map((point) => getNumber(point.x) * 1000)
+  const curvature = points.map((point) => {
+    const momentNmm = getNumber(point.M) * 1000000
+    return momentNmm / (Number(E) * Number(I))
+  })
+
+  const rawSlope = [0]
+  const rawDeflection = [0]
+
+  for (let index = 1; index < points.length; index++) {
+    const dx = xs[index] - xs[index - 1]
+    const averageCurvature = (curvature[index - 1] + curvature[index]) / 2
+
+    rawSlope[index] = rawSlope[index - 1] + averageCurvature * dx
+    rawDeflection[index] =
+      rawDeflection[index - 1] + ((rawSlope[index - 1] + rawSlope[index]) / 2) * dx
+  }
+
+  let deflections = rawDeflection
+
+  if (structureType !== 'cantilever') {
+    const totalLength = xs[xs.length - 1] || 1
+    const endDeflection = rawDeflection[rawDeflection.length - 1] || 0
+
+    deflections = rawDeflection.map(
+      (value, index) => value - (endDeflection * xs[index]) / totalLength
+    )
+  }
+
+  const curve = points.map((point, index) => ({
+    x: point.x,
+    y: deflections[index] || 0,
+  }))
+
+  const criticalPoint = curve.reduce((best, item) =>
+    Math.abs(item.y) > Math.abs(best.y) ? item : best
+  )
+
+  return {
+    maxDeflection: Math.abs(criticalPoint.y),
+    location: criticalPoint.x,
+    curve,
+    method:
+      structureType === 'cantilever'
+        ? 'Numerical integration of M/EI with fixed-end slope and deflection as zero.'
+        : 'Numerical integration of M/EI with support deflection at A and B as zero.',
+  }
+}
+
+function validateBeamInputs({
+  structureType,
+  span,
+  E,
+  Icalc,
+  pointLoads,
+  udls,
+  moments,
+}) {
+  const L = Number(span)
+
+  if (!Number.isFinite(L) || L <= 0) {
+    return 'Span length L must be greater than 0.'
+  }
+
+  if (!Number.isFinite(Number(E)) || Number(E) <= 0) {
+    return 'Elastic modulus E must be greater than 0.'
+  }
+
+  if (!Number.isFinite(Number(Icalc)) || Number(Icalc) <= 0) {
+    return 'Moment of inertia I must be greater than 0. Add valid section size or I override.'
+  }
+
+  if (!['simply-supported', 'cantilever'].includes(structureType)) {
+    return 'For zero-error student output, this version supports Simply Supported Beam and Cantilever Beam only.'
+  }
+
+  for (const load of pointLoads) {
+    const P = Number(load.P)
+    const x = Number(load.x)
+
+    if (!Number.isFinite(P) || P < 0) {
+      return 'Point load value must be 0 or positive. Use positive value for downward load.'
+    }
+
+    if (!Number.isFinite(x) || x < 0 || x > L) {
+      return `Point load position must be between 0 and ${roundValue(L)} m.`
+    }
+  }
+
+  for (const load of udls) {
+    const w = Number(load.w)
+    const start = Number(load.start)
+    const end = Number(load.end)
+
+    if (!Number.isFinite(w) || w < 0) {
+      return 'UDL value must be 0 or positive. Use positive value for downward UDL.'
+    }
+
+    if (
+      !Number.isFinite(start) ||
+      !Number.isFinite(end) ||
+      start < 0 ||
+      end > L ||
+      start >= end
+    ) {
+      return `UDL start/end must be valid and inside the beam span 0 to ${roundValue(L)} m.`
+    }
+  }
+
+  for (const moment of moments) {
+    const M = Number(moment.M)
+    const x = Number(moment.x)
+
+    if (!Number.isFinite(M)) {
+      return 'Applied moment value must be a valid number.'
+    }
+
+    if (!Number.isFinite(x) || x < 0 || x > L) {
+      return `Applied moment position must be between 0 and ${roundValue(L)} m.`
+    }
+  }
+
+  const activeVerticalLoads =
+    pointLoads.filter((load) => Number(load.P) > 0).length +
+    udls.filter((load) => Number(load.w) > 0).length
+
+  const activeMoments = moments.filter((moment) => Number(moment.M) !== 0).length
+
+  if (activeVerticalLoads + activeMoments === 0) {
+    return 'Add at least one point load, UDL, or applied moment before calculating.'
+  }
+
+  return ''
+}
+
+function getBeamInputSignature({
+  structureType,
+  span,
+  width,
+  depth,
+  E,
+  I,
+  pointLoads,
+  udls,
+  moments,
+}) {
+  return JSON.stringify({
+    structureType,
+    span: getNumber(span),
+    width: getNumber(width),
+    depth: getNumber(depth),
+    E: getNumber(E),
+    I: getNumber(I),
+    pointLoads: pointLoads.map((load) => ({
+      P: getNumber(load.P),
+      x: getNumber(load.x),
+    })),
+    udls: udls.map((load) => ({
+      w: getNumber(load.w),
+      start: getNumber(load.start),
+      end: getNumber(load.end),
+    })),
+    moments: moments.map((moment) => ({
+      M: getNumber(moment.M),
+      x: getNumber(moment.x),
+    })),
+  })
+}
+
+function getBeamLoadRows({ pointLoads, udls, moments }) {
+  const rows = []
+
+  pointLoads.forEach((load, index) => {
+    const P = getNumber(load.P)
+    const x = getNumber(load.x)
+
+    if (P > 0) {
+      rows.push({
+        label: `Point Load ${index + 1}`,
+        load: `${roundValue(P)} kN`,
+        position: `${roundValue(x)} m from A`,
+        moment: `${roundValue(P * x)} kNm`,
+      })
+    }
+  })
+
+  udls.forEach((load, index) => {
+    const w = getNumber(load.w)
+    const start = getNumber(load.start)
+    const end = getNumber(load.end)
+    const length = Math.max(end - start, 0)
+
+    if (w > 0 && length > 0) {
+      const W = w * length
+      const centroid = start + length / 2
+
+      rows.push({
+        label: `UDL ${index + 1}`,
+        load: `${roundValue(w)} kN/m × ${roundValue(length)} m = ${roundValue(W)} kN`,
+        position: `Centroid at ${roundValue(centroid)} m from A`,
+        moment: `${roundValue(W * centroid)} kNm`,
+      })
+    }
+  })
+
+  moments.forEach((moment, index) => {
+    const M = getNumber(moment.M)
+    const x = getNumber(moment.x)
+
+    if (M !== 0) {
+      rows.push({
+        label: `Applied Moment ${index + 1}`,
+        load: `${roundValue(M)} kNm`,
+        position: `${roundValue(x)} m from A`,
+        moment: `${roundValue(M)} kNm`,
+      })
+    }
+  })
+
+  return rows
+}
+
+function getBeamKeyTable({ result, pointLoads, udls, moments }) {
+  const keyLocations = [
+    0,
+    result.L,
+    result.criticalMomentPoint?.x || 0,
+    result.deflectionLocation || 0,
+    ...pointLoads.map((load) => getNumber(load.x)),
+    ...udls.flatMap((load) => [getNumber(load.start), getNumber(load.end)]),
+    ...moments.map((moment) => getNumber(moment.x)),
+  ]
+
+  const uniqueLocations = Array.from(
+    new Set(
+      keyLocations
+        .filter((x) => Number.isFinite(x) && x >= 0 && x <= result.L)
+        .map((x) => Number(x.toFixed(3)))
+    )
+  ).sort((a, b) => a - b)
+
+  return uniqueLocations.map((x) => {
+    const nearest = result.points.reduce((best, point) =>
+      Math.abs(point.x - x) < Math.abs(best.x - x) ? point : best
+    )
+
+    return {
+      x,
+      shear: nearest.V,
+      moment: nearest.M,
+    }
+  })
+}
+
+function getBeamSpecialCase({ structureType, result, pointLoads, udls, moments }) {
+  const activePointLoads = pointLoads.filter((load) => Number(load.P) > 0)
+  const activeUdls = udls.filter((load) => Number(load.w) > 0)
+  const activeMoments = moments.filter((moment) => Number(moment.M) !== 0)
+
+  if (activeMoments.length > 0) {
+    return {
+      title: 'General loading with applied moment',
+      note: 'Reactions, SFD and BMD are calculated by equilibrium and section method.',
+      deflectionNote: result.deflectionMethod,
+    }
+  }
+
+  if (structureType === 'simply-supported') {
+    if (activePointLoads.length === 1 && activeUdls.length === 0) {
+      const P = getNumber(activePointLoads[0].P)
+      const a = getNumber(activePointLoads[0].x)
+      const b = result.L - a
+
+      return {
+        title: 'Simply supported beam with one point load',
+        note: `Exact reaction formulas used: RA = Wb/L and RB = Wa/L. Here a = ${roundValue(a)} m and b = ${roundValue(b)} m.`,
+        deflectionNote:
+          Math.abs(a - result.L / 2) < 0.001
+            ? 'For central point load, exact formula is δmax = PL³ / 48EI.'
+            : result.deflectionMethod,
+      }
+    }
+
+    if (
+      activePointLoads.length === 0 &&
+      activeUdls.length === 1 &&
+      getNumber(activeUdls[0].start) === 0 &&
+      Math.abs(getNumber(activeUdls[0].end) - result.L) < 0.001
+    ) {
+      return {
+        title: 'Simply supported beam with full span UDL',
+        note: 'Exact formulas used: RA = RB = wL/2 and Mmax = wL²/8.',
+        deflectionNote: 'Exact formula for full span UDL is δmax = 5wL⁴ / 384EI.',
+      }
+    }
+  }
+
+  if (structureType === 'cantilever') {
+    if (
+      activePointLoads.length === 1 &&
+      activeUdls.length === 0 &&
+      Math.abs(getNumber(activePointLoads[0].x) - result.L) < 0.001
+    ) {
+      return {
+        title: 'Cantilever beam with point load at free end',
+        note: 'Exact formulas used: V = P and Mfixed = PL.',
+        deflectionNote: 'Exact free-end deflection formula is δ = PL³ / 3EI.',
+      }
+    }
+
+    if (
+      activePointLoads.length === 0 &&
+      activeUdls.length === 1 &&
+      getNumber(activeUdls[0].start) === 0 &&
+      Math.abs(getNumber(activeUdls[0].end) - result.L) < 0.001
+    ) {
+      return {
+        title: 'Cantilever beam with full span UDL',
+        note: 'Exact formulas used: V = wL and Mfixed = wL²/2.',
+        deflectionNote: 'Exact free-end deflection formula is δ = wL⁴ / 8EI.',
+      }
+    }
+  }
+
+  return {
+    title: 'General beam loading',
+    note: 'Reactions, SFD and BMD are calculated using equilibrium and section-wise force summation.',
+    deflectionNote: result.deflectionMethod,
+  }
+}
+
+function buildBeamStepSolution({
+  structureType,
+  result,
+  pointLoads,
+  udls,
+  moments,
+}) {
+  const loadRows = getBeamLoadRows({ pointLoads, udls, moments })
+  const beamName =
+    structureType === 'cantilever'
+      ? 'Cantilever beam'
+      : 'Simply supported beam'
+
+  return [
+    `Given beam type: ${beamName}.`,
+    `Span length, L = ${roundValue(result.L)} m.`,
+    `Total vertical load, ΣW = ${roundValue(result.totalLoad)} kN.`,
+    ...loadRows.map(
+      (row) =>
+        `${row.label}: Load = ${row.load}, position = ${row.position}, moment about A = ${row.moment}.`
+    ),
+    structureType === 'cantilever'
+      ? `For cantilever beam, vertical reaction at fixed support A = total downward load = ${roundValue(result.RA)} kN.`
+      : `Taking moment about support A: RB × L = Σ(W × x) + ΣM, therefore RB = ${roundValue(result.RB)} kN.`,
+    structureType === 'cantilever'
+      ? `Fixed end moment at A = Σ(W × x) + ΣM = ${roundValue(result.fixedMoment)} kNm.`
+      : `Using vertical equilibrium ΣFy = 0: RA + RB = ΣW, therefore RA = ${roundValue(result.RA)} kN.`,
+    `Maximum shear force from SFD = ${roundValue(
+      Math.max(Math.abs(result.maxShear), Math.abs(result.minShear))
+    )} kN.`,
+    `Maximum bending moment occurs near x = ${roundValue(
+      result.criticalMomentPoint.x
+    )} m.`,
+    `Maximum bending moment = ${roundValue(
+      Math.abs(result.criticalMomentPoint.M)
+    )} kNm.`,
+    `Maximum deflection = ${roundValue(result.maxDeflection)} mm at x = ${roundValue(
+      result.deflectionLocation
+    )} m.`,
+  ]
+}
+
+function buildBeamFormulaList({ structureType, result, pointLoads, udls, moments }) {
+  const specialCase = getBeamSpecialCase({
+    structureType,
+    result,
+    pointLoads,
+    udls,
+    moments,
+  })
+
+  const formulas = [
+    {
+      title: 'Vertical equilibrium',
+      formula: 'ΣFy = 0',
+      meaning: 'Total upward reactions must balance total downward loads.',
+    },
+    {
+      title: 'Moment equilibrium',
+      formula: 'ΣMA = 0',
+      meaning: 'Moment of all forces about support A is used to find the second reaction.',
+    },
+    {
+      title: 'Point load reaction',
+      formula: 'RA = Wb/L, RB = Wa/L',
+      meaning: 'For a simply supported beam with one point load W at distance a from A and b from B.',
+    },
+    {
+      title: 'UDL equivalent load',
+      formula: 'W = w × l',
+      meaning: 'UDL is converted into an equivalent point load at its centroid.',
+    },
+    {
+      title: 'Bending moment at section',
+      formula: 'Mx = RA × x - ΣP(x-a) - Σw·l(x-x̄) ± ΣM',
+      meaning: 'Moment is calculated from all loads on the left side of the section.',
+    },
+    {
+      title: 'Shear force at section',
+      formula: 'Vx = RA - ΣP - Σw·l',
+      meaning: 'Shear force is the algebraic sum of vertical forces on one side of the section.',
+    },
+    {
+      title: 'Beam curvature',
+      formula: 'EI d²y/dx² = M',
+      meaning: specialCase.deflectionNote,
+    },
+  ]
+
+  if (structureType === 'cantilever') {
+    formulas.push({
+      title: 'Cantilever fixed end moment',
+      formula: 'MA = Σ(W × x) + ΣM',
+      meaning: 'Fixed support carries vertical reaction and resisting moment.',
+    })
+  }
+
+  return {
+    specialCase,
+    formulas,
+  }
+}
+
+function buildExamAnswerText({
+  structureType,
+  result,
+  pointLoads,
+  udls,
+  moments,
+}) {
+  const beamName =
+    structureType === 'cantilever'
+      ? 'cantilever beam'
+      : 'simply supported beam'
+  const loadRows = getBeamLoadRows({ pointLoads, udls, moments })
+  const lines = [
+    `Q. Analyze the given ${beamName} and find support reactions, shear force, bending moment and maximum deflection.`,
+    '',
+    'Given:',
+    `Span, L = ${roundValue(result.L)} m`,
+    ...loadRows.map((row) => `${row.label}: ${row.load} at ${row.position}`),
+    '',
+    'To Find:',
+    '1. Support reactions',
+    '2. Maximum shear force',
+    '3. Maximum bending moment',
+    '4. Maximum deflection',
+    '',
+    'Solution:',
+    `Total load, ΣW = ${roundValue(result.totalLoad)} kN`,
+  ]
+
+  if (structureType === 'cantilever') {
+    lines.push(
+      `Vertical reaction at fixed support A = ${roundValue(result.RA)} kN`,
+      `Fixed end moment at A = ${roundValue(result.fixedMoment)} kNm`
+    )
+  } else {
+    lines.push(
+      'Taking moment about support A:',
+      `RB × ${roundValue(result.L)} = Σ(W × x) + ΣM`,
+      `RB = ${roundValue(result.RB)} kN`,
+      '',
+      'Using vertical equilibrium:',
+      'RA + RB = ΣW',
+      `RA = ${roundValue(result.RA)} kN`
+    )
+  }
+
+  lines.push(
+    '',
+    `Maximum shear force = ${roundValue(
+      Math.max(Math.abs(result.maxShear), Math.abs(result.minShear))
+    )} kN`,
+    `Maximum bending moment = ${roundValue(
+      Math.abs(result.criticalMomentPoint.M)
+    )} kNm at x = ${roundValue(result.criticalMomentPoint.x)} m`,
+    `Maximum deflection = ${roundValue(result.maxDeflection)} mm at x = ${roundValue(
+      result.deflectionLocation
+    )} m`,
+    '',
+    'Final Answer:',
+    `RA = ${roundValue(result.RA)} kN`,
+    structureType === 'cantilever'
+      ? `Fixed moment = ${roundValue(result.fixedMoment)} kNm`
+      : `RB = ${roundValue(result.RB)} kN`,
+    `Max SF = ${roundValue(
+      Math.max(Math.abs(result.maxShear), Math.abs(result.minShear))
+    )} kN`,
+    `Max BM = ${roundValue(Math.abs(result.criticalMomentPoint.M))} kNm`,
+    `Max deflection = ${roundValue(result.maxDeflection)} mm`
+  )
+
+  return lines.join('\n')
+}
+
 function BeamModule({
   structureType,
   setStructureType,
@@ -733,18 +1245,103 @@ function BeamModule({
   removeUDL,
   removeMoment,
 }) {
+  const [calculatedResult, setCalculatedResult] = useState(null)
+  const [calculatedSignature, setCalculatedSignature] = useState('')
+  const [activeOutputTab, setActiveOutputTab] = useState('final')
+  const [validationError, setValidationError] = useState('')
+  const [copyStatus, setCopyStatus] = useState('')
+
+  const currentSignature = useMemo(
+    () =>
+      getBeamInputSignature({
+        structureType,
+        span,
+        width,
+        depth,
+        E,
+        I,
+        pointLoads,
+        udls,
+        moments,
+      }),
+    [structureType, span, width, depth, E, I, pointLoads, udls, moments]
+  )
+
+  const hasCalculated = Boolean(calculatedResult)
+  const isOutdated = hasCalculated && calculatedSignature !== currentSignature
+  const displayResult = calculatedResult
+
+  const handleCalculate = () => {
+    const error = validateBeamInputs({
+      structureType,
+      span,
+      E,
+      Icalc: result.Icalc,
+      pointLoads,
+      udls,
+      moments,
+    })
+
+    if (error) {
+      setValidationError(error)
+      setCalculatedResult(null)
+      return
+    }
+
+    setValidationError('')
+    setCopyStatus('')
+    setCalculatedResult(cloneBeamResult(result))
+    setCalculatedSignature(currentSignature)
+    setActiveOutputTab('final')
+  }
+
+  const handleCopyExamAnswer = async () => {
+    if (!displayResult) return
+
+    const examAnswer = buildExamAnswerText({
+      structureType,
+      result: displayResult,
+      pointLoads,
+      udls,
+      moments,
+    })
+
+    try {
+      await navigator.clipboard.writeText(examAnswer)
+      setCopyStatus('Exam answer copied.')
+    } catch {
+      setCopyStatus('Copy failed. You can select and copy manually.')
+    }
+  }
+
   return (
     <>
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="bg-slate-900/50 border-slate-800 p-6 lg:col-span-1">
-          <h2 className="text-xl font-bold text-white mb-5">
-            Inputs
-          </h2>
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div>
+              <h2 className="text-xl font-bold text-white">
+                Student Inputs
+              </h2>
+              <p className="text-slate-400 text-sm mt-1">
+                Enter data first, then click Calculate Result.
+              </p>
+            </div>
+            <span className="text-xs bg-orange-500/15 text-orange-300 border border-orange-500/30 px-3 py-1 rounded-full">
+              Student Mode
+            </span>
+          </div>
 
           <div className="space-y-4">
             <div>
               <Label className="text-slate-400">Structure Type</Label>
-              <Select value={structureType} onValueChange={setStructureType}>
+              <Select
+                value={structureType}
+                onValueChange={(value) => {
+                  setStructureType(value)
+                  setValidationError('')
+                }}
+              >
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-2">
                   <SelectValue />
                 </SelectTrigger>
@@ -755,11 +1352,11 @@ function BeamModule({
                   <SelectItem value="cantilever">
                     Cantilever Beam
                   </SelectItem>
-                  <SelectItem value="overhanging">
-                    Overhanging Beam Basic
-                  </SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-slate-500 mt-2">
+                Exact student output is enabled for simply supported and cantilever beams.
+              </p>
             </div>
 
             <div>
@@ -806,7 +1403,7 @@ function BeamModule({
               </div>
 
               <div>
-                <Label className="text-slate-400">I override</Label>
+                <Label className="text-slate-400">I override (mm⁴)</Label>
                 <Input
                   type="number"
                   value={I}
@@ -823,25 +1420,35 @@ function BeamModule({
                   className="bg-slate-800/60 rounded-xl p-3 space-y-2"
                 >
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      value={load.P}
-                      onChange={(e) =>
-                        updatePointLoad(load.id, 'P', Number(e.target.value))
-                      }
-                      placeholder="Load kN"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
+                    <div>
+                      <Label className="text-slate-500 text-xs">
+                        Load P (kN)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={load.P}
+                        onChange={(e) =>
+                          updatePointLoad(load.id, 'P', Number(e.target.value))
+                        }
+                        placeholder="Load kN"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
 
-                    <Input
-                      type="number"
-                      value={load.x}
-                      onChange={(e) =>
-                        updatePointLoad(load.id, 'x', Number(e.target.value))
-                      }
-                      placeholder="Position m"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
+                    <div>
+                      <Label className="text-slate-500 text-xs">
+                        Position x (m)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={load.x}
+                        onChange={(e) =>
+                          updatePointLoad(load.id, 'x', Number(e.target.value))
+                        }
+                        placeholder="Position m"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
                   </div>
 
                   <RemoveButton onClick={() => removePointLoad(load.id)} />
@@ -855,36 +1462,51 @@ function BeamModule({
                   key={load.id}
                   className="bg-slate-800/60 rounded-xl p-3 space-y-2"
                 >
-                  <Input
-                    type="number"
-                    value={load.w}
-                    onChange={(e) =>
-                      updateUDL(load.id, 'w', Number(e.target.value))
-                    }
-                    placeholder="UDL kN/m"
-                    className="bg-slate-900 border-slate-700 text-white"
-                  />
+                  <div>
+                    <Label className="text-slate-500 text-xs">
+                      UDL w (kN/m)
+                    </Label>
+                    <Input
+                      type="number"
+                      value={load.w}
+                      onChange={(e) =>
+                        updateUDL(load.id, 'w', Number(e.target.value))
+                      }
+                      placeholder="UDL kN/m"
+                      className="bg-slate-900 border-slate-700 text-white mt-1"
+                    />
+                  </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      value={load.start}
-                      onChange={(e) =>
-                        updateUDL(load.id, 'start', Number(e.target.value))
-                      }
-                      placeholder="Start m"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
+                    <div>
+                      <Label className="text-slate-500 text-xs">
+                        Start (m)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={load.start}
+                        onChange={(e) =>
+                          updateUDL(load.id, 'start', Number(e.target.value))
+                        }
+                        placeholder="Start m"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
 
-                    <Input
-                      type="number"
-                      value={load.end}
-                      onChange={(e) =>
-                        updateUDL(load.id, 'end', Number(e.target.value))
-                      }
-                      placeholder="End m"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
+                    <div>
+                      <Label className="text-slate-500 text-xs">
+                        End (m)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={load.end}
+                        onChange={(e) =>
+                          updateUDL(load.id, 'end', Number(e.target.value))
+                        }
+                        placeholder="End m"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
                   </div>
 
                   <RemoveButton onClick={() => removeUDL(load.id)} />
@@ -899,25 +1521,35 @@ function BeamModule({
                   className="bg-slate-800/60 rounded-xl p-3 space-y-2"
                 >
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      value={moment.M}
-                      onChange={(e) =>
-                        updateMoment(moment.id, 'M', Number(e.target.value))
-                      }
-                      placeholder="Moment kNm"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
+                    <div>
+                      <Label className="text-slate-500 text-xs">
+                        Moment M (kNm)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={moment.M}
+                        onChange={(e) =>
+                          updateMoment(moment.id, 'M', Number(e.target.value))
+                        }
+                        placeholder="Moment kNm"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
 
-                    <Input
-                      type="number"
-                      value={moment.x}
-                      onChange={(e) =>
-                        updateMoment(moment.id, 'x', Number(e.target.value))
-                      }
-                      placeholder="Position m"
-                      className="bg-slate-900 border-slate-700 text-white"
-                    />
+                    <div>
+                      <Label className="text-slate-500 text-xs">
+                        Position x (m)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={moment.x}
+                        onChange={(e) =>
+                          updateMoment(moment.id, 'x', Number(e.target.value))
+                        }
+                        placeholder="Position m"
+                        className="bg-slate-900 border-slate-700 text-white mt-1"
+                      />
+                    </div>
                   </div>
 
                   <RemoveButton onClick={() => removeMoment(moment.id)} />
@@ -925,9 +1557,29 @@ function BeamModule({
               ))}
             </LoadSection>
 
+            {validationError && (
+              <div className="bg-red-950/40 border border-red-800 rounded-xl p-4 text-red-200 text-sm">
+                {validationError}
+              </div>
+            )}
+
+            {isOutdated && (
+              <div className="bg-yellow-950/40 border border-yellow-700 rounded-xl p-4 text-yellow-200 text-sm">
+                Inputs changed after calculation. Click Calculate Result again to update the output.
+              </div>
+            )}
+
+            <Button
+              onClick={handleCalculate}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold"
+            >
+              <Calculator className="h-4 w-4 mr-2" />
+              Calculate Result
+            </Button>
+
             <Button
               onClick={() => window.print()}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600"
+              className="w-full bg-slate-800 hover:bg-slate-700"
             >
               <Download className="h-4 w-4 mr-2" />
               Export / Print PDF
@@ -950,153 +1602,415 @@ function BeamModule({
             />
           </Card>
 
-          <div className="grid md:grid-cols-4 gap-4">
-            <SummaryCard label="RA" value={`${result.RA.toFixed(2)} kN`} />
-            <SummaryCard label="RB" value={`${result.RB.toFixed(2)} kN`} />
-            <SummaryCard
-              label="Max BM"
-              value={`${Math.max(
-                Math.abs(result.maxMoment),
-                Math.abs(result.minMoment)
-              ).toFixed(2)} kNm`}
-            />
-            <SummaryCard
-              label="Deflection"
-              value={`${result.maxDeflection.toFixed(2)} mm`}
-            />
-          </div>
+          {!hasCalculated ? (
+            <Card className="bg-slate-900/50 border-slate-800 p-8 text-center">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center mb-4">
+                <Calculator className="h-7 w-7 text-orange-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">
+                Enter inputs and calculate
+              </h2>
+              <p className="text-slate-400 mt-2 max-w-xl mx-auto">
+                Result cards, SFD/BMD data, formula used and exam-style answer will appear after calculation.
+              </p>
+            </Card>
+          ) : (
+            <>
+              <div className="grid md:grid-cols-4 gap-4">
+                <SummaryCard label="RA" value={`${roundValue(displayResult.RA)} kN`} />
+                <SummaryCard label="RB / Fixed M" value={
+                  structureType === 'cantilever'
+                    ? `${roundValue(displayResult.fixedMoment)} kNm`
+                    : `${roundValue(displayResult.RB)} kN`
+                } />
+                <SummaryCard
+                  label="Max BM"
+                  value={`${roundValue(
+                    Math.max(
+                      Math.abs(displayResult.maxMoment),
+                      Math.abs(displayResult.minMoment)
+                    )
+                  )} kNm`}
+                />
+                <SummaryCard
+                  label="Deflection"
+                  value={`${roundValue(displayResult.maxDeflection)} mm`}
+                />
+              </div>
 
-          <Card className="bg-slate-900/50 border-slate-800 p-6">
-            <h2 className="text-xl font-bold text-white mb-4">
-              Shear Force Diagram
-            </h2>
+              <Card className="bg-slate-900/50 border-slate-800 p-5">
+                <div className="flex flex-wrap gap-2">
+                  <OutputTabButton
+                    active={activeOutputTab === 'final'}
+                    onClick={() => setActiveOutputTab('final')}
+                  >
+                    Final Output
+                  </OutputTabButton>
+                  <OutputTabButton
+                    active={activeOutputTab === 'solution'}
+                    onClick={() => setActiveOutputTab('solution')}
+                  >
+                    Step-by-Step Solution
+                  </OutputTabButton>
+                  <OutputTabButton
+                    active={activeOutputTab === 'formula'}
+                    onClick={() => setActiveOutputTab('formula')}
+                  >
+                    Formula Used
+                  </OutputTabButton>
+                  <OutputTabButton
+                    active={activeOutputTab === 'exam'}
+                    onClick={() => setActiveOutputTab('exam')}
+                  >
+                    Exam Answer Format
+                  </OutputTabButton>
+                  <OutputTabButton
+                    active={activeOutputTab === 'data'}
+                    onClick={() => setActiveOutputTab('data')}
+                  >
+                    SFD / BMD Data
+                  </OutputTabButton>
+                </div>
+              </Card>
 
-            <Diagram points={result.points} type="V" label="SFD" />
-          </Card>
+              {activeOutputTab === 'final' && (
+                <BeamFinalOutput
+                  result={displayResult}
+                  structureType={structureType}
+                  pointLoads={pointLoads}
+                  udls={udls}
+                  moments={moments}
+                />
+              )}
 
-          <Card className="bg-slate-900/50 border-slate-800 p-6">
-            <h2 className="text-xl font-bold text-white mb-4">
-              Bending Moment Diagram
-            </h2>
+              {activeOutputTab === 'solution' && (
+                <BeamStepSolution
+                  result={displayResult}
+                  structureType={structureType}
+                  pointLoads={pointLoads}
+                  udls={udls}
+                  moments={moments}
+                />
+              )}
 
-            <Diagram points={result.points} type="M" label="BMD" />
-          </Card>
+              {activeOutputTab === 'formula' && (
+                <FormulaUsedSection
+                  result={displayResult}
+                  structureType={structureType}
+                  pointLoads={pointLoads}
+                  udls={udls}
+                  moments={moments}
+                />
+              )}
 
-          <Card className="bg-slate-900/50 border-slate-800 p-6">
-            <h2 className="text-xl font-bold text-white mb-4">
-              Deflection Curve
-            </h2>
+              {activeOutputTab === 'exam' && (
+                <ExamAnswerSection
+                  result={displayResult}
+                  structureType={structureType}
+                  pointLoads={pointLoads}
+                  udls={udls}
+                  moments={moments}
+                  copyStatus={copyStatus}
+                  onCopy={handleCopyExamAnswer}
+                />
+              )}
 
-            <DeflectionCurve points={result.points} />
-          </Card>
+              {activeOutputTab === 'data' && (
+                <SfdBmdDataSection
+                  result={displayResult}
+                  pointLoads={pointLoads}
+                  udls={udls}
+                  moments={moments}
+                />
+              )}
+
+              <Card className="bg-slate-900/50 border-slate-800 p-6">
+                <h2 className="text-xl font-bold text-white mb-4">
+                  Shear Force Diagram
+                </h2>
+
+                <Diagram points={displayResult.points} type="V" label="SFD" />
+              </Card>
+
+              <Card className="bg-slate-900/50 border-slate-800 p-6">
+                <h2 className="text-xl font-bold text-white mb-4">
+                  Bending Moment Diagram
+                </h2>
+
+                <Diagram points={displayResult.points} type="M" label="BMD" />
+              </Card>
+
+              <Card className="bg-slate-900/50 border-slate-800 p-6">
+                <h2 className="text-xl font-bold text-white mb-4">
+                  Deflection Curve
+                </h2>
+
+                <DeflectionCurve points={displayResult.deflectionCurve || []} />
+              </Card>
+            </>
+          )}
         </div>
       </div>
-
-      <section className="mt-10 grid lg:grid-cols-2 gap-6">
-        <Card className="bg-slate-900/50 border-slate-800 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Step-by-Step Calculations
-          </h2>
-
-          <div className="space-y-4 text-slate-300 leading-7">
-            <p>
-              Total load:{' '}
-              <b className="text-orange-400">
-                ΣW = {result.totalLoad.toFixed(2)} kN
-              </b>
-            </p>
-            <p>
-              Equilibrium:{' '}
-              <b className="text-orange-400">
-                ΣFy = 0 → RA + RB = ΣW
-              </b>
-            </p>
-            <p>
-              Moment about A:{' '}
-              <b className="text-orange-400">ΣMA = 0</b>
-            </p>
-            <p>
-              Right reaction:{' '}
-              <b className="text-orange-400">
-                RB = {result.RB.toFixed(2)} kN
-              </b>
-            </p>
-            <p>
-              Left reaction:{' '}
-              <b className="text-orange-400">
-                RA = {result.RA.toFixed(2)} kN
-              </b>
-            </p>
-            <p>
-              Maximum shear:{' '}
-              <b className="text-orange-400">
-                {result.maxShear.toFixed(2)} kN
-              </b>
-            </p>
-            <p>
-              Minimum shear:{' '}
-              <b className="text-orange-400">
-                {result.minShear.toFixed(2)} kN
-              </b>
-            </p>
-            <p>
-              Critical section:{' '}
-              <b className="text-orange-400">
-                x = {result.criticalMomentPoint.x.toFixed(2)} m
-              </b>
-            </p>
-            <p>
-              Maximum moment:{' '}
-              <b className="text-orange-400">
-                {result.criticalMomentPoint.M.toFixed(2)} kNm
-              </b>
-            </p>
-            <p>
-              Approx. maximum deflection:{' '}
-              <b className="text-orange-400">
-                {result.maxDeflection.toFixed(2)} mm
-              </b>
-            </p>
-          </div>
-        </Card>
-
-        <Card className="bg-slate-900/50 border-slate-800 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">
-            Theory Explanation
-          </h2>
-
-          <div className="space-y-4 text-slate-300 leading-7">
-            <p>
-              Support reactions occur because the beam must satisfy vertical
-              force equilibrium and moment equilibrium.
-            </p>
-
-            <p>
-              Shear force changes suddenly at a point load and changes linearly
-              under a uniformly distributed load.
-            </p>
-
-            <p>
-              Bending moment is maximum where shear force becomes zero or
-              changes sign.
-            </p>
-
-            <p>
-              Deflection occurs because the beam bends under load. It depends
-              on load, span, Young’s modulus and moment of inertia.
-            </p>
-
-            <p>
-              Positive bending moment indicates sagging, while negative bending
-              moment indicates hogging.
-            </p>
-          </div>
-        </Card>
-      </section>
     </>
   )
 }
 
+function OutputTabButton({ active, onClick, children }) {
+  return (
+    <Button
+      onClick={onClick}
+      className={
+        active
+          ? 'bg-orange-500 hover:bg-orange-600'
+          : 'bg-slate-800 hover:bg-slate-700'
+      }
+    >
+      {children}
+    </Button>
+  )
+}
+
+function BeamFinalOutput({
+  result,
+  structureType,
+  pointLoads,
+  udls,
+  moments,
+}) {
+  const specialCase = getBeamSpecialCase({
+    structureType,
+    result,
+    pointLoads,
+    udls,
+    moments,
+  })
+
+  return (
+    <Card className="bg-slate-900/50 border-slate-800 p-6">
+      <h2 className="text-xl font-bold text-white mb-4">
+        Final Output
+      </h2>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <ResultRow label="Beam Case" value={specialCase.title} />
+        <ResultRow label="Total Load" value={`${roundValue(result.totalLoad)} kN`} />
+        <ResultRow label="Left Reaction RA" value={`${roundValue(result.RA)} kN`} />
+        <ResultRow
+          label={structureType === 'cantilever' ? 'Fixed End Moment' : 'Right Reaction RB'}
+          value={
+            structureType === 'cantilever'
+              ? `${roundValue(result.fixedMoment)} kNm`
+              : `${roundValue(result.RB)} kN`
+          }
+        />
+        <ResultRow
+          label="Maximum Shear Force"
+          value={`${roundValue(
+            Math.max(Math.abs(result.maxShear), Math.abs(result.minShear))
+          )} kN`}
+        />
+        <ResultRow
+          label="Maximum Bending Moment"
+          value={`${roundValue(Math.abs(result.criticalMomentPoint.M))} kNm`}
+        />
+        <ResultRow
+          label="Critical Section"
+          value={`x = ${roundValue(result.criticalMomentPoint.x)} m`}
+        />
+        <ResultRow
+          label="Maximum Deflection"
+          value={`${roundValue(result.maxDeflection)} mm at x = ${roundValue(
+            result.deflectionLocation
+          )} m`}
+        />
+      </div>
+
+      <div className="mt-5 bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-slate-300 leading-7">
+        <p>
+          <b className="text-orange-400">Student Tip:</b> {specialCase.note}
+        </p>
+        <p className="mt-2">
+          <b className="text-orange-400">Deflection:</b> {specialCase.deflectionNote}
+        </p>
+      </div>
+    </Card>
+  )
+}
+
+function BeamStepSolution({
+  result,
+  structureType,
+  pointLoads,
+  udls,
+  moments,
+}) {
+  const steps = buildBeamStepSolution({
+    structureType,
+    result,
+    pointLoads,
+    udls,
+    moments,
+  })
+
+  return (
+    <Card className="bg-slate-900/50 border-slate-800 p-6">
+      <h2 className="text-xl font-bold text-white mb-4">
+        Step-by-Step Solution
+      </h2>
+
+      <div className="space-y-3 text-slate-300 leading-7">
+        {steps.map((step, index) => (
+          <div
+            key={index}
+            className="bg-slate-800/50 border border-slate-700 rounded-xl p-4"
+          >
+            <span className="text-orange-400 font-semibold">
+              Step {index + 1}:
+            </span>{' '}
+            {step}
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function FormulaUsedSection({
+  result,
+  structureType,
+  pointLoads,
+  udls,
+  moments,
+}) {
+  const { specialCase, formulas } = buildBeamFormulaList({
+    structureType,
+    result,
+    pointLoads,
+    udls,
+    moments,
+  })
+
+  return (
+    <Card className="bg-slate-900/50 border-slate-800 p-6">
+      <h2 className="text-xl font-bold text-white mb-4">
+        Formula Used
+      </h2>
+
+      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 text-orange-100 mb-5">
+        <b>Detected case:</b> {specialCase.title}
+      </div>
+
+      <div className="space-y-4">
+        {formulas.map((item, index) => (
+          <div
+            key={index}
+            className="bg-slate-800/50 border border-slate-700 rounded-xl p-4"
+          >
+            <div className="text-white font-semibold">
+              {index + 1}. {item.title}
+            </div>
+            <div className="text-orange-400 font-bold mt-1">
+              {item.formula}
+            </div>
+            <div className="text-slate-400 text-sm mt-2">
+              {item.meaning}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function ExamAnswerSection({
+  result,
+  structureType,
+  pointLoads,
+  udls,
+  moments,
+  copyStatus,
+  onCopy,
+}) {
+  const examAnswer = buildExamAnswerText({
+    structureType,
+    result,
+    pointLoads,
+    udls,
+    moments,
+  })
+
+  return (
+    <Card className="bg-slate-900/50 border-slate-800 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 className="text-xl font-bold text-white">
+          Exam Answer Format
+        </h2>
+
+        <Button
+          onClick={onCopy}
+          className="bg-orange-500 hover:bg-orange-600"
+        >
+          Copy Exam Answer
+        </Button>
+      </div>
+
+      {copyStatus && (
+        <div className="mb-4 text-sm text-green-300 bg-green-950/30 border border-green-800 rounded-xl p-3">
+          {copyStatus}
+        </div>
+      )}
+
+      <pre className="bg-slate-950 border border-slate-800 rounded-xl p-5 text-slate-200 whitespace-pre-wrap leading-7 overflow-x-auto">
+        {examAnswer}
+      </pre>
+    </Card>
+  )
+}
+
+function SfdBmdDataSection({ result, pointLoads, udls, moments }) {
+  const rows = getBeamKeyTable({ result, pointLoads, udls, moments })
+
+  return (
+    <Card className="bg-slate-900/50 border-slate-800 p-6">
+      <h2 className="text-xl font-bold text-white mb-4">
+        SFD / BMD Key Data
+      </h2>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-slate-300">
+          <thead>
+            <tr className="border-b border-slate-800 text-slate-400">
+              <th className="text-left py-3">Point</th>
+              <th className="text-left py-3">Distance x</th>
+              <th className="text-left py-3">Shear Force</th>
+              <th className="text-left py-3">Bending Moment</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                key={`${row.x}-${index}`}
+                className="border-b border-slate-800/70"
+              >
+                <td className="py-3 font-semibold text-orange-400">
+                  {index + 1}
+                </td>
+                <td className="py-3">{roundValue(row.x)} m</td>
+                <td className="py-3">{roundValue(row.shear)} kN</td>
+                <td className="py-3">{roundValue(row.moment)} kNm</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-slate-500 text-xs mt-4">
+        Table shows support, load, UDL boundary, critical moment and deflection locations.
+      </p>
+    </Card>
+  )
+}
 function TrussModule({
   trussData,
   trussResult,
