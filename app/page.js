@@ -140,22 +140,44 @@ export default function LandingPage() {
                 and automate civil engineering workflows — all in one intelligent platform.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/signup">
+                  <Button size="lg" className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-lg px-8 h-14 w-full sm:w-auto">
+                    Get Started — It&apos;s Free
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
 
-             <div className="mt-12 grid grid-cols-3 gap-6">
-  <div>
-    <div className="text-3xl font-bold text-orange-500">25+</div>
-    <div className="text-sm text-slate-400">Calculators</div>
-  </div>
-  <div>
-    <div className="text-3xl font-bold text-orange-500">SFD/BMD</div>
-    <div className="text-sm text-slate-400">Structural Analysis</div>
-  </div>
-  <div>
-    <div className="text-3xl font-bold text-orange-500">AI</div>
-    <div className="text-sm text-slate-400">Assistant</div>
-  </div>
-</div>
+                <Link href="/civil-engineering-calculators">
+                  <Button size="lg" variant="outline" className="border-slate-700 bg-slate-900/40 text-white hover:bg-slate-800 hover:text-white text-lg px-8 h-14 w-full sm:w-auto">
+                    Explore Calculators
+                    <ChevronRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+
+                <Link href="/why-civilcalc-pro">
+                  <Button size="lg" variant="outline" className="border-orange-500/70 bg-orange-500/10 text-orange-300 hover:bg-orange-500 hover:text-white text-lg px-8 h-14 w-full sm:w-auto">
+                    Why CivilCalc Pro?
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="mt-12 grid grid-cols-3 gap-6">
+                <div>
+                  <div className="text-3xl font-bold text-orange-500">25+</div>
+                  <div className="text-sm text-slate-400">Calculators</div>
+                </div>
+
+                <div>
+                  <div className="text-3xl font-bold text-orange-500">SFD/BMD</div>
+                  <div className="text-sm text-slate-400">Structural Analysis</div>
+                </div>
+
+                <div>
+                  <div className="text-3xl font-bold text-orange-500">AI</div>
+                  <div className="text-sm text-slate-400">Assistant</div>
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
