@@ -457,8 +457,8 @@ export default function LandingPage() {
                   <div className={`inline-flex p-3 rounded-lg bg-${feature.color}-500/10 border border-${feature.color}-500/20 mb-4`}>
                     <feature.icon className={`h-6 w-6 text-${feature.color}-400`} />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                  <p className="text-slate-400">{feature.description}</p>
+                  <h3 className="text-xl font-bold mb-2 text-white">{feature.title}</h3>
+                  <p className="text-slate-300 leading-7">{feature.description}</p>
                 </Card>
               </motion.div>
             ))}
