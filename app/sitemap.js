@@ -121,10 +121,11 @@ export default function sitemap() {
   priority: 0.9,
 },
     {
-      path: '/lap-length-calculation',
-      priority: 0.8,
-      changeFrequency: 'monthly',
-    },
+  url: `${baseUrl}/lap-length-calculation`,
+  lastModified: new Date(),
+  changeFrequency: "weekly",
+  priority: 0.9,
+},
     {
       path: '/m20-concrete-mix-ratio',
       priority: 0.8,
