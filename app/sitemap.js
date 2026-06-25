@@ -109,6 +109,12 @@ export default function sitemap() {
   priority: 1.0,
 },
     {
+  url: `${baseUrl}/boq-generator`,
+  lastModified: new Date(),
+  changeFrequency: "weekly",
+  priority: 0.95,
+},
+    {
       path: '/development-length-calculation',
       priority: 0.8,
       changeFrequency: 'monthly',
