@@ -250,7 +250,7 @@ export default function LandingPage() {
         </div>
             </section>
 
-      {/* Public Proof Section */}
+            {/* Public Proof Section */}
       <section className="py-16 px-4 bg-gradient-to-b from-[#020817] via-[#07112b] to-[#020817]">
         <div className="container mx-auto">
           <div className="max-w-6xl mx-auto rounded-3xl border border-orange-500/30 bg-orange-500/5 p-8 lg:p-10">
@@ -266,9 +266,9 @@ export default function LandingPage() {
 
                 <p className="text-slate-300 leading-8 text-lg">
                   It combines RCC design calculators, quantity estimation tools,
-                  BOQ generator, home construction cost calculator, AI civil
-                  engineering assistant, IS code learning and instant reports in
-                  one web-based platform.
+                  BOQ generator, home construction cost calculator, project
+                  history, PDF reports, AI civil engineering assistant and IS
+                  code learning in one web-based platform.
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4">
@@ -293,9 +293,9 @@ export default function LandingPage() {
                   "RCC beam, column, slab and footing tools",
                   "BOQ generator for project estimation",
                   "Home construction cost calculator",
-                  "Steel, brickwork, plaster and excavation tools",
+                  "Project saving and calculation history",
+                  "Professional PDF reports",
                   "AI civil engineering assistant",
-                  "IS code learning support",
                   "No app install required",
                 ].map((item, index) => (
                   <div
@@ -308,6 +308,80 @@ export default function LandingPage() {
                     </p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <FileText className="h-6 w-6 text-orange-400" />
+                  <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-full">
+                    Available
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-bold text-white mb-2">
+                  Project Saving
+                </h3>
+
+                <p className="text-slate-400 text-sm leading-6">
+                  Save project calculations and continue previous estimation
+                  work from the dashboard.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <BarChart3 className="h-6 w-6 text-orange-400" />
+                  <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-full">
+                    Tracked
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-bold text-white mb-2">
+                  Calculation History
+                </h3>
+
+                <p className="text-slate-400 text-sm leading-6">
+                  Dashboard history helps users review previous calculations
+                  and project activity.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <FileText className="h-6 w-6 text-orange-400" />
+                  <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-full">
+                    PDF
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-bold text-white mb-2">
+                  PDF Reports
+                </h3>
+
+                <p className="text-slate-400 text-sm leading-6">
+                  Generate professional calculation reports for civil
+                  engineering tools and estimates.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <Bot className="h-6 w-6 text-orange-400" />
+                  <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-full">
+                    Live Tools
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-bold text-white mb-2">
+                  BOQ + AI Assistant
+                </h3>
+
+                <p className="text-slate-400 text-sm leading-6">
+                  Use BOQ Generator for estimation and AI Assistant for civil
+                  engineering guidance.
+                </p>
               </div>
             </div>
           </div>
