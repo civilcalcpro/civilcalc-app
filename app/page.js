@@ -625,10 +625,27 @@ export default function LandingPage() {
            Home cost construction guide 
           </h3>
           <p className="text-slate-400">
-            Complete BBS guide for quantity estimation.
+            Calculate home construction cost with built-up area,
+           floors, material quantity, staircase, shuttering, BOQ, 
+           hidden costs and PDF estimate report.
           </p>
         </div>
       </Link>
+
+  <Link
+  href="/boq-generator"
+  className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 hover:border-orange-500/60 transition"
+>
+  <p className="text-xs font-bold text-orange-500 mb-4">ESTIMATION</p>
+  <h3 className="text-xl font-bold text-white">
+    BOQ Generator for Civil Engineering
+  </h3>
+  <p className="text-sm text-slate-400 mt-3">
+    Learn BOQ format, item-wise quantity, rate, amount, material summary and
+    PDF report for construction projects.
+  </p>
+</Link>
+  
     </div>
   </div>
 </section>
