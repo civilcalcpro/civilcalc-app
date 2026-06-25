@@ -618,7 +618,17 @@ export default function LandingPage() {
           </p>
         </div>
       </Link>
-
+       <Link href="/home-construction-cost-calculator-guide">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+          <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+          <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+           Home cost construction guide 
+          </h3>
+          <p className="text-slate-400">
+            Complete BBS guide for quantity estimation.
+          </p>
+        </div>
+      </Link>
     </div>
   </div>
 </section>
