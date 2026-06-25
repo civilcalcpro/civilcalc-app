@@ -103,6 +103,11 @@ export default function HomeConstructionCalculator() {
     kitchens: "1",
     bathrooms: "2",
     halls: "1",
+   includeStaircase: false,
+staircaseCount: 1,
+staircaseType: 'RCC Dog-Legged',
+staircaseAccess: "Up to Terrace / Roof",
+staircaseFinish: 'Standard',
     carParking: "0",
 balcony: "0",
 terrace: "0",
@@ -189,35 +194,39 @@ lift: "0",
     }
 
     const constructionArea = baseArea * floorCount;
-    const costPerSqFt = qualityOptions[form.quality].rate;
-    const baseConstructionCost =
-  constructionArea * costPerSqFt;
+const costPerSqFt = qualityOptions[form.quality].rate;
 
-const bedroomCost =
-  Number(form.bedrooms || 0) * 50000;
+const baseConstructionCost = constructionArea * costPerSqFt;
 
-const kitchenCost =
-  Number(form.kitchens || 0) * 80000;
+const staircaseLevels = form.includeStaircase
+  ? form.staircaseAccess === "Up to Terrace / Roof"
+    ? floorCount
+    : Math.max(floorCount - 1, 1)
+  : 0;
 
-const bathroomCost =
-  Number(form.bathrooms || 0) * 60000;
+const staircaseFinishMultiplier = {
+  Basic: 0.9,
+  Standard: 1,
+  Premium: 1.25,
+};
 
-const hallCost =
-  Number(form.halls || 0) * 40000;
-const parkingCost =
-  Number(form.carParking || 0) * 100000;
+const staircaseCost =
+  staircaseLevels *
+  baseConstructionCost *
+  0.035 *
+  Number(form.staircaseCount || 1) *
+  (staircaseFinishMultiplier[form.staircaseFinish] || 1);
 
-const balconyCost =
-  Number(form.balcony || 0) * 50000;
+const bedroomCost = Number(form.bedrooms || 0) * 50000;
+const kitchenCost = Number(form.kitchens || 0) * 80000;
+const bathroomCost = Number(form.bathrooms || 0) * 60000;
+const hallCost = Number(form.halls || 0) * 40000;
+const parkingCost = Number(form.carParking || 0) * 100000;
+const balconyCost = Number(form.balcony || 0) * 50000;
+const terraceCost = Number(form.terrace || 0) * 75000;
+const basementCost = Number(form.basement || 0) * 400000;
+const liftCost = Number(form.lift || 0) * 1000000;
 
-const terraceCost =
-  Number(form.terrace || 0) * 75000;
-
-const basementCost =
-  Number(form.basement || 0) * 400000;
-
-const liftCost =
-  Number(form.lift || 0) * 1000000;
 const roomAdditionalCost =
   bedroomCost +
   kitchenCost +
@@ -229,29 +238,44 @@ const roomAdditionalCost =
   basementCost +
   liftCost;
 
-const constructionCost =
-  baseConstructionCost +
-  roomAdditionalCost;
-    const gstAmount =
-      constructionCost * ((Number(hiddenCosts.gstPercent) || 0) / 100);
+const normalConstructionCost = baseConstructionCost + roomAdditionalCost;
 
-    const additionalHiddenCost =
-      Number(hiddenCosts.architect || 0) +
-      Number(hiddenCosts.structural || 0) +
-      Number(hiddenCosts.approval || 0) +
-      Number(hiddenCosts.water || 0) +
-      Number(hiddenCosts.electricity || 0) +
-      Number(hiddenCosts.borewell || 0) +
-      Number(hiddenCosts.boundaryWall || 0) +
-      gstAmount;
+const constructionCost = normalConstructionCost + staircaseCost;
 
-    const grandTotal = constructionCost + additionalHiddenCost;
+const gstAmount =
+  constructionCost * ((Number(hiddenCosts.gstPercent) || 0) / 100);
 
-    const breakdown = Object.entries(costPercentages).map(([item, percent]) => ({
-      item,
-      percent,
-      amount: (constructionCost * percent) / 100,
-    }));
+const additionalHiddenCost =
+  Number(hiddenCosts.architect || 0) +
+  Number(hiddenCosts.structural || 0) +
+  Number(hiddenCosts.approval || 0) +
+  Number(hiddenCosts.water || 0) +
+  Number(hiddenCosts.electricity || 0) +
+  Number(hiddenCosts.borewell || 0) +
+  Number(hiddenCosts.boundaryWall || 0) +
+  gstAmount;
+
+const grandTotal = constructionCost + additionalHiddenCost;
+
+const breakdown = [
+  ...Object.entries(costPercentages).map(([item, percent]) => ({
+    item,
+    percent,
+    amount: (normalConstructionCost * percent) / 100,
+  })),
+
+  ...(form.includeStaircase
+    ? [
+        {
+          item: "Staircase / सीढ़ी Work",
+          percent: Number(
+            ((staircaseCost / constructionCost) * 100).toFixed(1)
+          ),
+          amount: staircaseCost,
+        },
+      ]
+    : []),
+];
 
    const cementBase = constructionArea * 0.4;
 const steelBase = constructionArea * 4;
@@ -382,6 +406,32 @@ const bricks =
         Aggregate: `${(aggregateCft * 0.45).toFixed(2)} cft`,
         Cost: money(constructionCost * 0.22),
       },
+      ...(form.includeStaircase
+  ? {
+      Staircase: {
+        "Staircase Type": form.staircaseType,
+        "Access Type": form.staircaseAccess,
+        "No. of Staircases": `${Number(form.staircaseCount || 1)} nos`,
+        "Staircase Levels": `${staircaseLevels} level`,
+        "Concrete Approx.": `${(
+          staircaseLevels *
+          Number(form.staircaseCount || 1) *
+          2.5
+        ).toFixed(2)} m3`,
+        "Steel Approx.": `${(
+          staircaseLevels *
+          Number(form.staircaseCount || 1) *
+          250
+        ).toFixed(2)} kg`,
+        "Shuttering Approx.": `${(
+          staircaseLevels *
+          Number(form.staircaseCount || 1) *
+          180
+        ).toFixed(2)} sq ft`,
+        Cost: money(staircaseCost),
+      },
+    }
+  : {}),
       Brickwork: {
         Bricks: `${(bricks * 0.75).toFixed(0)} nos`,
         Cement: `${(cementBags * 0.15).toFixed(2)} bags`,
@@ -496,6 +546,19 @@ const bricks =
       grandTotal,
       gstAmount,
       breakdown,
+      staircase: {
+    included: form.includeStaircase,
+    count: Number(form.staircaseCount || 1),
+    type: form.staircaseType,
+    access: form.staircaseAccess,
+    finish: form.staircaseFinish,
+    levels: staircaseLevels,
+    cost: staircaseCost,
+    concrete: staircaseLevels * Number(form.staircaseCount || 1) * 2.5,
+    steel: staircaseLevels * Number(form.staircaseCount || 1) * 250,
+    shuttering: staircaseLevels * Number(form.staircaseCount || 1) * 180,
+  },
+
       materials,
       boq,
       hiddenList,
@@ -861,6 +924,20 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
       ],
       ["Location", `${form.city || "-"}, ${form.state || "-"}`],
       ["Construction Quality", form.quality],
+      [
+  "Staircase",
+  result?.staircase?.included
+    ? `${result.staircase.type} - ${
+        result.staircase.access === "Up to Terrace / Roof"
+          ? "Ground to Terrace"
+          : "Up to Selected Floor"
+      }`
+    : "Not Included",
+],
+[
+  "Staircase Levels",
+  result?.staircase?.included ? `${result.staircase.levels}` : "-",
+],
       ["Construction Area", `${result.constructionArea.toFixed(0)} sq ft`],
       ["Estimated Duration", result.timeline.total],
     ],
@@ -895,13 +972,19 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
   autoTable(doc, {
     startY: 43,
     head: [["Cost Head", "Amount"]],
-    body: [
-      ["Base Construction Cost", pdfMoney(result.constructionCost)],
-      ["Additional Hidden Cost", pdfMoney(result.additionalHiddenCost)],
-      ["Grand Total Project Budget", pdfMoney(result.grandTotal)],
-      ["Cost Per Sq Ft", pdfMoney(result.costPerSqFt)],
-      ["Cost Per Sq M", pdfMoney(result.costPerSqM)],
-    ],
+  body: [
+  ["Construction Cost", pdfMoney(result.constructionCost)],
+  [
+    "Staircase Cost",
+    result?.staircase?.included
+      ? pdfMoney(result.staircase.cost)
+      : "Not Included",
+  ],
+  ["Additional Hidden Cost", pdfMoney(result.additionalHiddenCost)],
+  ["Grand Total Project Budget", pdfMoney(result.grandTotal)],
+  ["Cost Per Sq Ft", pdfMoney(result.costPerSqFt)],
+  ["Cost Per Sq M", pdfMoney(result.costPerSqM)],
+],
     theme: "grid",
     styles: {
       fontSize: 10,
@@ -950,7 +1033,47 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
       2: { halign: "right", fontStyle: "bold" },
     },
   });
+if (result?.staircase?.included) {
+  sectionTitle("Staircase Details", doc.lastAutoTable.finalY + 14);
 
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 21,
+    head: [["Staircase Item", "Value"]],
+    body: [
+      ["Included", "Yes"],
+      [
+        "Access",
+        result.staircase.access === "Up to Terrace / Roof"
+          ? "Ground to Terrace"
+          : "Up to Selected Floor",
+      ],
+      ["No. of Staircases", result.staircase.count],
+      ["Staircase Levels", result.staircase.levels],
+      ["Type", safeText(result.staircase.type)],
+      ["Finish Quality", safeText(result.staircase.finish)],
+      ["Estimated Cost", pdfMoney(result.staircase.cost)],
+      ["Concrete Approx.", `${result.staircase.concrete.toFixed(2)} m3`],
+      ["Steel Approx.", `${result.staircase.steel.toFixed(0)} kg`],
+      ["Shuttering Approx.", `${result.staircase.shuttering.toFixed(0)} sq ft`],
+    ],
+    theme: "grid",
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+      textColor: DARK,
+      lineColor: [226, 232, 240],
+    },
+    headStyles: {
+      fillColor: ORANGE,
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+    columnStyles: {
+      0: { fontStyle: "bold" },
+      1: { halign: "right", fontStyle: "bold" },
+    },
+  });
+}
   // PAGE 3 — MATERIAL SUMMARY
   doc.addPage();
   addHeader("Material Requirement");
@@ -1358,7 +1481,19 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
 
               <div className="grid grid-cols-2 gap-3">
                 <Select label="Unit / यूनिट" value={form.unit} onChange={(v) => updateForm("unit", v)} options={["sqft", "sqm"]} />
-                <Select label="Floors / मंजिल" value={form.floors} onChange={(v) => updateForm("floors", v)} options={["Ground", "G+1", "G+2", "Custom"]} />
+                <Select
+  label="Floors / मंजिल"
+  value={form.floors}
+  onChange={(v) => {
+    setForm((prev) => ({
+      ...prev,
+      floors: v,
+      includeStaircase: v === "Ground" ? false : true,
+      staircaseAccess: v === "Ground" ? prev.staircaseAccess : "Up to Terrace / Roof",
+    }))
+  }}
+  options={["Ground", "G+1", "G+2", "Custom"]}
+/>
               </div>
 
               {form.floors === "Custom" && (
@@ -1455,8 +1590,71 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
                 Used for local rate reference. You can manually edit material rates.
               </p>
             </Panel>
+              <Panel title="Step 4 — Staircase Details / सीढ़ी विवरण">
+  <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+    <div>
+      <p className="text-sm font-semibold text-white">
+        Include Staircase / सीढ़ी जोड़ें
+      </p>
+      <p className="text-xs text-slate-500">
+        For G+1, G+2 or terrace access house estimate.
+      </p>
+    </div>
 
-            <Panel title="Step 4 — Material Rates / मटेरियल रेट">
+    <input
+      type="checkbox"
+      checked={form.includeStaircase}
+      onChange={(e) => updateForm("includeStaircase", e.target.checked)}
+      className="h-5 w-5 accent-orange-500"
+    />
+  </div>
+
+  {form.includeStaircase && (
+    <div className="grid grid-cols-2 gap-3 mt-4">
+      <Input
+        label="No. of Staircases"
+        value={form.staircaseCount}
+        onChange={(v) => updateForm("staircaseCount", v)}
+      />
+
+      <Select
+        label="Staircase Type"
+        value={form.staircaseType}
+        onChange={(v) => updateForm("staircaseType", v)}
+        options={[
+          "RCC Dog-Legged",
+          "Straight Staircase",
+          "Open Well Staircase",
+          "Spiral Staircase",
+        ]}
+      />
+
+      <Select
+        label="Staircase Access"
+        value={form.staircaseAccess}
+        onChange={(v) => updateForm("staircaseAccess", v)}
+        options={[
+          "Up to Selected Floor Only",
+          "Up to Terrace / Roof",
+        ]}
+      />
+
+      <Select
+        label="Finish Quality"
+        value={form.staircaseFinish}
+        onChange={(v) => updateForm("staircaseFinish", v)}
+        options={["Basic", "Standard", "Premium"]}
+      />
+    </div>
+  )}
+
+  <p className="text-xs text-slate-500 mt-3">
+    For G+1, “Up to Selected Floor Only” means Ground to First Floor.
+    “Up to Terrace” means Ground to First Floor plus First Floor to Terrace.
+  </p>
+</Panel>  
+
+            <Panel title="Step 5 — Material Rates / मटेरियल रेट">
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Cement ₹/bag" value={rates.cement} onChange={(v) => updateRate("cement", v)} />
                 <Input label="Sand ₹/cft" value={rates.sand} onChange={(v) => updateRate("sand", v)} />
@@ -1526,7 +1724,7 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
                       {money(result.grandTotal)}
                     </h2>
                     <p className="text-sm text-slate-400 mt-2">
-                      Construction Cost + Additional Hidden Cost
+                      Construction Cost + Additional Hidden Cost 
                     </p>
                   </div>
 
@@ -1706,8 +1904,63 @@ Construction Area: ${result.constructionArea.toFixed(0)} sq ft`;
                     ))}
                   </div>
                 </Panel>
+                      {result?.staircase?.included && (
+  <Panel title="4. Staircase Estimate / सीढ़ी Estimate">
+    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <Mini
+        label="Access"
+        value={
+          result.staircase.access === "Up to Terrace / Roof"
+            ? "Ground to Terrace"
+            : "Up to Selected Floor"
+        }
+      />
 
-                <Panel title="4. Room Recommendation / रूम सुझाव">
+      <Mini
+        label="Levels"
+        value={result.staircase.levels}
+      />
+
+      <Mini
+        label="Type"
+        value={result.staircase.type}
+      />
+
+      <Mini
+        label="Finish"
+        value={result.staircase.finish}
+      />
+
+      <Mini
+        label="Staircase Cost"
+        value={money(result.staircase.cost)}
+      />
+
+      <Mini
+        label="Concrete Approx."
+        value={`${result.staircase.concrete.toFixed(2)} m³`}
+      />
+
+      <Mini
+        label="Steel Approx."
+        value={`${result.staircase.steel.toFixed(0)} kg`}
+      />
+
+      <Mini
+        label="Shuttering Approx."
+        value={`${result.staircase.shuttering.toFixed(0)} sq ft`}
+      />
+    </div>
+
+    <p className="text-xs text-slate-400 mt-3">
+      G+1 with “Up to Selected Floor” means Ground to First Floor.
+      “Up to Terrace” means Ground to First Floor plus First Floor to Terrace.
+    </p>
+  </Panel>
+)}
+
+
+                <Panel title="5. Room Recommendation / रूम सुझाव">
                   <div className="grid sm:grid-cols-2 gap-3">
                     {result.roomRecommendation.rooms.map((room) => (
                       <Mini key={room.name} label={room.name} value={room.size} />
