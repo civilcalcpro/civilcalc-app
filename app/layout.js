@@ -15,12 +15,11 @@ export const metadata = {
   },
 
     title: {
-    default: 'CivilCalc Pro — Civil Engineering Calculators & Structural Analysis',
+    default: 'CivilCalc Pro | Civil Engineering Calculators, BOQ & RCC Design Tools',
     template: '%s',
   },
-
-  description:
-    'CivilCalc Pro is a professional civil engineering platform featuring RCC beam design, column design, slab design, footing design, structural analysis, IS code tools, estimation calculators, PDF reports, and AI-powered engineering assistance.',
+    description:
+    'CivilCalc Pro is an India-focused civil engineering calculator platform for RCC design, BOQ generation, quantity estimation, steel weight, brickwork, concrete volume, home construction cost, PDF reports, IS code learning and AI civil engineering assistance.',
 
   keywords: [
     'civil engineering calculator',
@@ -41,6 +40,19 @@ export const metadata = {
     'IS code calculator',
     'civil engineering tools',
     'CivilCalc Pro',
+        'civilcalc pro',
+    'civilcalcpro',
+    'civil calc pro',
+    'civilcalcpro india',
+    'civil engineering calculator india',
+    'civil engineering calculators online',
+    'civil engineer calculator',
+    'construction calculator',
+    'quantity estimation calculator',
+    'BOQ generator online',
+    'home construction cost calculator',
+    'AI civil engineering assistant',
+    'civil engineering PDF reports',
   ],
 
   authors: [{ name: 'CivilCalc Pro' }],
@@ -48,21 +60,21 @@ export const metadata = {
   publisher: 'CivilCalc Pro',
 
 
-  openGraph: {
-    title: 'CivilCalc Pro',
+    openGraph: {
+    title: 'CivilCalc Pro | Civil Engineering Calculators, BOQ & RCC Design Tools',
     description:
-      'Professional Civil Engineering Platform for RCC Design, Structural Analysis, IS Code Calculations and AI Engineering Assistance.',
+      'India-focused civil engineering calculator platform with RCC design tools, BOQ generator, quantity estimation calculators, PDF reports, IS code learning and AI civil engineering assistant.',
     url: 'https://civilcalcpro.in',
     siteName: 'CivilCalc Pro',
     locale: 'en_US',
     type: 'website',
   },
 
-  twitter: {
+    twitter: {
     card: 'summary_large_image',
-    title: 'CivilCalc Pro',
+    title: 'CivilCalc Pro | Civil Engineering Calculators, BOQ & RCC Design Tools',
     description:
-      'Professional Civil Engineering Calculators and Structural Analysis Platform.',
+      'Use CivilCalc Pro for RCC design, BOQ generation, quantity estimation, construction calculators, PDF reports and AI civil engineering assistance.',
   },
 
   robots: {
