@@ -48,6 +48,11 @@ export default function sitemap() {
       changeFrequency: 'weekly',
     },
     {
+  path: '/rate-analysis-calculator',
+  priority: 0.85,
+  changeFrequency: 'monthly',
+},
+    {
       path: '/beam-design',
       priority: 0.9,
       changeFrequency: 'monthly',
