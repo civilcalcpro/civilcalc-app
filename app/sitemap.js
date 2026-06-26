@@ -18,6 +18,11 @@ export default function sitemap() {
   changeFrequency: 'monthly',
 },
     {
+  path: '/civil-engineering-pdf-reports',
+  priority: 0.85,
+  changeFrequency: 'monthly',
+},
+    {
       path: '/civil-engineering-calculators',
       priority: 0.95,
       changeFrequency: 'weekly',
