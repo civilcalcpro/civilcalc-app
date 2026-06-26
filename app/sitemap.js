@@ -68,6 +68,11 @@ export default function sitemap() {
       changeFrequency: 'monthly',
     },
     {
+  path: '/structural-analysis-calculator',
+  priority: 0.85,
+  changeFrequency: 'monthly',
+},
+    {
       path: '/two-way-slab-calculator',
       priority: 0.9,
       changeFrequency: 'monthly',
