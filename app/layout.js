@@ -89,11 +89,48 @@ export const metadata = {
     },
   },
 }
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'CivilCalc Pro',
+  alternateName: ['CivilCalcPro', 'Civil Calc Pro', 'CivilCalc Pro India'],
+  url: 'https://civilcalcpro.in',
+  logo: 'https://civilcalcpro.in/og-image.png',
+  description:
+    'CivilCalc Pro is an India-focused civil engineering calculator platform for RCC design, BOQ generation, quantity estimation, PDF reports, IS code learning and AI civil engineering assistance.',
+  sameAs: ['https://www.linkedin.com/in/civilcalc-pro-6ba230411'],
+}
 
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'CivilCalc Pro',
+  alternateName: ['CivilCalcPro', 'Civil Calc Pro'],
+  url: 'https://civilcalcpro.in',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target:
+      'https://civilcalcpro.in/civil-engineering-calculators?search={search_term_string}',
+    'query-input': 'required name=search_term_string',
+  },
+}
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-slate-950 text-white antialiased">
+            <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema),
+          }}
+        />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema),
+          }}
+        />
         <GlobalSettingsProvider>
     <AuthProvider>
           {children}
