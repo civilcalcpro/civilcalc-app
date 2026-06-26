@@ -53,6 +53,11 @@ export default function sitemap() {
   changeFrequency: 'monthly',
 },
     {
+  path: '/unit-converter',
+  priority: 0.8,
+  changeFrequency: 'monthly',
+},
+    {
       path: '/beam-design',
       priority: 0.9,
       changeFrequency: 'monthly',
