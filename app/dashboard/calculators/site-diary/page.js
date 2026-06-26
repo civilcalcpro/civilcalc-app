@@ -29,8 +29,8 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore'
-import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
-import { db, storage } from '@/lib/firebase'
+import { db } from '@/lib/firebase'
+import { supabase } from '@/lib/supabase'
 
 const LABOUR_PROFILE_KEY = 'civilcalc_site_diary_labour_profile_v2'
 
@@ -534,26 +534,40 @@ export default function SiteDiaryPage() {
     setPhotoPreviews(validFiles.map((file) => URL.createObjectURL(file)))
   }
 
-  const uploadPhotos = async (reportId) => {
-    const uploaded = []
+const uploadPhotos = async (reportId) => {
+  const uploaded = []
 
-    for (const file of photoFiles) {
-      const path = `site-diary/${selectedSite.id}/${reportId}/${Date.now()}-${file.name}`
-      const fileRef = storageRef(storage, path)
+  for (const file of photoFiles) {
+    const safeFileName = file.name
+      .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9.-]/g, '')
 
-      await uploadBytes(fileRef, file)
+    const path = `${selectedSite.id}/${reportId}/${Date.now()}-${safeFileName}`
 
-      const url = await getDownloadURL(fileRef)
-
-      uploaded.push({
-        name: file.name,
-        url,
-        path,
+    const { error } = await supabase.storage
+      .from('site-diary-photos')
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
       })
+
+    if (error) {
+      throw error
     }
 
-    return uploaded
+    const { data } = supabase.storage
+      .from('site-diary-photos')
+      .getPublicUrl(path)
+
+    uploaded.push({
+      name: file.name,
+      url: data.publicUrl,
+      path,
+    })
   }
+
+  return uploaded
+}
 
   const submitEngineerReport = async () => {
     if (!selectedSite || !currentEngineer) return
