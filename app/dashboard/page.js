@@ -174,6 +174,13 @@ const quickTools = [
     desc: 'Professional Bill of Quantities',
   },
   {
+  name: 'Site Diary',
+  icon: ClipboardList,
+  href: '/dashboard/calculators/site-diary',
+  color: 'cyan',
+  desc: 'Daily site report, labour attendance, material usage and expense tracking',
+},
+  {
     name: 'House Construction Cost',
     icon: Building2,
     href: '/dashboard/calculators/home-construction',
