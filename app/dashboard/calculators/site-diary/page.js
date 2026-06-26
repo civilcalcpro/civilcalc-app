@@ -976,7 +976,7 @@ setScreen('ownerDashboard')
 </PrimaryButton>
               </div>
 
-              <div className="mt-6 grid gap-3 md:grid-cols-3">
+             <div className="mt-6 grid gap-3 md:grid-cols-3">
   {[
     ['Owner Code', selectedSite.ownerCode],
     ['Engineer Code', selectedSite.engineerCode],
@@ -1030,24 +1030,6 @@ setScreen('ownerDashboard')
     </div>
   </div>
 </div>
-                    key={code}
-                    className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
-                  >
-                    <p className="text-xs text-slate-400">{label}</p>
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <p className="text-xl font-black text-cyan-300">{code}</p>
-                      <button
-                        onClick={() => copyCode(code)}
-                        className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:border-cyan-400 hover:text-cyan-300"
-                      >
-                        <Copy size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className="grid gap-4 md:grid-cols-4">
               <StatCard
                 title="Reports"
