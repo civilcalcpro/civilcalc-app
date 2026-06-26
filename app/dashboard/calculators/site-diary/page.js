@@ -977,19 +977,40 @@ setScreen('ownerDashboard')
               </div>
 
               <div className="mt-6 grid gap-3 md:grid-cols-3">
-                {[
-                  ['Owner Code', selectedSite.ownerCode],
-                  ['Engineer Code', selectedSite.engineerCode],
-                  ['Labour Code', selectedSite.labourCode],
-                ].map(([label, code]) => (
-                  </div>
-                  <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+  {[
+    ['Owner Code', selectedSite.ownerCode],
+    ['Engineer Code', selectedSite.engineerCode],
+    ['Labour Code', selectedSite.labourCode],
+  ].map(([label, code]) => (
+    <div
+      key={code}
+      className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
+    >
+      <p className="text-xs text-slate-400">{label}</p>
+
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="text-xl font-black text-cyan-300">{code}</p>
+
+        <button
+          onClick={() => copyCode(code)}
+          className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:border-cyan-400 hover:text-cyan-300"
+        >
+          <Copy size={16} />
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
+
+<div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
   <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
     <div>
       <p className="text-sm font-bold text-white">Select Report Date</p>
+
       <p className="mt-1 text-sm text-slate-400">
         View work progress, labour attendance and expense summary by date.
       </p>
+
       <p className="mt-1 text-sm text-slate-500">
         तारीख के अनुसार कार्य प्रगति, मजदूर उपस्थिति और खर्च देखें।
       </p>
