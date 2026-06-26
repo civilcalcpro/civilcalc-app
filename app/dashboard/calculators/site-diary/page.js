@@ -283,7 +283,7 @@ export default function SiteDiaryPage() {
 
   const createSite = () => {
     if (!ownerForm.siteName.trim() || !ownerForm.ownerName.trim()) {
-      showMessage('Site name aur owner/contractor name required hai.')
+      showMessage('Site name and Owner / Contractor name are required.')
       return
     }
 
@@ -304,9 +304,9 @@ export default function SiteDiaryPage() {
     const nextSites = [site, ...sites]
     updateSites(nextSites)
     setSelectedSiteId(site.id)
-setSelectedReportDate(getToday())
-setOwnerForm(emptyOwnerForm)
-setScreen('ownerDashboard')
+    setSelectedReportDate(getToday())
+    setOwnerForm(emptyOwnerForm)
+    setScreen('ownerDashboard')
     showMessage('New Site Diary created successfully.')
   }
 
@@ -315,13 +315,13 @@ setScreen('ownerDashboard')
     const site = sites.find((item) => item.ownerCode === code)
 
     if (!site) {
-      showMessage('Owner code nahi mila. Same browser me created diary hi abhi open hogi.')
+      showMessage('Owner code not found. Create or open a saved site diary first.')
       return
     }
 
-   setSelectedSiteId(site.id)
-setSelectedReportDate(getToday())
-setScreen('ownerDashboard')
+    setSelectedSiteId(site.id)
+    setSelectedReportDate(getToday())
+    setScreen('ownerDashboard')
   }
 
   const joinAsEngineer = () => {
@@ -329,7 +329,7 @@ setScreen('ownerDashboard')
     const site = sites.find((item) => item.engineerCode === code)
 
     if (!site) {
-      showMessage('Engineer code galat hai ya diary is browser me available nahi hai.')
+      showMessage('Engineer code is invalid or the site diary is not available in this browser.')
       return
     }
 
@@ -353,7 +353,7 @@ setScreen('ownerDashboard')
     const site = sites.find((item) => item.labourCode === code)
 
     if (!site) {
-      showMessage('Labour code galat hai ya diary is browser me available nahi hai.')
+      showMessage('Labour code is invalid or the site diary is not available in this browser.')
       return
     }
 
@@ -392,7 +392,7 @@ setScreen('ownerDashboard')
     setCurrentLabour(labour)
     localStorage.setItem(LABOUR_PROFILE_KEY, JSON.stringify(labour))
     setScreen('labourAttendance')
-    showMessage('Labour setup saved. Ab daily attendance mark kar sakte ho.')
+    showMessage('Labour setup saved. Daily attendance can now be marked.')
   }
 
   const handlePhotoUpload = async (files) => {
@@ -400,7 +400,7 @@ setScreen('ownerDashboard')
     const validFiles = selected.filter((file) => file.size <= 1200000)
 
     if (validFiles.length !== selected.length) {
-      showMessage('Photo size 1.2 MB se kam rakho. Large photo skip kar diya.')
+      showMessage('Keep each photo under 1.2 MB. Large photos were skipped.')
     }
 
     const readers = validFiles.map(
@@ -453,7 +453,7 @@ setScreen('ownerDashboard')
     updateSites(nextSites)
     setReportForm({ ...emptyReportForm, date: getToday() })
     setPhotos([])
-    showMessage('Daily site report owner dashboard me save ho gaya.')
+    showMessage('Daily site report saved to Owner Dashboard.')
   }
 
   const submitAttendance = () => {
@@ -573,7 +573,7 @@ setScreen('ownerDashboard')
       labourCost,
       totalCost: materialCost + equipmentCost + otherCost + labourCost,
     }
-  }, [selectedSite])
+  }, [selectedSite, selectedReportDate])
 
   const totalProjectCost = useMemo(() => {
     if (!selectedSite) return 0
@@ -663,7 +663,7 @@ setScreen('ownerDashboard')
   `${selectedSite.siteName || 'site'}-daily-report-${selectedReportDate || getToday()}.pdf`
 )
     } catch {
-      showMessage('PDF package missing hai. Abhi browser print use karo.')
+      showMessage('PDF package is missing. Browser print opened instead.')
       window.print()
     }
   }
@@ -782,7 +782,7 @@ setScreen('ownerDashboard')
               <Plus className="mb-4 text-cyan-300" size={34} />
               <h2 className="text-2xl font-black">Create New Site Diary</h2>
               <p className="mt-2 text-sm text-slate-400">
-                Nayi site ke liye diary create karo.
+                Create a new diary for a new site.
               </p>
             </button>
 
@@ -793,7 +793,7 @@ setScreen('ownerDashboard')
               <FolderOpen className="mb-4 text-cyan-300" size={34} />
               <h2 className="text-2xl font-black">Open Existing Site Diary</h2>
               <p className="mt-2 text-sm text-slate-400">
-                Owner code se existing diary open karo.
+                Open an existing diary using the Owner Code.
               </p>
             </button>
           </section>
@@ -959,24 +959,184 @@ setScreen('ownerDashboard')
         ) : null}
 
         {screen === 'ownerDashboard' && selectedSite ? (
-  ...
-) : null}
+          <section className="space-y-5">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 md:p-7">
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                <div>
+                  <p className="text-sm font-semibold text-cyan-300">Owner Dashboard</p>
+                  <h2 className="mt-1 text-3xl font-black">{selectedSite.siteName}</h2>
+                  <p className="mt-2 text-sm text-slate-400">
+                    {selectedSite.siteLocation || 'No location added'} • {selectedSite.projectType}
+                  </p>
+                </div>
 
-{screen === 'engineerJoin' ? (
+                <PrimaryButton onClick={generatePDF} icon={Download}>
+                  Download PDF
+                </PrimaryButton>
+              </div>
+
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                {[
+                  ['Owner Code', selectedSite.ownerCode],
+                  ['Engineer Code', selectedSite.engineerCode],
+                  ['Labour Code', selectedSite.labourCode],
+                ].map(([label, code]) => (
+                  <div
+                    key={code}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
+                  >
+                    <p className="text-xs text-slate-400">{label}</p>
+
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <p className="text-xl font-black text-cyan-300">{code}</p>
+
+                      <button
+                        type="button"
+                        onClick={() => copyCode(code)}
+                        className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:border-cyan-400 hover:text-cyan-300"
+                      >
+                        <Copy size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-white">Select Report Date</p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      View work progress, labour attendance and expense summary by date.
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      तारीख के अनुसार कार्य प्रगति, मजदूर उपस्थिति और खर्च देखें।
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                    <input
+                      type="date"
+                      value={selectedReportDate}
+                      onChange={(e) => setSelectedReportDate(e.target.value)}
+                      className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+                    />
+
+                    <SecondaryButton onClick={() => setSelectedReportDate(getToday())}>
+                      Today
+                    </SecondaryButton>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <StatCard
+                title="Reports"
+                value={todaySummary?.reports.length || 0}
+                sub="Engineer submissions"
+                icon={ClipboardList}
+              />
+
+              <StatCard
+                title="Present Labour"
+                value={todaySummary?.present.length || 0}
+                sub={`Absent: ${todaySummary?.absent.length || 0}`}
+                icon={CheckCircle2}
+              />
+
+              <StatCard
+                title="Selected Date Expense"
+                value={money(todaySummary?.totalCost || 0)}
+                sub="Material + labour + equipment"
+                icon={IndianRupee}
+              />
+
+              <StatCard
+                title="Project Total"
+                value={money(totalProjectCost)}
+                sub="Till date"
+                icon={CalendarDays}
+              />
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
+                <h3 className="mb-4 text-xl font-black">
+                  Work Reports - {selectedReportDate}
+                </h3>
+
+                <div className="space-y-4">
+                  {todaySummary?.reports.length ? (
+                    todaySummary.reports.map((report) => (
+                      <div
+                        key={report.id}
+                        className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-bold text-cyan-300">
+                              {report.workCategory} • {report.workLocation || 'Site'}
+                            </p>
+                            <p className="mt-2 text-sm text-white">{report.workDone}</p>
+                            <p className="mt-2 text-xs text-slate-400">
+                              Qty: {report.quantity || '-'} {report.unit} • By {report.submittedBy}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => deleteReport(report.id)}
+                            className="rounded-lg border border-red-400/30 p-2 text-red-300 hover:bg-red-400/10"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+
+                        <div className="mt-3 grid gap-2 text-xs text-slate-300 md:grid-cols-3">
+                          <span>Material: {money(report.materialCost)}</span>
+                          <span>Equipment: {money(report.equipmentCost)}</span>
+                          <span>Other: {money(report.otherCost)}</span>
+                        </div>
+
+                        {report.issues ? (
+                          <p className="mt-3 rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-xs text-red-100">
+                            Issue: {report.issues}
+                          </p>
+                        ) : null}
+
+                        {report.tomorrowPlan ? (
+                          <p className="mt-3 rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-xs text-cyan-100">
+                            Tomorrow Plan: {report.tomorrowPlan}
+                          </p>
+                        ) : null}
+
+                        {report.photos?.length ? (
+                          <div className="mt-3 grid grid-cols-3 gap-2">
+                            {report.photos.map((photo) => (
+                              <img
+                                key={photo.id}
+                                src={photo.url}
+                                alt={photo.name}
+                                className="h-24 w-full rounded-xl object-cover"
+                              />
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
                     ))
                   ) : (
                     <p className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">
-                      Aaj koi engineer report submit nahi hui.
+                      No engineer report submitted for this date.
                     </p>
                   )}
                 </div>
               </div>
 
               <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
-               <h3 className="mb-4 text-xl font-black">
-  Labour Attendance - {selectedReportDate}
-</h3>
+                <h3 className="mb-4 text-xl font-black">
+                  Labour Attendance - {selectedReportDate}
+                </h3>
 
                 <div className="space-y-3">
                   {todaySummary?.attendance.length ? (
@@ -1005,7 +1165,7 @@ setScreen('ownerDashboard')
                     ))
                   ) : (
                     <p className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">
-                      Aaj koi labour attendance mark nahi hui.
+                      No labour attendance marked for this date.
                     </p>
                   )}
                 </div>
@@ -1027,8 +1187,7 @@ setScreen('ownerDashboard')
                       </p>
                       <p className="mt-1 text-sm text-white">{report.workDone}</p>
                       <p className="mt-2 text-xs text-slate-400">
-                        Engineer: {report.submittedBy} • Material Cost:{' '}
-                        {money(report.materialCost)}
+                        Engineer: {report.submittedBy} • Material Cost: {money(report.materialCost)}
                       </p>
                     </div>
                   ))
@@ -1125,7 +1284,7 @@ setScreen('ownerDashboard')
                 as="textarea"
                 value={reportForm.workDone}
                 onChange={(v) => updateReport('workDone', v)}
-                placeholder="Aaj site par kya work complete hua?"
+                placeholder="What work was completed on site today?"
               />
             </div>
 
@@ -1231,7 +1390,7 @@ setScreen('ownerDashboard')
                 as="textarea"
                 value={reportForm.tomorrowPlan}
                 onChange={(v) => updateReport('tomorrowPlan', v)}
-                placeholder="Kal kya kaam hoga?"
+                placeholder="What work is planned for tomorrow?"
               />
             </div>
 
@@ -1285,7 +1444,7 @@ setScreen('ownerDashboard')
             <h2 className="mb-2 text-2xl font-black">Labour First Time Setup</h2>
 
             <p className="mb-5 text-sm text-slate-400">
-              Ek baar details save karo, fir roz sirf Present / Absent mark karna hai.
+              Save details once, then mark only Present / Absent every day.
             </p>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -1350,7 +1509,7 @@ setScreen('ownerDashboard')
               <p className="text-sm font-semibold text-cyan-300">
                 {selectedSite.siteName}
               </p>
-              <h2 className="mt-1 text-3xl font-black">Aaj aaye ho?</h2>
+              <h2 className="mt-1 text-3xl font-black">Daily Attendance</h2>
               <p className="mt-2 text-sm text-slate-400">
                 Date: {getToday()} • {currentLabour.name} • {currentLabour.workType}
               </p>
@@ -1402,7 +1561,7 @@ setScreen('ownerDashboard')
                 onChange={(v) =>
                   setAttendanceForm((prev) => ({ ...prev, remarks: v }))
                 }
-                placeholder="Aaj plaster ka kaam kiya"
+                placeholder="Example: Worked on plaster today"
               />
             </div>
 
