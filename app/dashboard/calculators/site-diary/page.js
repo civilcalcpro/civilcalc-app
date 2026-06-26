@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowLeft,
-  CalendarDays,
+  CalendarDays,f
   CheckCircle2,
   ClipboardList,
   Copy,
@@ -668,16 +668,21 @@ export default function SiteDiaryPage() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 md:flex-row md:items-center">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-              <ClipboardList size={14} /> CivilCalc Pro Site Management
-            </div>
-            <h1 className="text-3xl font-black tracking-tight md:text-4xl">
-              Site Diary
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-400 md:text-base">
-              Daily site report, labour attendance, material usage, photos and expense
-              tracking.
-            </p>
+           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-300">
+  <ClipboardList size={14} /> CivilCalc Pro Site Management
+</div>
+
+<h1 className="text-3xl font-black tracking-tight md:text-4xl">
+  Site Diary
+</h1>
+
+<p className="mt-2 max-w-2xl text-sm text-slate-400 md:text-base">
+  Daily Site Report, Labour Attendance, Material Usage, Photos and Expense Tracking.
+</p>
+
+<p className="mt-1 max-w-2xl text-sm text-slate-500">
+  दैनिक साइट रिपोर्ट, मजदूर उपस्थिति, सामग्री उपयोग, फोटो और खर्च ट्रैकिंग।
+</p>
           </div>
 
           {screen !== 'home' ? (
@@ -693,40 +698,46 @@ export default function SiteDiaryPage() {
           </div>
         ) : null}
 
-        <div className="mb-5 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
-          <b>Note:</b> Ye first MVP version hai. Abhi data same browser ke
-          localStorage me save hota hai. Dusre phone/user ke saath real code sharing ke
-          liye next step me Firebase/Supabase database connect karna hoga.
-        </div>
-
         {screen === 'home' ? (
           <section className="grid gap-5 md:grid-cols-3">
             <button
               onClick={() => setScreen('owner')}
-              className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
+            className="min-h-[260px] rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
             >
               <div className="mb-5 inline-flex rounded-2xl bg-cyan-400/10 p-4 text-cyan-300">
                 <UserRound size={32} />
               </div>
-              <h2 className="text-2xl font-black">Owner / Contractor</h2>
-              <p className="mt-3 text-sm text-slate-400">
-                New site diary create karo, codes share karo, daily progress aur expense
-                dekho.
-              </p>
+             <h2 className="text-2xl font-black">Owner / Contractor</h2>
+<p className="mt-1 text-sm font-semibold text-cyan-300">
+  मालिक / ठेकेदार
+</p>
+<p className="mt-3 text-sm text-slate-400">
+  Create a new site diary, share access codes, and monitor daily progress,
+  attendance and expenses.
+</p>
+<p className="mt-2 text-sm text-slate-500">
+  नई साइट डायरी बनाएं, एक्सेस कोड शेयर करें और दैनिक प्रगति, उपस्थिति और खर्च देखें।
+</p>
             </button>
 
             <button
               onClick={() => setScreen('engineerJoin')}
-              className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
+              className="min-h-[260px] rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
             >
               <div className="mb-5 inline-flex rounded-2xl bg-cyan-400/10 p-4 text-cyan-300">
                 <HardHat size={32} />
               </div>
               <h2 className="text-2xl font-black">Site Engineer</h2>
-              <p className="mt-3 text-sm text-slate-400">
-                Daily work progress, material used, machinery, issues aur tomorrow plan
-                submit karo.
-              </p>
+<p className="mt-1 text-sm font-semibold text-cyan-300">
+  साइट इंजीनियर
+</p>
+<p className="mt-3 text-sm text-slate-400">
+  Submit daily work progress, material usage, machinery details, site issues
+  and tomorrow’s work plan.
+</p>
+<p className="mt-2 text-sm text-slate-500">
+  दैनिक कार्य प्रगति, सामग्री उपयोग, मशीनरी, साइट समस्या और अगले दिन की योजना जमा करें।
+</p>
             </button>
 
             <button
@@ -738,15 +749,21 @@ export default function SiteDiaryPage() {
                   setScreen('labourJoin')
                 }
               }}
-              className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
+              className="min-h-[260px] rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
             >
               <div className="mb-5 inline-flex rounded-2xl bg-cyan-400/10 p-4 text-cyan-300">
                 <UsersRound size={32} />
               </div>
-              <h2 className="text-2xl font-black">Labour</h2>
-              <p className="mt-3 text-sm text-slate-400">
-                Pehli baar setup karo, fir roz sirf Present ya Absent mark karo.
-              </p>
+            <h2 className="text-2xl font-black">Labour</h2>
+<p className="mt-1 text-sm font-semibold text-cyan-300">
+  मजदूर
+</p>
+<p className="mt-3 text-sm text-slate-400">
+  Complete one-time setup and then mark daily attendance as Present or Absent.
+</p>
+<p className="mt-2 text-sm text-slate-500">
+  एक बार जानकारी सेव करें, फिर रोज केवल उपस्थित या अनुपस्थित मार्क करें।
+</p>
             </button>
           </section>
         ) : null}
