@@ -13,6 +13,11 @@ export default function sitemap() {
       changeFrequency: 'weekly',
     },
     {
+  path: '/ai-civil-engineering-assistant',
+  priority: 0.9,
+  changeFrequency: 'monthly',
+},
+    {
       path: '/civil-engineering-calculators',
       priority: 0.95,
       changeFrequency: 'weekly',
