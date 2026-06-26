@@ -38,9 +38,47 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'CivilCalc Pro',
+    alternateName: ['CivilCalcPro', 'Civil Calc Pro', 'CivilCalc Pro India'],
+    url: 'https://civilcalcpro.in',
+    logo: 'https://civilcalcpro.in/og-image.png',
+    description:
+      'CivilCalc Pro is an India-focused civil engineering calculator platform for RCC design, BOQ generation, quantity estimation, PDF reports, IS code learning and AI civil engineering assistance.',
+    sameAs: [
+      'https://www.linkedin.com/in/civilcalc-pro-6ba230411',
+    ],
+  }
 
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'CivilCalc Pro',
+    alternateName: ['CivilCalcPro', 'Civil Calc Pro'],
+    url: 'https://civilcalcpro.in',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://civilcalcpro.in/civil-engineering-calculators?search={search_term_string}',
+      'query-input': 'required name=search_term_string',
+    },
+  }
   return (
     <div className="min-h-screen bg-[#020817]">
+          <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(organizationSchema),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(websiteSchema),
+        }}
+      />
       {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled ? 'bg-slate-950/95 backdrop-blur-lg border-b border-slate-800' : 'bg-transparent'
