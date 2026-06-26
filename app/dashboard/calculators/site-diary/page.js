@@ -18,9 +18,21 @@ import {
   UsersRound,
   XCircle,
 } from 'lucide-react'
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from 'firebase/firestore'
+import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
+import { db, storage } from '@/lib/firebase'
 
-const STORAGE_KEY = 'civilcalc_site_diary_v1'
-const LABOUR_PROFILE_KEY = 'civilcalc_site_diary_labour_profile_v1'
+const LABOUR_PROFILE_KEY = 'civilcalc_site_diary_labour_profile_v2'
 
 const emptyOwnerForm = {
   siteName: '',
@@ -37,7 +49,6 @@ const emptyOwnerForm = {
   aggregateRate: '50',
   brickRate: '8',
   labourRate: '700',
-  equipmentRate: '2500',
   notes: '',
 }
 
@@ -87,32 +98,27 @@ function generateId() {
 }
 
 function generateCode(prefix) {
-  const part = Math.random().toString(36).slice(2, 7).toUpperCase()
-  return `${prefix}-${part}`
-}
-
-function money(value) {
-  const num = Number(value || 0)
-  return `₹${num.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+  return `${prefix}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`
 }
 
 function num(value) {
   return Number(value || 0)
 }
 
-function readStorage() {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+function money(value) {
+  return `₹${num(value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 }
 
-function saveStorage(sites) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(sites))
+function toMillis(value) {
+  if (!value) return 0
+  if (typeof value === 'string') return new Date(value).getTime() || 0
+  if (typeof value.toMillis === 'function') return value.toMillis()
+  if (value.seconds) return value.seconds * 1000
+  return 0
+}
+
+function sortNewest(items) {
+  return [...items].sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
 }
 
 function calculateMaterialCost(report, site) {
@@ -132,7 +138,7 @@ function calculateAttendanceCost(attendance, site) {
 }
 
 function Field({ label, value, onChange, placeholder, type = 'text', as = 'input' }) {
-  const common =
+  const cls =
     'w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 placeholder:text-slate-500'
 
   return (
@@ -144,7 +150,7 @@ function Field({ label, value, onChange, placeholder, type = 'text', as = 'input
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={4}
-          className={common}
+          className={cls}
         />
       ) : (
         <input
@@ -152,7 +158,7 @@ function Field({ label, value, onChange, placeholder, type = 'text', as = 'input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={common}
+          className={cls}
         />
       )}
     </label>
@@ -224,9 +230,8 @@ function StatCard({ title, value, sub, icon: Icon }) {
 }
 
 export default function SiteDiaryPage() {
-  const [sites, setSites] = useState([])
   const [screen, setScreen] = useState('home')
-  const [selectedSiteId, setSelectedSiteId] = useState('')
+  const [selectedSite, setSelectedSite] = useState(null)
   const [ownerForm, setOwnerForm] = useState(emptyOwnerForm)
   const [ownerCodeInput, setOwnerCodeInput] = useState('')
   const [engineerForm, setEngineerForm] = useState(emptyEngineerForm)
@@ -239,30 +244,11 @@ export default function SiteDiaryPage() {
     dayType: 'Full Day',
     remarks: '',
   })
-  const [photos, setPhotos] = useState([])
-  const [message, setMessage] = useState('')
+  const [photoFiles, setPhotoFiles] = useState([])
+  const [photoPreviews, setPhotoPreviews] = useState([])
   const [selectedReportDate, setSelectedReportDate] = useState(getToday())
-
-  useEffect(() => {
-    setSites(readStorage())
-
-    try {
-      const labourProfile = localStorage.getItem(LABOUR_PROFILE_KEY)
-      if (labourProfile) setCurrentLabour(JSON.parse(labourProfile))
-    } catch {
-      setCurrentLabour(null)
-    }
-  }, [])
-
-  const selectedSite = useMemo(
-    () => sites.find((site) => site.id === selectedSiteId) || null,
-    [sites, selectedSiteId]
-  )
-
-  const updateSites = (nextSites) => {
-    setSites(nextSites)
-    saveStorage(nextSites)
-  }
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const showMessage = (text) => {
     setMessage(text)
@@ -274,288 +260,87 @@ export default function SiteDiaryPage() {
   const updateLabour = (key, value) => setLabourForm((prev) => ({ ...prev, [key]: value }))
   const updateReport = (key, value) => setReportForm((prev) => ({ ...prev, [key]: value }))
 
-  const goHome = () => {
-    setScreen('home')
-    setSelectedSiteId('')
-    setCurrentEngineer(null)
-    setPhotos([])
-  }
+  async function loadSiteBundle(site) {
+    if (!site?.id) return
 
-  const createSite = () => {
-    if (!ownerForm.siteName.trim() || !ownerForm.ownerName.trim()) {
-      showMessage('Site name and Owner / Contractor name are required.')
-      return
-    }
-
-    const site = {
-      id: generateId(),
-      ...ownerForm,
-      startDate: ownerForm.startDate || getToday(),
-      ownerCode: generateCode('OWN'),
-      engineerCode: generateCode('ENG'),
-      labourCode: generateCode('LAB'),
-      status: 'Active',
-      createdAt: new Date().toISOString(),
-      dailyReports: [],
-      labourMembers: [],
-      attendanceReports: [],
-    }
-
-    const nextSites = [site, ...sites]
-    updateSites(nextSites)
-    setSelectedSiteId(site.id)
-    setSelectedReportDate(getToday())
-    setOwnerForm(emptyOwnerForm)
-    setScreen('ownerDashboard')
-    showMessage('New Site Diary created successfully.')
-  }
-
-  const openOwnerSite = () => {
-    const code = ownerCodeInput.trim().toUpperCase()
-    const site = sites.find((item) => item.ownerCode === code)
-
-    if (!site) {
-      showMessage('Owner code not found. Create or open a saved site diary first.')
-      return
-    }
-
-    setSelectedSiteId(site.id)
-    setSelectedReportDate(getToday())
-    setScreen('ownerDashboard')
-  }
-
-  const joinAsEngineer = () => {
-    const code = engineerForm.engineerCode.trim().toUpperCase()
-    const site = sites.find((item) => item.engineerCode === code)
-
-    if (!site) {
-      showMessage('Engineer code is invalid or the site diary is not available in this browser.')
-      return
-    }
-
-    if (!engineerForm.engineerName.trim()) {
-      showMessage('Engineer name required hai.')
-      return
-    }
-
-    setSelectedSiteId(site.id)
-    setCurrentEngineer({
-      name: engineerForm.engineerName,
-      mobile: engineerForm.mobile,
-    })
-    setReportForm({ ...emptyReportForm, date: getToday() })
-    setScreen('engineerEntry')
-    showMessage(`Engineer connected with ${site.siteName}.`)
-  }
-
-  const joinAsLabour = () => {
-    const code = labourForm.labourCode.trim().toUpperCase()
-    const site = sites.find((item) => item.labourCode === code)
-
-    if (!site) {
-      showMessage('Labour code is invalid or the site diary is not available in this browser.')
-      return
-    }
-
-    if (!labourForm.labourName.trim()) {
-      showMessage('Labour name required hai.')
-      return
-    }
-
-    const labour = {
-      id: generateId(),
-      siteId: site.id,
-      name: labourForm.labourName,
-      mobile: labourForm.mobile,
-      workType: labourForm.workType,
-      workingUnder: labourForm.workingUnder,
-      createdAt: new Date().toISOString(),
-    }
-
-    const nextSites = sites.map((item) => {
-      if (item.id !== site.id) return item
-
-      const alreadyExists = item.labourMembers?.some(
-        (member) => member.mobile && member.mobile === labour.mobile
-      )
-
-      return {
-        ...item,
-        labourMembers: alreadyExists
-          ? item.labourMembers
-          : [...(item.labourMembers || []), labour],
-      }
-    })
-
-    updateSites(nextSites)
-    setSelectedSiteId(site.id)
-    setCurrentLabour(labour)
-    localStorage.setItem(LABOUR_PROFILE_KEY, JSON.stringify(labour))
-    setScreen('labourAttendance')
-    showMessage('Labour setup saved. Daily attendance can now be marked.')
-  }
-
-  const handlePhotoUpload = async (files) => {
-    const selected = Array.from(files || []).slice(0, 3)
-    const validFiles = selected.filter((file) => file.size <= 1200000)
-
-    if (validFiles.length !== selected.length) {
-      showMessage('Keep each photo under 1.2 MB. Large photos were skipped.')
-    }
-
-    const readers = validFiles.map(
-      (file) =>
-        new Promise((resolve) => {
-          const reader = new FileReader()
-          reader.onload = () =>
-            resolve({
-              id: generateId(),
-              name: file.name,
-              url: reader.result,
-            })
-          reader.readAsDataURL(file)
-        })
+    const reportsSnap = await getDocs(
+      query(collection(db, 'dailyReports'), where('siteId', '==', site.id))
     )
 
-    const result = await Promise.all(readers)
-    setPhotos(result)
+    const attendanceSnap = await getDocs(
+      query(collection(db, 'attendanceReports'), where('siteId', '==', site.id))
+    )
+
+    const labourSnap = await getDocs(
+      query(collection(db, 'labourMembers'), where('siteId', '==', site.id))
+    )
+
+    const dailyReports = reportsSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const attendanceReports = attendanceSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const labourMembers = labourSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+
+    setSelectedSite({
+      ...site,
+      dailyReports: sortNewest(dailyReports),
+      attendanceReports: sortNewest(attendanceReports),
+      labourMembers: sortNewest(labourMembers),
+    })
   }
 
-  const submitEngineerReport = () => {
-    if (!selectedSite || !currentEngineer) return
+  async function findSiteByCode(field, code) {
+    const q = query(collection(db, 'siteDiaries'), where(field, '==', code.trim().toUpperCase()))
+    const snap = await getDocs(q)
 
-    if (!reportForm.workDone.trim()) {
-      showMessage('Today work done required hai.')
-      return
-    }
+    if (snap.empty) return null
 
-    const materialCost = calculateMaterialCost(reportForm, selectedSite)
+    const docItem = snap.docs[0]
+    return { id: docItem.id, ...docItem.data() }
+  }
 
-    const report = {
-      id: generateId(),
-      ...reportForm,
-      materialCost,
-      submittedBy: currentEngineer.name,
-      submittedByMobile: currentEngineer.mobile,
-      photos,
-      createdAt: new Date().toISOString(),
-    }
+  useEffect(() => {
+    async function restoreLabour() {
+      try {
+        const raw = localStorage.getItem(LABOUR_PROFILE_KEY)
+        if (!raw) return
 
-    const nextSites = sites.map((site) =>
-      site.id === selectedSite.id
-        ? {
-            ...site,
-            dailyReports: [report, ...(site.dailyReports || [])],
+        const labour = JSON.parse(raw)
+        setCurrentLabour(labour)
+
+        if (labour.siteId) {
+          const siteRef = doc(db, 'siteDiaries', labour.siteId)
+          const siteSnap = await getDoc(siteRef)
+
+          if (siteSnap.exists()) {
+            await loadSiteBundle({ id: siteSnap.id, ...siteSnap.data() })
           }
-        : site
-    )
-
-    updateSites(nextSites)
-    setReportForm({ ...emptyReportForm, date: getToday() })
-    setPhotos([])
-    showMessage('Daily site report saved to Owner Dashboard.')
-  }
-
-  const submitAttendance = () => {
-    if (!selectedSite || !currentLabour) return
-
-    const today = getToday()
-
-    const attendance = {
-      id: generateId(),
-      siteId: selectedSite.id,
-      labourId: currentLabour.id,
-      labourName: currentLabour.name,
-      mobile: currentLabour.mobile,
-      workType: currentLabour.workType,
-      workingUnder: currentLabour.workingUnder,
-      date: today,
-      status: attendanceForm.status,
-      dayType: attendanceForm.dayType,
-      remarks: attendanceForm.remarks,
-      createdAt: new Date().toISOString(),
-    }
-
-    const nextSites = sites.map((site) => {
-      if (site.id !== selectedSite.id) return site
-
-      const oldReports = site.attendanceReports || []
-      const withoutToday = oldReports.filter(
-        (item) => !(item.date === today && item.labourId === currentLabour.id)
-      )
-
-      return {
-        ...site,
-        attendanceReports: [attendance, ...withoutToday],
+        }
+      } catch {
+        setCurrentLabour(null)
       }
-    })
-
-    updateSites(nextSites)
-    setAttendanceForm({
-      status: 'Present',
-      dayType: 'Full Day',
-      remarks: '',
-    })
-    showMessage('Attendance saved successfully.')
-  }
-
-  const deleteReport = (reportId) => {
-    if (!selectedSite) return
-
-    const nextSites = sites.map((site) =>
-      site.id === selectedSite.id
-        ? {
-            ...site,
-            dailyReports: (site.dailyReports || []).filter(
-              (report) => report.id !== reportId
-            ),
-          }
-        : site
-    )
-
-    updateSites(nextSites)
-    showMessage('Report deleted.')
-  }
-
-  const copyCode = async (code) => {
-    try {
-      await navigator.clipboard.writeText(code)
-      showMessage(`${code} copied.`)
-    } catch {
-      showMessage(code)
     }
-  }
+
+    restoreLabour()
+  }, [])
 
   const todaySummary = useMemo(() => {
-  if (!selectedSite) return null
+    if (!selectedSite) return null
 
-  const reportDate = selectedReportDate || getToday()
+    const reportDate = selectedReportDate || getToday()
 
-  const reports = (selectedSite.dailyReports || []).filter(
-    (report) => report.date === reportDate
-  )
+    const reports = (selectedSite.dailyReports || []).filter(
+      (report) => report.date === reportDate
+    )
 
-  const attendance = (selectedSite.attendanceReports || []).filter(
-    (item) => item.date === reportDate
-  )
+    const attendance = (selectedSite.attendanceReports || []).filter(
+      (item) => item.date === reportDate
+    )
 
     const present = attendance.filter((item) => item.status === 'Present')
     const absent = attendance.filter((item) => item.status === 'Absent')
 
-    const materialCost = reports.reduce(
-      (sum, report) => sum + num(report.materialCost),
-      0
-    )
-
-    const equipmentCost = reports.reduce(
-      (sum, report) => sum + num(report.equipmentCost),
-      0
-    )
-
-    const otherCost = reports.reduce(
-      (sum, report) => sum + num(report.otherCost),
-      0
-    )
+    const materialCost = reports.reduce((sum, report) => sum + num(report.materialCost), 0)
+    const equipmentCost = reports.reduce((sum, report) => sum + num(report.equipmentCost), 0)
+    const otherCost = reports.reduce((sum, report) => sum + num(report.otherCost), 0)
 
     const labourCost = attendance.reduce(
       (sum, item) => sum + calculateAttendanceCost(item, selectedSite),
@@ -590,7 +375,294 @@ export default function SiteDiaryPage() {
     )
 
     return reportCost + labourCost
-  }, [selectedSite, selectedReportDate])
+  }, [selectedSite])
+
+  const goHome = () => {
+    setScreen('home')
+    setCurrentEngineer(null)
+    setPhotoFiles([])
+    setPhotoPreviews([])
+  }
+
+  const createSite = async () => {
+    if (!ownerForm.siteName.trim() || !ownerForm.ownerName.trim()) {
+      showMessage('Site name and owner/contractor name are required.')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const siteId = generateId()
+
+      const site = {
+        id: siteId,
+        ...ownerForm,
+        startDate: ownerForm.startDate || getToday(),
+        ownerCode: generateCode('OWN'),
+        engineerCode: generateCode('ENG'),
+        labourCode: generateCode('LAB'),
+        status: 'Active',
+        createdAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      }
+
+      await setDoc(doc(db, 'siteDiaries', siteId), site)
+
+      setOwnerForm(emptyOwnerForm)
+      setSelectedReportDate(getToday())
+      await loadSiteBundle(site)
+      setScreen('ownerDashboard')
+      showMessage('New Site Diary created successfully.')
+    } catch (error) {
+      showMessage(error?.message || 'Failed to create site diary.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openOwnerSite = async () => {
+    if (!ownerCodeInput.trim()) {
+      showMessage('Owner code is required.')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const site = await findSiteByCode('ownerCode', ownerCodeInput)
+
+      if (!site) {
+        showMessage('Owner code not found.')
+        return
+      }
+
+      setSelectedReportDate(getToday())
+      await loadSiteBundle(site)
+      setScreen('ownerDashboard')
+    } catch (error) {
+      showMessage(error?.message || 'Failed to open diary.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const joinAsEngineer = async () => {
+    if (!engineerForm.engineerName.trim() || !engineerForm.engineerCode.trim()) {
+      showMessage('Engineer name and code are required.')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const site = await findSiteByCode('engineerCode', engineerForm.engineerCode)
+
+      if (!site) {
+        showMessage('Engineer code not found.')
+        return
+      }
+
+      setCurrentEngineer({
+        name: engineerForm.engineerName,
+        mobile: engineerForm.mobile,
+      })
+
+      setReportForm({ ...emptyReportForm, date: getToday() })
+      await loadSiteBundle(site)
+      setScreen('engineerEntry')
+      showMessage(`Engineer connected with ${site.siteName}.`)
+    } catch (error) {
+      showMessage(error?.message || 'Engineer login failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const joinAsLabour = async () => {
+    if (!labourForm.labourName.trim() || !labourForm.labourCode.trim()) {
+      showMessage('Labour name and code are required.')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const site = await findSiteByCode('labourCode', labourForm.labourCode)
+
+      if (!site) {
+        showMessage('Labour code not found.')
+        return
+      }
+
+      const labourId = generateId()
+
+      const labour = {
+        id: labourId,
+        siteId: site.id,
+        name: labourForm.labourName,
+        mobile: labourForm.mobile,
+        workType: labourForm.workType,
+        workingUnder: labourForm.workingUnder,
+        createdAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      }
+
+      await setDoc(doc(db, 'labourMembers', labourId), labour)
+
+      localStorage.setItem(LABOUR_PROFILE_KEY, JSON.stringify(labour))
+      setCurrentLabour(labour)
+      await loadSiteBundle(site)
+      setScreen('labourAttendance')
+      showMessage('Labour setup saved. Now daily attendance can be marked.')
+    } catch (error) {
+      showMessage(error?.message || 'Failed to save labour setup.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePhotoUpload = (files) => {
+    const selected = Array.from(files || []).slice(0, 3)
+    const validFiles = selected.filter((file) => file.size <= 2 * 1024 * 1024)
+
+    if (validFiles.length !== selected.length) {
+      showMessage('Each photo should be under 2 MB. Large photos were skipped.')
+    }
+
+    setPhotoFiles(validFiles)
+    setPhotoPreviews(validFiles.map((file) => URL.createObjectURL(file)))
+  }
+
+  const uploadPhotos = async (reportId) => {
+    const uploaded = []
+
+    for (const file of photoFiles) {
+      const path = `site-diary/${selectedSite.id}/${reportId}/${Date.now()}-${file.name}`
+      const fileRef = storageRef(storage, path)
+
+      await uploadBytes(fileRef, file)
+
+      const url = await getDownloadURL(fileRef)
+
+      uploaded.push({
+        name: file.name,
+        url,
+        path,
+      })
+    }
+
+    return uploaded
+  }
+
+  const submitEngineerReport = async () => {
+    if (!selectedSite || !currentEngineer) return
+
+    if (!reportForm.workDone.trim()) {
+      showMessage('Today work done is required.')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const reportId = generateId()
+      const photos = await uploadPhotos(reportId)
+      const materialCost = calculateMaterialCost(reportForm, selectedSite)
+
+      const report = {
+        id: reportId,
+        siteId: selectedSite.id,
+        ...reportForm,
+        materialCost,
+        submittedBy: currentEngineer.name,
+        submittedByMobile: currentEngineer.mobile,
+        photos,
+        createdAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      }
+
+      await setDoc(doc(db, 'dailyReports', reportId), report)
+
+      setReportForm({ ...emptyReportForm, date: getToday() })
+      setPhotoFiles([])
+      setPhotoPreviews([])
+      await loadSiteBundle(selectedSite)
+
+      showMessage('Daily site report submitted successfully.')
+    } catch (error) {
+      showMessage(error?.message || 'Failed to submit daily report.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const submitAttendance = async () => {
+    if (!selectedSite || !currentLabour) return
+
+    setLoading(true)
+
+    try {
+      const today = getToday()
+      const attendanceId = `${selectedSite.id}_${currentLabour.id}_${today}`
+
+      const attendance = {
+        id: attendanceId,
+        siteId: selectedSite.id,
+        labourId: currentLabour.id,
+        labourName: currentLabour.name,
+        mobile: currentLabour.mobile,
+        workType: currentLabour.workType,
+        workingUnder: currentLabour.workingUnder,
+        date: today,
+        status: attendanceForm.status,
+        dayType: attendanceForm.dayType,
+        remarks: attendanceForm.remarks,
+        createdAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      }
+
+      await setDoc(doc(db, 'attendanceReports', attendanceId), attendance)
+
+      setAttendanceForm({
+        status: 'Present',
+        dayType: 'Full Day',
+        remarks: '',
+      })
+
+      await loadSiteBundle(selectedSite)
+      showMessage('Attendance saved successfully.')
+    } catch (error) {
+      showMessage(error?.message || 'Failed to save attendance.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteReport = async (reportId) => {
+    if (!selectedSite) return
+
+    setLoading(true)
+
+    try {
+      await deleteDoc(doc(db, 'dailyReports', reportId))
+      await loadSiteBundle(selectedSite)
+      showMessage('Report deleted.')
+    } catch (error) {
+      showMessage(error?.message || 'Failed to delete report.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const copyCode = async (code) => {
+    try {
+      await navigator.clipboard.writeText(code)
+      showMessage(`${code} copied.`)
+    } catch {
+      showMessage(code)
+    }
+  }
 
   const generatePDF = async () => {
     if (!selectedSite || !todaySummary) return
@@ -599,18 +671,18 @@ export default function SiteDiaryPage() {
       const { default: jsPDF } = await import('jspdf')
       await import('jspdf-autotable')
 
-      const doc = new jsPDF()
+      const docPdf = new jsPDF()
 
-      doc.setFontSize(18)
-      doc.text('Daily Site Report', 14, 18)
+      docPdf.setFontSize(18)
+      docPdf.text('Daily Site Report', 14, 18)
 
-      doc.setFontSize(10)
-      doc.text(`Site: ${selectedSite.siteName}`, 14, 28)
-      doc.text(`Location: ${selectedSite.siteLocation || '-'}`, 14, 34)
-      doc.text(`Date: ${selectedReportDate || getToday()}`, 14, 40)
-      doc.text(`Owner/Contractor: ${selectedSite.ownerName}`, 14, 46)
+      docPdf.setFontSize(10)
+      docPdf.text(`Site: ${selectedSite.siteName}`, 14, 28)
+      docPdf.text(`Location: ${selectedSite.siteLocation || '-'}`, 14, 34)
+      docPdf.text(`Date: ${selectedReportDate || getToday()}`, 14, 40)
+      docPdf.text(`Owner/Contractor: ${selectedSite.ownerName}`, 14, 46)
 
-      doc.autoTable({
+      docPdf.autoTable({
         startY: 56,
         head: [['Summary', 'Value']],
         body: [
@@ -621,50 +693,45 @@ export default function SiteDiaryPage() {
           ['Labour Cost', money(todaySummary.labourCost)],
           ['Equipment Cost', money(todaySummary.equipmentCost)],
           ['Other Cost', money(todaySummary.otherCost)],
-          ['Today Total Cost', money(todaySummary.totalCost)],
+          ['Selected Date Total', money(todaySummary.totalCost)],
           ['Project Total Till Date', money(totalProjectCost)],
         ],
       })
 
-      const workRows = todaySummary.reports.map((report, index) => [
-        index + 1,
-        report.workCategory,
-        report.workLocation || '-',
-        report.workDone,
-        `${report.quantity || '-'} ${report.unit || ''}`,
-        report.submittedBy,
-      ])
-
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 10,
+      docPdf.autoTable({
+        startY: docPdf.lastAutoTable.finalY + 10,
         head: [['#', 'Category', 'Location', 'Work Done', 'Qty', 'Engineer']],
-        body: workRows.length
-          ? workRows
-          : [['-', '-', '-', 'No work report today', '-', '-']],
+        body: todaySummary.reports.length
+          ? todaySummary.reports.map((report, index) => [
+              index + 1,
+              report.workCategory,
+              report.workLocation || '-',
+              report.workDone,
+              `${report.quantity || '-'} ${report.unit || ''}`,
+              report.submittedBy,
+            ])
+          : [['-', '-', '-', 'No work report for this date', '-', '-']],
       })
 
-      const attendanceRows = todaySummary.attendance.map((item, index) => [
-        index + 1,
-        item.labourName,
-        item.workType,
-        item.status,
-        item.dayType,
-      ])
-
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 10,
+      docPdf.autoTable({
+        startY: docPdf.lastAutoTable.finalY + 10,
         head: [['#', 'Name', 'Work Type', 'Status', 'Day Type']],
-        body: attendanceRows.length
-          ? attendanceRows
-          : [['-', '-', '-', 'No attendance today', '-']],
+        body: todaySummary.attendance.length
+          ? todaySummary.attendance.map((item, index) => [
+              index + 1,
+              item.labourName,
+              item.workType,
+              item.status,
+              item.dayType,
+            ])
+          : [['-', '-', '-', 'No attendance for this date', '-']],
       })
 
-     doc.save(
-  `${selectedSite.siteName || 'site'}-daily-report-${selectedReportDate || getToday()}.pdf`
-)
+      docPdf.save(
+        `${selectedSite.siteName || 'site'}-daily-report-${selectedReportDate || getToday()}.pdf`
+      )
     } catch {
-      showMessage('PDF package is missing. Browser print opened instead.')
-      window.print()
+      showMessage('PDF package missing. Install jspdf and jspdf-autotable.')
     }
   }
 
@@ -673,21 +740,21 @@ export default function SiteDiaryPage() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-black/20 md:flex-row md:items-center">
           <div>
-           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-  <ClipboardList size={14} /> CivilCalc Pro Site Management
-</div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-300">
+              <ClipboardList size={14} /> CivilCalc Pro Site Management
+            </div>
 
-<h1 className="text-3xl font-black tracking-tight md:text-4xl">
-  Site Diary
-</h1>
+            <h1 className="text-3xl font-black tracking-tight md:text-4xl">
+              Site Diary
+            </h1>
 
-<p className="mt-2 max-w-2xl text-sm text-slate-400 md:text-base">
-  Daily Site Report, Labour Attendance, Material Usage, Photos and Expense Tracking.
-</p>
+            <p className="mt-2 max-w-2xl text-sm text-slate-400 md:text-base">
+              Daily Site Report, Labour Attendance, Material Usage, Photos and Expense Tracking.
+            </p>
 
-<p className="mt-1 max-w-2xl text-sm text-slate-500">
-  दैनिक साइट रिपोर्ट, मजदूर उपस्थिति, सामग्री उपयोग, फोटो और खर्च ट्रैकिंग।
-</p>
+            <p className="mt-1 max-w-2xl text-sm text-slate-500">
+              दैनिक साइट रिपोर्ट, मजदूर उपस्थिति, सामग्री उपयोग, फोटो और खर्च ट्रैकिंग।
+            </p>
           </div>
 
           {screen !== 'home' ? (
@@ -703,26 +770,32 @@ export default function SiteDiaryPage() {
           </div>
         ) : null}
 
+        {loading ? (
+          <div className="mb-5 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-300">
+            Processing...
+          </div>
+        ) : null}
+
         {screen === 'home' ? (
           <section className="grid gap-5 md:grid-cols-3">
             <button
               onClick={() => setScreen('owner')}
-            className="min-h-[260px] rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
+              className="min-h-[260px] rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
             >
               <div className="mb-5 inline-flex rounded-2xl bg-cyan-400/10 p-4 text-cyan-300">
                 <UserRound size={32} />
               </div>
-             <h2 className="text-2xl font-black">Owner / Contractor</h2>
-<p className="mt-1 text-sm font-semibold text-cyan-300">
-  मालिक / ठेकेदार
-</p>
-<p className="mt-3 text-sm text-slate-400">
-  Create a new site diary, share access codes, and monitor daily progress,
-  attendance and expenses.
-</p>
-<p className="mt-2 text-sm text-slate-500">
-  नई साइट डायरी बनाएं, एक्सेस कोड शेयर करें और दैनिक प्रगति, उपस्थिति और खर्च देखें।
-</p>
+              <h2 className="text-2xl font-black">Owner / Contractor</h2>
+              <p className="mt-1 text-sm font-semibold text-cyan-300">
+                मालिक / ठेकेदार
+              </p>
+              <p className="mt-3 text-sm text-slate-400">
+                Create a new site diary, share access codes, and monitor daily progress,
+                attendance and expenses.
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                नई साइट डायरी बनाएं, एक्सेस कोड शेयर करें और दैनिक प्रगति, उपस्थिति और खर्च देखें।
+              </p>
             </button>
 
             <button
@@ -733,22 +806,18 @@ export default function SiteDiaryPage() {
                 <HardHat size={32} />
               </div>
               <h2 className="text-2xl font-black">Site Engineer</h2>
-<p className="mt-1 text-sm font-semibold text-cyan-300">
-  साइट इंजीनियर
-</p>
-<p className="mt-3 text-sm text-slate-400">
-  Submit daily work progress, material usage, machinery details, site issues
-  and tomorrow’s work plan.
-</p>
-<p className="mt-2 text-sm text-slate-500">
-  दैनिक कार्य प्रगति, सामग्री उपयोग, मशीनरी, साइट समस्या और अगले दिन की योजना जमा करें।
-</p>
+              <p className="mt-1 text-sm font-semibold text-cyan-300">साइट इंजीनियर</p>
+              <p className="mt-3 text-sm text-slate-400">
+                Submit daily work progress, material usage, machinery details, site issues and tomorrow’s work plan.
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                दैनिक कार्य प्रगति, सामग्री उपयोग, मशीनरी, साइट समस्या और अगले दिन की योजना जमा करें।
+              </p>
             </button>
 
             <button
               onClick={() => {
-                if (currentLabour?.siteId) {
-                  setSelectedSiteId(currentLabour.siteId)
+                if (currentLabour?.siteId && selectedSite) {
                   setScreen('labourAttendance')
                 } else {
                   setScreen('labourJoin')
@@ -759,16 +828,14 @@ export default function SiteDiaryPage() {
               <div className="mb-5 inline-flex rounded-2xl bg-cyan-400/10 p-4 text-cyan-300">
                 <UsersRound size={32} />
               </div>
-            <h2 className="text-2xl font-black">Labour</h2>
-<p className="mt-1 text-sm font-semibold text-cyan-300">
-  मजदूर
-</p>
-<p className="mt-3 text-sm text-slate-400">
-  Complete one-time setup and then mark daily attendance as Present or Absent.
-</p>
-<p className="mt-2 text-sm text-slate-500">
-  एक बार जानकारी सेव करें, फिर रोज केवल उपस्थित या अनुपस्थित मार्क करें।
-</p>
+              <h2 className="text-2xl font-black">Labour</h2>
+              <p className="mt-1 text-sm font-semibold text-cyan-300">मजदूर</p>
+              <p className="mt-3 text-sm text-slate-400">
+                Complete one-time setup and then mark daily attendance as Present or Absent.
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                एक बार जानकारी सेव करें, फिर रोज केवल उपस्थित या अनुपस्थित मार्क करें।
+              </p>
             </button>
           </section>
         ) : null}
@@ -781,9 +848,7 @@ export default function SiteDiaryPage() {
             >
               <Plus className="mb-4 text-cyan-300" size={34} />
               <h2 className="text-2xl font-black">Create New Site Diary</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Create a new diary for a new site.
-              </p>
+              <p className="mt-2 text-sm text-slate-400">Create a fresh diary for a new project site.</p>
             </button>
 
             <button
@@ -792,9 +857,7 @@ export default function SiteDiaryPage() {
             >
               <FolderOpen className="mb-4 text-cyan-300" size={34} />
               <h2 className="text-2xl font-black">Open Existing Site Diary</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Open an existing diary using the Owner Code.
-              </p>
+              <p className="mt-2 text-sm text-slate-400">Open diary using Owner Code.</p>
             </button>
           </section>
         ) : null}
@@ -804,131 +867,29 @@ export default function SiteDiaryPage() {
             <h2 className="mb-5 text-2xl font-black">Create New Site Diary</h2>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Field
-                label="Site Name"
-                value={ownerForm.siteName}
-                onChange={(v) => updateOwner('siteName', v)}
-                placeholder="Example: Sharma House Project"
-              />
-
-              <SelectField
-                label="Project Type"
-                value={ownerForm.projectType}
-                onChange={(v) => updateOwner('projectType', v)}
-                options={[
-                  'Residential',
-                  'Commercial',
-                  'Industrial',
-                  'Infrastructure',
-                  'Renovation',
-                ]}
-              />
-
-              <Field
-                label="Site Location"
-                value={ownerForm.siteLocation}
-                onChange={(v) => updateOwner('siteLocation', v)}
-                placeholder="Ahmedabad, Gujarat"
-              />
-
-              <Field
-                label="Owner / Contractor Name"
-                value={ownerForm.ownerName}
-                onChange={(v) => updateOwner('ownerName', v)}
-                placeholder="Owner name"
-              />
-
-              <Field
-                label="Client Name"
-                value={ownerForm.clientName}
-                onChange={(v) => updateOwner('clientName', v)}
-                placeholder="Client name"
-              />
-
-              <Field
-                label="Start Date"
-                type="date"
-                value={ownerForm.startDate}
-                onChange={(v) => updateOwner('startDate', v)}
-              />
-
-              <Field
-                label="Estimated End Date"
-                type="date"
-                value={ownerForm.estimatedEndDate}
-                onChange={(v) => updateOwner('estimatedEndDate', v)}
-              />
-
-              <Field
-                label="Estimated Budget"
-                type="number"
-                value={ownerForm.budget}
-                onChange={(v) => updateOwner('budget', v)}
-                placeholder="5000000"
-              />
+              <Field label="Site Name" value={ownerForm.siteName} onChange={(v) => updateOwner('siteName', v)} placeholder="Sharma House Project" />
+              <SelectField label="Project Type" value={ownerForm.projectType} onChange={(v) => updateOwner('projectType', v)} options={['Residential', 'Commercial', 'Industrial', 'Infrastructure', 'Renovation']} />
+              <Field label="Site Location" value={ownerForm.siteLocation} onChange={(v) => updateOwner('siteLocation', v)} placeholder="Ahmedabad, Gujarat" />
+              <Field label="Owner / Contractor Name" value={ownerForm.ownerName} onChange={(v) => updateOwner('ownerName', v)} placeholder="Owner name" />
+              <Field label="Client Name" value={ownerForm.clientName} onChange={(v) => updateOwner('clientName', v)} placeholder="Client name" />
+              <Field label="Start Date" type="date" value={ownerForm.startDate} onChange={(v) => updateOwner('startDate', v)} />
+              <Field label="Estimated End Date" type="date" value={ownerForm.estimatedEndDate} onChange={(v) => updateOwner('estimatedEndDate', v)} />
+              <Field label="Estimated Budget" type="number" value={ownerForm.budget} onChange={(v) => updateOwner('budget', v)} placeholder="5000000" />
             </div>
 
             <h3 className="mt-8 mb-4 text-xl font-black">Default Rates</h3>
 
             <div className="grid gap-4 md:grid-cols-4">
-              <Field
-                label="Cement ₹/bag"
-                type="number"
-                value={ownerForm.cementRate}
-                onChange={(v) => updateOwner('cementRate', v)}
-              />
-
-              <Field
-                label="Steel ₹/kg"
-                type="number"
-                value={ownerForm.steelRate}
-                onChange={(v) => updateOwner('steelRate', v)}
-              />
-
-              <Field
-                label="Sand ₹/cft"
-                type="number"
-                value={ownerForm.sandRate}
-                onChange={(v) => updateOwner('sandRate', v)}
-              />
-
-              <Field
-                label="Aggregate ₹/cft"
-                type="number"
-                value={ownerForm.aggregateRate}
-                onChange={(v) => updateOwner('aggregateRate', v)}
-              />
-
-              <Field
-                label="Brick ₹/piece"
-                type="number"
-                value={ownerForm.brickRate}
-                onChange={(v) => updateOwner('brickRate', v)}
-              />
-
-              <Field
-                label="Labour ₹/day"
-                type="number"
-                value={ownerForm.labourRate}
-                onChange={(v) => updateOwner('labourRate', v)}
-              />
-
-              <Field
-                label="Equipment ₹/day"
-                type="number"
-                value={ownerForm.equipmentRate}
-                onChange={(v) => updateOwner('equipmentRate', v)}
-              />
+              <Field label="Cement ₹/bag" type="number" value={ownerForm.cementRate} onChange={(v) => updateOwner('cementRate', v)} />
+              <Field label="Steel ₹/kg" type="number" value={ownerForm.steelRate} onChange={(v) => updateOwner('steelRate', v)} />
+              <Field label="Sand ₹/cft" type="number" value={ownerForm.sandRate} onChange={(v) => updateOwner('sandRate', v)} />
+              <Field label="Aggregate ₹/cft" type="number" value={ownerForm.aggregateRate} onChange={(v) => updateOwner('aggregateRate', v)} />
+              <Field label="Brick ₹/piece" type="number" value={ownerForm.brickRate} onChange={(v) => updateOwner('brickRate', v)} />
+              <Field label="Labour ₹/day" type="number" value={ownerForm.labourRate} onChange={(v) => updateOwner('labourRate', v)} />
             </div>
 
             <div className="mt-4">
-              <Field
-                label="Notes"
-                as="textarea"
-                value={ownerForm.notes}
-                onChange={(v) => updateOwner('notes', v)}
-                placeholder="Special instruction, contract note, etc."
-              />
+              <Field label="Notes" as="textarea" value={ownerForm.notes} onChange={(v) => updateOwner('notes', v)} placeholder="Special instruction, contract note, etc." />
             </div>
 
             <div className="mt-6">
@@ -981,10 +942,7 @@ export default function SiteDiaryPage() {
                   ['Engineer Code', selectedSite.engineerCode],
                   ['Labour Code', selectedSite.labourCode],
                 ].map(([label, code]) => (
-                  <div
-                    key={code}
-                    className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
-                  >
+                  <div key={code} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
                     <p className="text-xs text-slate-400">{label}</p>
 
                     <div className="mt-2 flex items-center justify-between gap-3">
@@ -1031,48 +989,20 @@ export default function SiteDiaryPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-4">
-              <StatCard
-                title="Reports"
-                value={todaySummary?.reports.length || 0}
-                sub="Engineer submissions"
-                icon={ClipboardList}
-              />
-
-              <StatCard
-                title="Present Labour"
-                value={todaySummary?.present.length || 0}
-                sub={`Absent: ${todaySummary?.absent.length || 0}`}
-                icon={CheckCircle2}
-              />
-
-              <StatCard
-                title="Selected Date Expense"
-                value={money(todaySummary?.totalCost || 0)}
-                sub="Material + labour + equipment"
-                icon={IndianRupee}
-              />
-
-              <StatCard
-                title="Project Total"
-                value={money(totalProjectCost)}
-                sub="Till date"
-                icon={CalendarDays}
-              />
+              <StatCard title="Reports" value={todaySummary?.reports.length || 0} sub="Engineer submissions" icon={ClipboardList} />
+              <StatCard title="Present Labour" value={todaySummary?.present.length || 0} sub={`Absent: ${todaySummary?.absent.length || 0}`} icon={CheckCircle2} />
+              <StatCard title="Selected Date Expense" value={money(todaySummary?.totalCost || 0)} sub="Material + labour + equipment" icon={IndianRupee} />
+              <StatCard title="Project Total" value={money(totalProjectCost)} sub="Till date" icon={CalendarDays} />
             </div>
 
             <div className="grid gap-5 lg:grid-cols-2">
               <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
-                <h3 className="mb-4 text-xl font-black">
-                  Work Reports - {selectedReportDate}
-                </h3>
+                <h3 className="mb-4 text-xl font-black">Work Reports - {selectedReportDate}</h3>
 
                 <div className="space-y-4">
                   {todaySummary?.reports.length ? (
                     todaySummary.reports.map((report) => (
-                      <div
-                        key={report.id}
-                        className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
-                      >
+                      <div key={report.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-sm font-bold text-cyan-300">
@@ -1113,11 +1043,11 @@ export default function SiteDiaryPage() {
 
                         {report.photos?.length ? (
                           <div className="mt-3 grid grid-cols-3 gap-2">
-                            {report.photos.map((photo) => (
+                            {report.photos.map((photo, index) => (
                               <img
-                                key={photo.id}
+                                key={`${photo.url}-${index}`}
                                 src={photo.url}
-                                alt={photo.name}
+                                alt={photo.name || 'Site photo'}
                                 className="h-24 w-full rounded-xl object-cover"
                               />
                             ))}
@@ -1134,9 +1064,7 @@ export default function SiteDiaryPage() {
               </div>
 
               <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
-                <h3 className="mb-4 text-xl font-black">
-                  Labour Attendance - {selectedReportDate}
-                </h3>
+                <h3 className="mb-4 text-xl font-black">Labour Attendance - {selectedReportDate}</h3>
 
                 <div className="space-y-3">
                   {todaySummary?.attendance.length ? (
@@ -1178,10 +1106,7 @@ export default function SiteDiaryPage() {
               <div className="space-y-3">
                 {(selectedSite.dailyReports || []).length ? (
                   selectedSite.dailyReports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
-                    >
+                    <div key={report.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
                       <p className="text-sm font-bold text-cyan-300">
                         {report.date} • {report.workCategory}
                       </p>
@@ -1204,26 +1129,9 @@ export default function SiteDiaryPage() {
             <h2 className="mb-5 text-2xl font-black">Site Engineer Login</h2>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <Field
-                label="Engineer Name"
-                value={engineerForm.engineerName}
-                onChange={(v) => updateEngineer('engineerName', v)}
-                placeholder="Rahul Patel"
-              />
-
-              <Field
-                label="Mobile Number"
-                value={engineerForm.mobile}
-                onChange={(v) => updateEngineer('mobile', v)}
-                placeholder="98765xxxxx"
-              />
-
-              <Field
-                label="Engineer Code"
-                value={engineerForm.engineerCode}
-                onChange={(v) => updateEngineer('engineerCode', v.toUpperCase())}
-                placeholder="ENG-ABCDE"
-              />
+              <Field label="Engineer Name" value={engineerForm.engineerName} onChange={(v) => updateEngineer('engineerName', v)} placeholder="Rahul Patel" />
+              <Field label="Mobile Number" value={engineerForm.mobile} onChange={(v) => updateEngineer('mobile', v)} placeholder="98765xxxxx" />
+              <Field label="Engineer Code" value={engineerForm.engineerCode} onChange={(v) => updateEngineer('engineerCode', v.toUpperCase())} placeholder="ENG-ABCDE" />
             </div>
 
             <div className="mt-6">
@@ -1239,174 +1147,58 @@ export default function SiteDiaryPage() {
             <div className="mb-6">
               <p className="text-sm text-cyan-300">{selectedSite.siteName}</p>
               <h2 className="text-2xl font-black">Daily Work Progress</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Submitting as {currentEngineer.name}
-              </p>
+              <p className="mt-1 text-sm text-slate-400">Submitting as {currentEngineer.name}</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <Field
-                label="Date"
-                type="date"
-                value={reportForm.date}
-                onChange={(v) => updateReport('date', v)}
-              />
-
-              <SelectField
-                label="Work Category"
-                value={reportForm.workCategory}
-                onChange={(v) => updateReport('workCategory', v)}
-                options={[
-                  'RCC',
-                  'Brickwork',
-                  'Plaster',
-                  'Excavation',
-                  'Flooring',
-                  'Painting',
-                  'Electrical',
-                  'Plumbing',
-                  'Waterproofing',
-                  'Other',
-                ]}
-              />
-
-              <Field
-                label="Work Location"
-                value={reportForm.workLocation}
-                onChange={(v) => updateReport('workLocation', v)}
-                placeholder="Ground floor / Slab / Column"
-              />
+              <Field label="Date" type="date" value={reportForm.date} onChange={(v) => updateReport('date', v)} />
+              <SelectField label="Work Category" value={reportForm.workCategory} onChange={(v) => updateReport('workCategory', v)} options={['RCC', 'Brickwork', 'Plaster', 'Excavation', 'Flooring', 'Painting', 'Electrical', 'Plumbing', 'Waterproofing', 'Other']} />
+              <Field label="Work Location" value={reportForm.workLocation} onChange={(v) => updateReport('workLocation', v)} placeholder="Ground floor / Slab / Column" />
             </div>
 
             <div className="mt-4">
-              <Field
-                label="Today Work Done"
-                as="textarea"
-                value={reportForm.workDone}
-                onChange={(v) => updateReport('workDone', v)}
-                placeholder="What work was completed on site today?"
-              />
+              <Field label="Today Work Done" as="textarea" value={reportForm.workDone} onChange={(v) => updateReport('workDone', v)} placeholder="What work was completed today?" />
             </div>
 
             <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <Field
-                label="Quantity Done"
-                type="number"
-                value={reportForm.quantity}
-                onChange={(v) => updateReport('quantity', v)}
-                placeholder="25"
-              />
-
-              <SelectField
-                label="Unit"
-                value={reportForm.unit}
-                onChange={(v) => updateReport('unit', v)}
-                options={['m³', 'm²', 'm', 'Nos', 'kg', 'cft']}
-              />
+              <Field label="Quantity Done" type="number" value={reportForm.quantity} onChange={(v) => updateReport('quantity', v)} placeholder="25" />
+              <SelectField label="Unit" value={reportForm.unit} onChange={(v) => updateReport('unit', v)} options={['m³', 'm²', 'm', 'Nos', 'kg', 'cft']} />
             </div>
 
             <h3 className="mt-8 mb-4 text-xl font-black">Material Used</h3>
 
             <div className="grid gap-4 md:grid-cols-5">
-              <Field
-                label="Cement Bags"
-                type="number"
-                value={reportForm.cementBags}
-                onChange={(v) => updateReport('cementBags', v)}
-              />
-
-              <Field
-                label="Sand cft"
-                type="number"
-                value={reportForm.sandCft}
-                onChange={(v) => updateReport('sandCft', v)}
-              />
-
-              <Field
-                label="Aggregate cft"
-                type="number"
-                value={reportForm.aggregateCft}
-                onChange={(v) => updateReport('aggregateCft', v)}
-              />
-
-              <Field
-                label="Steel kg"
-                type="number"
-                value={reportForm.steelKg}
-                onChange={(v) => updateReport('steelKg', v)}
-              />
-
-              <Field
-                label="Bricks Nos"
-                type="number"
-                value={reportForm.bricksNos}
-                onChange={(v) => updateReport('bricksNos', v)}
-              />
+              <Field label="Cement Bags" type="number" value={reportForm.cementBags} onChange={(v) => updateReport('cementBags', v)} />
+              <Field label="Sand cft" type="number" value={reportForm.sandCft} onChange={(v) => updateReport('sandCft', v)} />
+              <Field label="Aggregate cft" type="number" value={reportForm.aggregateCft} onChange={(v) => updateReport('aggregateCft', v)} />
+              <Field label="Steel kg" type="number" value={reportForm.steelKg} onChange={(v) => updateReport('steelKg', v)} />
+              <Field label="Bricks Nos" type="number" value={reportForm.bricksNos} onChange={(v) => updateReport('bricksNos', v)} />
             </div>
 
             <div className="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm text-cyan-100">
-              Auto Material Cost:{' '}
-              <b>{money(calculateMaterialCost(reportForm, selectedSite))}</b>
+              Auto Material Cost: <b>{money(calculateMaterialCost(reportForm, selectedSite))}</b>
             </div>
 
             <h3 className="mt-8 mb-4 text-xl font-black">Machinery, Issues & Photos</h3>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <Field
-                label="Equipment Used"
-                value={reportForm.equipmentUsed}
-                onChange={(v) => updateReport('equipmentUsed', v)}
-                placeholder="Mixer, Vibrator, JCB"
-              />
-
-              <Field
-                label="Equipment Cost"
-                type="number"
-                value={reportForm.equipmentCost}
-                onChange={(v) => updateReport('equipmentCost', v)}
-                placeholder="2500"
-              />
-
-              <Field
-                label="Other Cost"
-                type="number"
-                value={reportForm.otherCost}
-                onChange={(v) => updateReport('otherCost', v)}
-                placeholder="500"
-              />
+              <Field label="Equipment Used" value={reportForm.equipmentUsed} onChange={(v) => updateReport('equipmentUsed', v)} placeholder="Mixer, Vibrator, JCB" />
+              <Field label="Equipment Cost" type="number" value={reportForm.equipmentCost} onChange={(v) => updateReport('equipmentCost', v)} placeholder="2500" />
+              <Field label="Other Cost" type="number" value={reportForm.otherCost} onChange={(v) => updateReport('otherCost', v)} placeholder="500" />
             </div>
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <Field
-                label="Site Issues / Delay Reason"
-                as="textarea"
-                value={reportForm.issues}
-                onChange={(v) => updateReport('issues', v)}
-                placeholder="Material shortage, weather issue, drawing issue etc."
-              />
-
-              <Field
-                label="Tomorrow Plan"
-                as="textarea"
-                value={reportForm.tomorrowPlan}
-                onChange={(v) => updateReport('tomorrowPlan', v)}
-                placeholder="What work is planned for tomorrow?"
-              />
+              <Field label="Site Issues / Delay Reason" as="textarea" value={reportForm.issues} onChange={(v) => updateReport('issues', v)} placeholder="Material shortage, weather issue, drawing issue etc." />
+              <Field label="Tomorrow Plan" as="textarea" value={reportForm.tomorrowPlan} onChange={(v) => updateReport('tomorrowPlan', v)} placeholder="Tomorrow work plan" />
             </div>
 
             <div className="mt-4">
-              <Field
-                label="Engineer Remarks"
-                as="textarea"
-                value={reportForm.remarks}
-                onChange={(v) => updateReport('remarks', v)}
-                placeholder="Any additional notes"
-              />
+              <Field label="Engineer Remarks" as="textarea" value={reportForm.remarks} onChange={(v) => updateReport('remarks', v)} placeholder="Any additional notes" />
             </div>
 
             <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
               <label className="block text-sm font-medium text-slate-300">
-                Upload Site Photos - max 3, each under 1.2 MB
+                Upload Site Photos - max 3, each under 2 MB
               </label>
 
               <input
@@ -1417,13 +1209,13 @@ export default function SiteDiaryPage() {
                 className="mt-3 w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-slate-300"
               />
 
-              {photos.length ? (
+              {photoPreviews.length ? (
                 <div className="mt-4 grid grid-cols-3 gap-3">
-                  {photos.map((photo) => (
+                  {photoPreviews.map((url, index) => (
                     <img
-                      key={photo.id}
-                      src={photo.url}
-                      alt={photo.name}
+                      key={url}
+                      src={url}
+                      alt={`Preview ${index + 1}`}
                       className="h-28 w-full rounded-xl object-cover"
                     />
                   ))}
@@ -1444,55 +1236,15 @@ export default function SiteDiaryPage() {
             <h2 className="mb-2 text-2xl font-black">Labour First Time Setup</h2>
 
             <p className="mb-5 text-sm text-slate-400">
-              Save details once, then mark only Present / Absent every day.
+              Save details once, then mark Present / Absent daily.
             </p>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Field
-                label="Labour Code"
-                value={labourForm.labourCode}
-                onChange={(v) => updateLabour('labourCode', v.toUpperCase())}
-                placeholder="LAB-ABCDE"
-              />
-
-              <Field
-                label="Name"
-                value={labourForm.labourName}
-                onChange={(v) => updateLabour('labourName', v)}
-                placeholder="Ramesh"
-              />
-
-              <Field
-                label="Mobile Number"
-                value={labourForm.mobile}
-                onChange={(v) => updateLabour('mobile', v)}
-                placeholder="98765xxxxx"
-              />
-
-              <SelectField
-                label="Work Type"
-                value={labourForm.workType}
-                onChange={(v) => updateLabour('workType', v)}
-                options={[
-                  'Mason / Mistri',
-                  'Helper / Labour',
-                  'Carpenter',
-                  'Bar Bender',
-                  'Electrician',
-                  'Plumber',
-                  'Painter',
-                  'Tile Fitter',
-                  'Machine Operator',
-                  'Other',
-                ]}
-              />
-
-              <Field
-                label="Working Under"
-                value={labourForm.workingUnder}
-                onChange={(v) => updateLabour('workingUnder', v)}
-                placeholder="Contractor / Engineer name"
-              />
+              <Field label="Labour Code" value={labourForm.labourCode} onChange={(v) => updateLabour('labourCode', v.toUpperCase())} placeholder="LAB-ABCDE" />
+              <Field label="Name" value={labourForm.labourName} onChange={(v) => updateLabour('labourName', v)} placeholder="Ramesh" />
+              <Field label="Mobile Number" value={labourForm.mobile} onChange={(v) => updateLabour('mobile', v)} placeholder="98765xxxxx" />
+              <SelectField label="Work Type" value={labourForm.workType} onChange={(v) => updateLabour('workType', v)} options={['Mason / Mistri', 'Helper / Labour', 'Carpenter', 'Bar Bender', 'Electrician', 'Plumber', 'Painter', 'Tile Fitter', 'Machine Operator', 'Other']} />
+              <Field label="Working Under" value={labourForm.workingUnder} onChange={(v) => updateLabour('workingUnder', v)} placeholder="Contractor / Engineer name" />
             </div>
 
             <div className="mt-6">
@@ -1506,10 +1258,8 @@ export default function SiteDiaryPage() {
         {screen === 'labourAttendance' && selectedSite && currentLabour ? (
           <section className="mx-auto max-w-2xl rounded-3xl border border-slate-800 bg-slate-900/80 p-5 md:p-7">
             <div className="text-center">
-              <p className="text-sm font-semibold text-cyan-300">
-                {selectedSite.siteName}
-              </p>
-              <h2 className="mt-1 text-3xl font-black">Daily Attendance</h2>
+              <p className="text-sm font-semibold text-cyan-300">{selectedSite.siteName}</p>
+              <h2 className="mt-1 text-3xl font-black">Aaj aaye ho?</h2>
               <p className="mt-2 text-sm text-slate-400">
                 Date: {getToday()} • {currentLabour.name} • {currentLabour.workType}
               </p>
@@ -1517,9 +1267,7 @@ export default function SiteDiaryPage() {
 
             <div className="mt-7 grid gap-4 md:grid-cols-2">
               <button
-                onClick={() =>
-                  setAttendanceForm((prev) => ({ ...prev, status: 'Present' }))
-                }
+                onClick={() => setAttendanceForm((prev) => ({ ...prev, status: 'Present' }))}
                 className={`rounded-3xl border p-8 text-center transition ${
                   attendanceForm.status === 'Present'
                     ? 'border-green-400 bg-green-400/15 text-green-200'
@@ -1531,9 +1279,7 @@ export default function SiteDiaryPage() {
               </button>
 
               <button
-                onClick={() =>
-                  setAttendanceForm((prev) => ({ ...prev, status: 'Absent' }))
-                }
+                onClick={() => setAttendanceForm((prev) => ({ ...prev, status: 'Absent' }))}
                 className={`rounded-3xl border p-8 text-center transition ${
                   attendanceForm.status === 'Absent'
                     ? 'border-red-400 bg-red-400/15 text-red-200'
@@ -1549,19 +1295,15 @@ export default function SiteDiaryPage() {
               <SelectField
                 label="Day Type"
                 value={attendanceForm.dayType}
-                onChange={(v) =>
-                  setAttendanceForm((prev) => ({ ...prev, dayType: v }))
-                }
+                onChange={(v) => setAttendanceForm((prev) => ({ ...prev, dayType: v }))}
                 options={['Full Day', 'Half Day']}
               />
 
               <Field
                 label="Remarks Optional"
                 value={attendanceForm.remarks}
-                onChange={(v) =>
-                  setAttendanceForm((prev) => ({ ...prev, remarks: v }))
-                }
-                placeholder="Example: Worked on plaster today"
+                onChange={(v) => setAttendanceForm((prev) => ({ ...prev, remarks: v }))}
+                placeholder="Today work remarks"
               />
             </div>
 
