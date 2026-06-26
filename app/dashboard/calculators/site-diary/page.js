@@ -241,6 +241,7 @@ export default function SiteDiaryPage() {
   })
   const [photos, setPhotos] = useState([])
   const [message, setMessage] = useState('')
+  const [selectedReportDate, setSelectedReportDate] = useState(getToday())
 
   useEffect(() => {
     setSites(readStorage())
@@ -303,8 +304,9 @@ export default function SiteDiaryPage() {
     const nextSites = [site, ...sites]
     updateSites(nextSites)
     setSelectedSiteId(site.id)
-    setOwnerForm(emptyOwnerForm)
-    setScreen('ownerDashboard')
+setSelectedReportDate(getToday())
+setOwnerForm(emptyOwnerForm)
+setScreen('ownerDashboard')
     showMessage('New Site Diary created successfully.')
   }
 
@@ -317,8 +319,9 @@ export default function SiteDiaryPage() {
       return
     }
 
-    setSelectedSiteId(site.id)
-    setScreen('ownerDashboard')
+   setSelectedSiteId(site.id)
+setSelectedReportDate(getToday())
+setScreen('ownerDashboard')
   }
 
   const joinAsEngineer = () => {
@@ -524,17 +527,17 @@ export default function SiteDiaryPage() {
   }
 
   const todaySummary = useMemo(() => {
-    if (!selectedSite) return null
+  if (!selectedSite) return null
 
-    const today = getToday()
+  const reportDate = selectedReportDate || getToday()
 
-    const reports = (selectedSite.dailyReports || []).filter(
-      (report) => report.date === today
-    )
+  const reports = (selectedSite.dailyReports || []).filter(
+    (report) => report.date === reportDate
+  )
 
-    const attendance = (selectedSite.attendanceReports || []).filter(
-      (item) => item.date === today
-    )
+  const attendance = (selectedSite.attendanceReports || []).filter(
+    (item) => item.date === reportDate
+  )
 
     const present = attendance.filter((item) => item.status === 'Present')
     const absent = attendance.filter((item) => item.status === 'Absent')
@@ -587,7 +590,7 @@ export default function SiteDiaryPage() {
     )
 
     return reportCost + labourCost
-  }, [selectedSite])
+  }, [selectedSite, selectedReportDate])
 
   const generatePDF = async () => {
     if (!selectedSite || !todaySummary) return
@@ -604,7 +607,7 @@ export default function SiteDiaryPage() {
       doc.setFontSize(10)
       doc.text(`Site: ${selectedSite.siteName}`, 14, 28)
       doc.text(`Location: ${selectedSite.siteLocation || '-'}`, 14, 34)
-      doc.text(`Date: ${getToday()}`, 14, 40)
+      doc.text(`Date: ${selectedReportDate || getToday()}`, 14, 40)
       doc.text(`Owner/Contractor: ${selectedSite.ownerName}`, 14, 46)
 
       doc.autoTable({
@@ -656,7 +659,9 @@ export default function SiteDiaryPage() {
           : [['-', '-', '-', 'No attendance today', '-']],
       })
 
-      doc.save(`${selectedSite.siteName || 'site'}-daily-report-${getToday()}.pdf`)
+     doc.save(
+  `${selectedSite.siteName || 'site'}-daily-report-${selectedReportDate || getToday()}.pdf`
+)
     } catch {
       showMessage('PDF package missing hai. Abhi browser print use karo.')
       window.print()
@@ -966,9 +971,9 @@ export default function SiteDiaryPage() {
                   </p>
                 </div>
 
-                <PrimaryButton onClick={generatePDF} icon={Download}>
-                  Download Today PDF
-                </PrimaryButton>
+              <PrimaryButton onClick={generatePDF} icon={Download}>
+  Download PDF
+</PrimaryButton>
               </div>
 
               <div className="mt-6 grid gap-3 md:grid-cols-3">
@@ -977,7 +982,33 @@ export default function SiteDiaryPage() {
                   ['Engineer Code', selectedSite.engineerCode],
                   ['Labour Code', selectedSite.labourCode],
                 ].map(([label, code]) => (
-                  <div
+                  </div>
+                  <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+  <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <p className="text-sm font-bold text-white">Select Report Date</p>
+      <p className="mt-1 text-sm text-slate-400">
+        View work progress, labour attendance and expense summary by date.
+      </p>
+      <p className="mt-1 text-sm text-slate-500">
+        तारीख के अनुसार कार्य प्रगति, मजदूर उपस्थिति और खर्च देखें।
+      </p>
+    </div>
+
+    <div className="flex flex-col gap-3 md:flex-row md:items-center">
+      <input
+        type="date"
+        value={selectedReportDate}
+        onChange={(e) => setSelectedReportDate(e.target.value)}
+        className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+      />
+
+      <SecondaryButton onClick={() => setSelectedReportDate(getToday())}>
+        Today
+      </SecondaryButton>
+    </div>
+  </div>
+</div>
                     key={code}
                     className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4"
                   >
@@ -998,7 +1029,7 @@ export default function SiteDiaryPage() {
 
             <div className="grid gap-4 md:grid-cols-4">
               <StatCard
-                title="Today Reports"
+                title="Reports"
                 value={todaySummary?.reports.length || 0}
                 sub="Engineer submissions"
                 icon={ClipboardList}
@@ -1012,7 +1043,7 @@ export default function SiteDiaryPage() {
               />
 
               <StatCard
-                title="Today Expense"
+                title="Selected Date Expense"
                 value={money(todaySummary?.totalCost || 0)}
                 sub="Material + labour + equipment"
                 icon={IndianRupee}
@@ -1028,7 +1059,9 @@ export default function SiteDiaryPage() {
 
             <div className="grid gap-5 lg:grid-cols-2">
               <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
-                <h3 className="mb-4 text-xl font-black">Today Work Reports</h3>
+                <h3 className="mb-4 text-xl font-black">
+  Work Reports - {selectedReportDate}
+</h3>
 
                 <div className="space-y-4">
                   {todaySummary?.reports.length ? (
@@ -1086,7 +1119,9 @@ export default function SiteDiaryPage() {
               </div>
 
               <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
-                <h3 className="mb-4 text-xl font-black">Today Labour Attendance</h3>
+               <h3 className="mb-4 text-xl font-black">
+  Labour Attendance - {selectedReportDate}
+</h3>
 
                 <div className="space-y-3">
                   {todaySummary?.attendance.length ? (
