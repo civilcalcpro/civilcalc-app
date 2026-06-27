@@ -131,10 +131,11 @@ export default function sitemap() {
   priority: 0.86,
 },
     {
-      path: '/plaster-calculator',
-      priority: 0.85,
-      changeFrequency: 'monthly',
-    },
+  url: `${baseUrl}/plaster-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.86,
+},
   {
   url: `${baseUrl}/excavation-calculator`,
   lastModified: new Date(),
