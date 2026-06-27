@@ -63,10 +63,11 @@ export default function sitemap() {
   changeFrequency: 'weekly',
   priority: 0.86,
 },
-    {
-  path: '/unit-converter',
-  priority: 0.8,
-  changeFrequency: 'monthly',
+  {
+  url: `${baseUrl}/unit-converter`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.84,
 },
   {
   url: `${baseUrl}/tile-calculator`,
