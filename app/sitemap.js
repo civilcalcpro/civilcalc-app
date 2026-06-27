@@ -82,11 +82,12 @@ export default function sitemap() {
       priority: 0.9,
       changeFrequency: 'monthly',
     },
-    {
-      path: '/column-design',
-      priority: 0.9,
-      changeFrequency: 'monthly',
-    },
+   {
+  url: `${baseUrl}/column-design`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.88,
+},
     {
       path: '/footing-design',
       priority: 0.9,
