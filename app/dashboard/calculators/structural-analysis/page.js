@@ -21,22 +21,37 @@ const caseOptions = [
   {
     value: 'ss_point',
     label: 'Simply Supported Beam + Point Load',
-    desc: 'Point load placed at distance a from left support.',
+    desc: 'Single point load placed at distance a from left support.',
+  },
+  {
+    value: 'ss_central_point',
+    label: 'Simply Supported Beam + Central Point Load',
+    desc: 'Point load acting at mid-span. Common exam case.',
+  },
+  {
+    value: 'ss_two_point',
+    label: 'Simply Supported Beam + Two Point Loads',
+    desc: 'Two point loads placed at different distances from left support.',
   },
   {
     value: 'ss_udl',
     label: 'Simply Supported Beam + UDL',
-    desc: 'Uniformly distributed load over full span.',
+    desc: 'Uniformly distributed load acting over full span.',
   },
   {
-    value: 'cantilever_point',
+    value: 'cantilever_point_end',
     label: 'Cantilever Beam + Point Load at Free End',
     desc: 'Point load acting downward at free end.',
   },
   {
+    value: 'cantilever_point_any',
+    label: 'Cantilever Beam + Point Load at Any Distance',
+    desc: 'Point load placed at distance a from fixed support.',
+  },
+  {
     value: 'cantilever_udl',
     label: 'Cantilever Beam + UDL',
-    desc: 'Uniformly distributed load over full cantilever span.',
+    desc: 'Uniformly distributed load acting over full cantilever span.',
   },
 ]
 
@@ -56,38 +71,100 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
+function uniqueSorted(values) {
+  return [...new Set(values.map((v) => Number(v.toFixed(6))))].sort((a, b) => a - b)
+}
+
+function getCaseTitle(caseType) {
+  const item = caseOptions.find((option) => option.value === caseType)
+  return item?.label || 'Structural Analysis Solver'
+}
+
+function shearMomentAt(result, sectionX, side = 'right') {
+  const L = result.L || 1
+  const x = clamp(sectionX, 0, L)
+  const eps = 0.000001
+  const testX = side === 'left' ? Math.max(0, x - eps) : Math.min(L, x + eps)
+
+  if (result.supportType === 'simple') {
+    let V = result.RA
+    let M = result.RA * x
+
+    if (result.loadType === 'udl') {
+      V -= result.w * testX
+      M -= (result.w * x * x) / 2
+    }
+
+    if (result.loads?.length) {
+      result.loads.forEach((load) => {
+        if (testX >= load.x) V -= load.P
+        if (x >= load.x) M -= load.P * (x - load.x)
+      })
+    }
+
+    return { shear: V, moment: M }
+  }
+
+  if (result.supportType === 'cantilever') {
+    let V = 0
+    let M = 0
+
+    if (result.loadType === 'udl') {
+      V = -result.w * (L - x)
+      M = -(result.w * Math.pow(L - x, 2)) / 2
+      return { shear: V, moment: M }
+    }
+
+    result.loads.forEach((load) => {
+      if (testX < load.x) V -= load.P
+      if (x <= load.x) M -= load.P * (load.x - x)
+    })
+
+    return { shear: V, moment: M }
+  }
+
+  return { shear: 0, moment: 0 }
+}
+
 function solveBeam(form) {
   const caseType = form.caseType
   const L = Math.max(toNum(form.L, 1), 0.1)
   const P = Math.max(toNum(form.P, 0), 0)
+  const P2 = Math.max(toNum(form.P2, 0), 0)
   const w = Math.max(toNum(form.w, 0), 0)
 
   let a = toNum(form.a, L / 2)
+  let a2 = toNum(form.a2, (2 * L) / 3)
   let warning = ''
 
-  if (caseType === 'ss_point') {
-    const originalA = a
-    a = clamp(a, 0.01, L - 0.01)
+  const addWarning = (text) => {
+    warning = warning ? `${warning} ${text}` : text
+  }
 
-    if (originalA !== a) {
-      warning = `Load distance a must be between 0 and L. For calculation, a is adjusted to ${fmt(
-        a
-      )} m.`
+  if (caseType === 'ss_point' || caseType === 'ss_central_point') {
+    const originalA = a
+    a = caseType === 'ss_central_point' ? L / 2 : clamp(a, 0.01, L - 0.01)
+
+    if (caseType === 'ss_point' && originalA !== a) {
+      addWarning(`Load distance a must be between 0 and L. For calculation, a is adjusted to ${fmt(a)} m.`)
     }
 
     const b = L - a
     const RA = (P * b) / L
     const RB = (P * a) / L
     const Mmax = RA * a
-    const check = RA + RB
 
     return {
       caseType,
-      title: 'Simply Supported Beam with Point Load',
+      title: caseType === 'ss_central_point' ? 'Simply Supported Beam with Central Point Load' : 'Simply Supported Beam with Point Load',
+      supportType: 'simple',
+      loadType: 'point',
       L,
       P,
+      P2,
       w,
       a,
+      a2,
       b,
       RA,
       RB,
@@ -96,6 +173,7 @@ function solveBeam(form) {
       xMaxMoment: a,
       zeroShear: a,
       warning,
+      loads: [{ label: 'P', P, x: a }],
       summary: [
         { label: 'Left Reaction RA', value: `${fmt(RA)} kN` },
         { label: 'Right Reaction RB', value: `${fmt(RB)} kN` },
@@ -110,231 +188,89 @@ function solveBeam(form) {
         'Check: RA + RB = P',
       ],
       steps: [
-        `Given span L = ${fmt(L)} m, point load P = ${fmt(P)} kN, distance a = ${fmt(
-          a
-        )} m.`,
-        `Distance from load to right support: b = L - a = ${fmt(L)} - ${fmt(
-          a
-        )} = ${fmt(b)} m.`,
+        `Given span L = ${fmt(L)} m, point load P = ${fmt(P)} kN, and load position a = ${fmt(a)} m from support A.`,
+        `Distance from load to right support: b = L - a = ${fmt(L)} - ${fmt(a)} = ${fmt(b)} m.`,
         `Taking moment about A: RB × L = P × a.`,
-        `RB = (P × a) / L = (${fmt(P)} × ${fmt(a)}) / ${fmt(L)} = ${fmt(
-          RB
-        )} kN.`,
-        `Taking vertical force equilibrium: RA + RB = P.`,
+        `RB = (P × a) / L = (${fmt(P)} × ${fmt(a)}) / ${fmt(L)} = ${fmt(RB)} kN.`,
+        `Using vertical equilibrium: RA + RB = P.`,
         `RA = P - RB = ${fmt(P)} - ${fmt(RB)} = ${fmt(RA)} kN.`,
         `Maximum bending moment occurs under the point load.`,
         `Mmax = RA × a = ${fmt(RA)} × ${fmt(a)} = ${fmt(Mmax)} kN·m.`,
-        `Check: RA + RB = ${fmt(RA)} + ${fmt(RB)} = ${fmt(
-          check
-        )} kN, which is equal to total load P = ${fmt(P)} kN.`,
       ],
-      examAnswer: `Hence, the support reactions are RA = ${fmt(
-        RA
-      )} kN and RB = ${fmt(
-        RB
-      )} kN. The maximum bending moment occurs below the point load at ${fmt(
-        a
-      )} m from support A, and Mmax = ${fmt(Mmax)} kN·m.`,
+      examAnswer: `Hence, RA = ${fmt(RA)} kN and RB = ${fmt(RB)} kN. Maximum bending moment occurs below the point load at ${fmt(a)} m from A, and Mmax = ${fmt(Mmax)} kN·m.`,
     }
   }
-function getSectionValues(result, sectionX) {
-  const L = result.L || 1
-  const x = clamp(toNum(sectionX, L / 2), 0, L)
-  const tol = 0.000001
 
-  if (result.caseType === 'ss_point') {
-    const isAtLoad = Math.abs(x - result.a) < tol
-    const moment = result.RA * x - result.P * Math.max(0, x - result.a)
+  if (caseType === 'ss_two_point') {
+    const originalA = a
+    const originalA2 = a2
+    a = clamp(a, 0.01, L - 0.01)
+    a2 = clamp(a2, 0.01, L - 0.01)
 
-    if (isAtLoad) {
-      return {
-        x,
-        shear: `Left: +${fmt(result.RA)} kN, Right: -${fmt(result.RB)} kN`,
-        moment: `${fmt(moment)} kN·m`,
-        note:
-          'At the point load location, shear force changes suddenly. Bending moment is maximum at this point.',
-      }
-    }
+    if (originalA !== a) addWarning(`First load distance adjusted to ${fmt(a)} m.`)
+    if (originalA2 !== a2) addWarning(`Second load distance adjusted to ${fmt(a2)} m.`)
 
-    const shear = x < result.a ? result.RA : result.RA - result.P
+    const loads = [
+      { label: 'P1', P, x: a },
+      { label: 'P2', P: P2, x: a2 },
+    ].sort((l1, l2) => l1.x - l2.x)
+
+    const W = P + P2
+    const RB = (P * a + P2 * a2) / L
+    const RA = W - RB
+
+    const candidateXs = uniqueSorted([0, L, ...loads.map((load) => load.x)])
+    const moments = candidateXs.map((x) => ({ x, M: shearMomentAt({ supportType: 'simple', loadType: 'points', L, RA, RB, loads }, x).moment }))
+    const maxItem = moments.reduce((best, item) => (item.M > best.M ? item : best), moments[0])
+    const Mmax = maxItem?.M || 0
+    const xMaxMoment = maxItem?.x || 0
 
     return {
-      x,
-      shear: `${fmt(shear)} kN`,
-      moment: `${fmt(moment)} kN·m`,
-      note:
-        x < result.a
-          ? 'This section is before the point load, so shear force is equal to RA.'
-          : 'This section is after the point load, so shear force is RA - P.',
+      caseType,
+      title: 'Simply Supported Beam with Two Point Loads',
+      supportType: 'simple',
+      loadType: 'points',
+      L,
+      P,
+      P2,
+      w,
+      a,
+      a2,
+      b: L - a,
+      RA,
+      RB,
+      W,
+      Mmax,
+      xMaxMoment,
+      zeroShear: xMaxMoment,
+      warning,
+      loads,
+      summary: [
+        { label: 'Total Load', value: `${fmt(W)} kN` },
+        { label: 'Left Reaction RA', value: `${fmt(RA)} kN` },
+        { label: 'Right Reaction RB', value: `${fmt(RB)} kN` },
+        { label: 'Maximum BM', value: `${fmt(Mmax)} kN·m` },
+      ],
+      formulas: [
+        'Total load W = P1 + P2',
+        'Taking moment about A: RB × L = P1 × a1 + P2 × a2',
+        'RB = (P1a1 + P2a2) / L',
+        'RA = W - RB',
+        'BM at section x = RA × x - Σ(P × distance from load to section)',
+      ],
+      steps: [
+        `Given L = ${fmt(L)} m, P1 = ${fmt(P)} kN at ${fmt(a)} m from A, and P2 = ${fmt(P2)} kN at ${fmt(a2)} m from A.`,
+        `Total load W = P1 + P2 = ${fmt(P)} + ${fmt(P2)} = ${fmt(W)} kN.`,
+        `Taking moment about A: RB × L = P1 × a1 + P2 × a2.`,
+        `RB = (${fmt(P)} × ${fmt(a)} + ${fmt(P2)} × ${fmt(a2)}) / ${fmt(L)} = ${fmt(RB)} kN.`,
+        `RA = W - RB = ${fmt(W)} - ${fmt(RB)} = ${fmt(RA)} kN.`,
+        `Bending moment is checked at load points because maximum BM usually occurs where shear force changes sign.`,
+        `Maximum bending moment = ${fmt(Mmax)} kN·m at x = ${fmt(xMaxMoment)} m from A.`,
+      ],
+      examAnswer: `Hence, RA = ${fmt(RA)} kN and RB = ${fmt(RB)} kN. Maximum bending moment is ${fmt(Mmax)} kN·m at x = ${fmt(xMaxMoment)} m from support A.`,
     }
   }
 
-  if (result.caseType === 'ss_udl') {
-    const shear = result.RA - result.w * x
-    const moment = result.RA * x - (result.w * x * x) / 2
-
-    return {
-      x,
-      shear: `${fmt(shear)} kN`,
-      moment: `${fmt(moment)} kN·m`,
-      note:
-        Math.abs(shear) < 0.01
-          ? 'Shear force is nearly zero here, so bending moment is maximum near this section.'
-          : 'For UDL, shear force changes linearly and bending moment changes parabolically.',
-    }
-  }
-
-  if (result.caseType === 'cantilever_point') {
-    const moment = -result.P * (L - x)
-
-    return {
-      x,
-      shear:
-        Math.abs(x - L) < tol
-          ? `-${fmt(result.P)} kN just before free-end load`
-          : `-${fmt(result.P)} kN`,
-      moment: `${fmt(moment)} kN·m`,
-      note:
-        'For cantilever with point load at free end, shear force is constant and bending moment is maximum at fixed support.',
-    }
-  }
-
-  const shear = -result.w * (L - x)
-  const moment = -(result.w * Math.pow(L - x, 2)) / 2
-
-  return {
-    x,
-    shear: `${fmt(shear)} kN`,
-    moment: `${fmt(moment)} kN·m`,
-    note:
-      'For cantilever with UDL, shear force and bending moment are maximum at fixed support and zero at free end.',
-  }
-}
-
-function getSfdBmdRows(result) {
-  if (result.caseType === 'ss_point') {
-    return [
-      {
-        point: 'At support A',
-        x: '0',
-        shear: `+${fmt(result.RA)} kN`,
-        moment: '0 kN·m',
-        remark: 'Reaction starts the SFD upward.',
-      },
-      {
-        point: 'Just left of point load',
-        x: `${fmt(result.a)}⁻`,
-        shear: `+${fmt(result.RA)} kN`,
-        moment: `${fmt(result.Mmax)} kN·m`,
-        remark: 'BM reaches maximum near the load.',
-      },
-      {
-        point: 'Just right of point load',
-        x: `${fmt(result.a)}⁺`,
-        shear: `-${fmt(result.RB)} kN`,
-        moment: `${fmt(result.Mmax)} kN·m`,
-        remark: 'Shear jumps downward by P.',
-      },
-      {
-        point: 'At support B',
-        x: `${fmt(result.L)}`,
-        shear: '0 after RB',
-        moment: '0 kN·m',
-        remark: 'BM is zero at simple support.',
-      },
-    ]
-  }
-
-  if (result.caseType === 'ss_udl') {
-    return [
-      {
-        point: 'At support A',
-        x: '0',
-        shear: `+${fmt(result.RA)} kN`,
-        moment: '0 kN·m',
-        remark: 'SFD starts from positive reaction.',
-      },
-      {
-        point: 'At mid-span',
-        x: `${fmt(result.L / 2)}`,
-        shear: '0 kN',
-        moment: `${fmt(result.Mmax)} kN·m`,
-        remark: 'Maximum BM occurs where SF becomes zero.',
-      },
-      {
-        point: 'Just before support B',
-        x: `${fmt(result.L)}⁻`,
-        shear: `-${fmt(result.RB)} kN`,
-        moment: '0 kN·m',
-        remark: 'SFD reaches negative value before support B.',
-      },
-      {
-        point: 'At support B',
-        x: `${fmt(result.L)}`,
-        shear: '0 after RB',
-        moment: '0 kN·m',
-        remark: 'Support reaction closes the SFD.',
-      },
-    ]
-  }
-
-  if (result.caseType === 'cantilever_point') {
-    return [
-      {
-        point: 'At fixed support',
-        x: '0',
-        shear: `-${fmt(result.P)} kN`,
-        moment: `-${fmt(result.Mmax)} kN·m`,
-        remark: 'Maximum hogging moment occurs at fixed end.',
-      },
-      {
-        point: 'At mid-span',
-        x: `${fmt(result.L / 2)}`,
-        shear: `-${fmt(result.P)} kN`,
-        moment: `-${fmt(result.P * (result.L / 2))} kN·m`,
-        remark: 'BM reduces linearly towards free end.',
-      },
-      {
-        point: 'Just before free-end load',
-        x: `${fmt(result.L)}⁻`,
-        shear: `-${fmt(result.P)} kN`,
-        moment: '0 kN·m',
-        remark: 'Moment is zero at free end.',
-      },
-      {
-        point: 'After free-end load',
-        x: `${fmt(result.L)}`,
-        shear: '0 kN',
-        moment: '0 kN·m',
-        remark: 'Load closes the SFD at free end.',
-      },
-    ]
-  }
-
-  return [
-    {
-      point: 'At fixed support',
-      x: '0',
-      shear: `-${fmt(result.W)} kN`,
-      moment: `-${fmt(result.Mmax)} kN·m`,
-      remark: 'Maximum SF and BM occur at fixed end.',
-    },
-    {
-      point: 'At mid-span',
-      x: `${fmt(result.L / 2)}`,
-      shear: `-${fmt(result.W / 2)} kN`,
-      moment: `-${fmt((result.w * result.L * result.L) / 8)} kN·m`,
-      remark: 'SFD is linear and BMD is parabolic.',
-    },
-    {
-      point: 'At free end',
-      x: `${fmt(result.L)}`,
-      shear: '0 kN',
-      moment: '0 kN·m',
-      remark: 'Both SF and BM become zero at free end.',
-    },
-  ]
-}
   if (caseType === 'ss_udl') {
     const W = w * L
     const RA = W / 2
@@ -345,10 +281,14 @@ function getSfdBmdRows(result) {
     return {
       caseType,
       title: 'Simply Supported Beam with UDL',
+      supportType: 'simple',
+      loadType: 'udl',
       L,
       P,
+      P2,
       w,
       a: L / 2,
+      a2,
       b: L / 2,
       RA,
       RB,
@@ -357,6 +297,7 @@ function getSfdBmdRows(result) {
       xMaxMoment: L / 2,
       zeroShear,
       warning,
+      loads: [],
       summary: [
         { label: 'Total Load W', value: `${fmt(W)} kN` },
         { label: 'Left Reaction RA', value: `${fmt(RA)} kN` },
@@ -373,34 +314,38 @@ function getSfdBmdRows(result) {
       steps: [
         `Given span L = ${fmt(L)} m and UDL w = ${fmt(w)} kN/m.`,
         `Total load W = w × L = ${fmt(w)} × ${fmt(L)} = ${fmt(W)} kN.`,
-        `For a simply supported beam with full-span UDL, reactions are equal.`,
+        `For full-span UDL on a simply supported beam, reactions are equal.`,
         `RA = RB = W / 2 = ${fmt(W)} / 2 = ${fmt(RA)} kN.`,
         `Maximum bending moment occurs at mid-span where shear force becomes zero.`,
-        `Mmax = wL² / 8 = ${fmt(w)} × ${fmt(L)}² / 8 = ${fmt(
-          Mmax
-        )} kN·m.`,
-        `Zero shear point is at L / 2 = ${fmt(L)} / 2 = ${fmt(zeroShear)} m from A.`,
+        `Mmax = wL² / 8 = ${fmt(w)} × ${fmt(L)}² / 8 = ${fmt(Mmax)} kN·m.`,
       ],
-      examAnswer: `Hence, the total load is ${fmt(W)} kN. The support reactions are RA = RB = ${fmt(
-        RA
-      )} kN. The maximum bending moment occurs at mid-span and Mmax = ${fmt(
-        Mmax
-      )} kN·m.`,
+      examAnswer: `Hence, total load W = ${fmt(W)} kN, RA = RB = ${fmt(RA)} kN, and maximum bending moment at mid-span is ${fmt(Mmax)} kN·m.`,
     }
   }
 
-  if (caseType === 'cantilever_point') {
+  if (caseType === 'cantilever_point_end' || caseType === 'cantilever_point_any') {
+    const originalA = a
+    a = caseType === 'cantilever_point_end' ? L : clamp(a, 0.01, L)
+
+    if (caseType === 'cantilever_point_any' && originalA !== a) {
+      addWarning(`Load distance a must be between 0 and L. For calculation, a is adjusted to ${fmt(a)} m.`)
+    }
+
     const R = P
-    const Mmax = P * L
+    const Mmax = P * a
 
     return {
       caseType,
-      title: 'Cantilever Beam with Point Load at Free End',
+      title: caseType === 'cantilever_point_end' ? 'Cantilever Beam with Point Load at Free End' : 'Cantilever Beam with Point Load at Any Distance',
+      supportType: 'cantilever',
+      loadType: 'point',
       L,
       P,
+      P2,
       w,
-      a: L,
-      b: 0,
+      a,
+      a2,
+      b: L - a,
       RA: R,
       RB: 0,
       W: P,
@@ -408,33 +353,27 @@ function getSfdBmdRows(result) {
       xMaxMoment: 0,
       zeroShear: null,
       warning,
+      loads: [{ label: 'P', P, x: a }],
       summary: [
         { label: 'Fixed Reaction', value: `${fmt(R)} kN` },
         { label: 'Fixed End Moment', value: `${fmt(Mmax)} kN·m` },
+        { label: 'Load Position', value: `${fmt(a)} m from fixed end` },
         { label: 'Maximum BM Location', value: 'At fixed support' },
-        { label: 'Shear Force', value: `${fmt(P)} kN constant` },
       ],
       formulas: [
         'Vertical reaction at fixed support = P',
-        'Fixed end moment = P × L',
+        'Fixed end moment = P × a',
+        'For free-end point load, a = L',
         'Maximum BM occurs at fixed support',
-        'BM at free end = 0',
       ],
       steps: [
-        `Given cantilever span L = ${fmt(L)} m and point load P = ${fmt(
-          P
-        )} kN at free end.`,
-        `Taking vertical equilibrium, fixed support reaction R = P = ${fmt(P)} kN.`,
-        `Fixed end moment is caused by the load acting at distance L from fixed support.`,
-        `M = P × L = ${fmt(P)} × ${fmt(L)} = ${fmt(Mmax)} kN·m.`,
+        `Given cantilever span L = ${fmt(L)} m and point load P = ${fmt(P)} kN at a = ${fmt(a)} m from fixed support.`,
+        `Using vertical equilibrium, fixed support reaction R = P = ${fmt(P)} kN.`,
+        `Fixed end moment is caused by the load acting at distance a from the fixed support.`,
+        `M = P × a = ${fmt(P)} × ${fmt(a)} = ${fmt(Mmax)} kN·m.`,
         `Maximum bending moment occurs at the fixed support.`,
-        `Bending moment at the free end is zero.`,
       ],
-      examAnswer: `Hence, the fixed support reaction is ${fmt(
-        R
-      )} kN and the fixed end moment is ${fmt(
-        Mmax
-      )} kN·m. Maximum bending moment occurs at the fixed support.`,
+      examAnswer: `Hence, fixed support reaction = ${fmt(R)} kN and fixed end moment = ${fmt(Mmax)} kN·m. Maximum bending moment occurs at the fixed support.`,
     }
   }
 
@@ -445,10 +384,14 @@ function getSfdBmdRows(result) {
   return {
     caseType: 'cantilever_udl',
     title: 'Cantilever Beam with UDL',
+    supportType: 'cantilever',
+    loadType: 'udl',
     L,
     P,
+    P2,
     w,
     a: L,
+    a2,
     b: 0,
     RA: R,
     RB: 0,
@@ -457,6 +400,7 @@ function getSfdBmdRows(result) {
     xMaxMoment: 0,
     zeroShear: null,
     warning,
+    loads: [],
     summary: [
       { label: 'Total Load W', value: `${fmt(W)} kN` },
       { label: 'Fixed Reaction', value: `${fmt(R)} kN` },
@@ -474,19 +418,203 @@ function getSfdBmdRows(result) {
       `Total load W = w × L = ${fmt(w)} × ${fmt(L)} = ${fmt(W)} kN.`,
       `The fixed support carries the complete vertical load.`,
       `Fixed reaction R = W = ${fmt(W)} kN.`,
-      `Fixed end moment M = wL² / 2 = ${fmt(w)} × ${fmt(L)}² / 2 = ${fmt(
-        Mmax
-      )} kN·m.`,
+      `Fixed end moment M = wL² / 2 = ${fmt(w)} × ${fmt(L)}² / 2 = ${fmt(Mmax)} kN·m.`,
       `Maximum bending moment occurs at the fixed support.`,
-      `Bending moment at the free end is zero.`,
     ],
-    examAnswer: `Hence, the total load is ${fmt(
-      W
-    )} kN, fixed support reaction is ${fmt(
-      R
-    )} kN, and fixed end moment is ${fmt(
-      Mmax
-    )} kN·m. Maximum bending moment occurs at the fixed support.`,
+    examAnswer: `Hence, total load W = ${fmt(W)} kN, fixed support reaction = ${fmt(R)} kN, and fixed end moment = ${fmt(Mmax)} kN·m.`,
+  }
+}
+
+function getSectionValues(result, sectionX) {
+  const L = result.L || 1
+  const x = clamp(toNum(sectionX, L / 2), 0, L)
+  const eps = 0.000001
+  const nearLoad = result.loads?.find((load) => Math.abs(x - load.x) < eps)
+
+  if (nearLoad) {
+    const left = shearMomentAt(result, x, 'left')
+    const right = shearMomentAt(result, x, 'right')
+    return {
+      x,
+      shear: `Left: ${fmt(left.shear)} kN, Right: ${fmt(right.shear)} kN`,
+      moment: `${fmt(left.moment)} kN·m`,
+      note: `At ${nearLoad.label}, shear force jumps suddenly by ${fmt(nearLoad.P)} kN. Bending moment remains continuous.`,
+    }
+  }
+
+  const value = shearMomentAt(result, x)
+
+  return {
+    x,
+    shear: `${fmt(value.shear)} kN`,
+    moment: `${fmt(value.moment)} kN·m`,
+    note:
+      result.loadType === 'udl'
+        ? 'For UDL, shear force changes linearly and bending moment changes parabolically.'
+        : 'For point loads, shear force remains constant between loads and bending moment changes linearly between loads.',
+  }
+}
+
+function getSfdBmdRows(result) {
+  const rows = []
+
+  const addRow = (point, x, remark, side = 'right') => {
+    const value = shearMomentAt(result, x, side)
+    rows.push({
+      point,
+      x: `${fmt(x)} m`,
+      shear: `${fmt(value.shear)} kN`,
+      moment: `${fmt(value.moment)} kN·m`,
+      remark,
+    })
+  }
+
+  if (result.supportType === 'simple') {
+    addRow('At support A', 0, 'BM is zero at simple support.')
+
+    if (result.loadType === 'udl') {
+      addRow('At mid-span', result.L / 2, 'Shear force is zero and BM is maximum.')
+      addRow('Just before support B', result.L, 'SFD reaches negative reaction before RB.', 'left')
+      rows.push({
+        point: 'After support B',
+        x: `${fmt(result.L)} m`,
+        shear: '0 kN',
+        moment: '0 kN·m',
+        remark: 'Support reaction closes the SFD.',
+      })
+      return rows
+    }
+
+    result.loads.forEach((load) => {
+      const left = shearMomentAt(result, load.x, 'left')
+      const right = shearMomentAt(result, load.x, 'right')
+      rows.push({
+        point: `Just left of ${load.label}`,
+        x: `${fmt(load.x)}⁻ m`,
+        shear: `${fmt(left.shear)} kN`,
+        moment: `${fmt(left.moment)} kN·m`,
+        remark: 'Value just before point load.',
+      })
+      rows.push({
+        point: `Just right of ${load.label}`,
+        x: `${fmt(load.x)}⁺ m`,
+        shear: `${fmt(right.shear)} kN`,
+        moment: `${fmt(right.moment)} kN·m`,
+        remark: `Shear jumps downward by ${fmt(load.P)} kN.`,
+      })
+    })
+
+    addRow('Just before support B', result.L, 'BM is zero at simple support.', 'left')
+    rows.push({
+      point: 'After support B',
+      x: `${fmt(result.L)} m`,
+      shear: '0 kN',
+      moment: '0 kN·m',
+      remark: 'Support reaction closes the SFD.',
+    })
+    return rows
+  }
+
+  addRow('At fixed support', 0, 'Maximum hogging BM occurs at fixed end.')
+
+  if (result.loadType === 'udl') {
+    addRow('At mid-span', result.L / 2, 'SFD is linear and BMD is parabolic.')
+    addRow('At free end', result.L, 'Both SF and BM become zero at free end.')
+    return rows
+  }
+
+  result.loads.forEach((load) => {
+    addRow(`Just before ${load.label}`, load.x, 'Loaded region ends here.', 'left')
+    addRow(`Just after ${load.label}`, load.x, 'After point load, SF becomes zero if no load exists to the right.', 'right')
+  })
+
+  addRow('At free end', result.L, 'Free end moment is zero.')
+  return rows
+}
+
+function deflectionAtX(result, xM, E_GPa, I_millionMm4) {
+  const E = Math.max(E_GPa, 0.001) * 1000
+  const I = Math.max(I_millionMm4, 0.001) * 1000000
+  const L = result.L * 1000
+  const x = clamp(xM, 0, result.L) * 1000
+
+  let y = 0
+
+  if (result.supportType === 'simple') {
+    if (result.loadType === 'udl') {
+      const w = result.w
+      y += (w * x * (Math.pow(L, 3) - 2 * L * x * x + Math.pow(x, 3))) / (24 * E * I)
+    }
+
+    result.loads.forEach((load) => {
+      const P = load.P * 1000
+      const a = load.x * 1000
+      const b = L - a
+
+      if (x <= a) {
+        y += (P * b * x * (Math.pow(L, 2) - Math.pow(b, 2) - Math.pow(x, 2))) / (6 * L * E * I)
+      } else {
+        y += (P * a * (L - x) * (Math.pow(L, 2) - Math.pow(a, 2) - Math.pow(L - x, 2))) / (6 * L * E * I)
+      }
+    })
+
+    return y
+  }
+
+  if (result.supportType === 'cantilever') {
+    if (result.loadType === 'udl') {
+      const w = result.w
+      y += (w * x * x * (6 * L * L - 4 * L * x + x * x)) / (24 * E * I)
+    }
+
+    result.loads.forEach((load) => {
+      const P = load.P * 1000
+      const a = load.x * 1000
+
+      if (x <= a) {
+        y += (P * x * x * (3 * a - x)) / (6 * E * I)
+      } else {
+        y += (P * a * a * (3 * x - a)) / (6 * E * I)
+      }
+    })
+
+    return y
+  }
+
+  return 0
+}
+
+function getDeflectionResult(result, form) {
+  const E = Math.max(toNum(form.E, 200), 0.001)
+  const I = Math.max(toNum(form.I, 300), 0.001)
+  const x = clamp(toNum(form.x, result.L / 2), 0, result.L)
+  const yAtX = deflectionAtX(result, x, E, I)
+
+  const samples = Array.from({ length: 201 }, (_, index) => {
+    const sx = (result.L * index) / 200
+    return {
+      x: sx,
+      y: deflectionAtX(result, sx, E, I),
+    }
+  })
+
+  const maxItem = samples.reduce((best, item) => (Math.abs(item.y) > Math.abs(best.y) ? item : best), samples[0])
+
+  const h = Math.max(result.L / 10000, 0.0001)
+  const xLeft = clamp(x - h, 0, result.L)
+  const xRight = clamp(x + h, 0, result.L)
+  const yLeft = deflectionAtX(result, xLeft, E, I)
+  const yRight = deflectionAtX(result, xRight, E, I)
+  const slope = (yRight - yLeft) / ((xRight - xLeft) * 1000 || 1)
+
+  return {
+    E,
+    I,
+    x,
+    yAtX,
+    slope,
+    maxDeflection: maxItem.y,
+    maxX: maxItem.x,
   }
 }
 
@@ -524,11 +652,8 @@ function BeamSketch({ result }) {
   const y = 115
   const L = result.L || 1
   const mapX = (x) => x0 + (x / L) * (x1 - x0)
-  const isSimply = result.caseType.startsWith('ss')
-  const isPoint = result.caseType.includes('point')
-  const isUDL = result.caseType.includes('udl')
-  const loadX = isSimply ? mapX(result.a) : x1
-
+  const isSimply = result.supportType === 'simple'
+  const isUDL = result.loadType === 'udl'
   const udlPositions = Array.from({ length: 9 }, (_, i) => x0 + 35 + i * 54)
 
   return (
@@ -540,10 +665,10 @@ function BeamSketch({ result }) {
         </span>
       </div>
 
-      <svg viewBox="0 0 640 220" className="h-auto w-full">
+      <svg viewBox="0 0 640 230" className="h-auto w-full">
         <line x1={x0} y1={y} x2={x1} y2={y} stroke="#cbd5e1" strokeWidth="7" strokeLinecap="round" />
 
-        {isSimply && (
+        {isSimply ? (
           <>
             <polygon points={`${x0 - 18},${y + 35} ${x0 + 18},${y + 35} ${x0},${y + 6}`} fill="#38bdf8" />
             <line x1={x0 - 30} y1={y + 38} x2={x0 + 30} y2={y + 38} stroke="#38bdf8" strokeWidth="3" />
@@ -552,17 +677,8 @@ function BeamSketch({ result }) {
             <circle cx={x1} cy={y + 24} r="12" fill="none" stroke="#38bdf8" strokeWidth="3" />
             <line x1={x1 - 30} y1={y + 38} x2={x1 + 30} y2={y + 38} stroke="#38bdf8" strokeWidth="3" />
             <text x={x1 - 7} y={y + 65} fill="#e2e8f0" fontSize="14" fontWeight="700">B</text>
-
-            <line x1={x0} y1={y + 90} x2={x1} y2={y + 90} stroke="#64748b" strokeWidth="2" />
-            <line x1={x0} y1={y + 82} x2={x0} y2={y + 98} stroke="#64748b" strokeWidth="2" />
-            <line x1={x1} y1={y + 82} x2={x1} y2={y + 98} stroke="#64748b" strokeWidth="2" />
-            <text x={(x0 + x1) / 2 - 18} y={y + 112} fill="#f97316" fontSize="14" fontWeight="700">
-              L = {fmt(result.L)} m
-            </text>
           </>
-        )}
-
-        {!isSimply && (
+        ) : (
           <>
             <rect x={x0 - 32} y={y - 55} width="28" height="110" fill="#38bdf8" opacity="0.9" />
             {[-42, -22, -2, 18, 38].map((dy) => (
@@ -578,23 +694,6 @@ function BeamSketch({ result }) {
             ))}
             <text x={x0 - 45} y={y + 76} fill="#e2e8f0" fontSize="14" fontWeight="700">
               Fixed
-            </text>
-
-            <line x1={x0} y1={y + 90} x2={x1} y2={y + 90} stroke="#64748b" strokeWidth="2" />
-            <line x1={x0} y1={y + 82} x2={x0} y2={y + 98} stroke="#64748b" strokeWidth="2" />
-            <line x1={x1} y1={y + 82} x2={x1} y2={y + 98} stroke="#64748b" strokeWidth="2" />
-            <text x={(x0 + x1) / 2 - 18} y={y + 112} fill="#f97316" fontSize="14" fontWeight="700">
-              L = {fmt(result.L)} m
-            </text>
-          </>
-        )}
-
-        {isPoint && (
-          <>
-            <line x1={loadX} y1="35" x2={loadX} y2={y - 8} stroke="#f97316" strokeWidth="4" />
-            <polygon points={`${loadX - 9},${y - 18} ${loadX + 9},${y - 18} ${loadX},${y - 4}`} fill="#f97316" />
-            <text x={loadX - 22} y="26" fill="#fed7aa" fontSize="14" fontWeight="800">
-              P = {fmt(result.P)} kN
             </text>
           </>
         )}
@@ -614,20 +713,31 @@ function BeamSketch({ result }) {
           </>
         )}
 
-        {result.caseType === 'ss_point' && (
-          <>
-            <line x1={x0} y1={y + 67} x2={loadX} y2={y + 67} stroke="#94a3b8" strokeWidth="2" />
-            <line x1={loadX} y1={y + 67} x2={x1} y2={y + 67} stroke="#94a3b8" strokeWidth="2" />
-            <text x={(x0 + loadX) / 2 - 15} y={y + 58} fill="#bfdbfe" fontSize="13" fontWeight="700">
-              a = {fmt(result.a)} m
-            </text>
-            <text x={(loadX + x1) / 2 - 15} y={y + 58} fill="#bfdbfe" fontSize="13" fontWeight="700">
-              b = {fmt(result.b)} m
-            </text>
-          </>
-        )}
+        {result.loads?.map((load) => {
+          const loadX = mapX(load.x)
+          return (
+            <g key={`${load.label}-${load.x}`}>
+              <line x1={loadX} y1="35" x2={loadX} y2={y - 8} stroke="#f97316" strokeWidth="4" />
+              <polygon points={`${loadX - 9},${y - 18} ${loadX + 9},${y - 18} ${loadX},${y - 4}`} fill="#f97316" />
+              <text x={loadX - 30} y="26" fill="#fed7aa" fontSize="14" fontWeight="800">
+                {load.label} = {fmt(load.P)} kN
+              </text>
+              <line x1={x0} y1={y + 67} x2={loadX} y2={y + 67} stroke="#94a3b8" strokeWidth="2" />
+              <text x={(x0 + loadX) / 2 - 20} y={y + 58} fill="#bfdbfe" fontSize="13" fontWeight="700">
+                x = {fmt(load.x)} m
+              </text>
+            </g>
+          )
+        })}
 
-        <text x="18" y="205" fill="#94a3b8" fontSize="13">
+        <line x1={x0} y1={y + 95} x2={x1} y2={y + 95} stroke="#64748b" strokeWidth="2" />
+        <line x1={x0} y1={y + 87} x2={x0} y2={y + 103} stroke="#64748b" strokeWidth="2" />
+        <line x1={x1} y1={y + 87} x2={x1} y2={y + 103} stroke="#64748b" strokeWidth="2" />
+        <text x={(x0 + x1) / 2 - 18} y={y + 118} fill="#f97316" fontSize="14" fontWeight="700">
+          L = {fmt(result.L)} m
+        </text>
+
+        <text x="18" y="215" fill="#94a3b8" fontSize="13">
           Diagram is educational and scaled according to input span and load position.
         </text>
       </svg>
@@ -635,143 +745,87 @@ function BeamSketch({ result }) {
   )
 }
 
-function SFDDiagram({ result }) {
+function Diagram({ result, type }) {
   const x0 = 70
   const x1 = 570
-  const yBase = 110
-  const amp = 58
+  const yBase = 105
+  const amp = 70
   const L = result.L || 1
   const mapX = (x) => x0 + (x / L) * (x1 - x0)
 
-  let diagram = null
+  const baseXs = Array.from({ length: 81 }, (_, i) => (L * i) / 80)
+  const extraXs = []
 
-  if (result.caseType === 'ss_point') {
-    const xp = mapX(result.a)
-    diagram = (
-      <>
-        <path
-          d={`M ${x0} ${yBase} L ${x0} ${yBase - amp} L ${xp} ${yBase - amp} L ${xp} ${
-            yBase + amp
-          } L ${x1} ${yBase + amp} L ${x1} ${yBase} Z`}
-          fill="rgba(249,115,22,0.18)"
-          stroke="#f97316"
-          strokeWidth="3"
-        />
-        <text x={x0 + 10} y={yBase - amp - 10} fill="#fed7aa" fontSize="13" fontWeight="700">
-          +RA = {fmt(result.RA)} kN
-        </text>
-        <text x={xp + 10} y={yBase + amp + 22} fill="#fed7aa" fontSize="13" fontWeight="700">
-          -RB = -{fmt(result.RB)} kN
-        </text>
-      </>
-    )
-  }
+  result.loads?.forEach((load) => {
+    extraXs.push(clamp(load.x - 0.0001, 0, L), load.x, clamp(load.x + 0.0001, 0, L))
+  })
 
-  if (result.caseType === 'ss_udl') {
-    diagram = (
-      <>
-        <path
-          d={`M ${x0} ${yBase} L ${x0} ${yBase - amp} L ${x1} ${yBase + amp} L ${x1} ${yBase} Z`}
-          fill="rgba(249,115,22,0.18)"
-          stroke="#f97316"
-          strokeWidth="3"
-        />
-        <circle cx={(x0 + x1) / 2} cy={yBase} r="5" fill="#38bdf8" />
-        <text x={x0 + 10} y={yBase - amp - 10} fill="#fed7aa" fontSize="13" fontWeight="700">
-          +{fmt(result.RA)} kN
-        </text>
-        <text x={x1 - 90} y={yBase + amp + 22} fill="#fed7aa" fontSize="13" fontWeight="700">
-          -{fmt(result.RB)} kN
-        </text>
-        <text x={(x0 + x1) / 2 + 10} y={yBase - 8} fill="#bfdbfe" fontSize="13" fontWeight="700">
-          V = 0 at L/2
-        </text>
-      </>
-    )
-  }
+  if (result.zeroShear !== null && result.zeroShear !== undefined) extraXs.push(result.zeroShear)
+  if (result.xMaxMoment !== null && result.xMaxMoment !== undefined) extraXs.push(result.xMaxMoment)
 
-  if (result.caseType === 'cantilever_point') {
-    diagram = (
-      <>
-        <path
-          d={`M ${x0} ${yBase} L ${x0} ${yBase + amp} L ${x1} ${yBase + amp} L ${x1} ${yBase} Z`}
-          fill="rgba(249,115,22,0.18)"
-          stroke="#f97316"
-          strokeWidth="3"
-        />
-        <text x={x0 + 15} y={yBase + amp + 22} fill="#fed7aa" fontSize="13" fontWeight="700">
-          V = -P = -{fmt(result.P)} kN
-        </text>
-      </>
-    )
-  }
+  const xs = uniqueSorted([...baseXs, ...extraXs])
+  const values = xs.map((x) => {
+    const value = shearMomentAt(result, x)
+    return type === 'sfd' ? value.shear : value.moment
+  })
 
-  if (result.caseType === 'cantilever_udl') {
-    diagram = (
-      <>
-        <path
-          d={`M ${x0} ${yBase} L ${x0} ${yBase + amp} L ${x1} ${yBase} Z`}
-          fill="rgba(249,115,22,0.18)"
-          stroke="#f97316"
-          strokeWidth="3"
-        />
-        <text x={x0 + 15} y={yBase + amp + 22} fill="#fed7aa" fontSize="13" fontWeight="700">
-          Vmax = -wL = -{fmt(result.W)} kN
-        </text>
-        <text x={x1 - 85} y={yBase - 10} fill="#bfdbfe" fontSize="13" fontWeight="700">
-          V = 0
-        </text>
-      </>
-    )
-  }
+  const maxAbs = Math.max(...values.map((v) => Math.abs(v)), 1)
+
+  const points = xs
+    .map((x, index) => {
+      const value = values[index]
+      const y =
+        type === 'sfd'
+          ? yBase - (value / maxAbs) * amp
+          : yBase + (value / maxAbs) * amp
+      return `${mapX(x)},${y}`
+    })
+    .join(' ')
+
+  const title = type === 'sfd' ? 'Shear Force Diagram' : 'Bending Moment Diagram'
+  const color = type === 'sfd' ? '#f97316' : '#38bdf8'
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-      <h3 className="mb-3 text-lg font-bold text-white">Shear Force Diagram</h3>
+      <h3 className="mb-3 text-lg font-bold text-white">{title}</h3>
 
-      <svg viewBox="0 0 640 220" className="h-auto w-full">
+      <svg viewBox="0 0 640 230" className="h-auto w-full">
         <line x1={x0} y1={yBase} x2={x1} y2={yBase} stroke="#64748b" strokeWidth="2" strokeDasharray="6 6" />
-        <line x1={x0} y1="38" x2={x0} y2="182" stroke="#334155" strokeWidth="2" />
-        <line x1={x1} y1="38" x2={x1} y2="182" stroke="#334155" strokeWidth="2" />
+        <line x1={x0} y1="28" x2={x0} y2="185" stroke="#334155" strokeWidth="2" />
+        <line x1={x1} y1="28" x2={x1} y2="185" stroke="#334155" strokeWidth="2" />
 
-        {diagram}
+        <polyline points={points} fill="none" stroke={color} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
 
-        <text x={x0 - 10} y="202" fill="#cbd5e1" fontSize="13" fontWeight="700">A / Fixed</text>
-        <text x={x1 - 16} y="202" fill="#cbd5e1" fontSize="13" fontWeight="700">B / Free</text>
-        <text x="18" y="24" fill="#94a3b8" fontSize="13">
-          SFD shows variation of shear force along the beam.
+        {result.loads?.map((load) => (
+          <line
+            key={load.label}
+            x1={mapX(load.x)}
+            y1="35"
+            x2={mapX(load.x)}
+            y2="185"
+            stroke="#475569"
+            strokeWidth="1.5"
+            strokeDasharray="5 5"
+          />
+        ))}
+
+        <text x={x0 - 10} y="207" fill="#cbd5e1" fontSize="13" fontWeight="700">
+          {result.supportType === 'simple' ? 'A' : 'Fixed'}
+        </text>
+        <text x={x1 - 16} y="207" fill="#cbd5e1" fontSize="13" fontWeight="700">
+          {result.supportType === 'simple' ? 'B' : 'Free'}
+        </text>
+
+        <text x="18" y="20" fill="#94a3b8" fontSize="13">
+          {type === 'sfd'
+            ? 'Positive shear is shown above the axis; negative shear below the axis.'
+            : 'Positive BM is shown below the axis; negative/hogging BM above the axis.'}
         </text>
       </svg>
     </div>
   )
 }
 
-function BMDDiagram({ result }) {
-  const x0 = 70
-  const x1 = 570
-  const yBase = 90
-  const amp = 75
-  const L = result.L || 1
-  const mapX = (x) => x0 + (x / L) * (x1 - x0)
-
-  let diagram = null
-
-  if (result.caseType === 'ss_point') {
-    const xp = mapX(result.a)
-    diagram = (
-      <>
-        <path
-          d={`M ${x0} ${yBase} L ${xp} ${yBase + amp} L ${x1} ${yBase} Z`}
-          fill="rgba(56,189,248,0.16)"
-          stroke="#38bdf8"
-          strokeWidth="3"
-        />
-        <text x={xp - 45} y={yBase + amp + 22} fill="#bfdbfe" fontSize="13" fontWeight="700">
-          Mmax = {fmt(result.Mmax)} kN·m
-        </text>
-      </>
-    )
-  }
 function DiagramValuesTable({ result, sectionX }) {
   const rows = getSfdBmdRows(result)
   const section = getSectionValues(result, sectionX)
@@ -780,16 +834,14 @@ function DiagramValuesTable({ result, sectionX }) {
     <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-2xl font-black text-white">
-            SFD & BMD Key Values
-          </h2>
+          <h2 className="text-2xl font-black text-white">SFD & BMD Key Values</h2>
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Important values required to draw shear force and bending moment diagrams.
+            Important ordinates required to draw shear force and bending moment diagrams.
           </p>
         </div>
 
         <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm leading-6 text-orange-100">
-          Sign convention: +BM = sagging, -BM = hogging
+          +BM = sagging, -BM = hogging
         </div>
       </div>
 
@@ -797,42 +849,22 @@ function DiagramValuesTable({ result, sectionX }) {
         <table className="w-full min-w-[760px] border-collapse text-left">
           <thead className="bg-slate-950">
             <tr>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
-                Point
-              </th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
-                x Location
-              </th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
-                Shear Force
-              </th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
-                Bending Moment
-              </th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
-                Remark
-              </th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Point</th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">x Location</th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Shear Force</th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Bending Moment</th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Remark</th>
             </tr>
           </thead>
 
           <tbody>
             {rows.map((row) => (
               <tr key={`${row.point}-${row.x}`} className="bg-slate-900/50">
-                <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-slate-200">
-                  {row.point}
-                </td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-orange-300">
-                  {row.x}
-                </td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">
-                  {row.shear}
-                </td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">
-                  {row.moment}
-                </td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm leading-6 text-slate-400">
-                  {row.remark}
-                </td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-slate-200">{row.point}</td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-orange-300">{row.x}</td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{row.shear}</td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{row.moment}</td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm leading-6 text-slate-400">{row.remark}</td>
               </tr>
             ))}
           </tbody>
@@ -847,16 +879,12 @@ function DiagramValuesTable({ result, sectionX }) {
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
             <p className="text-sm text-slate-400">Shear Force at Section</p>
-            <p className="mt-2 text-2xl font-black text-sky-300">
-              {section.shear}
-            </p>
+            <p className="mt-2 text-2xl font-black text-sky-300">{section.shear}</p>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
             <p className="text-sm text-slate-400">Bending Moment at Section</p>
-            <p className="mt-2 text-2xl font-black text-sky-300">
-              {section.moment}
-            </p>
+            <p className="mt-2 text-2xl font-black text-sky-300">{section.moment}</p>
           </div>
         </div>
 
@@ -865,98 +893,81 @@ function DiagramValuesTable({ result, sectionX }) {
     </div>
   )
 }
-  if (result.caseType === 'ss_udl') {
-    const points = Array.from({ length: 35 }, (_, i) => {
-      const x = (L * i) / 34
-      const M = result.RA * x - (result.w * x * x) / 2
-      const ratio = result.Mmax ? M / result.Mmax : 0
-      return `${mapX(x)},${yBase + ratio * amp}`
-    }).join(' ')
 
-    diagram = (
-      <>
-        <path
-          d={`M ${x0} ${yBase} L ${points} L ${x1} ${yBase} Z`}
-          fill="rgba(56,189,248,0.16)"
-          stroke="#38bdf8"
-          strokeWidth="3"
-        />
-        <text x={(x0 + x1) / 2 - 65} y={yBase + amp + 22} fill="#bfdbfe" fontSize="13" fontWeight="700">
-          Mmax = {fmt(result.Mmax)} kN·m at L/2
-        </text>
-      </>
-    )
-  }
-
-  if (result.caseType === 'cantilever_point') {
-    diagram = (
-      <>
-        <path
-          d={`M ${x0} ${yBase} L ${x0} ${yBase - amp} L ${x1} ${yBase} Z`}
-          fill="rgba(56,189,248,0.16)"
-          stroke="#38bdf8"
-          strokeWidth="3"
-        />
-        <text x={x0 + 15} y={yBase - amp - 12} fill="#bfdbfe" fontSize="13" fontWeight="700">
-          Hogging M = {fmt(result.Mmax)} kN·m
-        </text>
-      </>
-    )
-  }
-
-  if (result.caseType === 'cantilever_udl') {
-    const points = Array.from({ length: 35 }, (_, i) => {
-      const x = (L * i) / 34
-      const M = (result.w * Math.pow(L - x, 2)) / 2
-      const ratio = result.Mmax ? M / result.Mmax : 0
-      return `${mapX(x)},${yBase - ratio * amp}`
-    }).join(' ')
-
-    diagram = (
-      <>
-        <path
-          d={`M ${x0} ${yBase} L ${points} L ${x1} ${yBase} Z`}
-          fill="rgba(56,189,248,0.16)"
-          stroke="#38bdf8"
-          strokeWidth="3"
-        />
-        <text x={x0 + 15} y={yBase - amp - 12} fill="#bfdbfe" fontSize="13" fontWeight="700">
-          Hogging Mmax = {fmt(result.Mmax)} kN·m
-        </text>
-      </>
-    )
-  }
+function DeflectionPanel({ result, form }) {
+  const def = getDeflectionResult(result, form)
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-      <h3 className="mb-3 text-lg font-bold text-white">Bending Moment Diagram</h3>
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+      <h2 className="text-2xl font-black text-white">Slope & Deflection</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-400">
+        Deflection is calculated using standard elastic beam formulas. Downward deflection is shown as positive.
+      </p>
 
-      <svg viewBox="0 0 640 220" className="h-auto w-full">
-        <line x1={x0} y1={yBase} x2={x1} y2={yBase} stroke="#64748b" strokeWidth="2" strokeDasharray="6 6" />
-        <line x1={x0} y1="22" x2={x0} y2="180" stroke="#334155" strokeWidth="2" />
-        <line x1={x1} y1="22" x2={x1} y2="180" stroke="#334155" strokeWidth="2" />
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+          <p className="text-sm text-slate-400">Deflection at selected x</p>
+          <p className="mt-2 text-xl font-black text-orange-300">{fmt(def.yAtX, 4)} mm</p>
+        </div>
 
-        {diagram}
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+          <p className="text-sm text-slate-400">Maximum deflection</p>
+          <p className="mt-2 text-xl font-black text-orange-300">{fmt(def.maxDeflection, 4)} mm</p>
+        </div>
 
-        <text x={x0 - 10} y="202" fill="#cbd5e1" fontSize="13" fontWeight="700">A / Fixed</text>
-        <text x={x1 - 16} y="202" fill="#cbd5e1" fontSize="13" fontWeight="700">B / Free</text>
-        <text x="18" y="18" fill="#94a3b8" fontSize="13">
-          BMD shows bending moment variation. Sagging is shown below axis, hogging above axis.
-        </text>
-      </svg>
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+          <p className="text-sm text-slate-400">Max deflection location</p>
+          <p className="mt-2 text-xl font-black text-orange-300">{fmt(def.maxX)} m</p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
+        <p className="text-sm text-slate-400">Approx. slope at selected x</p>
+        <p className="mt-2 text-xl font-black text-sky-300">{fmt(def.slope, 6)} rad</p>
+      </div>
+    </div>
+  )
+}
+
+function FormulaLibrary() {
+  const formulas = [
+    ['Equilibrium', 'ΣV = 0, ΣH = 0, ΣM = 0'],
+    ['Simply supported point load', 'RA = Pb/L, RB = Pa/L, Mmax = Pab/L'],
+    ['Simply supported UDL', 'RA = RB = wL/2, Mmax = wL²/8'],
+    ['Cantilever point load', 'R = P, Mfixed = Pa'],
+    ['Cantilever UDL', 'R = wL, Mfixed = wL²/2'],
+    ['Steel beam deflection note', 'Deflection depends on E, I, load and span.'],
+  ]
+
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+      <h2 className="text-2xl font-black text-white">Formula Library</h2>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {formulas.map((item) => (
+          <div key={item[0]} className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4">
+            <p className="font-black text-white">{item[0]}</p>
+            <p className="mt-2 text-sm font-bold text-orange-200">{item[1]}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
 export default function StructuralAnalysisPage() {
-const [form, setForm] = useState({
-  caseType: 'ss_point',
-  L: 6,
-  P: 20,
-  a: 2,
-  w: 5,
-  x: 3,
-})
+  const [form, setForm] = useState({
+    caseType: 'ss_point',
+    L: 6,
+    P: 20,
+    P2: 10,
+    a: 2,
+    a2: 4,
+    w: 5,
+    x: 3,
+    E: 200,
+    I: 300,
+  })
 
   const selectedCase = caseOptions.find((item) => item.value === form.caseType)
   const result = useMemo(() => solveBeam(form), [form])
@@ -969,50 +980,49 @@ const [form, setForm] = useState({
   }
 
   const reset = () => {
-   setForm({
-  caseType: 'ss_point',
-  L: 6,
-  P: 20,
-  a: 2,
-  w: 5,
-  x: 3,
-})
+    setForm({
+      caseType: 'ss_point',
+      L: 6,
+      P: 20,
+      P2: 10,
+      a: 2,
+      a2: 4,
+      w: 5,
+      x: 3,
+      E: 200,
+      I: 300,
+    })
   }
 
-  const isPointCase = form.caseType.includes('point')
   const isUDLCase = form.caseType.includes('udl')
-  const isSimplyPoint = form.caseType === 'ss_point'
+  const isTwoPoint = form.caseType === 'ss_two_point'
+  const isSinglePoint =
+    form.caseType === 'ss_point' ||
+    form.caseType === 'ss_central_point' ||
+    form.caseType === 'cantilever_point_end' ||
+    form.caseType === 'cantilever_point_any'
+  const needsA = form.caseType === 'ss_point' || form.caseType === 'cantilever_point_any'
 
   return (
     <main className="min-h-screen bg-[#050B1F] px-4 py-8 text-white md:px-8">
       <section className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 md:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="mb-3 text-sm font-extrabold uppercase tracking-widest text-orange-400">
-                Semester 3 Civil Engineering
-              </p>
+          <p className="mb-3 text-sm font-extrabold uppercase tracking-widest text-orange-400">
+            Semester 3 Civil Engineering
+          </p>
 
-              <h1 className="text-3xl font-black leading-tight md:text-5xl">
-                Structural Analysis Solver for Civil Engineering Students
-              </h1>
+          <h1 className="text-3xl font-black leading-tight md:text-5xl">
+            Structural Analysis Solver for Civil Engineering Students
+          </h1>
 
-              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300 md:text-lg">
-      Solve structural analysis problems with beam diagrams, support reactions,
-SFD, BMD, formulas, step-by-step solution and exam-style final answer.
-              </p>
-            </div>
-
-            
-          </div>
+          <p className="mt-4 max-w-4xl text-base leading-8 text-slate-300 md:text-lg">
+            Solve beam reactions, SFD, BMD, slope, deflection and exam-style structural analysis problems with diagrams and step-by-step solution.
+          </p>
         </div>
 
         <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {topicCards.map((topic) => (
-            <div
-              key={topic}
-              className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4"
-            >
+            <div key={topic} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
               <p className="text-sm font-bold text-slate-200">{topic}</p>
             </div>
           ))}
@@ -1023,7 +1033,7 @@ SFD, BMD, formulas, step-by-step solution and exam-style final answer.
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
               <h2 className="text-2xl font-black text-white">Input Panel</h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Select beam case and enter values. Diagrams update automatically.
+                Select problem type and enter values. Diagrams and answers update automatically.
               </p>
 
               <label className="mt-6 block">
@@ -1043,9 +1053,7 @@ SFD, BMD, formulas, step-by-step solution and exam-style final answer.
                   ))}
                 </select>
 
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  {selectedCase?.desc}
-                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">{selectedCase?.desc}</p>
               </label>
 
               <div className="mt-6 space-y-5">
@@ -1057,20 +1065,17 @@ SFD, BMD, formulas, step-by-step solution and exam-style final answer.
                   helper="Total length of beam."
                   min="0.1"
                 />
-                  <NumberField
-  label={
-    form.caseType.startsWith('ss')
-      ? 'Section x from Support A'
-      : 'Section x from Fixed Support'
-  }
-  value={form.x}
-  onChange={(value) => update('x', value)}
-  suffix="m"
-  helper="Enter any section between 0 and L to get SF and BM at that point."
-  min="0"
-/>
 
-                {isPointCase && (
+                <NumberField
+                  label={result.supportType === 'simple' ? 'Section x from Support A' : 'Section x from Fixed Support'}
+                  value={form.x}
+                  onChange={(value) => update('x', value)}
+                  suffix="m"
+                  helper="Enter any section between 0 and L to get SF, BM, slope and deflection."
+                  min="0"
+                />
+
+                {isSinglePoint && (
                   <NumberField
                     label="Point Load P"
                     value={form.P}
@@ -1081,15 +1086,55 @@ SFD, BMD, formulas, step-by-step solution and exam-style final answer.
                   />
                 )}
 
-                {isSimplyPoint && (
+                {needsA && (
                   <NumberField
-                    label="Distance a from Left Support"
+                    label={form.caseType === 'cantilever_point_any' ? 'Load Distance a from Fixed Support' : 'Load Distance a from Support A'}
                     value={form.a}
                     onChange={(value) => update('a', value)}
                     suffix="m"
-                    helper="Load position measured from support A."
+                    helper="Load position measured from the reference support."
                     min="0"
                   />
+                )}
+
+                {isTwoPoint && (
+                  <>
+                    <NumberField
+                      label="Point Load P1"
+                      value={form.P}
+                      onChange={(value) => update('P', value)}
+                      suffix="kN"
+                      helper="First downward point load."
+                      min="0"
+                    />
+
+                    <NumberField
+                      label="Distance a1 from Support A"
+                      value={form.a}
+                      onChange={(value) => update('a', value)}
+                      suffix="m"
+                      helper="Position of first point load."
+                      min="0"
+                    />
+
+                    <NumberField
+                      label="Point Load P2"
+                      value={form.P2}
+                      onChange={(value) => update('P2', value)}
+                      suffix="kN"
+                      helper="Second downward point load."
+                      min="0"
+                    />
+
+                    <NumberField
+                      label="Distance a2 from Support A"
+                      value={form.a2}
+                      onChange={(value) => update('a2', value)}
+                      suffix="m"
+                      helper="Position of second point load."
+                      min="0"
+                    />
+                  </>
                 )}
 
                 {isUDLCase && (
@@ -1102,6 +1147,29 @@ SFD, BMD, formulas, step-by-step solution and exam-style final answer.
                     min="0"
                   />
                 )}
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                  <h3 className="font-black text-white">Deflection Inputs</h3>
+                  <div className="mt-4 space-y-4">
+                    <NumberField
+                      label="Modulus of Elasticity E"
+                      value={form.E}
+                      onChange={(value) => update('E', value)}
+                      suffix="GPa"
+                      helper="Example: Steel ≈ 200 GPa, RCC often lower depending on grade."
+                      min="0.001"
+                    />
+
+                    <NumberField
+                      label="Moment of Inertia I"
+                      value={form.I}
+                      onChange={(value) => update('I', value)}
+                      suffix="×10⁶ mm⁴"
+                      helper="Use section moment of inertia for deflection calculation."
+                      min="0.001"
+                    />
+                  </div>
+                </div>
               </div>
 
               {result.warning && (
@@ -1120,21 +1188,24 @@ SFD, BMD, formulas, step-by-step solution and exam-style final answer.
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-             <h2 className="text-xl font-black text-white">What This Tool Solves</h2>
+              <h2 className="text-xl font-black text-white">What This Tool Solves</h2>
 
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
                 <li>✓ Free body diagram style beam sketch</li>
                 <li>✓ Simply supported and cantilever cases</li>
-                <li>✓ Point load and UDL cases</li>
+                <li>✓ Single point load, central point load and two point loads</li>
+                <li>✓ UDL on full span</li>
                 <li>✓ Support reaction calculation</li>
-                <li>✓ SFD and BMD educational diagrams</li>
+                <li>✓ SFD and BMD diagrams</li>
+                <li>✓ SFD and BMD key values table</li>
+                <li>✓ Shear force and bending moment at any section x</li>
+                <li>✓ Slope and deflection calculation</li>
                 <li>✓ Formula and step-by-step solution</li>
-                  <li>✓ SFD and BMD key values table</li>
-<li>✓ Shear force and bending moment at any section x</li>
               </ul>
 
               <div className="mt-5 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm leading-6 text-slate-300">
-Useful for semester exams, assignments, practice questions and quick concept revision.              </div>
+                Useful for semester exams, assignments, practice questions and quick concept revision.
+              </div>
             </div>
           </aside>
 
@@ -1144,14 +1215,9 @@ Useful for semester exams, assignments, practice questions and quick concept rev
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {result.summary.map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-2xl border border-slate-800 bg-slate-950 p-4"
-                  >
+                  <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
                     <p className="text-sm text-slate-400">{item.label}</p>
-                    <p className="mt-2 text-xl font-black text-orange-300">
-                      {item.value}
-                    </p>
+                    <p className="mt-2 text-xl font-black text-orange-300">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -1160,10 +1226,13 @@ Useful for semester exams, assignments, practice questions and quick concept rev
             <BeamSketch result={result} />
 
             <div className="grid gap-6 xl:grid-cols-2">
-              <SFDDiagram result={result} />
-              <BMDDiagram result={result} />
+              <Diagram result={result} type="sfd" />
+              <Diagram result={result} type="bmd" />
             </div>
-                  <DiagramValuesTable result={result} sectionX={form.x} />
+
+            <DiagramValuesTable result={result} sectionX={form.x} />
+
+            <DeflectionPanel result={result} form={form} />
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
@@ -1171,10 +1240,7 @@ Useful for semester exams, assignments, practice questions and quick concept rev
 
                 <div className="mt-5 space-y-3">
                   {result.formulas.map((formula) => (
-                    <div
-                      key={formula}
-                      className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-4 py-3 text-sm font-bold text-orange-200"
-                    >
+                    <div key={formula} className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-4 py-3 text-sm font-bold text-orange-200">
                       {formula}
                     </div>
                   ))}
@@ -1182,9 +1248,7 @@ Useful for semester exams, assignments, practice questions and quick concept rev
               </div>
 
               <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-                <h2 className="text-2xl font-black text-white">
-                  Exam-Style Final Answer
-                </h2>
+                <h2 className="text-2xl font-black text-white">Exam-Style Final Answer</h2>
 
                 <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-5 leading-8 text-slate-200">
                   {result.examAnswer}
@@ -1193,16 +1257,11 @@ Useful for semester exams, assignments, practice questions and quick concept rev
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">
-                Step-by-Step Solution
-              </h2>
+              <h2 className="text-2xl font-black text-white">Step-by-Step Solution</h2>
 
               <div className="mt-6 space-y-4">
                 {result.steps.map((step, index) => (
-                  <div
-                    key={step}
-                    className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4"
-                  >
+                  <div key={step} className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-black text-white">
                       {index + 1}
                     </div>
@@ -1212,7 +1271,7 @@ Useful for semester exams, assignments, practice questions and quick concept rev
               </div>
             </div>
 
-            
+            <FormulaLibrary />
           </section>
         </div>
       </section>
