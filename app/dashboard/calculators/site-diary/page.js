@@ -182,7 +182,9 @@ function qty(value) {
 function money(value) {
   return `₹${num(value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 }
-
+function moneyPDF(value) {
+  return `Rs. ${num(value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+}
 function toMillis(value) {
   if (!value) return 0
   if (typeof value === 'string') return new Date(value).getTime() || 0
@@ -1278,25 +1280,25 @@ export default function SiteDiaryPage() {
       docPdf.autoTable({
         startY: 56,
         head: [['Summary', 'Value']],
-        body: [
-          ['Reports Submitted', String(summary?.reports.length || 0)],
-          ['Labour Present Entries', String(summary?.present.length || 0)],
-          ['Labour Absent Entries', String(summary?.absent.length || 0)],
-          ['Material Cost', money(summary?.materialCost || 0)],
-          ['Shuttering Cost', money(summary?.shutteringCost || 0)],
-          ['Labour Cost', money(summary?.labourCost || 0)],
-          ['Equipment Cost', money(summary?.equipmentCost || 0)],
-          ['Other Cost', money(summary?.otherCost || 0)],
-          ['Total Cost', money(summary?.totalCost || 0)],
-          ['Project Total Till Date', money(totalProjectCost)],
-        ],
+      body: [
+  ['Reports Submitted', String(summary?.reports.length || 0)],
+  ['Labour Present Entries', String(summary?.present.length || 0)],
+  ['Labour Absent Entries', String(summary?.absent.length || 0)],
+  ['Material Cost', moneyPDF(summary?.materialCost || 0)],
+  ['Shuttering Cost', moneyPDF(summary?.shutteringCost || 0)],
+  ['Labour Cost', moneyPDF(summary?.labourCost || 0)],
+  ['Equipment Cost', moneyPDF(summary?.equipmentCost || 0)],
+  ['Other Cost', moneyPDF(summary?.otherCost || 0)],
+  ['Total Cost', moneyPDF(summary?.totalCost || 0)],
+  ['Project Total Till Date', moneyPDF(totalProjectCost)],
+],
       })
 
       docPdf.autoTable({
         startY: docPdf.lastAutoTable.finalY + 10,
         head: [['Material', 'Qty', 'Unit', 'Cost']],
         body: summary?.materialUsage?.length
-          ? summary.materialUsage.map((item) => [item.name, qty(item.quantity), item.unit, money(item.value)])
+         ? summary.materialUsage.map((item) => [item.name, qty(item.quantity), item.unit, moneyPDF(item.value)])
           : [['-', '-', '-', 'No material used']],
       })
 
@@ -1339,9 +1341,13 @@ export default function SiteDiaryPage() {
           : [['-', '-', '-', 'No attendance', '-']],
       })
 
-      docPdf.save(
-        `${selectedSite.siteName || 'site'}-${isRange ? 'summary' : 'daily-report'}-${start}-${end}.pdf`
-      )
+      const safeSiteName = String(selectedSite.siteName || 'site')
+  .replace(/[^a-zA-Z0-9-_]/g, '-')
+  .replace(/-+/g, '-')
+
+docPdf.save(
+  `${safeSiteName}-${isRange ? 'summary' : 'daily-report'}-${start}-${end}.pdf`
+)
     } catch {
       showMessage('PDF package missing. Install jspdf and jspdf-autotable.')
     }
