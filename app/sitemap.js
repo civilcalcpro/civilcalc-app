@@ -92,6 +92,12 @@ export default function sitemap() {
   changeFrequency: 'weekly',
   priority: 0.88,
 },
+    {
+  url: `${baseUrl}/concrete-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.88,
+},
    {
   url: `${baseUrl}/footing-design`,
   lastModified: new Date(),
