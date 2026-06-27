@@ -460,14 +460,38 @@ function Field({ label, value, onChange, placeholder, type = 'text', as = 'input
 function SelectField({ label, value, onChange, options }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-slate-300">{label}</span>
+      <span className="mb-2 block text-[15px] font-semibold text-slate-200">
+        {label}
+      </span>
+
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+        className="
+          w-full min-h-[52px] rounded-xl
+          border border-slate-700 bg-slate-950/80
+          px-4 py-3
+          text-[16px] md:text-[17px] font-semibold text-white
+          outline-none transition
+          focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20
+          cursor-pointer
+        "
+        style={{
+          fontSize: '16px',
+          lineHeight: '24px',
+        }}
       >
         {options.map((option) => (
-          <option key={option} value={option}>
+          <option
+            key={option}
+            value={option}
+            className="bg-slate-950 text-white"
+            style={{
+              fontSize: '16px',
+              lineHeight: '28px',
+              padding: '12px',
+            }}
+          >
             {option}
           </option>
         ))}
@@ -475,7 +499,6 @@ function SelectField({ label, value, onChange, options }) {
     </label>
   )
 }
-
 function PrimaryButton({ children, onClick, icon: Icon, className = '', type = 'button' }) {
   return (
     <button
