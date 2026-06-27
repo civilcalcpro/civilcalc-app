@@ -1,386 +1,418 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 export const metadata = {
-  title: "RCC Column Design Calculator | CivilCalc Pro",
+  title: 'Column Design Calculator Online | RCC Column Design as per IS 456',
   description:
-    "Free online RCC column design calculator for civil engineers and students. Calculate axial load, column size, reinforcement steel, slenderness ratio and RCC column design as per IS 456.",
+    'Calculate RCC column design, axial load capacity, steel area, concrete area, column size and reinforcement requirement online with CivilCalc Pro Column Design Calculator.',
+  keywords: [
+    'column design calculator',
+    'RCC column design calculator',
+    'column design as per IS 456',
+    'RCC column calculator',
+    'civil engineering column design',
+    'short column design',
+    'long column design',
+    'column reinforcement calculator',
+    'construction calculator India',
+    'civil engineering calculator',
+  ],
   alternates: {
-    canonical: "https://civilcalcpro.in/column-design",
+    canonical: 'https://www.civilcalcpro.in/column-design-calculation',
   },
   openGraph: {
-    title: "RCC Column Design Calculator | CivilCalc Pro",
+    title: 'Column Design Calculator Online | CivilCalc Pro',
     description:
-      "Free online RCC column design calculator for civil engineers and students. Calculate axial load, column size, reinforcement steel, slenderness ratio and RCC column design as per IS 456.",
-    url: "https://civilcalcpro.in/column-design",
-    siteName: "CivilCalc Pro",
-    type: "website",
-    locale: "en_US",
+      'Calculate RCC column design, axial load capacity and reinforcement requirement online using CivilCalc Pro.',
+    url: 'https://www.civilcalcpro.in/column-design-calculation',
+    siteName: 'CivilCalc Pro',
+    type: 'article',
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "RCC Column Design Calculator | CivilCalc Pro",
-    description:
-      "Free online RCC column design calculator for civil engineers and students. Calculate axial load, column size, reinforcement steel, slenderness ratio and RCC column design as per IS 456.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-snippet": -1,
-      "max-image-preview": "large",
-      "max-video-preview": -1,
-    },
-  },
-};
+}
 
-export default function ColumnDesignPage() {
+const faqs = [
+  {
+    q: 'What is RCC column design?',
+    a: 'RCC column design is the process of calculating column size, concrete area, steel reinforcement and load carrying capacity of a reinforced cement concrete column.',
+  },
+  {
+    q: 'Which code is used for RCC column design in India?',
+    a: 'In India, RCC column design is commonly done as per IS 456 guidelines along with structural engineering design requirements.',
+  },
+  {
+    q: 'What is the formula for axial load capacity of a short RCC column?',
+    a: 'For a short axially loaded RCC column, a commonly used design expression is Pu = 0.4 fck Ac + 0.67 fy Asc.',
+  },
+  {
+    q: 'Can I use this calculator for final structural design?',
+    a: 'This calculator is useful for estimation, learning and preliminary design. Final structural design should always be checked by a qualified structural engineer.',
+  },
+]
+
+export default function ColumnDesignCalculationArticle() {
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: 'Column Design Calculator Online | RCC Column Design as per IS 456',
+    description:
+      'Complete guide to RCC column design calculation, axial load capacity, column size and reinforcement requirement.',
+    author: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': 'https://www.civilcalcpro.in/column-design-calculation',
+    },
+  }
+
   const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "How is an RCC column designed?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "RCC column design is done by calculating axial load, selecting column size, checking slenderness ratio, choosing concrete grade and steel grade, and designing longitudinal reinforcement and lateral ties.",
-        },
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
       },
-      {
-        "@type": "Question",
-        name: "What is the formula for RCC column load capacity?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "For a short axially loaded RCC column, load capacity is commonly checked using Pu equals 0.4 fck Ac plus 0.67 fy Asc, where fck is concrete grade, fy is steel grade, Ac is concrete area and Asc is steel area.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What is the minimum reinforcement in RCC column?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "The minimum longitudinal reinforcement in an RCC column is commonly taken as 0.8 percent of the gross cross sectional area, subject to structural design code requirements.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Which inputs are required for RCC column design?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Common inputs for RCC column design include axial load, column size, effective length, concrete grade, steel grade, clear cover, bar diameter and support condition.",
-        },
-      },
-    ],
-  };
+    })),
+  }
+
+  const designInputs = [
+    'Column length',
+    'Column width',
+    'Column height',
+    'Concrete grade',
+    'Steel grade',
+    'Axial load',
+    'Steel percentage',
+    'Effective length',
+    'Column type',
+  ]
+
+  const useCases = [
+    'RCC column design',
+    'Short column design',
+    'Long column checking',
+    'Axial load capacity calculation',
+    'Column reinforcement calculation',
+    'Residential building column design',
+    'Commercial building column estimation',
+    'Civil engineering student practice',
+    'Site engineer design checking',
+    'Preliminary structural estimation',
+  ]
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+    <main className="min-h-screen bg-[#050B1F] text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="max-w-5xl mx-auto">
-        <p className="text-orange-400 font-semibold mb-3">
-          RCC STRUCTURAL DESIGN TOOL
+      <section className="mx-auto max-w-5xl px-5 py-16">
+        <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-400">
+          Civil Engineering Article
         </p>
 
-        <h1 className="text-5xl font-bold mb-6">
-          RCC Column Design Calculator
+        <h1 className="max-w-4xl text-4xl font-extrabold leading-tight md:text-5xl">
+          Column Design Calculator Online – RCC Column Design as per IS 456
         </h1>
 
-        <p className="text-slate-300 text-lg mb-10">
-          Free online RCC column design calculator for civil engineers and
-          students. Calculate axial load, column size, reinforcement steel,
-          slenderness ratio, and RCC column design as per IS 456.
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+          Use CivilCalc Pro Column Design Calculator to calculate RCC column size,
+          axial load capacity, concrete area, steel reinforcement and preliminary
+          column design values for construction projects.
         </p>
 
-        <Link
-          href="/login?redirect=/dashboard/calculators/column"
-          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
-        >
-          Open Column Design Calculator
-        </Link>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <Link
+            href="/dashboard/calculators/column"
+            className="rounded-xl bg-orange-500 px-6 py-3 font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+          >
+            Open Column Design Calculator
+          </Link>
 
-        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
-          <p className="text-orange-400 font-semibold mb-3">
-            QUICK ANSWER
-          </p>
-
-          <h2 className="text-3xl font-bold mb-5">
-            How to design an RCC column?
-          </h2>
-
-          <p className="text-slate-300 leading-8 mb-4">
-            RCC column design is done by calculating axial load, checking column
-            size, selecting concrete grade and steel grade, and designing
-            longitudinal reinforcement and lateral ties. For a short axially
-            loaded RCC column, load capacity is commonly checked using concrete
-            area and steel area.
-          </p>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 my-6">
-            <p className="text-xl font-bold text-white mb-2">
-              Pu = 0.4 fck Ac + 0.67 fy Asc
-            </p>
-
-            <p className="text-slate-400">
-              Pu = axial load capacity, fck = concrete grade, fy = steel grade,
-              Ac = concrete area, Asc = steel area.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto mt-6">
-            <table className="w-full border border-slate-800 text-left">
-              <thead className="bg-slate-900">
-                <tr>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Design Item
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Formula / Value
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Example
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="text-slate-300">
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Column Size
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    Width × Depth
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    300 mm × 300 mm
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Concrete Grade
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    fck
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    M25
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Steel Grade
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    fy
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    Fe500
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Longitudinal Steel
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    0.8% to 6% of gross area
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    4 bars of 16 mm
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Lateral Ties
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    Based on bar diameter and column size
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    8 mm ties
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p className="text-slate-400 leading-7 mt-5">
-            Example: For a 300 mm × 300 mm RCC column with M25 concrete and
-            Fe500 steel, column design includes checking axial load capacity,
-            steel percentage, longitudinal bars and tie spacing. Final column
-            design should always be checked as per structural design code and
-            actual project loads.
-          </p>
-        </section>
-
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Features
-            </h2>
-
-            <ul className="space-y-3 text-slate-300">
-              <li>• RCC column design calculation</li>
-              <li>• Axial load calculation</li>
-              <li>• Column size estimation</li>
-              <li>• Longitudinal steel calculation</li>
-              <li>• Slenderness ratio check</li>
-              <li>• IS 456 based column design</li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Why Use CivilCalc Pro?
-            </h2>
-
-            <p className="text-slate-300 leading-8">
-              CivilCalc Pro helps civil engineers design RCC columns quickly
-              using professional structural calculation tools. Useful for
-              students, site engineers, structural consultants, and construction
-              professionals.
-            </p>
-          </div>
+          <Link
+            href="/"
+            className="rounded-xl border border-slate-700 px-6 py-3 font-bold text-slate-200 transition hover:border-orange-400 hover:text-orange-300"
+          >
+            Back to Home
+          </Link>
         </div>
 
-        <section className="mt-16 space-y-8">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
+        <article className="mt-12 space-y-10 text-slate-300">
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              What is a Column Design Calculator?
+            </h2>
+
+            <p className="leading-8">
+              A Column Design Calculator is a civil engineering tool used to calculate
+              the design values of RCC columns. Columns are vertical structural
+              members that transfer load from beams, slabs and upper floors to the
+              foundation.
+            </p>
+
+            <p className="mt-4 leading-8">
+              CivilCalc Pro Column Design Calculator helps civil engineers,
+              contractors, site engineers and students calculate column size,
+              concrete area, reinforcement area and axial load capacity quickly.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Why RCC Column Design is Important
+            </h2>
+
+            <p className="leading-8">
+              RCC columns are one of the most important structural elements in any
+              building. A column carries load from the structure and safely transfers
+              it to the footing or foundation. If column design is not done properly,
+              it can affect the safety, serviceability and stability of the building.
+            </p>
+
+            <p className="mt-4 leading-8">
+              Proper column design helps in selecting correct column size,
+              reinforcement percentage, concrete grade, steel grade and load capacity.
+              It also helps engineers avoid under-design, over-design and unnecessary
+              material wastage.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
               RCC Column Design Formula
             </h2>
 
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
-              Pu = 0.4fckAc + 0.67fyAsc
+            <p className="leading-8">
+              For a short axially loaded RCC column, the commonly used design
+              expression is:
+            </p>
+
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
+                Pu = 0.4 fck Ac + 0.67 fy Asc
+              </p>
             </div>
 
-            <p className="text-slate-300 mt-4 leading-7">
-              This formula is commonly used for the axial load capacity of a
-              short RCC column under compression.
-            </p>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              What is RCC Column Design?
-            </h2>
-
-            <p className="text-slate-300 leading-7 mb-4">
-              RCC column design is the process of designing a reinforced
-              concrete compression member to safely carry axial loads and
-              moments from beams, slabs and upper floors to the foundation.
-            </p>
-
-            <p className="text-slate-300 leading-7">
-              Columns are one of the most critical structural members in a
-              building. Correct column design is important for load transfer,
-              stability and overall structural safety.
-            </p>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Steps in RCC Column Design
-            </h2>
-
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>Calculate axial load on column</li>
-              <li>Select column size</li>
-              <li>Choose concrete grade and steel grade</li>
-              <li>Check slenderness ratio</li>
-              <li>Calculate required longitudinal reinforcement</li>
-              <li>Provide lateral ties or stirrups</li>
-              <li>Check minimum and maximum steel percentage</li>
-              <li>Verify spacing, cover and detailing requirements</li>
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Pu = Ultimate axial load capacity of column</li>
+              <li>fck = Characteristic compressive strength of concrete</li>
+              <li>fy = Yield strength of steel</li>
+              <li>Ac = Area of concrete</li>
+              <li>Asc = Area of steel reinforcement</li>
             </ul>
-          </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Column Design Example
+            <p className="mt-4 leading-8">
+              This formula is used for understanding axial load carrying capacity of
+              RCC columns. Actual structural design may also include slenderness,
+              moment, eccentricity, load combination and detailing checks.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Short Column and Long Column
             </h2>
 
-            <p className="text-slate-300 leading-7">
-              Consider a short RCC column with factored axial load of 1000 kN,
-              concrete grade M20 and steel grade Fe415.
+            <p className="leading-8">
+              RCC columns are generally checked as short columns or long columns
+              depending on effective length and cross-sectional dimensions. A short
+              column mainly fails by crushing, while a long column may be affected by
+              buckling and slenderness effects.
             </p>
 
-            <p className="text-slate-300 leading-7 mt-4">
-              The column should be designed by selecting suitable column
-              dimensions, calculating concrete area and steel area, and checking
-              the load capacity using IS 456 column design provisions.
+            <p className="mt-4 leading-8">
+              CivilCalc Pro Column Design Calculator helps users understand basic
+              column design values and preliminary column capacity. For long columns
+              and complex loading conditions, detailed structural design checks are
+              required.
             </p>
-          </div>
+          </section>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Important Checks in Column Design
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Inputs Required for Column Design Calculator
             </h2>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>Axial load capacity check</li>
-              <li>Short column or slender column check</li>
-              <li>Minimum reinforcement check</li>
-              <li>Maximum reinforcement check</li>
-              <li>Lateral tie spacing check</li>
-              <li>Clear cover check</li>
-              <li>Column size and stability check</li>
-            </ul>
-          </div>
+            <p className="leading-8">
+              To calculate RCC column design values, the following inputs are
+              commonly required:
+            </p>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Related Calculators
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              {designInputs.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Example of RCC Column Design Calculation
             </h2>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>
-                <Link href="/beam-design">
-                  Beam Design Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/footing-design">
-                  Footing Design Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/one-way-slab-calculator">
-                  One Way Slab Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/two-way-slab-calculator">
-                  Two Way Slab Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/steel-weight-calculator">
-                  Steel Weight Calculator
-                </Link>
-              </li>
-            </ul>
-          </div>
+            <p className="leading-8">
+              Suppose an RCC column has size 300 mm × 300 mm, concrete grade M25,
+              steel grade Fe500 and provided steel area of 1800 mm².
+            </p>
 
-          <div className="mt-10 text-center">
+            <div className="my-6 rounded-2xl border border-slate-700 bg-slate-900 p-5 leading-8">
+              <p>Gross area = 300 × 300 = 90,000 mm²</p>
+              <p>Steel area = 1,800 mm²</p>
+              <p>Concrete area = 90,000 - 1,800 = 88,200 mm²</p>
+              <p>Pu = 0.4 × 25 × 88,200 + 0.67 × 500 × 1,800</p>
+              <p>Pu = 882,000 + 603,000</p>
+              <p>Pu = 1,485,000 N</p>
+              <p>Pu = 1485 kN</p>
+            </div>
+
+            <p className="leading-8">
+              So, the approximate axial load capacity of the column is{' '}
+              <strong className="text-white">1485 kN</strong>.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              How to Use CivilCalc Pro Column Design Calculator
+            </h2>
+
+            <p className="leading-8">
+              Enter column dimensions, concrete grade, steel grade, axial load and
+              reinforcement details. After entering the values, click on calculate.
+              The tool will show important column design results such as area of
+              concrete, area of steel, load capacity and design status.
+            </p>
+
+            <p className="mt-4 leading-8">
+              This helps civil engineers, site engineers and students understand RCC
+              column design quickly without doing repeated manual calculations.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Where Column Design Calculator is Used
+            </h2>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              {useCases.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Column Design Calculator for Civil Engineers
+            </h2>
+
+            <p className="leading-8">
+              Civil engineers need quick design checking tools for daily engineering
+              work. CivilCalc Pro Column Design Calculator is useful for preliminary
+              column design, educational calculation, RCC design checking and
+              construction estimation.
+            </p>
+
+            <p className="mt-4 leading-8">
+              It is especially useful for civil engineering students, site engineers,
+              contractors and professionals who want to understand column capacity and
+              reinforcement requirement in a simple way.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Benefits of CivilCalc Pro Column Design Calculator
+            </h2>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Quick RCC column design calculation</li>
+              <li>Useful for axial load capacity checking</li>
+              <li>Helps calculate concrete area and steel area</li>
+              <li>Supports civil engineering learning</li>
+              <li>Useful for preliminary design and estimation</li>
+              <li>Reduces repeated manual calculation</li>
+              <li>Helpful for students, engineers and contractors</li>
+            </ul>
+          </section>
+
+          <section className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5">
+            <h2 className="mb-3 text-2xl font-bold text-white">
+              Important Design Note
+            </h2>
+
+            <p className="leading-8 text-slate-300">
+              RCC column design is a structural safety-related calculation. This
+              article and calculator are useful for learning, estimation and
+              preliminary design. Final structural design should always be verified by
+              a qualified structural engineer as per applicable codes and project
+              conditions.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">Conclusion</h2>
+
+            <p className="leading-8">
+              RCC column design is a critical part of building construction.
+              CivilCalc Pro Column Design Calculator helps civil engineers,
+              contractors, site engineers and students calculate column design values
+              quickly and clearly.
+            </p>
+
+            <p className="mt-4 leading-8">
+              For preliminary RCC column design, axial load capacity calculation and
+              reinforcement checking, use CivilCalc Pro Column Design Calculator.
+            </p>
+          </section>
+
+          <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-slate-900 p-6">
+            <h2 className="text-2xl font-extrabold text-white">
+              Calculate RCC Column Design Instantly
+            </h2>
+
+            <p className="mt-3 leading-8 text-slate-300">
+              Open CivilCalc Pro Column Design Calculator and calculate column size,
+              load capacity and reinforcement requirement for your project.
+            </p>
+
             <Link
-              href="/civil-engineering-calculators"
-              className="inline-block border border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white transition px-6 py-3 rounded-xl font-semibold"
+              href="/dashboard/calculators/column"
+              className="mt-5 inline-flex rounded-xl bg-orange-500 px-6 py-3 font-bold text-white transition hover:bg-orange-600"
             >
-              View All Civil Engineering Calculators
+              Use Column Design Calculator
             </Link>
           </div>
-        </section>
-      </div>
+
+          <section>
+            <h2 className="mb-6 text-3xl font-bold text-white">FAQs</h2>
+
+            <div className="space-y-5">
+              {faqs.map((item) => (
+                <div
+                  key={item.q}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                >
+                  <h3 className="text-xl font-bold text-white">{item.q}</h3>
+                  <p className="mt-2 leading-8 text-slate-300">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </article>
+      </section>
     </main>
-  );
+  )
 }
