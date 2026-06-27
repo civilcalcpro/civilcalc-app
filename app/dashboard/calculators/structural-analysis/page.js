@@ -3,55 +3,46 @@
 import { useMemo, useState } from 'react'
 
 const topicCards = [
-  'Static Equilibrium',
-  'Free Body Diagram',
   'Support Reactions',
-  'SFD & BMD',
-  'Slope & Deflection',
-  'Conjugate Beam Method',
-  'Moment Area Method',
-  'Truss Analysis',
-  'Energy Methods',
-  'Indeterminate Structures',
-  'Influence Lines',
-  'Arches & Cables',
+  'Point Loads',
+  'UDL Loads',
+  'UVL / Trapezoidal Loads',
+  'Moment Loads',
+  'Combined Loading',
+  'SFD',
+  'BMD',
+  'Section Values',
+  'Free Body Diagram',
+  'Sign Convention',
+  'Exam Solution',
 ]
 
-const caseOptions = [
+const defaultLoads = [
   {
-    value: 'ss_point',
-    label: 'Simply Supported Beam + Point Load',
-    desc: 'Single point load placed at distance a from left support.',
+    id: 'load-1',
+    type: 'point',
+    P: 20,
+    x: 2,
+    w: 5,
+    w1: 0,
+    w2: 10,
+    start: 0,
+    end: 6,
+    M: 10,
+    direction: 'clockwise',
   },
   {
-    value: 'ss_central_point',
-    label: 'Simply Supported Beam + Central Point Load',
-    desc: 'Point load acting at mid-span. Common exam case.',
-  },
-  {
-    value: 'ss_two_point',
-    label: 'Simply Supported Beam + Two Point Loads',
-    desc: 'Two point loads placed at different distances from left support.',
-  },
-  {
-    value: 'ss_udl',
-    label: 'Simply Supported Beam + UDL',
-    desc: 'Uniformly distributed load acting over full span.',
-  },
-  {
-    value: 'cantilever_point_end',
-    label: 'Cantilever Beam + Point Load at Free End',
-    desc: 'Point load acting downward at free end.',
-  },
-  {
-    value: 'cantilever_point_any',
-    label: 'Cantilever Beam + Point Load at Any Distance',
-    desc: 'Point load placed at distance a from fixed support.',
-  },
-  {
-    value: 'cantilever_udl',
-    label: 'Cantilever Beam + UDL',
-    desc: 'Uniformly distributed load acting over full cantilever span.',
+    id: 'load-2',
+    type: 'udl',
+    P: 10,
+    x: 3,
+    w: 5,
+    w1: 0,
+    w2: 10,
+    start: 2,
+    end: 5,
+    M: 10,
+    direction: 'clockwise',
   },
 ]
 
@@ -71,559 +62,395 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
-function uniqueSorted(values) {
-  return [...new Set(values.map((v) => Number(v.toFixed(6))))].sort((a, b) => a - b)
+function createLoad(type) {
+  return {
+    id: `load-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    type,
+    P: type === 'point' ? 20 : 10,
+    x: 2,
+    w: 5,
+    w1: type === 'uvl' ? 0 : 5,
+    w2: type === 'uvl' ? 10 : 5,
+    start: 0,
+    end: 6,
+    M: 10,
+    direction: 'clockwise',
+  }
 }
 
-function getCaseTitle(caseType) {
-  const item = caseOptions.find((option) => option.value === caseType)
-  return item?.label || 'Structural Analysis Solver'
+function normalizeLoad(load, L) {
+  const x = clamp(toNum(load.x, 0), 0, L)
+  const startRaw = clamp(toNum(load.start, 0), 0, L)
+  const endRaw = clamp(toNum(load.end, L), 0, L)
+  const start = Math.min(startRaw, endRaw)
+  const end = Math.max(startRaw, endRaw)
+  const length = Math.max(end - start, 0)
+
+  return {
+    ...load,
+    P: Math.max(toNum(load.P, 0), 0),
+    x,
+    w: Math.max(toNum(load.w, 0), 0),
+    w1: Math.max(toNum(load.w1, 0), 0),
+    w2: Math.max(toNum(load.w2, 0), 0),
+    start,
+    end,
+    length,
+    M: Math.max(toNum(load.M, 0), 0),
+    direction: load.direction === 'anticlockwise' ? 'anticlockwise' : 'clockwise',
+  }
 }
 
-function shearMomentAt(result, sectionX, side = 'right') {
-  const L = result.L || 1
-  const x = clamp(sectionX, 0, L)
+function getMomentSign(load) {
+  return load.direction === 'clockwise' ? 1 : -1
+}
+
+function getLoadResultant(load) {
+  if (load.type === 'point') {
+    return {
+      W: load.P,
+      xBar: load.x,
+      label: `Point load ${fmt(load.P)} kN at x = ${fmt(load.x)} m`,
+    }
+  }
+
+  if (load.type === 'udl') {
+    const W = load.w * load.length
+    const xBar = load.start + load.length / 2
+
+    return {
+      W,
+      xBar,
+      label: `UDL ${fmt(load.w)} kN/m from ${fmt(load.start)} m to ${fmt(load.end)} m`,
+    }
+  }
+
+  if (load.type === 'uvl') {
+    const W = ((load.w1 + load.w2) / 2) * load.length
+    const localX =
+      load.w1 + load.w2 === 0
+        ? load.length / 2
+        : (load.length * (load.w1 + 2 * load.w2)) / (3 * (load.w1 + load.w2))
+    const xBar = load.start + localX
+
+    return {
+      W,
+      xBar,
+      label: `UVL/Trapezoidal load ${fmt(load.w1)} to ${fmt(load.w2)} kN/m from ${fmt(load.start)} m to ${fmt(load.end)} m`,
+    }
+  }
+
+  const signedMoment = getMomentSign(load) * load.M
+
+  return {
+    W: 0,
+    xBar: load.x,
+    signedMoment,
+    label: `${load.direction === 'clockwise' ? 'Clockwise' : 'Anticlockwise'} moment ${fmt(load.M)} kN·m at x = ${fmt(load.x)} m`,
+  }
+}
+
+function partialDistributedLoad(load, fromX, toX) {
+  const a = clamp(fromX, load.start, load.end)
+  const b = clamp(toX, load.start, load.end)
+
+  if (b <= a) {
+    return { W: 0, firstMoment: 0 }
+  }
+
+  if (load.type === 'udl') {
+    const W = load.w * (b - a)
+    const xBar = (a + b) / 2
+    return {
+      W,
+      firstMoment: W * xBar,
+    }
+  }
+
+  if (load.type === 'uvl') {
+    const length = load.length || 0.000001
+    const slope = (load.w2 - load.w1) / length
+
+    const integrateLoad = (x) => {
+      const u = x - load.start
+      return load.w1 * u + (slope * u * u) / 2
+    }
+
+    const integrateMoment = (x) => {
+      const u = x - load.start
+      return (
+        load.start * (load.w1 * u + (slope * u * u) / 2) +
+        (load.w1 * u * u) / 2 +
+        (slope * u * u * u) / 3
+      )
+    }
+
+    const W = integrateLoad(b) - integrateLoad(a)
+    const firstMoment = integrateMoment(b) - integrateMoment(a)
+
+    return { W, firstMoment }
+  }
+
+  return { W: 0, firstMoment: 0 }
+}
+
+function shearMomentAt(result, rawX, side = 'right') {
+  const L = result.L
+  const x = clamp(rawX, 0, L)
   const eps = 0.000001
-  const testX = side === 'left' ? Math.max(0, x - eps) : Math.min(L, x + eps)
+  const checkX = side === 'left' ? Math.max(0, x - eps) : Math.min(L, x + eps)
 
-  if (result.supportType === 'simple') {
+  if (result.beamType === 'simple') {
     let V = result.RA
     let M = result.RA * x
 
-    if (result.loadType === 'udl') {
-      V -= result.w * testX
-      M -= (result.w * x * x) / 2
-    }
-
-    if (result.loads?.length) {
-      result.loads.forEach((load) => {
-        if (testX >= load.x) V -= load.P
-        if (x >= load.x) M -= load.P * (x - load.x)
-      })
-    }
-
-    return { shear: V, moment: M }
-  }
-
-  if (result.supportType === 'cantilever') {
-    let V = 0
-    let M = 0
-
-    if (result.loadType === 'udl') {
-      V = -result.w * (L - x)
-      M = -(result.w * Math.pow(L - x, 2)) / 2
-      return { shear: V, moment: M }
-    }
-
     result.loads.forEach((load) => {
-      if (testX < load.x) V -= load.P
-      if (x <= load.x) M -= load.P * (load.x - x)
+      if (load.type === 'point') {
+        if (checkX >= load.x) V -= load.P
+        if (x >= load.x) M -= load.P * (x - load.x)
+      }
+
+      if (load.type === 'udl' || load.type === 'uvl') {
+        const shearPart = partialDistributedLoad(load, load.start, Math.min(checkX, load.end))
+        V -= shearPart.W
+
+        const momentPart = partialDistributedLoad(load, load.start, Math.min(x, load.end))
+        M -= momentPart.W * x - momentPart.firstMoment
+      }
+
+      if (load.type === 'moment') {
+        if (checkX >= load.x) {
+          M += getMomentSign(load) * load.M
+        }
+      }
     })
 
     return { shear: V, moment: M }
   }
 
-  return { shear: 0, moment: 0 }
+  let V = 0
+  let M = 0
+
+  result.loads.forEach((load) => {
+    if (load.type === 'point') {
+      if (checkX <= load.x) V -= load.P
+      if (x <= load.x) M -= load.P * (load.x - x)
+    }
+
+    if (load.type === 'udl' || load.type === 'uvl') {
+      const rightStart = Math.max(x, load.start)
+      const rightEnd = load.end
+
+      if (rightEnd > rightStart) {
+        const part = partialDistributedLoad(load, rightStart, rightEnd)
+        V -= part.W
+        M -= part.firstMoment - part.W * x
+      }
+    }
+
+    if (load.type === 'moment') {
+      if (checkX <= load.x) {
+        M -= getMomentSign(load) * load.M
+      }
+    }
+  })
+
+  return { shear: V, moment: M }
 }
 
 function solveBeam(form) {
-  const caseType = form.caseType
-  const L = Math.max(toNum(form.L, 1), 0.1)
-  const P = Math.max(toNum(form.P, 0), 0)
-  const P2 = Math.max(toNum(form.P2, 0), 0)
-  const w = Math.max(toNum(form.w, 0), 0)
+  const L = Math.max(toNum(form.L, 6), 0.1)
+  const beamType = form.beamType === 'cantilever' ? 'cantilever' : 'simple'
+  const loads = form.loads.map((load) => normalizeLoad(load, L))
 
-  let a = toNum(form.a, L / 2)
-  let a2 = toNum(form.a2, (2 * L) / 3)
-  let warning = ''
+  const resultants = loads.map((load) => ({
+    load,
+    ...getLoadResultant(load),
+  }))
 
-  const addWarning = (text) => {
-    warning = warning ? `${warning} ${text}` : text
+  const verticalResultants = resultants.filter((item) => item.load.type !== 'moment')
+  const momentResultants = resultants.filter((item) => item.load.type === 'moment')
+
+  const totalLoad = verticalResultants.reduce((sum, item) => sum + item.W, 0)
+  const loadMomentAboutA = verticalResultants.reduce((sum, item) => sum + item.W * item.xBar, 0)
+  const appliedMomentSum = momentResultants.reduce(
+    (sum, item) => sum + getMomentSign(item.load) * item.load.M,
+    0
+  )
+
+  let RA = 0
+  let RB = 0
+  let fixedMoment = 0
+
+  if (beamType === 'simple') {
+    RB = (loadMomentAboutA + appliedMomentSum) / L
+    RA = totalLoad - RB
+  } else {
+    RA = totalLoad
+    fixedMoment = loadMomentAboutA + appliedMomentSum
   }
 
-  if (caseType === 'ss_point' || caseType === 'ss_central_point') {
-    const originalA = a
-    a = caseType === 'ss_central_point' ? L / 2 : clamp(a, 0.01, L - 0.01)
-
-    if (caseType === 'ss_point' && originalA !== a) {
-      addWarning(`Load distance a must be between 0 and L. For calculation, a is adjusted to ${fmt(a)} m.`)
-    }
-
-    const b = L - a
-    const RA = (P * b) / L
-    const RB = (P * a) / L
-    const Mmax = RA * a
-
-    return {
-      caseType,
-      title: caseType === 'ss_central_point' ? 'Simply Supported Beam with Central Point Load' : 'Simply Supported Beam with Point Load',
-      supportType: 'simple',
-      loadType: 'point',
-      L,
-      P,
-      P2,
-      w,
-      a,
-      a2,
-      b,
-      RA,
-      RB,
-      W: P,
-      Mmax,
-      xMaxMoment: a,
-      zeroShear: a,
-      warning,
-      loads: [{ label: 'P', P, x: a }],
-      summary: [
-        { label: 'Left Reaction RA', value: `${fmt(RA)} kN` },
-        { label: 'Right Reaction RB', value: `${fmt(RB)} kN` },
-        { label: 'Maximum BM', value: `${fmt(Mmax)} kN·m` },
-        { label: 'Max BM Location', value: `${fmt(a)} m from A` },
-      ],
-      formulas: [
-        'b = L - a',
-        'RA = P × b / L',
-        'RB = P × a / L',
-        'Maximum BM = RA × a = RB × b',
-        'Check: RA + RB = P',
-      ],
-      steps: [
-        `Given span L = ${fmt(L)} m, point load P = ${fmt(P)} kN, and load position a = ${fmt(a)} m from support A.`,
-        `Distance from load to right support: b = L - a = ${fmt(L)} - ${fmt(a)} = ${fmt(b)} m.`,
-        `Taking moment about A: RB × L = P × a.`,
-        `RB = (P × a) / L = (${fmt(P)} × ${fmt(a)}) / ${fmt(L)} = ${fmt(RB)} kN.`,
-        `Using vertical equilibrium: RA + RB = P.`,
-        `RA = P - RB = ${fmt(P)} - ${fmt(RB)} = ${fmt(RA)} kN.`,
-        `Maximum bending moment occurs under the point load.`,
-        `Mmax = RA × a = ${fmt(RA)} × ${fmt(a)} = ${fmt(Mmax)} kN·m.`,
-      ],
-      examAnswer: `Hence, RA = ${fmt(RA)} kN and RB = ${fmt(RB)} kN. Maximum bending moment occurs below the point load at ${fmt(a)} m from A, and Mmax = ${fmt(Mmax)} kN·m.`,
-    }
-  }
-
-  if (caseType === 'ss_two_point') {
-    const originalA = a
-    const originalA2 = a2
-    a = clamp(a, 0.01, L - 0.01)
-    a2 = clamp(a2, 0.01, L - 0.01)
-
-    if (originalA !== a) addWarning(`First load distance adjusted to ${fmt(a)} m.`)
-    if (originalA2 !== a2) addWarning(`Second load distance adjusted to ${fmt(a2)} m.`)
-
-    const loads = [
-      { label: 'P1', P, x: a },
-      { label: 'P2', P: P2, x: a2 },
-    ].sort((l1, l2) => l1.x - l2.x)
-
-    const W = P + P2
-    const RB = (P * a + P2 * a2) / L
-    const RA = W - RB
-
-    const candidateXs = uniqueSorted([0, L, ...loads.map((load) => load.x)])
-    const moments = candidateXs.map((x) => ({ x, M: shearMomentAt({ supportType: 'simple', loadType: 'points', L, RA, RB, loads }, x).moment }))
-    const maxItem = moments.reduce((best, item) => (item.M > best.M ? item : best), moments[0])
-    const Mmax = maxItem?.M || 0
-    const xMaxMoment = maxItem?.x || 0
-
-    return {
-      caseType,
-      title: 'Simply Supported Beam with Two Point Loads',
-      supportType: 'simple',
-      loadType: 'points',
-      L,
-      P,
-      P2,
-      w,
-      a,
-      a2,
-      b: L - a,
-      RA,
-      RB,
-      W,
-      Mmax,
-      xMaxMoment,
-      zeroShear: xMaxMoment,
-      warning,
-      loads,
-      summary: [
-        { label: 'Total Load', value: `${fmt(W)} kN` },
-        { label: 'Left Reaction RA', value: `${fmt(RA)} kN` },
-        { label: 'Right Reaction RB', value: `${fmt(RB)} kN` },
-        { label: 'Maximum BM', value: `${fmt(Mmax)} kN·m` },
-      ],
-      formulas: [
-        'Total load W = P1 + P2',
-        'Taking moment about A: RB × L = P1 × a1 + P2 × a2',
-        'RB = (P1a1 + P2a2) / L',
-        'RA = W - RB',
-        'BM at section x = RA × x - Σ(P × distance from load to section)',
-      ],
-      steps: [
-        `Given L = ${fmt(L)} m, P1 = ${fmt(P)} kN at ${fmt(a)} m from A, and P2 = ${fmt(P2)} kN at ${fmt(a2)} m from A.`,
-        `Total load W = P1 + P2 = ${fmt(P)} + ${fmt(P2)} = ${fmt(W)} kN.`,
-        `Taking moment about A: RB × L = P1 × a1 + P2 × a2.`,
-        `RB = (${fmt(P)} × ${fmt(a)} + ${fmt(P2)} × ${fmt(a2)}) / ${fmt(L)} = ${fmt(RB)} kN.`,
-        `RA = W - RB = ${fmt(W)} - ${fmt(RB)} = ${fmt(RA)} kN.`,
-        `Bending moment is checked at load points because maximum BM usually occurs where shear force changes sign.`,
-        `Maximum bending moment = ${fmt(Mmax)} kN·m at x = ${fmt(xMaxMoment)} m from A.`,
-      ],
-      examAnswer: `Hence, RA = ${fmt(RA)} kN and RB = ${fmt(RB)} kN. Maximum bending moment is ${fmt(Mmax)} kN·m at x = ${fmt(xMaxMoment)} m from support A.`,
-    }
-  }
-
-  if (caseType === 'ss_udl') {
-    const W = w * L
-    const RA = W / 2
-    const RB = W / 2
-    const Mmax = (w * L * L) / 8
-    const zeroShear = L / 2
-
-    return {
-      caseType,
-      title: 'Simply Supported Beam with UDL',
-      supportType: 'simple',
-      loadType: 'udl',
-      L,
-      P,
-      P2,
-      w,
-      a: L / 2,
-      a2,
-      b: L / 2,
-      RA,
-      RB,
-      W,
-      Mmax,
-      xMaxMoment: L / 2,
-      zeroShear,
-      warning,
-      loads: [],
-      summary: [
-        { label: 'Total Load W', value: `${fmt(W)} kN` },
-        { label: 'Left Reaction RA', value: `${fmt(RA)} kN` },
-        { label: 'Right Reaction RB', value: `${fmt(RB)} kN` },
-        { label: 'Maximum BM', value: `${fmt(Mmax)} kN·m` },
-      ],
-      formulas: [
-        'Total load W = w × L',
-        'RA = RB = W / 2',
-        'RA = RB = wL / 2',
-        'Maximum BM = wL² / 8',
-        'Maximum BM occurs at mid-span',
-      ],
-      steps: [
-        `Given span L = ${fmt(L)} m and UDL w = ${fmt(w)} kN/m.`,
-        `Total load W = w × L = ${fmt(w)} × ${fmt(L)} = ${fmt(W)} kN.`,
-        `For full-span UDL on a simply supported beam, reactions are equal.`,
-        `RA = RB = W / 2 = ${fmt(W)} / 2 = ${fmt(RA)} kN.`,
-        `Maximum bending moment occurs at mid-span where shear force becomes zero.`,
-        `Mmax = wL² / 8 = ${fmt(w)} × ${fmt(L)}² / 8 = ${fmt(Mmax)} kN·m.`,
-      ],
-      examAnswer: `Hence, total load W = ${fmt(W)} kN, RA = RB = ${fmt(RA)} kN, and maximum bending moment at mid-span is ${fmt(Mmax)} kN·m.`,
-    }
-  }
-
-  if (caseType === 'cantilever_point_end' || caseType === 'cantilever_point_any') {
-    const originalA = a
-    a = caseType === 'cantilever_point_end' ? L : clamp(a, 0.01, L)
-
-    if (caseType === 'cantilever_point_any' && originalA !== a) {
-      addWarning(`Load distance a must be between 0 and L. For calculation, a is adjusted to ${fmt(a)} m.`)
-    }
-
-    const R = P
-    const Mmax = P * a
-
-    return {
-      caseType,
-      title: caseType === 'cantilever_point_end' ? 'Cantilever Beam with Point Load at Free End' : 'Cantilever Beam with Point Load at Any Distance',
-      supportType: 'cantilever',
-      loadType: 'point',
-      L,
-      P,
-      P2,
-      w,
-      a,
-      a2,
-      b: L - a,
-      RA: R,
-      RB: 0,
-      W: P,
-      Mmax,
-      xMaxMoment: 0,
-      zeroShear: null,
-      warning,
-      loads: [{ label: 'P', P, x: a }],
-      summary: [
-        { label: 'Fixed Reaction', value: `${fmt(R)} kN` },
-        { label: 'Fixed End Moment', value: `${fmt(Mmax)} kN·m` },
-        { label: 'Load Position', value: `${fmt(a)} m from fixed end` },
-        { label: 'Maximum BM Location', value: 'At fixed support' },
-      ],
-      formulas: [
-        'Vertical reaction at fixed support = P',
-        'Fixed end moment = P × a',
-        'For free-end point load, a = L',
-        'Maximum BM occurs at fixed support',
-      ],
-      steps: [
-        `Given cantilever span L = ${fmt(L)} m and point load P = ${fmt(P)} kN at a = ${fmt(a)} m from fixed support.`,
-        `Using vertical equilibrium, fixed support reaction R = P = ${fmt(P)} kN.`,
-        `Fixed end moment is caused by the load acting at distance a from the fixed support.`,
-        `M = P × a = ${fmt(P)} × ${fmt(a)} = ${fmt(Mmax)} kN·m.`,
-        `Maximum bending moment occurs at the fixed support.`,
-      ],
-      examAnswer: `Hence, fixed support reaction = ${fmt(R)} kN and fixed end moment = ${fmt(Mmax)} kN·m. Maximum bending moment occurs at the fixed support.`,
-    }
-  }
-
-  const W = w * L
-  const R = W
-  const Mmax = (w * L * L) / 2
-
-  return {
-    caseType: 'cantilever_udl',
-    title: 'Cantilever Beam with UDL',
-    supportType: 'cantilever',
-    loadType: 'udl',
+  const baseResult = {
+    beamType,
     L,
-    P,
-    P2,
-    w,
-    a: L,
-    a2,
-    b: 0,
-    RA: R,
-    RB: 0,
-    W,
-    Mmax,
-    xMaxMoment: 0,
-    zeroShear: null,
-    warning,
-    loads: [],
-    summary: [
-      { label: 'Total Load W', value: `${fmt(W)} kN` },
-      { label: 'Fixed Reaction', value: `${fmt(R)} kN` },
-      { label: 'Fixed End Moment', value: `${fmt(Mmax)} kN·m` },
-      { label: 'Maximum BM Location', value: 'At fixed support' },
-    ],
-    formulas: [
-      'Total load W = w × L',
-      'Vertical reaction at fixed support = W',
-      'Fixed end moment = wL² / 2',
-      'Maximum BM occurs at fixed support',
-    ],
-    steps: [
-      `Given cantilever span L = ${fmt(L)} m and UDL w = ${fmt(w)} kN/m.`,
-      `Total load W = w × L = ${fmt(w)} × ${fmt(L)} = ${fmt(W)} kN.`,
-      `The fixed support carries the complete vertical load.`,
-      `Fixed reaction R = W = ${fmt(W)} kN.`,
-      `Fixed end moment M = wL² / 2 = ${fmt(w)} × ${fmt(L)}² / 2 = ${fmt(Mmax)} kN·m.`,
-      `Maximum bending moment occurs at the fixed support.`,
-    ],
-    examAnswer: `Hence, total load W = ${fmt(W)} kN, fixed support reaction = ${fmt(R)} kN, and fixed end moment = ${fmt(Mmax)} kN·m.`,
+    loads,
+    resultants,
+    totalLoad,
+    loadMomentAboutA,
+    appliedMomentSum,
+    RA,
+    RB,
+    fixedMoment,
   }
-}
 
-function getSectionValues(result, sectionX) {
-  const L = result.L || 1
-  const x = clamp(toNum(sectionX, L / 2), 0, L)
-  const eps = 0.000001
-  const nearLoad = result.loads?.find((load) => Math.abs(x - load.x) < eps)
+  const sampleXs = []
+  for (let i = 0; i <= 260; i += 1) {
+    sampleXs.push((L * i) / 260)
+  }
 
-  if (nearLoad) {
-    const left = shearMomentAt(result, x, 'left')
-    const right = shearMomentAt(result, x, 'right')
-    return {
-      x,
-      shear: `Left: ${fmt(left.shear)} kN, Right: ${fmt(right.shear)} kN`,
-      moment: `${fmt(left.moment)} kN·m`,
-      note: `At ${nearLoad.label}, shear force jumps suddenly by ${fmt(nearLoad.P)} kN. Bending moment remains continuous.`,
+  loads.forEach((load) => {
+    if (load.type === 'point' || load.type === 'moment') {
+      sampleXs.push(load.x)
     }
-  }
 
-  const value = shearMomentAt(result, x)
+    if (load.type === 'udl' || load.type === 'uvl') {
+      sampleXs.push(load.start, load.end, (load.start + load.end) / 2)
+    }
+  })
+
+  const uniqueXs = [...new Set(sampleXs.map((x) => Number(clamp(x, 0, L).toFixed(6))))].sort((a, b) => a - b)
+
+  const values = uniqueXs.map((x) => ({
+    x,
+    ...shearMomentAt(baseResult, x),
+  }))
+
+  const maxPositiveBM = values.reduce((best, item) => (item.moment > best.moment ? item : best), values[0])
+  const maxNegativeBM = values.reduce((best, item) => (item.moment < best.moment ? item : best), values[0])
+  const maxAbsBM = values.reduce((best, item) => (Math.abs(item.moment) > Math.abs(best.moment) ? item : best), values[0])
+  const maxAbsSF = values.reduce((best, item) => (Math.abs(item.shear) > Math.abs(best.shear) ? item : best), values[0])
+
+  const sectionX = clamp(toNum(form.x, L / 2), 0, L)
+  const section = shearMomentAt(baseResult, sectionX)
+
+  const warnings = []
+
+  loads.forEach((load, index) => {
+    if ((load.type === 'udl' || load.type === 'uvl') && load.length <= 0) {
+      warnings.push(`Load ${index + 1}: start and end position cannot be same.`)
+    }
+  })
+
+  if (beamType === 'simple' && (RA < 0 || RB < 0)) {
+    warnings.push('One support reaction is negative. This means uplift may occur for the given loading.')
+  }
 
   return {
-    x,
-    shear: `${fmt(value.shear)} kN`,
-    moment: `${fmt(value.moment)} kN·m`,
-    note:
-      result.loadType === 'udl'
-        ? 'For UDL, shear force changes linearly and bending moment changes parabolically.'
-        : 'For point loads, shear force remains constant between loads and bending moment changes linearly between loads.',
+    ...baseResult,
+    values,
+    maxPositiveBM,
+    maxNegativeBM,
+    maxAbsBM,
+    maxAbsSF,
+    sectionX,
+    section,
+    warnings,
+    summary:
+      beamType === 'simple'
+        ? [
+            { label: 'Total Downward Load', value: `${fmt(totalLoad)} kN` },
+            { label: 'Left Reaction RA', value: `${fmt(RA)} kN` },
+            { label: 'Right Reaction RB', value: `${fmt(RB)} kN` },
+            { label: 'Max |BM|', value: `${fmt(maxAbsBM?.moment || 0)} kN·m` },
+          ]
+        : [
+            { label: 'Total Downward Load', value: `${fmt(totalLoad)} kN` },
+            { label: 'Fixed Reaction', value: `${fmt(RA)} kN` },
+            { label: 'Fixed End Moment', value: `${fmt(fixedMoment)} kN·m` },
+            { label: 'Max |BM|', value: `${fmt(maxAbsBM?.moment || 0)} kN·m` },
+          ],
+    formulas:
+      beamType === 'simple'
+        ? [
+            'Resultant of UDL = w × loaded length',
+            'Resultant of UVL/trapezoidal load = (w1 + w2) × loaded length / 2',
+            'Centroid of UVL from start = Lload × (w1 + 2w2) / [3(w1 + w2)]',
+            'Taking moment about A: RB × L = Σ(W × x̄) + ΣMclockwise',
+            'RA = ΣW - RB',
+            'At any section x: SF = RA - loads acting before x',
+            'At any section x: BM = RA × x - moment of loads before x ± applied moments',
+          ]
+        : [
+            'Fixed reaction = ΣW',
+            'Fixed end moment = Σ(W × x̄) + ΣMclockwise',
+            'For cantilever section x: SF = loads acting on right side of section',
+            'For cantilever section x: BM = moment of loads acting on right side of section',
+            'UDL resultant = w × loaded length',
+            'UVL/trapezoidal resultant = (w1 + w2) × loaded length / 2',
+          ],
+    steps: [
+      `Beam type selected: ${beamType === 'simple' ? 'Simply Supported Beam' : 'Cantilever Beam'}.`,
+      `Beam span L = ${fmt(L)} m.`,
+      `Total downward vertical load ΣW = ${fmt(totalLoad)} kN.`,
+      `Moment of vertical loads about left/fixed support = Σ(W × x̄) = ${fmt(loadMomentAboutA)} kN·m.`,
+      `Net applied moment using clockwise positive convention = ${fmt(appliedMomentSum)} kN·m.`,
+      beamType === 'simple'
+        ? `Right reaction RB = [Σ(W × x̄) + ΣMclockwise] / L = ${fmt(RB)} kN.`
+        : `Fixed end moment = Σ(W × x̄) + ΣMclockwise = ${fmt(fixedMoment)} kN·m.`,
+      beamType === 'simple'
+        ? `Left reaction RA = ΣW - RB = ${fmt(RA)} kN.`
+        : `Fixed vertical reaction = ΣW = ${fmt(RA)} kN.`,
+      `At selected section x = ${fmt(sectionX)} m, SF = ${fmt(section.shear)} kN and BM = ${fmt(section.moment)} kN·m.`,
+      `Maximum absolute bending moment from sampled diagram = ${fmt(maxAbsBM?.moment || 0)} kN·m at x = ${fmt(maxAbsBM?.x || 0)} m.`,
+    ],
+    examAnswer:
+      beamType === 'simple'
+        ? `For the given combined loading, total downward load is ${fmt(totalLoad)} kN. Support reactions are RA = ${fmt(RA)} kN and RB = ${fmt(RB)} kN. At x = ${fmt(sectionX)} m, shear force is ${fmt(section.shear)} kN and bending moment is ${fmt(section.moment)} kN·m. Maximum absolute bending moment is ${fmt(maxAbsBM?.moment || 0)} kN·m at x = ${fmt(maxAbsBM?.x || 0)} m.`
+        : `For the given cantilever loading, fixed vertical reaction is ${fmt(RA)} kN and fixed end moment is ${fmt(fixedMoment)} kN·m. At x = ${fmt(sectionX)} m from fixed support, shear force is ${fmt(section.shear)} kN and bending moment is ${fmt(section.moment)} kN·m. Maximum absolute bending moment is ${fmt(maxAbsBM?.moment || 0)} kN·m at x = ${fmt(maxAbsBM?.x || 0)} m.`,
   }
 }
 
-function getSfdBmdRows(result) {
-  const rows = []
-
-  const addRow = (point, x, remark, side = 'right') => {
-    const value = shearMomentAt(result, x, side)
-    rows.push({
-      point,
-      x: `${fmt(x)} m`,
-      shear: `${fmt(value.shear)} kN`,
-      moment: `${fmt(value.moment)} kN·m`,
-      remark,
-    })
-  }
-
-  if (result.supportType === 'simple') {
-    addRow('At support A', 0, 'BM is zero at simple support.')
-
-    if (result.loadType === 'udl') {
-      addRow('At mid-span', result.L / 2, 'Shear force is zero and BM is maximum.')
-      addRow('Just before support B', result.L, 'SFD reaches negative reaction before RB.', 'left')
-      rows.push({
-        point: 'After support B',
-        x: `${fmt(result.L)} m`,
-        shear: '0 kN',
-        moment: '0 kN·m',
-        remark: 'Support reaction closes the SFD.',
-      })
-      return rows
-    }
-
-    result.loads.forEach((load) => {
-      const left = shearMomentAt(result, load.x, 'left')
-      const right = shearMomentAt(result, load.x, 'right')
-      rows.push({
-        point: `Just left of ${load.label}`,
-        x: `${fmt(load.x)}⁻ m`,
-        shear: `${fmt(left.shear)} kN`,
-        moment: `${fmt(left.moment)} kN·m`,
-        remark: 'Value just before point load.',
-      })
-      rows.push({
-        point: `Just right of ${load.label}`,
-        x: `${fmt(load.x)}⁺ m`,
-        shear: `${fmt(right.shear)} kN`,
-        moment: `${fmt(right.moment)} kN·m`,
-        remark: `Shear jumps downward by ${fmt(load.P)} kN.`,
-      })
-    })
-
-    addRow('Just before support B', result.L, 'BM is zero at simple support.', 'left')
-    rows.push({
-      point: 'After support B',
-      x: `${fmt(result.L)} m`,
-      shear: '0 kN',
-      moment: '0 kN·m',
-      remark: 'Support reaction closes the SFD.',
-    })
-    return rows
-  }
-
-  addRow('At fixed support', 0, 'Maximum hogging BM occurs at fixed end.')
-
-  if (result.loadType === 'udl') {
-    addRow('At mid-span', result.L / 2, 'SFD is linear and BMD is parabolic.')
-    addRow('At free end', result.L, 'Both SF and BM become zero at free end.')
-    return rows
-  }
+function getKeyRows(result) {
+  const xs = [0, result.sectionX, result.L]
 
   result.loads.forEach((load) => {
-    addRow(`Just before ${load.label}`, load.x, 'Loaded region ends here.', 'left')
-    addRow(`Just after ${load.label}`, load.x, 'After point load, SF becomes zero if no load exists to the right.', 'right')
+    if (load.type === 'point' || load.type === 'moment') {
+      xs.push(load.x)
+    }
+
+    if (load.type === 'udl' || load.type === 'uvl') {
+      xs.push(load.start, (load.start + load.end) / 2, load.end)
+    }
   })
 
-  addRow('At free end', result.L, 'Free end moment is zero.')
-  return rows
-}
+  const uniqueXs = [...new Set(xs.map((x) => Number(clamp(x, 0, result.L).toFixed(6))))].sort((a, b) => a - b)
 
-function deflectionAtX(result, xM, E_GPa, I_millionMm4) {
-  const E = Math.max(E_GPa, 0.001) * 1000
-  const I = Math.max(I_millionMm4, 0.001) * 1000000
-  const L = result.L * 1000
-  const x = clamp(xM, 0, result.L) * 1000
-
-  let y = 0
-
-  if (result.supportType === 'simple') {
-    if (result.loadType === 'udl') {
-      const w = result.w
-      y += (w * x * (Math.pow(L, 3) - 2 * L * x * x + Math.pow(x, 3))) / (24 * E * I)
-    }
-
-    result.loads.forEach((load) => {
-      const P = load.P * 1000
-      const a = load.x * 1000
-      const b = L - a
-
-      if (x <= a) {
-        y += (P * b * x * (Math.pow(L, 2) - Math.pow(b, 2) - Math.pow(x, 2))) / (6 * L * E * I)
-      } else {
-        y += (P * a * (L - x) * (Math.pow(L, 2) - Math.pow(a, 2) - Math.pow(L - x, 2))) / (6 * L * E * I)
-      }
-    })
-
-    return y
-  }
-
-  if (result.supportType === 'cantilever') {
-    if (result.loadType === 'udl') {
-      const w = result.w
-      y += (w * x * x * (6 * L * L - 4 * L * x + x * x)) / (24 * E * I)
-    }
-
-    result.loads.forEach((load) => {
-      const P = load.P * 1000
-      const a = load.x * 1000
-
-      if (x <= a) {
-        y += (P * x * x * (3 * a - x)) / (6 * E * I)
-      } else {
-        y += (P * a * a * (3 * x - a)) / (6 * E * I)
-      }
-    })
-
-    return y
-  }
-
-  return 0
-}
-
-function getDeflectionResult(result, form) {
-  const E = Math.max(toNum(form.E, 200), 0.001)
-  const I = Math.max(toNum(form.I, 300), 0.001)
-  const x = clamp(toNum(form.x, result.L / 2), 0, result.L)
-  const yAtX = deflectionAtX(result, x, E, I)
-
-  const samples = Array.from({ length: 201 }, (_, index) => {
-    const sx = (result.L * index) / 200
+  return uniqueXs.map((x) => {
+    const value = shearMomentAt(result, x)
     return {
-      x: sx,
-      y: deflectionAtX(result, sx, E, I),
+      x,
+      shear: value.shear,
+      moment: value.moment,
+      point:
+        x === 0
+          ? result.beamType === 'simple'
+            ? 'Support A'
+            : 'Fixed Support'
+          : x === result.L
+            ? result.beamType === 'simple'
+              ? 'Support B'
+              : 'Free End'
+            : Math.abs(x - result.sectionX) < 0.000001
+              ? 'Selected Section'
+              : 'Load / Key Point',
     }
   })
-
-  const maxItem = samples.reduce((best, item) => (Math.abs(item.y) > Math.abs(best.y) ? item : best), samples[0])
-
-  const h = Math.max(result.L / 10000, 0.0001)
-  const xLeft = clamp(x - h, 0, result.L)
-  const xRight = clamp(x + h, 0, result.L)
-  const yLeft = deflectionAtX(result, xLeft, E, I)
-  const yRight = deflectionAtX(result, xRight, E, I)
-  const slope = (yRight - yLeft) / ((xRight - xLeft) * 1000 || 1)
-
-  return {
-    E,
-    I,
-    x,
-    yAtX,
-    slope,
-    maxDeflection: maxItem.y,
-    maxX: maxItem.x,
-  }
 }
 
 function NumberField({ label, value, onChange, suffix, helper, min = 0, step = 'any' }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-300">
-        {label}
-      </span>
+      <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
 
       <div className="flex overflow-hidden rounded-xl border border-slate-700 bg-slate-950">
         <input
@@ -646,29 +473,213 @@ function NumberField({ label, value, onChange, suffix, helper, min = 0, step = '
   )
 }
 
-function BeamSketch({ result }) {
-  const x0 = 70
-  const x1 = 570
-  const y = 115
-  const L = result.L || 1
-  const mapX = (x) => x0 + (x / L) * (x1 - x0)
-  const isSimply = result.supportType === 'simple'
-  const isUDL = result.loadType === 'udl'
-  const udlPositions = Array.from({ length: 9 }, (_, i) => x0 + 35 + i * 54)
+function SelectField({ label, value, onChange, children, helper }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none"
+      >
+        {children}
+      </select>
+      {helper && <p className="mt-2 text-xs leading-5 text-slate-500">{helper}</p>}
+    </label>
+  )
+}
+
+function LoadEditor({ load, index, L, onChange, onDelete }) {
+  const update = (key, value) => {
+    onChange(load.id, key, value)
+  }
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-bold text-white">Beam Loading Diagram</h3>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-black text-orange-300">Load {index + 1}</p>
+          <h3 className="mt-1 text-lg font-black text-white">
+            {load.type === 'point' && 'Point Load'}
+            {load.type === 'udl' && 'UDL'}
+            {load.type === 'uvl' && 'UVL / Trapezoidal Load'}
+            {load.type === 'moment' && 'Moment Load'}
+          </h3>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onDelete(load.id)}
+          className="rounded-lg border border-red-500/30 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-500/10"
+        >
+          Delete
+        </button>
+      </div>
+
+      <SelectField label="Load Type" value={load.type} onChange={(value) => update('type', value)}>
+        <option value="point">Point Load</option>
+        <option value="udl">UDL</option>
+        <option value="uvl">UVL / Trapezoidal</option>
+        <option value="moment">Moment Load</option>
+      </SelectField>
+
+      <div className="mt-4 space-y-4">
+        {load.type === 'point' && (
+          <>
+            <NumberField
+              label="Point Load P"
+              value={load.P}
+              onChange={(value) => update('P', value)}
+              suffix="kN"
+              helper="Downward concentrated load."
+              min="0"
+            />
+
+            <NumberField
+              label="Position x"
+              value={load.x}
+              onChange={(value) => update('x', value)}
+              suffix="m"
+              helper={`Position from left/fixed support. Keep between 0 and ${fmt(L)} m.`}
+              min="0"
+            />
+          </>
+        )}
+
+        {load.type === 'udl' && (
+          <>
+            <NumberField
+              label="UDL Intensity w"
+              value={load.w}
+              onChange={(value) => update('w', value)}
+              suffix="kN/m"
+              helper="Uniform load intensity."
+              min="0"
+            />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <NumberField
+                label="Start Position"
+                value={load.start}
+                onChange={(value) => update('start', value)}
+                suffix="m"
+                helper="Load start from support."
+                min="0"
+              />
+
+              <NumberField
+                label="End Position"
+                value={load.end}
+                onChange={(value) => update('end', value)}
+                suffix="m"
+                helper="Load end from support."
+                min="0"
+              />
+            </div>
+          </>
+        )}
+
+        {load.type === 'uvl' && (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <NumberField
+                label="Start Intensity w1"
+                value={load.w1}
+                onChange={(value) => update('w1', value)}
+                suffix="kN/m"
+                helper="Intensity at start."
+                min="0"
+              />
+
+              <NumberField
+                label="End Intensity w2"
+                value={load.w2}
+                onChange={(value) => update('w2', value)}
+                suffix="kN/m"
+                helper="Intensity at end."
+                min="0"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <NumberField
+                label="Start Position"
+                value={load.start}
+                onChange={(value) => update('start', value)}
+                suffix="m"
+                helper="UVL start position."
+                min="0"
+              />
+
+              <NumberField
+                label="End Position"
+                value={load.end}
+                onChange={(value) => update('end', value)}
+                suffix="m"
+                helper="UVL end position."
+                min="0"
+              />
+            </div>
+          </>
+        )}
+
+        {load.type === 'moment' && (
+          <>
+            <NumberField
+              label="Moment M"
+              value={load.M}
+              onChange={(value) => update('M', value)}
+              suffix="kN·m"
+              helper="Applied concentrated moment."
+              min="0"
+            />
+
+            <NumberField
+              label="Position x"
+              value={load.x}
+              onChange={(value) => update('x', value)}
+              suffix="m"
+              helper="Moment position from left/fixed support."
+              min="0"
+            />
+
+            <SelectField
+              label="Moment Direction"
+              value={load.direction}
+              onChange={(value) => update('direction', value)}
+              helper="Clockwise is taken as positive for reaction calculation."
+            >
+              <option value="clockwise">Clockwise</option>
+              <option value="anticlockwise">Anticlockwise</option>
+            </SelectField>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function BeamSketch({ result }) {
+  const x0 = 70
+  const x1 = 570
+  const y = 125
+  const L = result.L || 1
+  const mapX = (x) => x0 + (x / L) * (x1 - x0)
+  const isSimple = result.beamType === 'simple'
+
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-lg font-black text-white">Combined Beam Loading Diagram</h3>
         <span className="rounded-full bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-300">
-          Dynamic SVG
+          Dynamic load builder
         </span>
       </div>
 
-      <svg viewBox="0 0 640 230" className="h-auto w-full">
+      <svg viewBox="0 0 640 260" className="h-auto w-full">
         <line x1={x0} y1={y} x2={x1} y2={y} stroke="#cbd5e1" strokeWidth="7" strokeLinecap="round" />
 
-        {isSimply ? (
+        {isSimple ? (
           <>
             <polygon points={`${x0 - 18},${y + 35} ${x0 + 18},${y + 35} ${x0},${y + 6}`} fill="#38bdf8" />
             <line x1={x0 - 30} y1={y + 38} x2={x0 + 30} y2={y + 38} stroke="#38bdf8" strokeWidth="3" />
@@ -680,8 +691,8 @@ function BeamSketch({ result }) {
           </>
         ) : (
           <>
-            <rect x={x0 - 32} y={y - 55} width="28" height="110" fill="#38bdf8" opacity="0.9" />
-            {[-42, -22, -2, 18, 38].map((dy) => (
+            <rect x={x0 - 32} y={y - 58} width="28" height="116" fill="#38bdf8" opacity="0.9" />
+            {[-45, -25, -5, 15, 35, 55].map((dy) => (
               <line
                 key={dy}
                 x1={x0 - 44}
@@ -692,53 +703,125 @@ function BeamSketch({ result }) {
                 strokeWidth="2"
               />
             ))}
-            <text x={x0 - 45} y={y + 76} fill="#e2e8f0" fontSize="14" fontWeight="700">
+            <text x={x0 - 45} y={y + 82} fill="#e2e8f0" fontSize="14" fontWeight="700">
               Fixed
             </text>
           </>
         )}
 
-        {isUDL && (
-          <>
-            <line x1={x0} y1="48" x2={x1} y2="48" stroke="#f97316" strokeWidth="3" />
-            {udlPositions.map((x) => (
-              <g key={x}>
-                <line x1={x} y1="50" x2={x} y2={y - 8} stroke="#f97316" strokeWidth="3" />
-                <polygon points={`${x - 7},${y - 18} ${x + 7},${y - 18} ${x},${y - 5}`} fill="#f97316" />
+        {result.loads.map((load, index) => {
+          if (load.type === 'point') {
+            const lx = mapX(load.x)
+            return (
+              <g key={load.id}>
+                <line x1={lx} y1="38" x2={lx} y2={y - 8} stroke="#f97316" strokeWidth="4" />
+                <polygon points={`${lx - 9},${y - 18} ${lx + 9},${y - 18} ${lx},${y - 4}`} fill="#f97316" />
+                <text x={lx - 28} y="28" fill="#fed7aa" fontSize="13" fontWeight="800">
+                  P{index + 1}={fmt(load.P)}
+                </text>
+                <text x={lx - 20} y={y + 92} fill="#bfdbfe" fontSize="12" fontWeight="700">
+                  x={fmt(load.x)}
+                </text>
               </g>
-            ))}
-            <text x={(x0 + x1) / 2 - 45} y="35" fill="#fed7aa" fontSize="14" fontWeight="800">
-              w = {fmt(result.w)} kN/m
-            </text>
-          </>
-        )}
+            )
+          }
 
-        {result.loads?.map((load) => {
-          const loadX = mapX(load.x)
+          if (load.type === 'udl') {
+            const sx = mapX(load.start)
+            const ex = mapX(load.end)
+            const positions = Array.from({ length: 7 }, (_, i) => sx + ((ex - sx) * i) / 6)
+
+            return (
+              <g key={load.id}>
+                <rect x={sx} y="48" width={Math.max(ex - sx, 0)} height={y - 58} fill="rgba(249,115,22,0.08)" />
+                <line x1={sx} y1="48" x2={ex} y2="48" stroke="#f97316" strokeWidth="3" />
+                {positions.map((px) => (
+                  <g key={px}>
+                    <line x1={px} y1="50" x2={px} y2={y - 8} stroke="#f97316" strokeWidth="2.5" />
+                    <polygon points={`${px - 6},${y - 18} ${px + 6},${y - 18} ${px},${y - 6}`} fill="#f97316" />
+                  </g>
+                ))}
+                <text x={sx + 6} y="38" fill="#fed7aa" fontSize="13" fontWeight="800">
+                  UDL {fmt(load.w)} kN/m
+                </text>
+              </g>
+            )
+          }
+
+          if (load.type === 'uvl') {
+            const sx = mapX(load.start)
+            const ex = mapX(load.end)
+            const maxW = Math.max(load.w1, load.w2, 0.001)
+            const h1 = 18 + (load.w1 / maxW) * 70
+            const h2 = 18 + (load.w2 / maxW) * 70
+            const positions = Array.from({ length: 7 }, (_, i) => {
+              const ratio = i / 6
+              return {
+                px: sx + (ex - sx) * ratio,
+                h: h1 + (h2 - h1) * ratio,
+              }
+            })
+
+            return (
+              <g key={load.id}>
+                <polygon
+                  points={`${sx},${y - 8} ${sx},${y - h1} ${ex},${y - h2} ${ex},${y - 8}`}
+                  fill="rgba(249,115,22,0.12)"
+                  stroke="#f97316"
+                  strokeWidth="2"
+                />
+                {positions.map((item) => (
+                  <g key={item.px}>
+                    <line x1={item.px} y1={y - item.h} x2={item.px} y2={y - 8} stroke="#f97316" strokeWidth="2.5" />
+                    <polygon points={`${item.px - 6},${y - 18} ${item.px + 6},${y - 18} ${item.px},${y - 6}`} fill="#f97316" />
+                  </g>
+                ))}
+                <text x={sx + 6} y="35" fill="#fed7aa" fontSize="13" fontWeight="800">
+                  UVL {fmt(load.w1)}→{fmt(load.w2)}
+                </text>
+              </g>
+            )
+          }
+
+          const lx = mapX(load.x)
+          const clockwise = load.direction === 'clockwise'
+
           return (
-            <g key={`${load.label}-${load.x}`}>
-              <line x1={loadX} y1="35" x2={loadX} y2={y - 8} stroke="#f97316" strokeWidth="4" />
-              <polygon points={`${loadX - 9},${y - 18} ${loadX + 9},${y - 18} ${loadX},${y - 4}`} fill="#f97316" />
-              <text x={loadX - 30} y="26" fill="#fed7aa" fontSize="14" fontWeight="800">
-                {load.label} = {fmt(load.P)} kN
-              </text>
-              <line x1={x0} y1={y + 67} x2={loadX} y2={y + 67} stroke="#94a3b8" strokeWidth="2" />
-              <text x={(x0 + loadX) / 2 - 20} y={y + 58} fill="#bfdbfe" fontSize="13" fontWeight="700">
-                x = {fmt(load.x)} m
+            <g key={load.id}>
+              <path
+                d={
+                  clockwise
+                    ? `M ${lx - 25} ${y - 35} A 26 26 0 1 1 ${lx + 20} ${y - 15}`
+                    : `M ${lx + 25} ${y - 35} A 26 26 0 1 0 ${lx - 20} ${y - 15}`
+                }
+                fill="none"
+                stroke="#a78bfa"
+                strokeWidth="4"
+              />
+              <polygon
+                points={
+                  clockwise
+                    ? `${lx + 15},${y - 5} ${lx + 30},${y - 12} ${lx + 18},${y - 22}`
+                    : `${lx - 15},${y - 5} ${lx - 30},${y - 12} ${lx - 18},${y - 22}`
+                }
+                fill="#a78bfa"
+              />
+              <text x={lx - 32} y={y - 55} fill="#ddd6fe" fontSize="13" fontWeight="800">
+                M={fmt(load.M)}
               </text>
             </g>
           )
         })}
 
-        <line x1={x0} y1={y + 95} x2={x1} y2={y + 95} stroke="#64748b" strokeWidth="2" />
-        <line x1={x0} y1={y + 87} x2={x0} y2={y + 103} stroke="#64748b" strokeWidth="2" />
-        <line x1={x1} y1={y + 87} x2={x1} y2={y + 103} stroke="#64748b" strokeWidth="2" />
-        <text x={(x0 + x1) / 2 - 18} y={y + 118} fill="#f97316" fontSize="14" fontWeight="700">
+        <line x1={x0} y1={y + 105} x2={x1} y2={y + 105} stroke="#64748b" strokeWidth="2" />
+        <line x1={x0} y1={y + 97} x2={x0} y2={y + 113} stroke="#64748b" strokeWidth="2" />
+        <line x1={x1} y1={y + 97} x2={x1} y2={y + 113} stroke="#64748b" strokeWidth="2" />
+        <text x={(x0 + x1) / 2 - 20} y={y + 130} fill="#f97316" fontSize="14" fontWeight="800">
           L = {fmt(result.L)} m
         </text>
 
-        <text x="18" y="215" fill="#94a3b8" fontSize="13">
-          Diagram is educational and scaled according to input span and load position.
+        <text x="18" y="245" fill="#94a3b8" fontSize="13">
+          Point load, UDL, UVL/trapezoidal load and moment load can act together.
         </text>
       </svg>
     </div>
@@ -748,37 +831,19 @@ function BeamSketch({ result }) {
 function Diagram({ result, type }) {
   const x0 = 70
   const x1 = 570
-  const yBase = 105
-  const amp = 70
+  const yBase = 110
+  const amp = 72
   const L = result.L || 1
   const mapX = (x) => x0 + (x / L) * (x1 - x0)
 
-  const baseXs = Array.from({ length: 81 }, (_, i) => (L * i) / 80)
-  const extraXs = []
+  const values = result.values || []
+  const maxAbs = Math.max(...values.map((item) => Math.abs(type === 'sfd' ? item.shear : item.moment)), 1)
 
-  result.loads?.forEach((load) => {
-    extraXs.push(clamp(load.x - 0.0001, 0, L), load.x, clamp(load.x + 0.0001, 0, L))
-  })
-
-  if (result.zeroShear !== null && result.zeroShear !== undefined) extraXs.push(result.zeroShear)
-  if (result.xMaxMoment !== null && result.xMaxMoment !== undefined) extraXs.push(result.xMaxMoment)
-
-  const xs = uniqueSorted([...baseXs, ...extraXs])
-  const values = xs.map((x) => {
-    const value = shearMomentAt(result, x)
-    return type === 'sfd' ? value.shear : value.moment
-  })
-
-  const maxAbs = Math.max(...values.map((v) => Math.abs(v)), 1)
-
-  const points = xs
-    .map((x, index) => {
-      const value = values[index]
-      const y =
-        type === 'sfd'
-          ? yBase - (value / maxAbs) * amp
-          : yBase + (value / maxAbs) * amp
-      return `${mapX(x)},${y}`
+  const points = values
+    .map((item) => {
+      const value = type === 'sfd' ? item.shear : item.moment
+      const y = type === 'sfd' ? yBase - (value / maxAbs) * amp : yBase + (value / maxAbs) * amp
+      return `${mapX(item.x)},${y}`
     })
     .join(' ')
 
@@ -786,49 +851,104 @@ function Diagram({ result, type }) {
   const color = type === 'sfd' ? '#f97316' : '#38bdf8'
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-      <h3 className="mb-3 text-lg font-bold text-white">{title}</h3>
+    <div className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+      <h3 className="mb-3 text-lg font-black text-white">{title}</h3>
 
-      <svg viewBox="0 0 640 230" className="h-auto w-full">
+      <svg viewBox="0 0 640 240" className="h-auto w-full">
         <line x1={x0} y1={yBase} x2={x1} y2={yBase} stroke="#64748b" strokeWidth="2" strokeDasharray="6 6" />
-        <line x1={x0} y1="28" x2={x0} y2="185" stroke="#334155" strokeWidth="2" />
-        <line x1={x1} y1="28" x2={x1} y2="185" stroke="#334155" strokeWidth="2" />
+        <line x1={x0} y1="30" x2={x0} y2="190" stroke="#334155" strokeWidth="2" />
+        <line x1={x1} y1="30" x2={x1} y2="190" stroke="#334155" strokeWidth="2" />
 
         <polyline points={points} fill="none" stroke={color} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
 
-        {result.loads?.map((load) => (
-          <line
-            key={load.label}
-            x1={mapX(load.x)}
-            y1="35"
-            x2={mapX(load.x)}
-            y2="185"
-            stroke="#475569"
-            strokeWidth="1.5"
-            strokeDasharray="5 5"
-          />
-        ))}
+        {result.loads.map((load) => {
+          if (load.type === 'point' || load.type === 'moment') {
+            return (
+              <line
+                key={load.id}
+                x1={mapX(load.x)}
+                y1="34"
+                x2={mapX(load.x)}
+                y2="190"
+                stroke="#475569"
+                strokeWidth="1.5"
+                strokeDasharray="5 5"
+              />
+            )
+          }
 
-        <text x={x0 - 10} y="207" fill="#cbd5e1" fontSize="13" fontWeight="700">
-          {result.supportType === 'simple' ? 'A' : 'Fixed'}
+          return (
+            <g key={load.id}>
+              <line x1={mapX(load.start)} y1="34" x2={mapX(load.start)} y2="190" stroke="#475569" strokeWidth="1.2" strokeDasharray="5 5" />
+              <line x1={mapX(load.end)} y1="34" x2={mapX(load.end)} y2="190" stroke="#475569" strokeWidth="1.2" strokeDasharray="5 5" />
+            </g>
+          )
+        })}
+
+        <text x={x0 - 10} y="212" fill="#cbd5e1" fontSize="13" fontWeight="700">
+          {result.beamType === 'simple' ? 'A' : 'Fixed'}
         </text>
-        <text x={x1 - 16} y="207" fill="#cbd5e1" fontSize="13" fontWeight="700">
-          {result.supportType === 'simple' ? 'B' : 'Free'}
+        <text x={x1 - 16} y="212" fill="#cbd5e1" fontSize="13" fontWeight="700">
+          {result.beamType === 'simple' ? 'B' : 'Free'}
         </text>
 
-        <text x="18" y="20" fill="#94a3b8" fontSize="13">
+        <text x="18" y="22" fill="#94a3b8" fontSize="13">
           {type === 'sfd'
-            ? 'Positive shear is shown above the axis; negative shear below the axis.'
-            : 'Positive BM is shown below the axis; negative/hogging BM above the axis.'}
+            ? 'SFD is generated by sampling combined loading along the beam.'
+            : 'BMD is generated by sampling combined loading along the beam.'}
         </text>
       </svg>
     </div>
   )
 }
 
-function DiagramValuesTable({ result, sectionX }) {
-  const rows = getSfdBmdRows(result)
-  const section = getSectionValues(result, sectionX)
+function LoadSummaryTable({ result }) {
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+      <h2 className="text-2xl font-black text-white">Load Resultant Summary</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-400">
+        Every distributed load is converted into an equivalent resultant for reaction calculation.
+      </p>
+
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-800">
+        <table className="w-full min-w-[760px] border-collapse text-left">
+          <thead className="bg-slate-950">
+            <tr>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Load</th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Resultant W</th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Location x̄</th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Moment About A/Fixed</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {result.resultants.map((item, index) => (
+              <tr key={item.load.id} className="bg-slate-900/50">
+                <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-slate-200">
+                  {index + 1}. {item.label}
+                </td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-orange-300">
+                  {item.load.type === 'moment' ? '-' : `${fmt(item.W)} kN`}
+                </td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">
+                  {fmt(item.xBar)} m
+                </td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">
+                  {item.load.type === 'moment'
+                    ? `${fmt(getMomentSign(item.load) * item.load.M)} kN·m`
+                    : `${fmt(item.W * item.xBar)} kN·m`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function KeyValuesTable({ result }) {
+  const rows = getKeyRows(result)
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
@@ -836,12 +956,12 @@ function DiagramValuesTable({ result, sectionX }) {
         <div>
           <h2 className="text-2xl font-black text-white">SFD & BMD Key Values</h2>
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Important ordinates required to draw shear force and bending moment diagrams.
+            Important values at supports, load positions, distributed load boundaries and selected section.
           </p>
         </div>
 
         <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm leading-6 text-orange-100">
-          +BM = sagging, -BM = hogging
+          Clockwise moment is taken positive for reaction calculation.
         </div>
       </div>
 
@@ -853,18 +973,16 @@ function DiagramValuesTable({ result, sectionX }) {
               <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">x Location</th>
               <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Shear Force</th>
               <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Bending Moment</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Remark</th>
             </tr>
           </thead>
 
           <tbody>
             {rows.map((row) => (
-              <tr key={`${row.point}-${row.x}`} className="bg-slate-900/50">
+              <tr key={`${row.x}-${row.point}`} className="bg-slate-900/50">
                 <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-slate-200">{row.point}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-orange-300">{row.x}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{row.shear}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{row.moment}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm leading-6 text-slate-400">{row.remark}</td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-orange-300">{fmt(row.x)} m</td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.shear)} kN</td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.moment)} kN·m</td>
               </tr>
             ))}
           </tbody>
@@ -872,58 +990,19 @@ function DiagramValuesTable({ result, sectionX }) {
       </div>
 
       <div className="mt-6 rounded-2xl border border-sky-500/30 bg-sky-500/10 p-5">
-        <h3 className="text-xl font-black text-white">
-          Section Value at x = {fmt(section.x)} m
-        </h3>
+        <h3 className="text-xl font-black text-white">Selected Section x = {fmt(result.sectionX)} m</h3>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
             <p className="text-sm text-slate-400">Shear Force at Section</p>
-            <p className="mt-2 text-2xl font-black text-sky-300">{section.shear}</p>
+            <p className="mt-2 text-2xl font-black text-sky-300">{fmt(result.section.shear)} kN</p>
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
             <p className="text-sm text-slate-400">Bending Moment at Section</p>
-            <p className="mt-2 text-2xl font-black text-sky-300">{section.moment}</p>
+            <p className="mt-2 text-2xl font-black text-sky-300">{fmt(result.section.moment)} kN·m</p>
           </div>
         </div>
-
-        <p className="mt-4 leading-7 text-slate-300">{section.note}</p>
-      </div>
-    </div>
-  )
-}
-
-function DeflectionPanel({ result, form }) {
-  const def = getDeflectionResult(result, form)
-
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-      <h2 className="text-2xl font-black text-white">Slope & Deflection</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-400">
-        Deflection is calculated using standard elastic beam formulas. Downward deflection is shown as positive.
-      </p>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-          <p className="text-sm text-slate-400">Deflection at selected x</p>
-          <p className="mt-2 text-xl font-black text-orange-300">{fmt(def.yAtX, 4)} mm</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-          <p className="text-sm text-slate-400">Maximum deflection</p>
-          <p className="mt-2 text-xl font-black text-orange-300">{fmt(def.maxDeflection, 4)} mm</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-          <p className="text-sm text-slate-400">Max deflection location</p>
-          <p className="mt-2 text-xl font-black text-orange-300">{fmt(def.maxX)} m</p>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
-        <p className="text-sm text-slate-400">Approx. slope at selected x</p>
-        <p className="mt-2 text-xl font-black text-sky-300">{fmt(def.slope, 6)} rad</p>
       </div>
     </div>
   )
@@ -931,12 +1010,15 @@ function DeflectionPanel({ result, form }) {
 
 function FormulaLibrary() {
   const formulas = [
-    ['Equilibrium', 'ΣV = 0, ΣH = 0, ΣM = 0'],
-    ['Simply supported point load', 'RA = Pb/L, RB = Pa/L, Mmax = Pab/L'],
-    ['Simply supported UDL', 'RA = RB = wL/2, Mmax = wL²/8'],
-    ['Cantilever point load', 'R = P, Mfixed = Pa'],
-    ['Cantilever UDL', 'R = wL, Mfixed = wL²/2'],
-    ['Steel beam deflection note', 'Deflection depends on E, I, load and span.'],
+    ['Equilibrium', 'ΣV = 0, ΣM = 0'],
+    ['Point load', 'W = P at given x'],
+    ['UDL resultant', 'W = w × loaded length, x̄ = mid-point'],
+    ['UVL / trapezoidal resultant', 'W = (w1 + w2)L/2'],
+    ['UVL centroid', 'x̄ from start = L(w1 + 2w2) / [3(w1 + w2)]'],
+    ['Simply supported reaction', 'RB = [Σ(Wx̄) + ΣMclockwise] / L'],
+    ['Left reaction', 'RA = ΣW - RB'],
+    ['Cantilever reaction', 'R = ΣW'],
+    ['Cantilever fixed moment', 'Mfixed = Σ(Wx̄) + ΣMclockwise'],
   ]
 
   return (
@@ -957,66 +1039,72 @@ function FormulaLibrary() {
 
 export default function StructuralAnalysisPage() {
   const [form, setForm] = useState({
-    caseType: 'ss_point',
+    beamType: 'simple',
     L: 6,
-    P: 20,
-    P2: 10,
-    a: 2,
-    a2: 4,
-    w: 5,
     x: 3,
-    E: 200,
-    I: 300,
+    loads: defaultLoads,
   })
 
-  const selectedCase = caseOptions.find((item) => item.value === form.caseType)
   const result = useMemo(() => solveBeam(form), [form])
 
-  const update = (key, value) => {
+  const updateForm = (key, value) => {
     setForm((prev) => ({
       ...prev,
       [key]: value,
     }))
   }
 
-  const reset = () => {
-    setForm({
-      caseType: 'ss_point',
-      L: 6,
-      P: 20,
-      P2: 10,
-      a: 2,
-      a2: 4,
-      w: 5,
-      x: 3,
-      E: 200,
-      I: 300,
-    })
+  const addLoad = (type) => {
+    setForm((prev) => ({
+      ...prev,
+      loads: [...prev.loads, createLoad(type)],
+    }))
   }
 
-  const isUDLCase = form.caseType.includes('udl')
-  const isTwoPoint = form.caseType === 'ss_two_point'
-  const isSinglePoint =
-    form.caseType === 'ss_point' ||
-    form.caseType === 'ss_central_point' ||
-    form.caseType === 'cantilever_point_end' ||
-    form.caseType === 'cantilever_point_any'
-  const needsA = form.caseType === 'ss_point' || form.caseType === 'cantilever_point_any'
+  const updateLoad = (id, key, value) => {
+    setForm((prev) => ({
+      ...prev,
+      loads: prev.loads.map((load) =>
+        load.id === id
+          ? {
+              ...load,
+              [key]: value,
+            }
+          : load
+      ),
+    }))
+  }
+
+  const deleteLoad = (id) => {
+    setForm((prev) => ({
+      ...prev,
+      loads: prev.loads.length > 1 ? prev.loads.filter((load) => load.id !== id) : prev.loads,
+    }))
+  }
+
+  const reset = () => {
+    setForm({
+      beamType: 'simple',
+      L: 6,
+      x: 3,
+      loads: defaultLoads,
+    })
+  }
 
   return (
     <main className="min-h-screen bg-[#050B1F] px-4 py-8 text-white md:px-8">
       <section className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 md:p-8">
           <p className="mb-3 text-sm font-extrabold uppercase tracking-widest text-orange-400">
-            Semester 3 Civil Engineering
+            Civil Engineering Beam Solver
           </p>
 
           <h1 className="text-3xl font-black leading-tight md:text-5xl">
-            Structural Analysis Solver for Civil Engineering Students
+            Structural Analysis Combined Load Calculator
           </h1>
 
           <p className="mt-4 max-w-4xl text-base leading-8 text-slate-300 md:text-lg">
-            Solve beam reactions, SFD, BMD, slope, deflection and exam-style structural analysis problems with diagrams and step-by-step solution.
+            Add point loads, UDL, UVL/trapezoidal loads and moment loads together on one beam. Get support reactions, loading diagram, SFD, BMD, section values, formulas and exam-style solution.
           </p>
         </div>
 
@@ -1031,150 +1119,45 @@ export default function StructuralAnalysisPage() {
         <div className="grid gap-8 lg:grid-cols-[430px_1fr]">
           <aside className="space-y-6">
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">Input Panel</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
-                Select problem type and enter values. Diagrams and answers update automatically.
-              </p>
-
-              <label className="mt-6 block">
-                <span className="mb-2 block text-sm font-semibold text-slate-300">
-                  Select Problem Type
-                </span>
-
-                <select
-                  value={form.caseType}
-                  onChange={(e) => update('caseType', e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none"
-                >
-                  {caseOptions.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-
-                <p className="mt-2 text-xs leading-5 text-slate-500">{selectedCase?.desc}</p>
-              </label>
+              <h2 className="text-2xl font-black text-white">Beam Setup</h2>
 
               <div className="mt-6 space-y-5">
+                <SelectField
+                  label="Beam Type"
+                  value={form.beamType}
+                  onChange={(value) => updateForm('beamType', value)}
+                  helper="Simply supported beam gives RA and RB. Cantilever gives fixed reaction and fixed end moment."
+                >
+                  <option value="simple">Simply Supported Beam</option>
+                  <option value="cantilever">Cantilever Beam</option>
+                </SelectField>
+
                 <NumberField
                   label="Beam Span L"
                   value={form.L}
-                  onChange={(value) => update('L', value)}
+                  onChange={(value) => updateForm('L', value)}
                   suffix="m"
                   helper="Total length of beam."
                   min="0.1"
                 />
 
                 <NumberField
-                  label={result.supportType === 'simple' ? 'Section x from Support A' : 'Section x from Fixed Support'}
+                  label={form.beamType === 'simple' ? 'Section x from Support A' : 'Section x from Fixed Support'}
                   value={form.x}
-                  onChange={(value) => update('x', value)}
+                  onChange={(value) => updateForm('x', value)}
                   suffix="m"
-                  helper="Enter any section between 0 and L to get SF, BM, slope and deflection."
+                  helper="Enter any section between 0 and L to get SF and BM."
                   min="0"
                 />
-
-                {isSinglePoint && (
-                  <NumberField
-                    label="Point Load P"
-                    value={form.P}
-                    onChange={(value) => update('P', value)}
-                    suffix="kN"
-                    helper="Downward concentrated load."
-                    min="0"
-                  />
-                )}
-
-                {needsA && (
-                  <NumberField
-                    label={form.caseType === 'cantilever_point_any' ? 'Load Distance a from Fixed Support' : 'Load Distance a from Support A'}
-                    value={form.a}
-                    onChange={(value) => update('a', value)}
-                    suffix="m"
-                    helper="Load position measured from the reference support."
-                    min="0"
-                  />
-                )}
-
-                {isTwoPoint && (
-                  <>
-                    <NumberField
-                      label="Point Load P1"
-                      value={form.P}
-                      onChange={(value) => update('P', value)}
-                      suffix="kN"
-                      helper="First downward point load."
-                      min="0"
-                    />
-
-                    <NumberField
-                      label="Distance a1 from Support A"
-                      value={form.a}
-                      onChange={(value) => update('a', value)}
-                      suffix="m"
-                      helper="Position of first point load."
-                      min="0"
-                    />
-
-                    <NumberField
-                      label="Point Load P2"
-                      value={form.P2}
-                      onChange={(value) => update('P2', value)}
-                      suffix="kN"
-                      helper="Second downward point load."
-                      min="0"
-                    />
-
-                    <NumberField
-                      label="Distance a2 from Support A"
-                      value={form.a2}
-                      onChange={(value) => update('a2', value)}
-                      suffix="m"
-                      helper="Position of second point load."
-                      min="0"
-                    />
-                  </>
-                )}
-
-                {isUDLCase && (
-                  <NumberField
-                    label="UDL Intensity w"
-                    value={form.w}
-                    onChange={(value) => update('w', value)}
-                    suffix="kN/m"
-                    helper="Uniform load acting over full beam span."
-                    min="0"
-                  />
-                )}
-
-                <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                  <h3 className="font-black text-white">Deflection Inputs</h3>
-                  <div className="mt-4 space-y-4">
-                    <NumberField
-                      label="Modulus of Elasticity E"
-                      value={form.E}
-                      onChange={(value) => update('E', value)}
-                      suffix="GPa"
-                      helper="Example: Steel ≈ 200 GPa, RCC often lower depending on grade."
-                      min="0.001"
-                    />
-
-                    <NumberField
-                      label="Moment of Inertia I"
-                      value={form.I}
-                      onChange={(value) => update('I', value)}
-                      suffix="×10⁶ mm⁴"
-                      helper="Use section moment of inertia for deflection calculation."
-                      min="0.001"
-                    />
-                  </div>
-                </div>
               </div>
 
-              {result.warning && (
-                <div className="mt-5 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm leading-6 text-yellow-100">
-                  {result.warning}
+              {result.warnings.length > 0 && (
+                <div className="mt-5 space-y-2">
+                  {result.warnings.map((warning) => (
+                    <div key={warning} className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm leading-6 text-yellow-100">
+                      {warning}
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -1188,30 +1171,63 @@ export default function StructuralAnalysisPage() {
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 className="text-2xl font-black text-white">Load Builder</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Add multiple loads on the same beam. All loads are solved together.
+              </p>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => addLoad('point')} className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-white hover:bg-orange-600">
+                  + Point
+                </button>
+                <button type="button" onClick={() => addLoad('udl')} className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-white hover:bg-orange-600">
+                  + UDL
+                </button>
+                <button type="button" onClick={() => addLoad('uvl')} className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-white hover:bg-orange-600">
+                  + UVL
+                </button>
+                <button type="button" onClick={() => addLoad('moment')} className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-white hover:bg-orange-600">
+                  + Moment
+                </button>
+              </div>
+
+              <div className="mt-6 space-y-5">
+                {form.loads.map((load, index) => (
+                  <LoadEditor
+                    key={load.id}
+                    load={load}
+                    index={index}
+                    L={toNum(form.L, 6)}
+                    onChange={updateLoad}
+                    onDelete={deleteLoad}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
               <h2 className="text-xl font-black text-white">What This Tool Solves</h2>
 
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-                <li>✓ Free body diagram style beam sketch</li>
-                <li>✓ Simply supported and cantilever cases</li>
-                <li>✓ Single point load, central point load and two point loads</li>
-                <li>✓ UDL on full span</li>
-                <li>✓ Support reaction calculation</li>
+                <li>✓ Simply supported beam</li>
+                <li>✓ Cantilever beam</li>
+                <li>✓ Multiple point loads</li>
+                <li>✓ Partial and full-span UDL</li>
+                <li>✓ UVL increasing / decreasing</li>
+                <li>✓ Trapezoidal load using w1 and w2</li>
+                <li>✓ Moment loads</li>
+                <li>✓ Combined support reactions</li>
                 <li>✓ SFD and BMD diagrams</li>
-                <li>✓ SFD and BMD key values table</li>
-                <li>✓ Shear force and bending moment at any section x</li>
-                <li>✓ Slope and deflection calculation</li>
-                <li>✓ Formula and step-by-step solution</li>
+                <li>✓ SF and BM at any section x</li>
               </ul>
-
-              <div className="mt-5 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm leading-6 text-slate-300">
-                Useful for semester exams, assignments, practice questions and quick concept revision.
-              </div>
             </div>
           </aside>
 
           <section className="space-y-6">
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">{result.title}</h2>
+              <h2 className="text-2xl font-black text-white">
+                {result.beamType === 'simple' ? 'Simply Supported Beam Result' : 'Cantilever Beam Result'}
+              </h2>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {result.summary.map((item) => (
@@ -1230,9 +1246,9 @@ export default function StructuralAnalysisPage() {
               <Diagram result={result} type="bmd" />
             </div>
 
-            <DiagramValuesTable result={result} sectionX={form.x} />
+            <KeyValuesTable result={result} />
 
-            <DeflectionPanel result={result} form={form} />
+            <LoadSummaryTable result={result} />
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
