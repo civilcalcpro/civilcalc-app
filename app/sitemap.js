@@ -88,11 +88,12 @@ export default function sitemap() {
   changeFrequency: 'weekly',
   priority: 0.88,
 },
-    {
-      path: '/footing-design',
-      priority: 0.9,
-      changeFrequency: 'monthly',
-    },
+   {
+  url: `${baseUrl}/footing-design`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.88,
+},
     {
       path: '/one-way-slab-calculator',
       priority: 0.9,
