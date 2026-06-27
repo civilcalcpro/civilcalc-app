@@ -33,6 +33,8 @@ import { db } from '@/lib/firebase'
 import { supabase } from '@/lib/supabase'
 
 const LABOUR_PROFILE_KEY = 'civilcalc_site_diary_labour_profile_v2'
+const ENGINEER_PROFILES_KEY = 'civilcalc_site_diary_engineer_profiles_v1'
+const LABOUR_PROFILES_KEY = 'civilcalc_site_diary_labour_profiles_v1'
 const MAX_PHOTO_SIZE = 2 * 1024 * 1024
 const MAX_PHOTO_DIMENSION = 1800
 
@@ -121,6 +123,33 @@ function toMillis(value) {
 
 function sortNewest(items) {
   return [...items].sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
+}
+function readLocalProfiles(key) {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function saveLocalProfiles(key, profiles) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(key, JSON.stringify(profiles))
+}
+
+function upsertLocalProfile(key, profile) {
+  const oldProfiles = readLocalProfiles(key)
+
+  const nextProfiles = [
+    profile,
+    ...oldProfiles.filter((item) => item.id !== profile.id),
+  ]
+
+  saveLocalProfiles(key, nextProfiles)
+  return nextProfiles
 }
 function loadImageFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -316,6 +345,22 @@ function StatCard({ title, value, sub, icon: Icon }) {
     </div>
   )
 }
+  function MaterialMiniCard({ title, value, unit, rate, cost }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+      <p className="text-sm text-slate-400">{title}</p>
+
+      <p className="mt-2 text-2xl font-black text-white">
+        {value} <span className="text-sm font-semibold text-slate-400">{unit}</span>
+      </p>
+
+      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400">
+        <span>Rate: {rate}</span>
+        <span className="font-bold text-cyan-300">{cost}</span>
+      </div>
+    </div>
+  )
+}
 
 export default function SiteDiaryPage() {
   const [screen, setScreen] = useState('home')
@@ -337,6 +382,8 @@ export default function SiteDiaryPage() {
   const [selectedReportDate, setSelectedReportDate] = useState(getToday())
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [savedEngineers, setSavedEngineers] = useState([])
+const [savedLabours, setSavedLabours] = useState([])
 
   const showMessage = (text) => {
     setMessage(text)
@@ -387,6 +434,8 @@ export default function SiteDiaryPage() {
 
   useEffect(() => {
     async function restoreLabour() {
+      setSavedEngineers(readLocalProfiles(ENGINEER_PROFILES_KEY))
+setSavedLabours(readLocalProfiles(LABOUR_PROFILES_KEY))
       try {
         const raw = localStorage.getItem(LABOUR_PROFILE_KEY)
         if (!raw) return
@@ -434,13 +483,21 @@ export default function SiteDiaryPage() {
       (sum, item) => sum + calculateAttendanceCost(item, selectedSite),
       0
     )
+    const materialSummary = {
+  cementBags: reports.reduce((sum, report) => sum + num(report.cementBags), 0),
+  sandCft: reports.reduce((sum, report) => sum + num(report.sandCft), 0),
+  aggregateCft: reports.reduce((sum, report) => sum + num(report.aggregateCft), 0),
+  steelKg: reports.reduce((sum, report) => sum + num(report.steelKg), 0),
+  bricksNos: reports.reduce((sum, report) => sum + num(report.bricksNos), 0),
+}
 
-    return {
-      reports,
-      attendance,
-      present,
-      absent,
-      materialCost,
+   return {
+  reports,
+  attendance,
+  present,
+  absent,
+  materialSummary,
+  materialCost,
       equipmentCost,
       otherCost,
       labourCost,
@@ -534,7 +591,30 @@ export default function SiteDiaryPage() {
       setLoading(false)
     }
   }
+const openExistingEngineerWork = async (profile) => {
+  setLoading(true)
 
+  try {
+    const siteRef = doc(db, 'siteDiaries', profile.siteId)
+    const siteSnap = await getDoc(siteRef)
+
+    if (!siteSnap.exists()) {
+      showMessage('Saved site not found. Please join again using New Work.')
+      return
+    }
+
+    const site = { id: siteSnap.id, ...siteSnap.data() }
+
+    setCurrentEngineer(profile)
+    setReportForm({ ...emptyReportForm, date: getToday() })
+    await loadSiteBundle(site)
+    setScreen('engineerEntry')
+  } catch (error) {
+    showMessage(error?.message || 'Failed to open existing engineer work.')
+  } finally {
+    setLoading(false)
+  }
+}
   const joinAsEngineer = async () => {
     if (!engineerForm.engineerName.trim() || !engineerForm.engineerCode.trim()) {
       showMessage('Engineer name and code are required.')
@@ -551,10 +631,21 @@ export default function SiteDiaryPage() {
         return
       }
 
-      setCurrentEngineer({
-        name: engineerForm.engineerName,
-        mobile: engineerForm.mobile,
-      })
+     const engineerProfile = {
+  id: `${site.id}_${engineerForm.mobile || engineerForm.engineerName}`,
+  siteId: site.id,
+  siteName: site.siteName,
+  name: engineerForm.engineerName,
+  mobile: engineerForm.mobile,
+  engineerCode: engineerForm.engineerCode.trim().toUpperCase(),
+  role: 'Site Engineer',
+  createdAt: new Date().toISOString(),
+}
+
+const nextProfiles = upsertLocalProfile(ENGINEER_PROFILES_KEY, engineerProfile)
+
+setSavedEngineers(nextProfiles)
+setCurrentEngineer(engineerProfile)
 
       setReportForm({ ...emptyReportForm, date: getToday() })
       await loadSiteBundle(site)
@@ -566,7 +657,30 @@ export default function SiteDiaryPage() {
       setLoading(false)
     }
   }
+const openExistingLabourWork = async (profile) => {
+  setLoading(true)
 
+  try {
+    const siteRef = doc(db, 'siteDiaries', profile.siteId)
+    const siteSnap = await getDoc(siteRef)
+
+    if (!siteSnap.exists()) {
+      showMessage('Saved site not found. Please join again using New Work.')
+      return
+    }
+
+    const site = { id: siteSnap.id, ...siteSnap.data() }
+
+    setCurrentLabour(profile)
+    localStorage.setItem(LABOUR_PROFILE_KEY, JSON.stringify(profile))
+    await loadSiteBundle(site)
+    setScreen('labourAttendance')
+  } catch (error) {
+    showMessage(error?.message || 'Failed to open existing labour work.')
+  } finally {
+    setLoading(false)
+  }
+}
   const joinAsLabour = async () => {
     if (!labourForm.labourName.trim() || !labourForm.labourCode.trim()) {
       showMessage('Labour name and code are required.')
@@ -598,8 +712,18 @@ export default function SiteDiaryPage() {
 
       await setDoc(doc(db, 'labourMembers', labourId), labour)
 
-      localStorage.setItem(LABOUR_PROFILE_KEY, JSON.stringify(labour))
-      setCurrentLabour(labour)
+      const labourProfile = {
+  ...labour,
+  siteName: site.siteName,
+  labourCode: labourForm.labourCode.trim().toUpperCase(),
+  role: 'Labour',
+}
+
+const nextProfiles = upsertLocalProfile(LABOUR_PROFILES_KEY, labourProfile)
+
+setSavedLabours(nextProfiles)
+localStorage.setItem(LABOUR_PROFILE_KEY, JSON.stringify(labourProfile))
+setCurrentLabour(labourProfile)
       await loadSiteBundle(site)
       setScreen('labourAttendance')
       showMessage('Labour setup saved. Now daily attendance can be marked.')
@@ -942,7 +1066,7 @@ const uploadPhotos = async (reportId) => {
             </button>
 
             <button
-              onClick={() => setScreen('engineerJoin')}
+              onClick={() => setScreen('engineerStart')}
               className="min-h-[260px] rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
             >
               <div className="mb-5 inline-flex rounded-2xl bg-cyan-400/10 p-4 text-cyan-300">
@@ -959,13 +1083,7 @@ const uploadPhotos = async (reportId) => {
             </button>
 
             <button
-              onClick={() => {
-                if (currentLabour?.siteId && selectedSite) {
-                  setScreen('labourAttendance')
-                } else {
-                  setScreen('labourJoin')
-                }
-              }}
+             onClick={() => setScreen('labourStart')}
               className="min-h-[260px] rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400 hover:bg-slate-900"
             >
               <div className="mb-5 inline-flex rounded-2xl bg-cyan-400/10 p-4 text-cyan-300">
@@ -1137,6 +1255,65 @@ const uploadPhotos = async (reportId) => {
               <StatCard title="Selected Date Expense" value={money(todaySummary?.totalCost || 0)} sub="Material + labour + equipment" icon={IndianRupee} />
               <StatCard title="Project Total" value={money(totalProjectCost)} sub="Till date" icon={CalendarDays} />
             </div>
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
+  <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-end">
+    <div>
+      <h3 className="text-xl font-black">Material Breakdown - {selectedReportDate}</h3>
+      <p className="mt-1 text-sm text-slate-400">
+        Material used on selected date with estimated cost.
+      </p>
+      <p className="mt-1 text-sm text-slate-500">
+        चुनी गई तारीख पर उपयोग की गई सामग्री और अनुमानित लागत।
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm font-bold text-cyan-200">
+      Total Material Cost: {money(todaySummary?.materialCost || 0)}
+    </div>
+  </div>
+
+  <div className="grid gap-4 md:grid-cols-5">
+    <MaterialMiniCard
+      title="Cement"
+      value={todaySummary?.materialSummary?.cementBags || 0}
+      unit="bags"
+      rate={`${money(selectedSite.cementRate)}/bag`}
+      cost={money(num(todaySummary?.materialSummary?.cementBags) * num(selectedSite.cementRate))}
+    />
+
+    <MaterialMiniCard
+      title="Sand"
+      value={todaySummary?.materialSummary?.sandCft || 0}
+      unit="cft"
+      rate={`${money(selectedSite.sandRate)}/cft`}
+      cost={money(num(todaySummary?.materialSummary?.sandCft) * num(selectedSite.sandRate))}
+    />
+
+    <MaterialMiniCard
+      title="Aggregate"
+      value={todaySummary?.materialSummary?.aggregateCft || 0}
+      unit="cft"
+      rate={`${money(selectedSite.aggregateRate)}/cft`}
+      cost={money(num(todaySummary?.materialSummary?.aggregateCft) * num(selectedSite.aggregateRate))}
+    />
+
+    <MaterialMiniCard
+      title="Steel"
+      value={todaySummary?.materialSummary?.steelKg || 0}
+      unit="kg"
+      rate={`${money(selectedSite.steelRate)}/kg`}
+      cost={money(num(todaySummary?.materialSummary?.steelKg) * num(selectedSite.steelRate))}
+    />
+
+    <MaterialMiniCard
+      title="Bricks"
+      value={todaySummary?.materialSummary?.bricksNos || 0}
+      unit="nos"
+      rate={`${money(selectedSite.brickRate)}/piece`}
+      cost={money(num(todaySummary?.materialSummary?.bricksNos) * num(selectedSite.brickRate))}
+    />
+  </div>
+</div>
 
             <div className="grid gap-5 lg:grid-cols-2">
               <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5">
@@ -1266,7 +1443,54 @@ const uploadPhotos = async (reportId) => {
             </div>
           </section>
         ) : null}
+{screen === 'engineerStart' ? (
+  <section className="grid gap-5 md:grid-cols-2">
+    <button
+      onClick={() => setScreen('engineerJoin')}
+      className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400"
+    >
+      <Plus className="mb-4 text-cyan-300" size={34} />
+      <h2 className="text-2xl font-black">New Work</h2>
+      <p className="mt-1 text-sm font-semibold text-cyan-300">नया काम</p>
+      <p className="mt-3 text-sm text-slate-400">
+        Join a new site using Engineer Code.
+      </p>
+      <p className="mt-2 text-sm text-slate-500">
+        इंजीनियर कोड डालकर नई साइट से जुड़ें।
+      </p>
+    </button>
 
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
+      <FolderOpen className="mb-4 text-cyan-300" size={34} />
+      <h2 className="text-2xl font-black">Existing Work</h2>
+      <p className="mt-1 text-sm font-semibold text-cyan-300">पहले से जुड़ी साइट</p>
+      <p className="mt-3 text-sm text-slate-400">
+        Open saved engineer work without entering code again.
+      </p>
+
+      <div className="mt-5 space-y-3">
+        {savedEngineers.length ? (
+          savedEngineers.map((profile) => (
+            <button
+              key={profile.id}
+              onClick={() => openExistingEngineerWork(profile)}
+              className="w-full rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-left transition hover:border-cyan-400"
+            >
+              <p className="font-bold text-white">{profile.siteName}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {profile.name} • {profile.mobile || 'No mobile'}
+              </p>
+            </button>
+          ))
+        ) : (
+          <p className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">
+            No saved engineer work found. Use New Work first.
+          </p>
+        )}
+      </div>
+    </div>
+  </section>
+) : null}
         {screen === 'engineerJoin' ? (
           <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 md:p-7">
             <h2 className="mb-5 text-2xl font-black">Site Engineer Login</h2>
@@ -1373,7 +1597,54 @@ const uploadPhotos = async (reportId) => {
             </div>
           </section>
         ) : null}
+{screen === 'labourStart' ? (
+  <section className="grid gap-5 md:grid-cols-2">
+    <button
+      onClick={() => setScreen('labourJoin')}
+      className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-cyan-400"
+    >
+      <Plus className="mb-4 text-cyan-300" size={34} />
+      <h2 className="text-2xl font-black">New Work</h2>
+      <p className="mt-1 text-sm font-semibold text-cyan-300">नया काम</p>
+      <p className="mt-3 text-sm text-slate-400">
+        Join a new site using Labour Code.
+      </p>
+      <p className="mt-2 text-sm text-slate-500">
+        लेबर कोड डालकर नई साइट से जुड़ें।
+      </p>
+    </button>
 
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
+      <FolderOpen className="mb-4 text-cyan-300" size={34} />
+      <h2 className="text-2xl font-black">Existing Work</h2>
+      <p className="mt-1 text-sm font-semibold text-cyan-300">पहले से जुड़ी साइट</p>
+      <p className="mt-3 text-sm text-slate-400">
+        Open saved labour attendance without entering code again.
+      </p>
+
+      <div className="mt-5 space-y-3">
+        {savedLabours.length ? (
+          savedLabours.map((profile) => (
+            <button
+              key={profile.id}
+              onClick={() => openExistingLabourWork(profile)}
+              className="w-full rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-left transition hover:border-cyan-400"
+            >
+              <p className="font-bold text-white">{profile.siteName}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                {profile.name} • {profile.workType}
+              </p>
+            </button>
+          ))
+        ) : (
+          <p className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">
+            No saved labour work found. Use New Work first.
+          </p>
+        )}
+      </div>
+    </div>
+  </section>
+) : null}
         {screen === 'labourJoin' ? (
           <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 md:p-7">
             <h2 className="mb-2 text-2xl font-black">Labour First Time Setup</h2>
