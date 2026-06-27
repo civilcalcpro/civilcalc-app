@@ -730,6 +730,17 @@ export default function LandingPage() {
     PDF report for construction projects.
   </p>
 </Link>
+      <Link href="/rate-analysis-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Rate Analysis Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate material cost, labour cost, overhead, profit and final construction unit rate.
+    </p>
+  </div>
+</Link>
   
     </div>
   </div>
