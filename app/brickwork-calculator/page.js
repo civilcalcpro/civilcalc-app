@@ -1,402 +1,449 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 export const metadata = {
-  title: "Brickwork Calculator | Brick Quantity & Mortar Estimation | CivilCalc Pro",
+  title: 'Brickwork Calculator Online | Brick Quantity and Mortar Calculator',
   description:
-    "Free online brickwork calculator for civil engineers and contractors. Calculate number of bricks, wall volume, mortar quantity, cement, sand and brickwork material estimation.",
+    'Calculate brickwork quantity, number of bricks, mortar volume, cement and sand requirement online with CivilCalc Pro Brickwork Calculator.',
+  keywords: [
+    'brickwork calculator',
+    'brick quantity calculator',
+    'brick calculator',
+    'masonry calculator',
+    'cement sand calculator for brickwork',
+    'brick wall calculator',
+    'civil engineering calculator',
+    'construction calculator India',
+    'brickwork quantity calculator',
+  ],
   alternates: {
-    canonical: "https://civilcalcpro.in/brickwork-calculator",
+    canonical: 'https://www.civilcalcpro.in/brickwork-calculator',
   },
   openGraph: {
-    title: "Brickwork Calculator | Brick Quantity & Mortar Estimation | CivilCalc Pro",
+    title: 'Brickwork Calculator Online | CivilCalc Pro',
     description:
-      "Free online brickwork calculator for civil engineers and contractors. Calculate number of bricks, wall volume, mortar quantity, cement, sand and brickwork material estimation.",
-    url: "https://civilcalcpro.in/brickwork-calculator",
-    siteName: "CivilCalc Pro",
-    type: "website",
-    locale: "en_US",
+      'Calculate number of bricks, brickwork volume, mortar quantity, cement and sand for brick masonry work.',
+    url: 'https://www.civilcalcpro.in/brickwork-calculator',
+    siteName: 'CivilCalc Pro',
+    type: 'article',
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Brickwork Calculator | Brick Quantity & Mortar Estimation | CivilCalc Pro",
-    description:
-      "Free online brickwork calculator for civil engineers and contractors. Calculate number of bricks, wall volume, mortar quantity, cement, sand and brickwork material estimation.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-snippet": -1,
-      "max-image-preview": "large",
-      "max-video-preview": -1,
-    },
-  },
-};
+}
 
-export default function BrickworkCalculatorPage() {
+const faqs = [
+  {
+    q: 'What is a brickwork calculator?',
+    a: 'A brickwork calculator is a civil engineering tool used to calculate number of bricks, brickwork volume, mortar quantity, cement and sand required for brick masonry work.',
+  },
+  {
+    q: 'How many bricks are required in 1 cubic meter of brickwork?',
+    a: 'For standard modular bricks with mortar, approximately 500 bricks are required for 1 cubic meter of brickwork. Actual quantity may vary based on brick size and mortar thickness.',
+  },
+  {
+    q: 'What is the formula for brickwork volume?',
+    a: 'Brickwork volume is calculated as Length × Height × Thickness of the wall.',
+  },
+  {
+    q: 'Which mortar ratio is commonly used for brickwork?',
+    a: 'Common mortar ratios for brickwork are 1:4, 1:5 and 1:6 depending on project specification and structural requirement.',
+  },
+]
+
+export default function BrickworkCalculatorArticle() {
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: 'Brickwork Calculator Online | Brick Quantity and Mortar Calculator',
+    description:
+      'Complete guide to calculate brick quantity, brickwork volume, mortar, cement and sand requirement for brick masonry construction.',
+    author: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': 'https://www.civilcalcpro.in/brickwork-calculator',
+    },
+  }
+
   const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "How is brickwork quantity calculated?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Brickwork quantity is calculated by multiplying wall length, wall height and wall thickness. The formula is length multiplied by height multiplied by thickness.",
-        },
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
       },
-      {
-        "@type": "Question",
-        name: "How many bricks are required in 1 cubic meter of brickwork?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Approximately 500 standard modular bricks are required for 1 cubic meter of brickwork, including mortar joints.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What is the formula for number of bricks?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "The approximate number of bricks is calculated by multiplying brickwork volume by 500. For example, if brickwork volume is 3.45 cubic meters, bricks required are 1725 bricks.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Where is brickwork calculation used?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Brickwork calculation is used for wall construction, brick quantity estimation, mortar calculation, BOQ preparation, billing and construction material planning.",
-        },
-      },
-    ],
-  };
+    })),
+  }
+
+  const inputs = [
+    'Wall length',
+    'Wall height',
+    'Wall thickness',
+    'Brick size',
+    'Mortar thickness',
+    'Mortar ratio',
+    'Wastage percentage',
+    'Unit system',
+  ]
+
+  const useCases = [
+    'Brick wall quantity calculation',
+    'Residential building brickwork',
+    'Partition wall estimation',
+    'External wall estimation',
+    'Masonry work billing',
+    'BOQ preparation',
+    'Cement and sand estimation',
+    'Site material planning',
+    'Contractor quantity checking',
+    'Civil engineering student practice',
+  ]
+
+  const ratios = [
+    ['1:4', 'Strong brickwork mortar for higher strength requirement'],
+    ['1:5', 'Common mortar ratio for general brick masonry work'],
+    ['1:6', 'Economical mortar ratio for normal brickwork as per specification'],
+  ]
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+    <main className="min-h-screen bg-[#050B1F] text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-5xl font-bold mb-6">
-          Brickwork Calculator
-        </h1>
-
-        <p className="text-slate-300 text-lg mb-10">
-          Free online brickwork calculator for civil engineers, contractors,
-          and students. Calculate number of bricks, wall volume, mortar
-          quantity, cement, sand, and brickwork material estimation.
+      <section className="mx-auto max-w-5xl px-5 py-16">
+        <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-400">
+          Civil Engineering Article
         </p>
 
-        <Link
-          href="/login?redirect=/dashboard/calculators/brickwork"
-          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
-        >
-          Open Brickwork Calculator
-        </Link>
+        <h1 className="max-w-4xl text-4xl font-extrabold leading-tight md:text-5xl">
+          Brickwork Calculator Online – Calculate Bricks, Mortar, Cement and Sand
+        </h1>
 
-        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
-          <p className="text-orange-400 font-semibold mb-3">
-            QUICK ANSWER
-          </p>
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+          Use CivilCalc Pro Brickwork Calculator to calculate number of bricks,
+          brickwork volume, mortar quantity, cement bags and sand required for
+          brick masonry construction work.
+        </p>
 
-          <h2 className="text-3xl font-bold mb-5">
-            How to calculate brickwork quantity?
-          </h2>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <Link
+            href="/dashboard/calculators/brickwork"
+            className="rounded-xl bg-orange-500 px-6 py-3 font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+          >
+            Open Brickwork Calculator
+          </Link>
 
-          <p className="text-slate-300 leading-8 mb-4">
-            Brickwork quantity is calculated by multiplying wall length, wall
-            height and wall thickness. After calculating brickwork volume, the
-            approximate number of bricks is calculated by multiplying volume by
-            500 bricks per cubic meter for standard modular bricks.
-          </p>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 my-6">
-            <p className="text-xl font-bold text-white mb-2">
-              Brickwork Volume = Length × Height × Thickness
-            </p>
-
-            <p className="text-xl font-bold text-white mb-2">
-              Number of Bricks = Brickwork Volume × 500
-            </p>
-
-            <p className="text-slate-400">
-              For a 230 mm wall, thickness is usually taken as 0.23 m.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto mt-6">
-            <table className="w-full border border-slate-800 text-left">
-              <thead className="bg-slate-900">
-                <tr>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Item
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Formula / Value
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Example Result
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="text-slate-300">
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Wall Length
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    L
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    5 m
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Wall Height
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    H
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    3 m
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Wall Thickness
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    T
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    0.23 m
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Brickwork Volume
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    5 × 3 × 0.23
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    3.45 m³
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Number of Bricks
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    3.45 × 500
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    1,725 bricks
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    With 5% Wastage
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    1,725 × 1.05
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    1,811 bricks
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p className="text-slate-400 leading-7 mt-5">
-            Example: For a wall of 5 m length, 3 m height and 230 mm thickness,
-            brickwork volume is 5 × 3 × 0.23 = 3.45 m³. Approximate bricks
-            required are 3.45 × 500 = 1,725 bricks. With 5% wastage, total
-            bricks required are approximately 1,811 bricks.
-          </p>
-        </section>
-
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Features
-            </h2>
-
-            <ul className="space-y-3 text-slate-300">
-              <li>• Brick quantity calculation</li>
-              <li>• Wall volume calculation</li>
-              <li>• Mortar quantity estimation</li>
-              <li>• Cement and sand estimation</li>
-              <li>• Brickwork material analysis</li>
-              <li>• Construction cost planning</li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Why Use CivilCalc Pro?
-            </h2>
-
-            <p className="text-slate-300 leading-8">
-              CivilCalc Pro helps engineers and contractors calculate brickwork
-              quantities quickly using professional construction estimation
-              tools. Useful for site engineers, quantity surveyors, contractors,
-              and construction professionals.
-            </p>
-          </div>
+          <Link
+            href="/"
+            className="rounded-xl border border-slate-700 px-6 py-3 font-bold text-slate-200 transition hover:border-orange-400 hover:text-orange-300"
+          >
+            Back to Home
+          </Link>
         </div>
 
-        <section className="mt-16 space-y-8">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Brickwork Volume Formula
-            </h2>
-
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
-              Wall Volume = Length × Height × Thickness
-            </div>
-
-            <p className="text-slate-300 mt-4">
-              Brickwork quantity is calculated from wall volume, brick size,
-              mortar thickness, and wastage allowance.
-            </p>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
+        <article className="mt-12 space-y-10 text-slate-300">
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
               What is a Brickwork Calculator?
             </h2>
 
-            <p className="text-slate-300 leading-7 mb-4">
-              A Brickwork Calculator is used to estimate the number of bricks,
-              mortar quantity, cement, and sand required for wall construction.
-              Civil engineers and contractors use brickwork calculations for
-              quantity estimation, billing, procurement, and BOQ preparation.
+            <p className="leading-8">
+              A Brickwork Calculator is an online civil engineering tool used to
+              calculate the quantity of bricks, mortar, cement and sand required for
+              brick masonry work. Brickwork is one of the most common activities in
+              residential, commercial and industrial construction.
             </p>
 
-            <p className="text-slate-300 leading-7">
-              Accurate brickwork estimation helps reduce material wastage,
-              improve project budgeting, and plan construction work more
-              efficiently.
+            <p className="mt-4 leading-8">
+              CivilCalc Pro Brickwork Calculator helps civil engineers, contractors,
+              builders, site engineers and students calculate brick quantity quickly
+              by entering wall length, height, thickness, brick size and mortar ratio.
             </p>
-          </div>
+          </section>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Brickwork Calculation Steps
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Why Brickwork Quantity Calculation is Important
             </h2>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>Measure wall length</li>
-              <li>Measure wall height</li>
-              <li>Select wall thickness</li>
-              <li>Calculate total wall volume</li>
-              <li>Deduct openings such as doors and windows</li>
-              <li>Calculate number of bricks</li>
-              <li>Calculate mortar quantity</li>
-              <li>Estimate cement and sand requirement</li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Brickwork Calculation Example
-            </h2>
-
-            <p className="text-slate-300 leading-7">
-              Consider a brick wall with:
+            <p className="leading-8">
+              Brickwork quantity calculation is required before starting masonry work
+              because it helps estimate the number of bricks, mortar volume, cement
+              bags, sand quantity, labour cost and total construction cost.
             </p>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300 mt-4">
-              <li>Length = 5 m</li>
-              <li>Height = 3 m</li>
-              <li>Thickness = 0.23 m</li>
-            </ul>
-
-            <p className="text-slate-300 leading-7 mt-4">
-              Wall Volume = Length × Height × Thickness
-              <br />
-              Wall Volume = 5 × 3 × 0.23
-              <br />
-              Wall Volume = 3.45 m³
+            <p className="mt-4 leading-8">
+              If brick quantity is not calculated correctly, the project may face
+              material shortage, extra wastage, wrong billing or delay in construction
+              work. Accurate brickwork calculation helps in better site planning,
+              BOQ preparation and contractor billing.
             </p>
-          </div>
+          </section>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Benefits of Brickwork Estimation
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Brickwork Volume Formula
             </h2>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>Reduces brick and mortar wastage</li>
-              <li>Improves construction budgeting</li>
-              <li>Helps in material procurement</li>
-              <li>Supports contractor billing</li>
-              <li>Useful for BOQ preparation</li>
-              <li>Improves site planning and execution</li>
-            </ul>
-          </div>
+            <p className="leading-8">
+              The basic formula for brickwork volume is:
+            </p>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Related Calculators
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
+                Brickwork Volume = Length × Height × Thickness
+              </p>
+            </div>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Length = length of brick wall</li>
+              <li>Height = height of brick wall</li>
+              <li>Thickness = wall thickness</li>
+              <li>Brickwork volume = total masonry volume</li>
+            </ul>
+
+            <p className="mt-4 leading-8">
+              The final brickwork volume is generally measured in cubic meter or
+              cubic feet depending on the unit system used on site.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Number of Bricks Formula
             </h2>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>
-                <Link href="/plaster-calculator">
-                  Plaster Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/concrete-volume-calculator">
-                  Concrete Volume Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/excavation-calculator">
-                  Excavation Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/steel-weight-calculator">
-                  Steel Weight Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/footing-design">
-                  Footing Design Calculator
-                </Link>
-              </li>
-            </ul>
-          </div>
+            <p className="leading-8">
+              After calculating brickwork volume, the number of bricks can be
+              calculated using the volume of one brick with mortar.
+            </p>
 
-          <div className="mt-10 text-center">
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
+                Number of Bricks = Brickwork Volume / Volume of One Brick with Mortar
+              </p>
+            </div>
+
+            <p className="leading-8">
+              For standard modular bricks with 10 mm mortar thickness, approximately
+              500 bricks are required for 1 cubic meter of brickwork. Wastage is
+              usually added separately depending on site condition.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Mortar Calculation for Brickwork
+            </h2>
+
+            <p className="leading-8">
+              Mortar is required to bind bricks together. Mortar quantity depends on
+              brick size, wall thickness, joint thickness and mortar ratio.
+            </p>
+
+            <p className="mt-4 leading-8">
+              Common mortar ratios used in brickwork are 1:4, 1:5 and 1:6. In a 1:6
+              ratio, 1 part cement and 6 parts sand are used by volume.
+            </p>
+
+            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-800">
+              <table className="w-full border-collapse text-left">
+                <thead className="bg-slate-900">
+                  <tr>
+                    <th className="border-b border-slate-800 px-4 py-3 text-white">
+                      Mortar Ratio
+                    </th>
+                    <th className="border-b border-slate-800 px-4 py-3 text-white">
+                      Common Use
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ratios.map((row) => (
+                    <tr key={row[0]} className="bg-slate-900/40">
+                      <td className="border-b border-slate-800 px-4 py-3">
+                        {row[0]}
+                      </td>
+                      <td className="border-b border-slate-800 px-4 py-3">
+                        {row[1]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Inputs Required for Brickwork Calculator
+            </h2>
+
+            <p className="leading-8">
+              To calculate brickwork quantity accurately, the following inputs are
+              commonly required:
+            </p>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              {inputs.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Example of Brickwork Calculation
+            </h2>
+
+            <p className="leading-8">
+              Suppose a wall has length 10 m, height 3 m and thickness 0.23 m.
+            </p>
+
+            <div className="my-6 rounded-2xl border border-slate-700 bg-slate-900 p-5 leading-8">
+              <p>Brickwork Volume = Length × Height × Thickness</p>
+              <p>Brickwork Volume = 10 × 3 × 0.23</p>
+              <p>Brickwork Volume = 6.9 m³</p>
+              <p>Approximate bricks = 6.9 × 500</p>
+              <p>Approximate bricks = 3450 bricks</p>
+            </div>
+
+            <p className="leading-8">
+              So, approximately{' '}
+              <strong className="text-white">3450 bricks</strong> are required before
+              adding wastage. If 5% wastage is considered, the final quantity will be
+              higher.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              How to Use CivilCalc Pro Brickwork Calculator
+            </h2>
+
+            <p className="leading-8">
+              Enter wall length, height, thickness, brick size, mortar ratio and
+              wastage percentage. After entering the values, click on calculate. The
+              tool will show brickwork volume, number of bricks, mortar quantity,
+              cement requirement and sand requirement.
+            </p>
+
+            <p className="mt-4 leading-8">
+              This makes masonry estimation faster and easier for civil engineers,
+              site engineers, contractors and construction professionals.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Where Brickwork Calculator is Used
+            </h2>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              {useCases.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Brickwork Calculator for Civil Engineers and Contractors
+            </h2>
+
+            <p className="leading-8">
+              Civil engineers and contractors need quick quantity calculation for
+              daily site work. CivilCalc Pro Brickwork Calculator is designed for
+              practical construction use. It helps users calculate brick quantity,
+              cement, sand and mortar without using repeated manual formulas.
+            </p>
+
+            <p className="mt-4 leading-8">
+              Whether you are preparing BOQ, checking contractor bills, planning
+              material purchase or estimating brick masonry cost, this calculator
+              helps you get quick and clear results.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Benefits of CivilCalc Pro Brickwork Calculator
+            </h2>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Fast brick quantity calculation</li>
+              <li>Calculates brickwork volume</li>
+              <li>Helps estimate cement and sand for mortar</li>
+              <li>Useful for masonry work billing</li>
+              <li>Supports BOQ preparation</li>
+              <li>Reduces manual calculation mistakes</li>
+              <li>Useful for civil engineers, contractors and students</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">Conclusion</h2>
+
+            <p className="leading-8">
+              Brickwork quantity calculation is an important part of construction
+              estimation. CivilCalc Pro Brickwork Calculator helps civil engineers,
+              contractors, site engineers and students calculate bricks, mortar,
+              cement and sand quickly and accurately.
+            </p>
+
+            <p className="mt-4 leading-8">
+              For better material planning, BOQ preparation and masonry billing, use
+              CivilCalc Pro Brickwork Calculator before starting brickwork on site.
+            </p>
+          </section>
+
+          <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-slate-900 p-6">
+            <h2 className="text-2xl font-extrabold text-white">
+              Calculate Brickwork Quantity Instantly
+            </h2>
+
+            <p className="mt-3 leading-8 text-slate-300">
+              Open CivilCalc Pro Brickwork Calculator and calculate bricks, mortar,
+              cement and sand required for your construction project.
+            </p>
+
             <Link
-              href="/civil-engineering-calculators"
-              className="inline-block border border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white transition px-6 py-3 rounded-xl font-semibold"
+              href="/dashboard/calculators/brickwork"
+              className="mt-5 inline-flex rounded-xl bg-orange-500 px-6 py-3 font-bold text-white transition hover:bg-orange-600"
             >
-              View All Civil Engineering Calculators
+              Use Brickwork Calculator
             </Link>
           </div>
-        </section>
-      </div>
+
+          <section>
+            <h2 className="mb-6 text-3xl font-bold text-white">FAQs</h2>
+
+            <div className="space-y-5">
+              {faqs.map((item) => (
+                <div
+                  key={item.q}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                >
+                  <h3 className="text-xl font-bold text-white">{item.q}</h3>
+                  <p className="mt-2 leading-8 text-slate-300">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </article>
+      </section>
     </main>
-  );
+  )
 }
