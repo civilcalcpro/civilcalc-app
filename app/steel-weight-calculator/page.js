@@ -1,364 +1,367 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 export const metadata = {
-  title: "Steel Weight Calculator | Bar Weight Formula | CivilCalc Pro",
+  title: 'Steel Weight Calculator Online | TMT Bar Weight Calculator',
   description:
-    "Free online steel weight calculator using D²/162 formula. Calculate reinforcement bar weight for 6mm, 8mm, 10mm, 12mm, 16mm, 20mm and more.",
+    'Calculate steel bar weight, TMT bar weight, rebar weight and reinforcement quantity online using CivilCalc Pro Steel Weight Calculator.',
+  keywords: [
+    'steel weight calculator',
+    'TMT bar weight calculator',
+    'rebar weight calculator',
+    'steel bar weight calculator',
+    'D2 by 162 formula',
+    'steel quantity calculator',
+    'civil engineering calculator',
+    'construction calculator India',
+  ],
   alternates: {
-    canonical: "https://civilcalcpro.in/steel-weight-calculator",
+    canonical: 'https://www.civilcalcpro.in/steel-weight-calculator',
   },
   openGraph: {
-    title: "Steel Weight Calculator | Bar Weight Formula | CivilCalc Pro",
+    title: 'Steel Weight Calculator Online | CivilCalc Pro',
     description:
-      "Free online steel weight calculator using D²/162 formula. Calculate reinforcement bar weight for 6mm, 8mm, 10mm, 12mm, 16mm, 20mm and more.",
-    url: "https://civilcalcpro.in/steel-weight-calculator",
-    siteName: "CivilCalc Pro",
-    type: "website",
-    locale: "en_US",
+      'Calculate TMT bar weight, steel quantity and reinforcement weight online using standard D²/162 formula.',
+    url: 'https://www.civilcalcpro.in/steel-weight-calculator',
+    siteName: 'CivilCalc Pro',
+    type: 'article',
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Steel Weight Calculator | Bar Weight Formula | CivilCalc Pro",
-    description:
-      "Free online steel weight calculator using D²/162 formula. Calculate reinforcement bar weight for 6mm, 8mm, 10mm, 12mm, 16mm, 20mm and more.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-snippet": -1,
-      "max-image-preview": "large",
-      "max-video-preview": -1,
-    },
-  },
-};
+}
 
-export default function SteelWeightCalculatorPage() {
+const faqs = [
+  {
+    q: 'What is a steel weight calculator?',
+    a: 'A steel weight calculator is a civil engineering tool used to calculate the weight of steel bars or TMT bars used in RCC construction.',
+  },
+  {
+    q: 'What is the formula for steel weight?',
+    a: 'The common formula for steel weight is D²/162 × Length, where D is bar diameter in mm and length is in meter.',
+  },
+  {
+    q: 'What is the weight of 12 mm steel bar per meter?',
+    a: 'The approximate weight of 12 mm steel bar is 0.888 kg per meter.',
+  },
+  {
+    q: 'Why is steel weight calculation important?',
+    a: 'Steel weight calculation is important for material estimation, cost calculation, BOQ preparation, billing and reducing steel wastage on site.',
+  },
+]
+
+export default function SteelWeightCalculatorArticle() {
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: 'Steel Weight Calculator Online | TMT Bar Weight Calculator',
+    description:
+      'Complete guide to calculate steel bar weight, TMT bar weight and reinforcement quantity for construction projects.',
+    author: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': 'https://www.civilcalcpro.in/steel-weight-calculator',
+    },
+  }
+
   const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "How is steel weight calculated?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Steel weight is calculated using D squared divided by 162 multiplied by length. D is the bar diameter in millimeters and length is in meters.",
-        },
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
       },
-      {
-        "@type": "Question",
-        name: "What is the formula for steel bar weight?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "The commonly used steel bar weight formula is D squared divided by 162 multiplied by length. The result gives approximate weight in kilograms.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What is the weight of 12 mm steel bar per meter?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "The approximate weight of 12 mm steel bar is 0.889 kg per meter, calculated using 12 squared divided by 162.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Where is steel weight calculation used?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Steel weight calculation is used in RCC beams, columns, slabs, footings, bar bending schedules, BOQ preparation and construction material estimation.",
-        },
-      },
-    ],
-  };
+    })),
+  }
+
+  const steelTable = [
+    ['8 mm', '0.395 kg/m'],
+    ['10 mm', '0.617 kg/m'],
+    ['12 mm', '0.888 kg/m'],
+    ['16 mm', '1.58 kg/m'],
+    ['20 mm', '2.47 kg/m'],
+    ['25 mm', '3.86 kg/m'],
+    ['32 mm', '6.32 kg/m'],
+  ]
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+    <main className="min-h-screen bg-[#050B1F] text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-5xl font-bold mb-6">
-          Steel Weight Calculator
-        </h1>
-
-        <p className="text-slate-300 text-lg mb-10">
-          Free online steel weight calculator for civil engineers, contractors,
-          and students. Calculate TMT bar weight, reinforcement steel quantity,
-          and steel estimation instantly.
+      <section className="mx-auto max-w-5xl px-5 py-16">
+        <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-400">
+          Civil Engineering Article
         </p>
 
-        <Link
-          href="/login?redirect=/dashboard/calculators/steel-weight"
-          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
-        >
-          Open Steel Weight Calculator
-        </Link>
+        <h1 className="max-w-4xl text-4xl font-extrabold leading-tight md:text-5xl">
+          Steel Weight Calculator Online – Calculate TMT Bar Weight for Construction
+        </h1>
 
-        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
-          <p className="text-orange-400 font-semibold mb-3">
-            QUICK ANSWER
-          </p>
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+          Use CivilCalc Pro Steel Weight Calculator to calculate steel bar weight,
+          TMT bar weight, rebar weight and reinforcement quantity for RCC beams,
+          columns, slabs, footings and other construction work.
+        </p>
 
-          <h2 className="text-3xl font-bold mb-5">
-            How to calculate steel weight?
-          </h2>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <Link
+            href="/dashboard/calculators/steel-weight"
+            className="rounded-xl bg-orange-500 px-6 py-3 font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+          >
+            Open Steel Weight Calculator
+          </Link>
 
-          <p className="text-slate-300 leading-8 mb-4">
-            Steel weight is calculated using the formula D² / 162 × length,
-            where D is the diameter of the steel bar in millimeters and length
-            is in meters. This formula gives the approximate weight of steel
-            reinforcement bars in kilograms.
-          </p>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 my-6">
-            <p className="text-xl font-bold text-white mb-2">
-              Steel Weight = D² / 162 × Length
-            </p>
-
-            <p className="text-slate-400">
-              D = bar diameter in mm, Length = bar length in meter.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto mt-6">
-            <table className="w-full border border-slate-800 text-left">
-              <thead className="bg-slate-900">
-                <tr>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Bar Diameter
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Weight per Meter Formula
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Approx. Weight
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="text-slate-300">
-                <tr>
-                  <td className="border border-slate-800 p-3">8 mm</td>
-                  <td className="border border-slate-800 p-3">8² / 162</td>
-                  <td className="border border-slate-800 p-3">0.395 kg/m</td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">10 mm</td>
-                  <td className="border border-slate-800 p-3">10² / 162</td>
-                  <td className="border border-slate-800 p-3">0.617 kg/m</td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">12 mm</td>
-                  <td className="border border-slate-800 p-3">12² / 162</td>
-                  <td className="border border-slate-800 p-3">0.889 kg/m</td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">16 mm</td>
-                  <td className="border border-slate-800 p-3">16² / 162</td>
-                  <td className="border border-slate-800 p-3">1.580 kg/m</td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">20 mm</td>
-                  <td className="border border-slate-800 p-3">20² / 162</td>
-                  <td className="border border-slate-800 p-3">2.469 kg/m</td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">25 mm</td>
-                  <td className="border border-slate-800 p-3">25² / 162</td>
-                  <td className="border border-slate-800 p-3">3.858 kg/m</td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">32 mm</td>
-                  <td className="border border-slate-800 p-3">32² / 162</td>
-                  <td className="border border-slate-800 p-3">6.321 kg/m</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p className="text-slate-400 leading-7 mt-5">
-            Example: For a 12 mm diameter steel bar of 10 m length, steel
-            weight is 12² / 162 × 10 = 8.89 kg approximately.
-          </p>
-        </section>
-
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Features
-            </h2>
-
-            <ul className="space-y-3 text-slate-300">
-              <li>• TMT bar weight calculation</li>
-              <li>• Reinforcement steel estimation</li>
-              <li>• Steel quantity analysis</li>
-              <li>• Construction material estimation</li>
-              <li>• Fast engineering calculations</li>
-              <li>• Site quantity planning</li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Why Use CivilCalc Pro?
-            </h2>
-
-            <p className="text-slate-300 leading-8">
-              CivilCalc Pro helps engineers and contractors calculate
-              reinforcement steel quantities quickly using professional
-              construction estimation tools. Ideal for quantity surveyors, site
-              engineers, contractors and students.
-            </p>
-          </div>
+          <Link
+            href="/"
+            className="rounded-xl border border-slate-700 px-6 py-3 font-bold text-slate-200 transition hover:border-orange-400 hover:text-orange-300"
+          >
+            Back to Home
+          </Link>
         </div>
 
-        <section className="mt-16 space-y-8">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Steel Weight Formula
-            </h2>
-
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
-              Weight = D² / 162 × Length
-            </div>
-
-            <p className="text-slate-300 mt-4">
-              Steel weight calculator is used for reinforcement quantity
-              estimation in RCC construction work.
-            </p>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
+        <article className="mt-12 space-y-10 text-slate-300">
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
               What is a Steel Weight Calculator?
             </h2>
-
-            <p className="text-slate-300 leading-7 mb-4">
-              A Steel Weight Calculator is used to determine the weight of
-              reinforcement bars used in RCC construction. Civil engineers,
-              contractors and quantity surveyors use steel weight calculations
-              for estimation, procurement and project planning.
+            <p className="leading-8">
+              A Steel Weight Calculator is an online civil engineering tool used to
+              calculate the weight of steel bars used in construction. Steel is one
+              of the most important materials in RCC work, and accurate steel
+              quantity calculation is required for estimation, billing and material
+              planning.
             </p>
-
-            <p className="text-slate-300 leading-7">
-              Accurate steel estimation helps reduce material wastage and
-              improves project cost control.
+            <p className="mt-4 leading-8">
+              CivilCalc Pro Steel Weight Calculator helps civil engineers,
+              contractors, site engineers, estimators and students calculate TMT bar
+              weight quickly by entering bar diameter, bar length and number of bars.
             </p>
-          </div>
+          </section>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Common TMT Bar Sizes
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Why Steel Weight Calculation is Important
             </h2>
+            <p className="leading-8">
+              Steel cost is a major part of construction cost. In RCC beams,
+              columns, slabs, footings, staircases and other structural members,
+              reinforcement quantity must be calculated correctly before execution.
+            </p>
+            <p className="mt-4 leading-8">
+              Wrong steel calculation can increase project cost, create material
+              shortage, cause wastage on site and affect billing accuracy. That is
+              why every civil engineer and contractor should calculate steel weight
+              before ordering or placing reinforcement.
+            </p>
+          </section>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>6 mm TMT Bar</li>
-              <li>8 mm TMT Bar</li>
-              <li>10 mm TMT Bar</li>
-              <li>12 mm TMT Bar</li>
-              <li>16 mm TMT Bar</li>
-              <li>20 mm TMT Bar</li>
-              <li>25 mm TMT Bar</li>
-              <li>32 mm TMT Bar</li>
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Steel Weight Formula
+            </h2>
+            <p className="leading-8">
+              The standard formula commonly used for steel bar weight calculation is:
+            </p>
+
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
+                Steel Weight = D² / 162 × Length
+              </p>
+            </div>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>D = Diameter of steel bar in mm</li>
+              <li>Length = Length of steel bar in meter</li>
+              <li>Steel weight = Weight in kg</li>
             </ul>
-          </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Steel Weight Calculation Example
+            <p className="mt-4 leading-8">
+              This formula gives the approximate weight of steel bars in kilograms.
+              It is widely used for TMT bar weight and rebar quantity calculation in
+              construction estimation.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Common Steel Bar Weight Per Meter
             </h2>
 
-            <p className="text-slate-300 leading-7">
-              For a 12 mm diameter reinforcement bar:
-            </p>
+            <div className="overflow-hidden rounded-2xl border border-slate-800">
+              <table className="w-full border-collapse text-left">
+                <thead className="bg-slate-900">
+                  <tr>
+                    <th className="border-b border-slate-800 px-4 py-3 text-white">
+                      Bar Diameter
+                    </th>
+                    <th className="border-b border-slate-800 px-4 py-3 text-white">
+                      Approx. Weight
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {steelTable.map((row) => (
+                    <tr key={row[0]} className="bg-slate-900/40">
+                      <td className="border-b border-slate-800 px-4 py-3">
+                        {row[0]}
+                      </td>
+                      <td className="border-b border-slate-800 px-4 py-3">
+                        {row[1]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-            <p className="text-slate-300 leading-7 mt-4">
-              Weight per meter = D² / 162
-              <br />
-              = 12² / 162
-              <br />
-              = 0.889 kg/m
-            </p>
-
-            <p className="text-slate-300 leading-7 mt-4">
-              Therefore, a 12 mm bar of 10 m length weighs approximately
-              8.89 kg.
-            </p>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Uses of Steel Weight Calculation
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Example of Steel Weight Calculation
             </h2>
+            <p className="leading-8">
+              Suppose bar diameter is 12 mm, bar length is 10 m and number of bars
+              is 5.
+            </p>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>RCC beam reinforcement estimation</li>
-              <li>Column reinforcement calculation</li>
-              <li>Footing reinforcement planning</li>
-              <li>Slab steel quantity estimation</li>
-              <li>BOQ and BBS preparation</li>
-              <li>Material procurement planning</li>
+            <div className="my-6 rounded-2xl border border-slate-700 bg-slate-900 p-5 leading-8">
+              <p>Weight of one bar = 12² / 162 × 10</p>
+              <p>Weight of one bar = 144 / 162 × 10</p>
+              <p>Weight of one bar = 8.88 kg</p>
+              <p>Total weight = 8.88 × 5</p>
+              <p>Total weight = 44.4 kg</p>
+            </div>
+
+            <p className="leading-8">
+              So, the total steel weight is{' '}
+              <strong className="text-white">44.4 kg</strong>.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              How to Use CivilCalc Pro Steel Weight Calculator
+            </h2>
+            <p className="leading-8">
+              Enter the steel bar diameter, length of bar and number of bars. After
+              entering the values, click on calculate. The tool will instantly show
+              total steel weight in kilograms.
+            </p>
+            <p className="mt-4 leading-8">
+              This makes reinforcement estimation faster and easier for civil
+              engineers, contractors and site engineers.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Where Steel Weight Calculator is Used
+            </h2>
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>RCC beam steel calculation</li>
+              <li>RCC column steel calculation</li>
+              <li>Slab reinforcement quantity</li>
+              <li>Footing steel calculation</li>
+              <li>Staircase reinforcement</li>
+              <li>Bar bending schedule checking</li>
+              <li>Steel purchase planning</li>
+              <li>Contractor billing</li>
+              <li>BOQ preparation</li>
+              <li>Civil engineering student learning</li>
             </ul>
-          </div>
+          </section>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Related Calculators
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Steel Weight Calculator for Civil Engineers
             </h2>
+            <p className="leading-8">
+              Civil engineers need accurate and fast reinforcement calculation for
+              daily site work. CivilCalc Pro Steel Weight Calculator is designed for
+              practical construction use. It helps users calculate steel weight
+              without manual formula work or spreadsheet dependency.
+            </p>
+            <p className="mt-4 leading-8">
+              Whether you are preparing BOQ, checking BBS, ordering steel, verifying
+              contractor bills or calculating RCC quantity, this tool can help you
+              calculate steel weight quickly.
+            </p>
+          </section>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>
-                <Link href="/beam-design">
-                  Beam Design Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/column-design">
-                  Column Design Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/footing-design">
-                  Footing Design Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/one-way-slab-calculator">
-                  One-Way Slab Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/two-way-slab-calculator">
-                  Two-Way Slab Calculator
-                </Link>
-              </li>
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Benefits of CivilCalc Pro Steel Weight Calculator
+            </h2>
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Fast steel weight calculation</li>
+              <li>Simple input and clear output</li>
+              <li>Uses standard D²/162 formula</li>
+              <li>Useful for TMT bars and reinforcement work</li>
+              <li>Helps in BOQ and billing</li>
+              <li>Reduces manual calculation mistakes</li>
+              <li>Useful for civil engineers, contractors and students</li>
             </ul>
-          </div>
+          </section>
 
-          <div className="mt-10 text-center">
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">Conclusion</h2>
+            <p className="leading-8">
+              Steel weight calculation is one of the most important calculations in
+              RCC construction. CivilCalc Pro Steel Weight Calculator helps civil
+              engineers, contractors, site engineers and students calculate TMT bar
+              weight quickly and accurately.
+            </p>
+            <p className="mt-4 leading-8">
+              For better reinforcement estimation, steel ordering, BOQ preparation
+              and contractor billing, use CivilCalc Pro Steel Weight Calculator.
+            </p>
+          </section>
+
+          <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-slate-900 p-6">
+            <h2 className="text-2xl font-extrabold text-white">
+              Calculate Steel Weight Instantly
+            </h2>
+            <p className="mt-3 leading-8 text-slate-300">
+              Open CivilCalc Pro Steel Weight Calculator and calculate TMT bar
+              weight for your construction project.
+            </p>
             <Link
-              href="/civil-engineering-calculators"
-              className="inline-block border border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white transition px-6 py-3 rounded-xl font-semibold"
+              href="/dashboard/calculators/steel-weight"
+              className="mt-5 inline-flex rounded-xl bg-orange-500 px-6 py-3 font-bold text-white transition hover:bg-orange-600"
             >
-              View All Civil Engineering Calculators
+              Use Steel Weight Calculator
             </Link>
           </div>
-        </section>
-      </div>
+
+          <section>
+            <h2 className="mb-6 text-3xl font-bold text-white">FAQs</h2>
+            <div className="space-y-5">
+              {faqs.map((item) => (
+                <div
+                  key={item.q}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                >
+                  <h3 className="text-xl font-bold text-white">{item.q}</h3>
+                  <p className="mt-2 leading-8 text-slate-300">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </article>
+      </section>
     </main>
-  );
+  )
 }
