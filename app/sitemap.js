@@ -106,6 +106,12 @@ export default function sitemap() {
   priority: 0.88,
 },
     {
+  url: `${baseUrl}/site-diary-tool`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+    {
       path: '/one-way-slab-calculator',
       priority: 0.9,
       changeFrequency: 'monthly',
