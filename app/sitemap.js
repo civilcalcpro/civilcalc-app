@@ -125,10 +125,11 @@ export default function sitemap() {
       changeFrequency: 'monthly',
     },
     {
-      path: '/brickwork-calculator',
-      priority: 0.85,
-      changeFrequency: 'monthly',
-    },
+  url: `${baseUrl}/brickwork-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.86,
+},
     {
       path: '/plaster-calculator',
       priority: 0.85,
