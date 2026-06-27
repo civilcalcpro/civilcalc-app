@@ -57,10 +57,11 @@ export default function sitemap() {
       priority: 0.9,
       changeFrequency: 'weekly',
     },
-    {
-  path: '/rate-analysis-calculator',
-  priority: 0.85,
-  changeFrequency: 'monthly',
+   {
+  url: `${baseUrl}/rate-analysis-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.86,
 },
     {
   path: '/unit-converter',
