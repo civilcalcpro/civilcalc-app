@@ -132,11 +132,12 @@ export default function sitemap() {
       priority: 0.85,
       changeFrequency: 'monthly',
     },
-    {
-      path: '/excavation-calculator',
-      priority: 0.85,
-      changeFrequency: 'monthly',
-    },
+  {
+  url: `${baseUrl}/excavation-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.85,
+},
     {
       path: '/bar-bending-schedule-guide',
       priority: 0.8,
