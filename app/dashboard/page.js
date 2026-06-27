@@ -41,6 +41,20 @@ import {
 
 const quickTools = [
   {
+  name: 'Structural Analysis',
+  icon: Ruler,
+  href: '/dashboard/calculators/structural-analysis',
+  color: 'orange',
+  desc: 'Beam reactions, SFD, BMD, UDL, UVL and moment load solver',
+},
+{
+  name: 'Truss Analysis',
+  icon: Ruler,
+  href: '/dashboard/calculators/truss-analysis',
+  color: 'blue',
+  desc: '2D truss member forces, reactions, tension and compression',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
