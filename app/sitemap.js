@@ -8,6 +8,12 @@ export default function sitemap() {
       changeFrequency: 'weekly',
     },
     {
+  url: `${baseUrl}/is-code-library`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.88,
+},
+    {
       path: '/why-civilcalc-pro',
       priority: 0.9,
       changeFrequency: 'weekly',
