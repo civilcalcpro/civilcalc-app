@@ -592,6 +592,17 @@ export default function LandingPage() {
           </p>
         </div>
       </Link>
+  <Link href="/steel-weight-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Steel Weight Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate TMT bar weight, steel quantity and reinforcement weight using D²/162 formula.
+    </p>
+  </div>
+</Link>
 
       <Link href="/development-length-calculation">
         <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
