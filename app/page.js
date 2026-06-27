@@ -706,6 +706,17 @@ export default function LandingPage() {
     </p>
   </div>
 </Link>
+  <Link href="/paint-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">ARTICLE</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Paint Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate wall paint quantity, primer quantity, painting area and painting cost.
+    </p>
+  </div>
+</Link>
   <Link
   href="/boq-generator"
   className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 hover:border-orange-500/60 transition"
