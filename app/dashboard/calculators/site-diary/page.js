@@ -643,25 +643,45 @@ const handlePhotoUpload = async (files) => {
     setLoading(false)
   }
 }
+const makeSafeStorageName = (name) => {
+  const extension = name.includes('.') ? name.split('.').pop().toLowerCase() : 'jpg'
+  const cleanBase = name
+    .replace(/\.[^/.]+$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40)
+
+  return `${cleanBase || 'site-photo'}.${extension || 'jpg'}`
+}
+
 const uploadPhotos = async (reportId) => {
   const uploaded = []
 
-  for (const file of photoFiles) {
-    const safeFileName = file.name
-      .replace(/\s+/g, '-')
-      .replace(/[^a-zA-Z0-9.-]/g, '')
+  if (!selectedSite?.id) {
+    throw new Error('Site is not selected. Please reopen the site diary.')
+  }
 
-    const path = `${selectedSite.id}/${reportId}/${Date.now()}-${safeFileName}`
+  for (const file of photoFiles) {
+    const safeFileName = makeSafeStorageName(file.name)
+
+    const path = [
+      String(selectedSite.id).replace(/[^a-zA-Z0-9-]/g, ''),
+      String(reportId).replace(/[^a-zA-Z0-9-]/g, ''),
+      `${Date.now()}-${safeFileName}`,
+    ].join('/')
 
     const { error } = await supabase.storage
       .from('site-diary-photos')
       .upload(path, file, {
         cacheControl: '3600',
         upsert: false,
+        contentType: file.type || 'image/jpeg',
       })
 
     if (error) {
-      throw error
+      throw new Error(error.message || 'Photo upload failed.')
     }
 
     const { data } = supabase.storage
