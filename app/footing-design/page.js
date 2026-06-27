@@ -1,390 +1,444 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 export const metadata = {
-  title: "RCC Footing Design Calculator | CivilCalc Pro",
+  title: 'Footing Design Calculator Online | RCC Footing Design as per IS 456',
   description:
-    "Free online RCC footing design calculator for civil engineers and students. Calculate footing size, soil pressure, reinforcement steel, loads, bending moments, and structural design as per IS 456.",
+    'Calculate RCC footing design, footing size, soil bearing capacity, load, reinforcement and concrete quantity online with CivilCalc Pro Footing Design Calculator.',
+  keywords: [
+    'footing design calculator',
+    'RCC footing design calculator',
+    'isolated footing design',
+    'footing size calculator',
+    'foundation design calculator',
+    'soil bearing capacity calculator',
+    'RCC footing reinforcement calculator',
+    'civil engineering calculator',
+    'construction calculator India',
+  ],
   alternates: {
-    canonical: "https://civilcalcpro.in/footing-design",
+    canonical: 'https://www.civilcalcpro.in/footing-design-calculation',
   },
   openGraph: {
-    title: "RCC Footing Design Calculator | CivilCalc Pro",
+    title: 'Footing Design Calculator Online | CivilCalc Pro',
     description:
-      "Free online RCC footing design calculator for civil engineers and students. Calculate footing size, soil pressure, reinforcement steel, loads, bending moments, and structural design as per IS 456.",
-    url: "https://civilcalcpro.in/footing-design",
-    siteName: "CivilCalc Pro",
-    type: "website",
-    locale: "en_US",
+      'Calculate RCC footing size, soil pressure, reinforcement and foundation design values online.',
+    url: 'https://www.civilcalcpro.in/footing-design-calculation',
+    siteName: 'CivilCalc Pro',
+    type: 'article',
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "RCC Footing Design Calculator | CivilCalc Pro",
-    description:
-      "Free online RCC footing design calculator for civil engineers and students. Calculate footing size, soil pressure, reinforcement steel, loads, bending moments, and structural design as per IS 456.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-snippet": -1,
-      "max-image-preview": "large",
-      "max-video-preview": -1,
-    },
-  },
-};
+}
 
-export default function FootingDesignPage() {
+const faqs = [
+  {
+    q: 'What is footing design?',
+    a: 'Footing design is the process of calculating the size, thickness, reinforcement and load distribution of a foundation element that transfers column load safely to the soil.',
+  },
+  {
+    q: 'What is the basic formula for footing area?',
+    a: 'The basic footing area formula is Required Area = Total Load / Safe Bearing Capacity of Soil.',
+  },
+  {
+    q: 'Which footing is commonly used for building columns?',
+    a: 'Isolated footing is commonly used below individual RCC columns in residential and commercial buildings when soil bearing capacity is adequate.',
+  },
+  {
+    q: 'Can this calculator be used for final structural design?',
+    a: 'This calculator is useful for learning, estimation and preliminary design. Final footing design should always be verified by a qualified structural engineer.',
+  },
+]
+
+export default function FootingDesignCalculationArticle() {
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: 'Footing Design Calculator Online | RCC Footing Design as per IS 456',
+    description:
+      'Complete guide to RCC footing design calculation, footing area, soil bearing capacity, reinforcement and foundation design.',
+    author: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': 'https://www.civilcalcpro.in/footing-design-calculation',
+    },
+  }
+
   const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "How is isolated footing size calculated?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Isolated footing size is commonly calculated by dividing column load by safe bearing capacity of soil. The required footing area is then used to select footing length and width.",
-        },
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
       },
-      {
-        "@type": "Question",
-        name: "What is the formula for footing area?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "The basic footing area formula is column load divided by safe bearing capacity of soil. Area equals load divided by SBC.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What checks are required in RCC footing design?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Common RCC footing design checks include soil pressure, bending moment, one-way shear, punching shear, effective depth and reinforcement steel.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Which inputs are required for footing design?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Common inputs for footing design include column load, safe bearing capacity of soil, column size, concrete grade, steel grade, clear cover and footing dimensions.",
-        },
-      },
-    ],
-  };
+    })),
+  }
+
+  const inputs = [
+    'Column load',
+    'Safe bearing capacity of soil',
+    'Column size',
+    'Concrete grade',
+    'Steel grade',
+    'Footing length',
+    'Footing width',
+    'Footing thickness',
+    'Reinforcement details',
+    'Soil pressure',
+  ]
+
+  const useCases = [
+    'Isolated footing design',
+    'RCC foundation design',
+    'Column footing size calculation',
+    'Soil bearing pressure checking',
+    'Footing reinforcement calculation',
+    'Residential building foundation design',
+    'Commercial building foundation estimation',
+    'Civil engineering student practice',
+    'Site engineer design checking',
+    'Preliminary structural estimation',
+  ]
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+    <main className="min-h-screen bg-[#050B1F] text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-5xl font-bold mb-6">
-          RCC Footing Design Calculator
-        </h1>
-
-        <p className="text-slate-300 text-lg mb-10">
-          Free online RCC footing design calculator for civil engineers and
-          students. Calculate footing dimensions, soil pressure, reinforcement
-          steel, bending moments, and structural design as per IS 456 code.
+      <section className="mx-auto max-w-5xl px-5 py-16">
+        <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-400">
+          Civil Engineering Article
         </p>
 
-        <Link
-          href="/login?redirect=/dashboard/calculators/footing"
-          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
-        >
-          Open Footing Design Calculator
-        </Link>
+        <h1 className="max-w-4xl text-4xl font-extrabold leading-tight md:text-5xl">
+          Footing Design Calculator Online – RCC Footing Design for Construction
+        </h1>
 
-        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
-          <p className="text-orange-400 font-semibold mb-3">
-            QUICK ANSWER
-          </p>
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+          Use CivilCalc Pro Footing Design Calculator to calculate footing size,
+          required footing area, soil bearing pressure, reinforcement requirement and
+          preliminary RCC foundation design values.
+        </p>
 
-          <h2 className="text-3xl font-bold mb-5">
-            How to design an isolated footing?
-          </h2>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <Link
+            href="/dashboard/calculators/footing"
+            className="rounded-xl bg-orange-500 px-6 py-3 font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+          >
+            Open Footing Design Calculator
+          </Link>
 
-          <p className="text-slate-300 leading-8 mb-4">
-            Isolated footing design is done by calculating the required footing
-            area from column load and safe bearing capacity of soil. After
-            footing size is selected, depth, bending moment, shear force and
-            reinforcement are checked based on concrete grade, steel grade and
-            soil pressure.
-          </p>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 my-6">
-            <p className="text-xl font-bold text-white mb-2">
-              Required Footing Area = Column Load / Safe Bearing Capacity
-            </p>
-
-            <p className="text-xl font-bold text-white mb-2">
-              Square Footing Side = √Required Area
-            </p>
-
-            <p className="text-slate-400">
-              Column load is usually taken in kN and safe bearing capacity in
-              kN/m².
-            </p>
-          </div>
-
-          <div className="overflow-x-auto mt-6">
-            <table className="w-full border border-slate-800 text-left">
-              <thead className="bg-slate-900">
-                <tr>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Design Item
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Formula / Value
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Example Result
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="text-slate-300">
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Column Load
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    P
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    800 kN
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Safe Bearing Capacity
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    SBC
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    200 kN/m²
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Required Area
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    800 / 200
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    4 m²
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Square Footing Size
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    √4
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    2 m × 2 m
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Design Checks
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    Bending, shear and reinforcement
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    Checked after sizing
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p className="text-slate-400 leading-7 mt-5">
-            Example: If column load is 800 kN and soil safe bearing capacity is
-            200 kN/m², required footing area is 800 / 200 = 4 m². For a square
-            isolated footing, footing size can be taken as 2 m × 2 m before
-            checking depth, bending, shear and reinforcement.
-          </p>
-        </section>
-
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Features
-            </h2>
-
-            <ul className="space-y-3 text-slate-300">
-              <li>• Footing size calculation</li>
-              <li>• Soil pressure check</li>
-              <li>• Load and bearing capacity checks</li>
-              <li>• Steel reinforcement estimation</li>
-              <li>• IS 456 based RCC footing design</li>
-              <li>• Fast structural analysis</li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Why Use CivilCalc Pro?
-            </h2>
-
-            <p className="text-slate-300 leading-8">
-              CivilCalc Pro helps civil engineers perform RCC footing design
-              quickly using engineering tools and structural calculations.
-              Useful for students, site engineers, consultants, and construction
-              professionals.
-            </p>
-          </div>
+          <Link
+            href="/"
+            className="rounded-xl border border-slate-700 px-6 py-3 font-bold text-slate-200 transition hover:border-orange-400 hover:text-orange-300"
+          >
+            Back to Home
+          </Link>
         </div>
 
-        <section className="mt-16 space-y-8">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Footing Design Formula
+        <article className="mt-12 space-y-10 text-slate-300">
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              What is a Footing Design Calculator?
             </h2>
 
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
-              Area = Load / SBC
+            <p className="leading-8">
+              A Footing Design Calculator is a civil engineering tool used to calculate
+              footing size, footing area, soil pressure, concrete quantity and
+              reinforcement requirement for RCC foundations. Footings are structural
+              elements that transfer column loads safely to the soil.
+            </p>
+
+            <p className="mt-4 leading-8">
+              CivilCalc Pro Footing Design Calculator helps civil engineers,
+              contractors, site engineers and students calculate preliminary footing
+              design values quickly by entering load, safe bearing capacity, column
+              size and material details.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Why Footing Design is Important
+            </h2>
+
+            <p className="leading-8">
+              Footing design is one of the most important parts of building
+              construction because the footing transfers the load of the structure to
+              the ground. If footing size or reinforcement is not proper, it can lead
+              to excessive settlement, cracks, structural damage or unsafe foundation
+              performance.
+            </p>
+
+            <p className="mt-4 leading-8">
+              Proper footing design helps in selecting correct footing area, thickness,
+              reinforcement, concrete grade and safe soil pressure. It also helps
+              avoid under-design, over-design and unnecessary material wastage.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Basic Footing Design Formula
+            </h2>
+
+            <p className="leading-8">
+              The basic formula used to calculate required footing area is:
+            </p>
+
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
+                Required Footing Area = Total Load / Safe Bearing Capacity
+              </p>
             </div>
 
-            <p className="text-slate-300 mt-4">
-              Footing design is used to safely transfer structural loads to
-              soil. The required footing area depends on column load and safe
-              bearing capacity of soil.
-            </p>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              What is RCC Footing Design?
-            </h2>
-
-            <p className="text-slate-300 leading-7 mb-4">
-              RCC Footing Design is the process of designing a reinforced
-              concrete foundation that safely transfers structural loads from
-              columns to the soil. Proper footing design helps prevent excessive
-              settlement and improves structural stability.
-            </p>
-
-            <p className="text-slate-300 leading-7">
-              Footings are one of the most important structural elements because
-              they support the entire building and distribute loads to the
-              ground.
-            </p>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Types of Footings
-            </h2>
-
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>Isolated Footing</li>
-              <li>Combined Footing</li>
-              <li>Strap Footing</li>
-              <li>Raft Foundation</li>
-              <li>Pile Foundation</li>
-              <li>Wall Footing</li>
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Total Load = Load transferred from column to footing</li>
+              <li>Safe Bearing Capacity = Safe load carrying capacity of soil</li>
+              <li>Required Footing Area = Minimum area required to safely transfer load</li>
             </ul>
-          </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Steps in RCC Footing Design
+            <p className="mt-4 leading-8">
+              After calculating footing area, engineers check footing length, width,
+              soil pressure, bending moment, shear force, punching shear and
+              reinforcement requirement.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Important Checks in RCC Footing Design
             </h2>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>Determine column load</li>
-              <li>Obtain safe bearing capacity of soil</li>
-              <li>Calculate footing area</li>
-              <li>Select footing dimensions</li>
-              <li>Check soil pressure</li>
-              <li>Check bending moments</li>
-              <li>Check one-way shear and punching shear</li>
-              <li>Design reinforcement steel</li>
+            <p className="leading-8">
+              RCC footing design is not limited to only footing area. A proper footing
+              design generally includes multiple safety and serviceability checks.
+            </p>
+
+            <ul className="mt-4 list-disc space-y-2 pl-6 leading-8">
+              <li>Soil bearing pressure check</li>
+              <li>Footing area calculation</li>
+              <li>Footing depth calculation</li>
+              <li>One-way shear check</li>
+              <li>Punching shear check</li>
+              <li>Bending moment calculation</li>
+              <li>Main reinforcement calculation</li>
+              <li>Distribution reinforcement calculation</li>
+              <li>Development length and anchorage check</li>
             </ul>
-          </div>
+          </section>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Footing Design Example
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Inputs Required for Footing Design Calculator
             </h2>
 
-            <p className="text-slate-300 leading-7">
-              Assume a column load of 800 kN and soil bearing capacity of
+            <p className="leading-8">
+              To calculate RCC footing design values, the following inputs are
+              commonly required:
+            </p>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              {inputs.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Example of Footing Area Calculation
+            </h2>
+
+            <p className="leading-8">
+              Suppose total column load is 900 kN and safe bearing capacity of soil is
               200 kN/m².
             </p>
 
-            <p className="text-slate-300 leading-7 mt-4">
-              Required Area = Load / SBC
-              <br />
-              Area = 800 / 200
-              <br />
-              Area = 4.0 m²
-              <br />
-              Square footing size = √4 = 2 m × 2 m
-            </p>
-          </div>
+            <div className="my-6 rounded-2xl border border-slate-700 bg-slate-900 p-5 leading-8">
+              <p>Required Area = Total Load / Safe Bearing Capacity</p>
+              <p>Required Area = 900 / 200</p>
+              <p>Required Area = 4.5 m²</p>
+            </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Related Calculators
+            <p className="leading-8">
+              So, the required footing area is{' '}
+              <strong className="text-white">4.5 m²</strong>. Based on this area, an
+              engineer may select a suitable footing size such as 2.2 m × 2.1 m or
+              another practical size depending on site and design conditions.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Types of Footings Used in Construction
             </h2>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>
-                <Link href="/beam-design">
-                  Beam Design Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/column-design">
-                  Column Design Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/one-way-slab-calculator">
-                  One Way Slab Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/two-way-slab-calculator">
-                  Two Way Slab Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/steel-weight-calculator">
-                  Steel Weight Calculator
-                </Link>
-              </li>
-            </ul>
-          </div>
+            <p className="leading-8">
+              Different types of footings are used depending on soil condition,
+              structural load, column spacing and project requirement.
+            </p>
 
-          <div className="mt-10 text-center">
+            <ul className="mt-4 list-disc space-y-2 pl-6 leading-8">
+              <li>Isolated footing</li>
+              <li>Combined footing</li>
+              <li>Strip footing</li>
+              <li>Raft foundation</li>
+              <li>Stepped footing</li>
+              <li>Sloped footing</li>
+              <li>Wall footing</li>
+              <li>Pile cap foundation</li>
+            </ul>
+
+            <p className="mt-4 leading-8">
+              Isolated footing is one of the most commonly used footing types below
+              individual RCC columns in residential and small commercial buildings.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              How to Use CivilCalc Pro Footing Design Calculator
+            </h2>
+
+            <p className="leading-8">
+              Enter the column load, safe bearing capacity of soil, column size,
+              footing dimensions, concrete grade and steel grade. After entering the
+              values, click on calculate. The tool will show important footing design
+              results such as required area, soil pressure, footing size and design
+              values.
+            </p>
+
+            <p className="mt-4 leading-8">
+              This helps civil engineers, contractors and students understand footing
+              design quickly without doing repeated manual calculations.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Where Footing Design Calculator is Used
+            </h2>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              {useCases.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Footing Design Calculator for Civil Engineers
+            </h2>
+
+            <p className="leading-8">
+              Civil engineers need quick and practical design tools for foundation
+              work. CivilCalc Pro Footing Design Calculator is useful for preliminary
+              footing design, learning, estimation and site checking.
+            </p>
+
+            <p className="mt-4 leading-8">
+              It is useful for civil engineering students, site engineers, contractors
+              and construction professionals who want to calculate footing design
+              values in a simple and clear way.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Benefits of CivilCalc Pro Footing Design Calculator
+            </h2>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Quick RCC footing design calculation</li>
+              <li>Useful for footing area calculation</li>
+              <li>Helps check soil bearing pressure</li>
+              <li>Useful for foundation estimation</li>
+              <li>Supports civil engineering learning</li>
+              <li>Reduces repeated manual calculation</li>
+              <li>Helpful for engineers, contractors and students</li>
+            </ul>
+          </section>
+
+          <section className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5">
+            <h2 className="mb-3 text-2xl font-bold text-white">
+              Important Design Note
+            </h2>
+
+            <p className="leading-8 text-slate-300">
+              RCC footing design is directly related to structural safety and soil
+              conditions. This article and calculator are useful for learning,
+              estimation and preliminary design. Final foundation design should always
+              be verified by a qualified structural engineer based on soil report,
+              building load and applicable design codes.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">Conclusion</h2>
+
+            <p className="leading-8">
+              Footing design is a critical part of every construction project.
+              CivilCalc Pro Footing Design Calculator helps civil engineers,
+              contractors, site engineers and students calculate footing area,
+              soil pressure and foundation design values quickly.
+            </p>
+
+            <p className="mt-4 leading-8">
+              For preliminary RCC footing design, foundation estimation and soil
+              pressure checking, use CivilCalc Pro Footing Design Calculator.
+            </p>
+          </section>
+
+          <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-slate-900 p-6">
+            <h2 className="text-2xl font-extrabold text-white">
+              Calculate RCC Footing Design Instantly
+            </h2>
+
+            <p className="mt-3 leading-8 text-slate-300">
+              Open CivilCalc Pro Footing Design Calculator and calculate footing size,
+              soil pressure and foundation design values for your project.
+            </p>
+
             <Link
-              href="/civil-engineering-calculators"
-              className="inline-block border border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white transition px-6 py-3 rounded-xl font-semibold"
+              href="/dashboard/calculators/footing"
+              className="mt-5 inline-flex rounded-xl bg-orange-500 px-6 py-3 font-bold text-white transition hover:bg-orange-600"
             >
-              View All Civil Engineering Calculators
+              Use Footing Design Calculator
             </Link>
           </div>
-        </section>
-      </div>
+
+          <section>
+            <h2 className="mb-6 text-3xl font-bold text-white">FAQs</h2>
+
+            <div className="space-y-5">
+              {faqs.map((item) => (
+                <div
+                  key={item.q}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                >
+                  <h3 className="text-xl font-bold text-white">{item.q}</h3>
+                  <p className="mt-2 leading-8 text-slate-300">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </article>
+      </section>
     </main>
-  );
+  )
 }
