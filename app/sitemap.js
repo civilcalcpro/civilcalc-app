@@ -164,10 +164,11 @@ export default function sitemap() {
       changeFrequency: 'monthly',
     },
     {
-      path: '/steel-weight-calculation-formula',
-      priority: 0.8,
-      changeFrequency: 'monthly',
-    },
+  url: `${baseUrl}/steel-weight-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.85,
+},
     {
       path: '/how-to-calculate-brickwork-quantity',
       priority: 0.75,
