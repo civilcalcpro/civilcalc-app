@@ -137,7 +137,204 @@ function solveBeam(form) {
       )} m from support A, and Mmax = ${fmt(Mmax)} kN·m.`,
     }
   }
+function getSectionValues(result, sectionX) {
+  const L = result.L || 1
+  const x = clamp(toNum(sectionX, L / 2), 0, L)
+  const tol = 0.000001
 
+  if (result.caseType === 'ss_point') {
+    const isAtLoad = Math.abs(x - result.a) < tol
+    const moment = result.RA * x - result.P * Math.max(0, x - result.a)
+
+    if (isAtLoad) {
+      return {
+        x,
+        shear: `Left: +${fmt(result.RA)} kN, Right: -${fmt(result.RB)} kN`,
+        moment: `${fmt(moment)} kN·m`,
+        note:
+          'At the point load location, shear force changes suddenly. Bending moment is maximum at this point.',
+      }
+    }
+
+    const shear = x < result.a ? result.RA : result.RA - result.P
+
+    return {
+      x,
+      shear: `${fmt(shear)} kN`,
+      moment: `${fmt(moment)} kN·m`,
+      note:
+        x < result.a
+          ? 'This section is before the point load, so shear force is equal to RA.'
+          : 'This section is after the point load, so shear force is RA - P.',
+    }
+  }
+
+  if (result.caseType === 'ss_udl') {
+    const shear = result.RA - result.w * x
+    const moment = result.RA * x - (result.w * x * x) / 2
+
+    return {
+      x,
+      shear: `${fmt(shear)} kN`,
+      moment: `${fmt(moment)} kN·m`,
+      note:
+        Math.abs(shear) < 0.01
+          ? 'Shear force is nearly zero here, so bending moment is maximum near this section.'
+          : 'For UDL, shear force changes linearly and bending moment changes parabolically.',
+    }
+  }
+
+  if (result.caseType === 'cantilever_point') {
+    const moment = -result.P * (L - x)
+
+    return {
+      x,
+      shear:
+        Math.abs(x - L) < tol
+          ? `-${fmt(result.P)} kN just before free-end load`
+          : `-${fmt(result.P)} kN`,
+      moment: `${fmt(moment)} kN·m`,
+      note:
+        'For cantilever with point load at free end, shear force is constant and bending moment is maximum at fixed support.',
+    }
+  }
+
+  const shear = -result.w * (L - x)
+  const moment = -(result.w * Math.pow(L - x, 2)) / 2
+
+  return {
+    x,
+    shear: `${fmt(shear)} kN`,
+    moment: `${fmt(moment)} kN·m`,
+    note:
+      'For cantilever with UDL, shear force and bending moment are maximum at fixed support and zero at free end.',
+  }
+}
+
+function getSfdBmdRows(result) {
+  if (result.caseType === 'ss_point') {
+    return [
+      {
+        point: 'At support A',
+        x: '0',
+        shear: `+${fmt(result.RA)} kN`,
+        moment: '0 kN·m',
+        remark: 'Reaction starts the SFD upward.',
+      },
+      {
+        point: 'Just left of point load',
+        x: `${fmt(result.a)}⁻`,
+        shear: `+${fmt(result.RA)} kN`,
+        moment: `${fmt(result.Mmax)} kN·m`,
+        remark: 'BM reaches maximum near the load.',
+      },
+      {
+        point: 'Just right of point load',
+        x: `${fmt(result.a)}⁺`,
+        shear: `-${fmt(result.RB)} kN`,
+        moment: `${fmt(result.Mmax)} kN·m`,
+        remark: 'Shear jumps downward by P.',
+      },
+      {
+        point: 'At support B',
+        x: `${fmt(result.L)}`,
+        shear: '0 after RB',
+        moment: '0 kN·m',
+        remark: 'BM is zero at simple support.',
+      },
+    ]
+  }
+
+  if (result.caseType === 'ss_udl') {
+    return [
+      {
+        point: 'At support A',
+        x: '0',
+        shear: `+${fmt(result.RA)} kN`,
+        moment: '0 kN·m',
+        remark: 'SFD starts from positive reaction.',
+      },
+      {
+        point: 'At mid-span',
+        x: `${fmt(result.L / 2)}`,
+        shear: '0 kN',
+        moment: `${fmt(result.Mmax)} kN·m`,
+        remark: 'Maximum BM occurs where SF becomes zero.',
+      },
+      {
+        point: 'Just before support B',
+        x: `${fmt(result.L)}⁻`,
+        shear: `-${fmt(result.RB)} kN`,
+        moment: '0 kN·m',
+        remark: 'SFD reaches negative value before support B.',
+      },
+      {
+        point: 'At support B',
+        x: `${fmt(result.L)}`,
+        shear: '0 after RB',
+        moment: '0 kN·m',
+        remark: 'Support reaction closes the SFD.',
+      },
+    ]
+  }
+
+  if (result.caseType === 'cantilever_point') {
+    return [
+      {
+        point: 'At fixed support',
+        x: '0',
+        shear: `-${fmt(result.P)} kN`,
+        moment: `-${fmt(result.Mmax)} kN·m`,
+        remark: 'Maximum hogging moment occurs at fixed end.',
+      },
+      {
+        point: 'At mid-span',
+        x: `${fmt(result.L / 2)}`,
+        shear: `-${fmt(result.P)} kN`,
+        moment: `-${fmt(result.P * (result.L / 2))} kN·m`,
+        remark: 'BM reduces linearly towards free end.',
+      },
+      {
+        point: 'Just before free-end load',
+        x: `${fmt(result.L)}⁻`,
+        shear: `-${fmt(result.P)} kN`,
+        moment: '0 kN·m',
+        remark: 'Moment is zero at free end.',
+      },
+      {
+        point: 'After free-end load',
+        x: `${fmt(result.L)}`,
+        shear: '0 kN',
+        moment: '0 kN·m',
+        remark: 'Load closes the SFD at free end.',
+      },
+    ]
+  }
+
+  return [
+    {
+      point: 'At fixed support',
+      x: '0',
+      shear: `-${fmt(result.W)} kN`,
+      moment: `-${fmt(result.Mmax)} kN·m`,
+      remark: 'Maximum SF and BM occur at fixed end.',
+    },
+    {
+      point: 'At mid-span',
+      x: `${fmt(result.L / 2)}`,
+      shear: `-${fmt(result.W / 2)} kN`,
+      moment: `-${fmt((result.w * result.L * result.L) / 8)} kN·m`,
+      remark: 'SFD is linear and BMD is parabolic.',
+    },
+    {
+      point: 'At free end',
+      x: `${fmt(result.L)}`,
+      shear: '0 kN',
+      moment: '0 kN·m',
+      remark: 'Both SF and BM become zero at free end.',
+    },
+  ]
+}
   if (caseType === 'ss_udl') {
     const W = w * L
     const RA = W / 2
@@ -575,7 +772,99 @@ function BMDDiagram({ result }) {
       </>
     )
   }
+function DiagramValuesTable({ result, sectionX }) {
+  const rows = getSfdBmdRows(result)
+  const section = getSectionValues(result, sectionX)
 
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-white">
+            SFD & BMD Key Values
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Important values required to draw shear force and bending moment diagrams.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm leading-6 text-orange-100">
+          Sign convention: +BM = sagging, -BM = hogging
+        </div>
+      </div>
+
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-800">
+        <table className="w-full min-w-[760px] border-collapse text-left">
+          <thead className="bg-slate-950">
+            <tr>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
+                Point
+              </th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
+                x Location
+              </th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
+                Shear Force
+              </th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
+                Bending Moment
+              </th>
+              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">
+                Remark
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map((row) => (
+              <tr key={`${row.point}-${row.x}`} className="bg-slate-900/50">
+                <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-slate-200">
+                  {row.point}
+                </td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-orange-300">
+                  {row.x}
+                </td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">
+                  {row.shear}
+                </td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">
+                  {row.moment}
+                </td>
+                <td className="border-b border-slate-800 px-4 py-3 text-sm leading-6 text-slate-400">
+                  {row.remark}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-sky-500/30 bg-sky-500/10 p-5">
+        <h3 className="text-xl font-black text-white">
+          Section Value at x = {fmt(section.x)} m
+        </h3>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+            <p className="text-sm text-slate-400">Shear Force at Section</p>
+            <p className="mt-2 text-2xl font-black text-sky-300">
+              {section.shear}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+            <p className="text-sm text-slate-400">Bending Moment at Section</p>
+            <p className="mt-2 text-2xl font-black text-sky-300">
+              {section.moment}
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-4 leading-7 text-slate-300">{section.note}</p>
+      </div>
+    </div>
+  )
+}
   if (result.caseType === 'ss_udl') {
     const points = Array.from({ length: 35 }, (_, i) => {
       const x = (L * i) / 34
@@ -660,13 +949,14 @@ function BMDDiagram({ result }) {
 }
 
 export default function StructuralAnalysisPage() {
-  const [form, setForm] = useState({
-    caseType: 'ss_point',
-    L: 6,
-    P: 20,
-    a: 2,
-    w: 5,
-  })
+const [form, setForm] = useState({
+  caseType: 'ss_point',
+  L: 6,
+  P: 20,
+  a: 2,
+  w: 5,
+  x: 3,
+})
 
   const selectedCase = caseOptions.find((item) => item.value === form.caseType)
   const result = useMemo(() => solveBeam(form), [form])
@@ -679,13 +969,14 @@ export default function StructuralAnalysisPage() {
   }
 
   const reset = () => {
-    setForm({
-      caseType: 'ss_point',
-      L: 6,
-      P: 20,
-      a: 2,
-      w: 5,
-    })
+   setForm({
+  caseType: 'ss_point',
+  L: 6,
+  P: 20,
+  a: 2,
+  w: 5,
+  x: 3,
+})
   }
 
   const isPointCase = form.caseType.includes('point')
@@ -703,22 +994,16 @@ export default function StructuralAnalysisPage() {
               </p>
 
               <h1 className="text-3xl font-black leading-tight md:text-5xl">
-                Structural Analysis Student Solver
+                Structural Analysis Solver for Civil Engineering Students
               </h1>
 
               <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300 md:text-lg">
-                Stage 1 includes beam loading diagram, support reactions, SFD, BMD,
-                formulas, step-by-step solution and exam-style final answer.
+      Solve structural analysis problems with beam diagrams, support reactions,
+SFD, BMD, formulas, step-by-step solution and exam-style final answer.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-5">
-              <p className="text-sm font-bold text-orange-300">Current Stage</p>
-              <p className="mt-1 text-2xl font-black text-white">Stage 1</p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                Beam Reactions + Basic SFD/BMD Diagrams
-              </p>
-            </div>
+            
           </div>
         </div>
 
@@ -772,6 +1057,18 @@ export default function StructuralAnalysisPage() {
                   helper="Total length of beam."
                   min="0.1"
                 />
+                  <NumberField
+  label={
+    form.caseType.startsWith('ss')
+      ? 'Section x from Support A'
+      : 'Section x from Fixed Support'
+  }
+  value={form.x}
+  onChange={(value) => update('x', value)}
+  suffix="m"
+  helper="Enter any section between 0 and L to get SF and BM at that point."
+  min="0"
+/>
 
                 {isPointCase && (
                   <NumberField
@@ -823,7 +1120,7 @@ export default function StructuralAnalysisPage() {
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-xl font-black text-white">Stage 1 Covers</h2>
+             <h2 className="text-xl font-black text-white">What This Tool Solves</h2>
 
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
                 <li>✓ Free body diagram style beam sketch</li>
@@ -832,11 +1129,12 @@ export default function StructuralAnalysisPage() {
                 <li>✓ Support reaction calculation</li>
                 <li>✓ SFD and BMD educational diagrams</li>
                 <li>✓ Formula and step-by-step solution</li>
+                  <li>✓ SFD and BMD key values table</li>
+<li>✓ Shear force and bending moment at any section x</li>
               </ul>
 
               <div className="mt-5 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm leading-6 text-slate-300">
-                Diagram/PDF download will be added later after all diagrams are stable.
-              </div>
+Useful for semester exams, assignments, practice questions and quick concept revision.              </div>
             </div>
           </aside>
 
@@ -865,6 +1163,7 @@ export default function StructuralAnalysisPage() {
               <SFDDiagram result={result} />
               <BMDDiagram result={result} />
             </div>
+                  <DiagramValuesTable result={result} sectionX={form.x} />
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
@@ -913,14 +1212,7 @@ export default function StructuralAnalysisPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-6">
-              <h2 className="text-2xl font-black text-white">Next Stage</h2>
-              <p className="mt-3 leading-8 text-slate-300">
-                Stage 2 me SFD/BMD ko aur detailed karenge: key ordinates table,
-                maximum bending moment location, zero shear point, point of
-                contraflexure concept, aur more load cases.
-              </p>
-            </div>
+            
           </section>
         </div>
       </section>
