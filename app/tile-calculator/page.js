@@ -1,517 +1,484 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title:
-    'Tile Calculator | Floor & Wall Tile Quantity Calculator | CivilCalc Pro',
+  title: 'Tile Calculator Online | Floor and Wall Tile Quantity Calculator',
   description:
-    'Use CivilCalc Pro Tile Calculator to estimate floor tiles, wall tiles, tile area, number of tiles, wastage, boxes and material quantity for construction and interior work.',
+    'Calculate floor tiles, wall tiles, tile area, number of tiles, wastage and tile quantity online with CivilCalc Pro Tile Calculator.',
+  keywords: [
+    'tile calculator',
+    'floor tile calculator',
+    'wall tile calculator',
+    'tile quantity calculator',
+    'tiles calculator India',
+    'construction tile calculator',
+    'flooring calculator',
+    'civil engineering calculator',
+    'construction calculator India',
+  ],
   alternates: {
-    canonical: 'https://civilcalcpro.in/tile-calculator',
+    canonical: 'https://www.civilcalcpro.in/tile-calculator',
   },
   openGraph: {
-    title: 'Tile Calculator | Floor & Wall Tile Quantity Calculator',
+    title: 'Tile Calculator Online | CivilCalc Pro',
     description:
-      'Calculate floor and wall tile quantity with area, tile size, wastage, boxes and practical construction examples.',
-    url: 'https://civilcalcpro.in/tile-calculator',
+      'Calculate number of tiles, flooring area, wall tile area, wastage and tile quantity for construction work.',
+    url: 'https://www.civilcalcpro.in/tile-calculator',
     siteName: 'CivilCalc Pro',
     type: 'article',
-    locale: 'en_US',
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Tile Calculator | Floor & Wall Tile Quantity Calculator',
+}
+
+const faqs = [
+  {
+    q: 'What is a tile calculator?',
+    a: 'A tile calculator is a construction calculator used to calculate the number of tiles required for floor tiles, wall tiles, bathroom tiles, kitchen tiles and other tiling work.',
+  },
+  {
+    q: 'What is the formula for tile quantity?',
+    a: 'Tile quantity is calculated by dividing total area by one tile area. Number of tiles = Total area / Area of one tile.',
+  },
+  {
+    q: 'How much wastage should be added for tiles?',
+    a: 'Usually 5% to 10% wastage is added for tile cutting, breakage and fitting. For diagonal patterns or complex layouts, wastage can be higher.',
+  },
+  {
+    q: 'Can this calculator be used for floor and wall tiles?',
+    a: 'Yes, this tile calculator can be used for floor tiles, wall tiles, bathroom tiles, kitchen tiles and general construction tiling work.',
+  },
+]
+
+export default function TileCalculatorArticle() {
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: 'Tile Calculator Online | Floor and Wall Tile Quantity Calculator',
     description:
-      'Estimate tiles required for floors and walls with tile size, room area, wastage and box quantity.',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-snippet': -1,
-      'max-image-preview': 'large',
-      'max-video-preview': -1,
+      'Complete guide to calculate tile quantity, tile area, number of tiles and wastage for floor and wall tiling work.',
+    author: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
     },
-  },
-}
+    publisher: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': 'https://www.civilcalcpro.in/tile-calculator',
+    },
+  }
 
-const pageUrl = 'https://civilcalcpro.in/tile-calculator'
-
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
-    {
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({
       '@type': 'Question',
-      name: 'What is a tile calculator?',
+      name: item.q,
       acceptedAnswer: {
         '@type': 'Answer',
-        text:
-          'A tile calculator helps estimate the number of tiles required for floor or wall work based on room area, tile size, wastage percentage and tile box quantity.',
+        text: item.a,
       },
-    },
-    {
-      '@type': 'Question',
-      name: 'How do you calculate number of tiles required?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text:
-          'Number of tiles required is calculated by dividing the total area by the area of one tile. Wastage is then added for cutting, breakage and site adjustment.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'What is the formula for tile quantity?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text:
-          'Tile quantity formula is: Number of tiles = Total area / Area of one tile. Final quantity = Number of tiles + wastage percentage.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'How much tile wastage should be added?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text:
-          'For normal tile work, 5% to 10% wastage is commonly added. For diagonal patterns, complex layouts or small cut pieces, higher wastage may be required.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Can tile calculator be used for wall tiles?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text:
-          'Yes, a tile calculator can be used for both floor tiles and wall tiles by entering the correct length, height or area of the surface.',
-      },
-    },
-  ],
-}
+    })),
+  }
 
-const articleSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'TechArticle',
-  headline: 'Tile Calculator for Floor and Wall Tile Quantity Estimation',
-  description:
-    'A practical guide to tile quantity calculation for floors and walls including area calculation, tile size, wastage, boxes and civil engineering examples.',
-  mainEntityOfPage: pageUrl,
-  url: pageUrl,
-  author: {
-    '@type': 'Organization',
-    name: 'CivilCalc Pro',
-    url: 'https://civilcalcpro.in',
-  },
-  publisher: {
-    '@type': 'Organization',
-    name: 'CivilCalc Pro',
-    url: 'https://civilcalcpro.in',
-  },
-  about: [
-    'Tile calculator',
-    'Floor tile quantity',
-    'Wall tile quantity',
-    'Construction material estimation',
-    'Interior work estimation',
-  ],
-}
+  const inputs = [
+    'Room length',
+    'Room width',
+    'Wall height',
+    'Tile length',
+    'Tile width',
+    'Number of rooms or walls',
+    'Wastage percentage',
+    'Unit system',
+  ]
 
-const breadcrumbSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: [
-    {
-      '@type': 'ListItem',
-      position: 1,
-      name: 'Home',
-      item: 'https://civilcalcpro.in',
-    },
-    {
-      '@type': 'ListItem',
-      position: 2,
-      name: 'Civil Engineering Calculators',
-      item: 'https://civilcalcpro.in/civil-engineering-calculators',
-    },
-    {
-      '@type': 'ListItem',
-      position: 3,
-      name: 'Tile Calculator',
-      item: pageUrl,
-    },
-  ],
-}
+  const useCases = [
+    'Floor tile quantity calculation',
+    'Wall tile quantity calculation',
+    'Bathroom tile estimation',
+    'Kitchen wall tile estimation',
+    'Room flooring calculation',
+    'Commercial flooring estimation',
+    'Tile purchase planning',
+    'BOQ preparation',
+    'Contractor billing',
+    'Civil engineering student practice',
+  ]
 
-export default function TileCalculatorPage() {
+  const tileSizes = [
+    ['300 mm × 300 mm', 'Small floor or wall tiles'],
+    ['600 mm × 600 mm', 'Common floor tile size'],
+    ['600 mm × 1200 mm', 'Large format floor or wall tiles'],
+    ['300 mm × 600 mm', 'Wall tiles and bathroom tiles'],
+    ['800 mm × 800 mm', 'Premium flooring tiles'],
+  ]
+
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+    <main className="min-h-screen bg-[#050B1F] text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(articleSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
       />
-
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbSchema),
-        }}
-      />
-
-      <div className="max-w-6xl mx-auto">
-        <p className="text-orange-400 font-semibold mb-3">
-          FLOORING ESTIMATION TOOL
+      <section className="mx-auto max-w-5xl px-5 py-16">
+        <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-400">
+          Civil Engineering Article
         </p>
 
-        <h1 className="text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-          Tile Calculator
+        <h1 className="max-w-4xl text-4xl font-extrabold leading-tight md:text-5xl">
+          Tile Calculator Online – Calculate Floor and Wall Tile Quantity
         </h1>
 
-        <p className="text-slate-300 text-lg lg:text-xl mb-8 leading-8 max-w-4xl">
-          Use the Tile Calculator to estimate floor tile and wall tile quantity
-          with room area, tile size, wastage percentage, number of tiles and tile
-          boxes. This guide is useful for civil engineers, contractors,
-          interior contractors, site engineers and homeowners.
+        <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+          Use CivilCalc Pro Tile Calculator to calculate number of tiles, floor tile
+          quantity, wall tile quantity, tile area and wastage for construction,
+          flooring, bathroom and kitchen tiling work.
         </p>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
+        <div className="mt-8 flex flex-wrap gap-4">
           <Link
             href="/dashboard/calculators/tile"
-            className="bg-orange-500 hover:bg-orange-600 transition px-6 py-4 rounded-xl font-semibold text-center"
+            className="rounded-xl bg-orange-500 px-6 py-3 font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
           >
-            Open Tile Calculator Tool
+            Open Tile Calculator
           </Link>
 
           <Link
-            href="/home-construction-cost-calculator"
-            className="bg-slate-900 hover:bg-slate-800 border border-slate-700 transition px-6 py-4 rounded-xl font-semibold text-center"
+            href="/"
+            className="rounded-xl border border-slate-700 px-6 py-3 font-bold text-slate-200 transition hover:border-orange-400 hover:text-orange-300"
           >
-            Home Construction Cost Calculator
+            Back to Home
           </Link>
         </div>
 
-        <section className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-6 lg:p-8 mb-10">
-          <h2 className="text-2xl lg:text-3xl font-bold text-white mb-4">
-            Quick Answer
-          </h2>
-
-          <p className="text-slate-200 leading-8 text-lg">
-            A <strong>tile calculator</strong> estimates the number of tiles
-            required by dividing the total surface area by the area of one tile.
-            After that, wastage is added for cutting, breakage and site
-            adjustment. It can be used for both floor tiles and wall tiles.
-          </p>
-        </section>
-
-        <section className="space-y-8">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
+        <article className="mt-12 space-y-10 text-slate-300">
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
               What is a Tile Calculator?
             </h2>
 
-            <p className="text-slate-300 leading-7">
-              A tile calculator is a construction estimation tool used to
-              calculate how many tiles are required for a floor, wall, bathroom,
-              kitchen, parking area, balcony or any tiled surface. It helps
-              reduce material shortage, over-ordering and cost estimation errors
-              before starting tile work.
+            <p className="leading-8">
+              A Tile Calculator is an online construction calculator used to calculate
+              the number of tiles required for flooring, wall tiling, bathroom tiles,
+              kitchen tiles and other finishing work. It helps users estimate tile
+              quantity before purchasing tiles for a project.
             </p>
-          </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
+            <p className="mt-4 leading-8">
+              CivilCalc Pro Tile Calculator helps civil engineers, contractors,
+              builders, interior workers, site engineers and homeowners calculate
+              tile quantity quickly by entering room size, tile size and wastage
+              percentage.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Why Tile Quantity Calculation is Important
+            </h2>
+
+            <p className="leading-8">
+              Tile quantity calculation is important because flooring and wall tiling
+              work requires accurate material planning. If tile quantity is calculated
+              incorrectly, the project may face shortage, extra wastage, wrong purchase
+              quantity or delay in finishing work.
+            </p>
+
+            <p className="mt-4 leading-8">
+              Accurate tile calculation helps in material purchase, cost estimation,
+              BOQ preparation, contractor billing and reducing tile wastage on site.
+              It also helps users decide how many boxes of tiles are required for a
+              room or wall.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Tile Area Formula
+            </h2>
+
+            <p className="leading-8">
+              The first step in tile calculation is calculating total floor or wall
+              area.
+            </p>
+
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
+                Total Area = Length × Width
+              </p>
+            </div>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Length = length of room, floor or wall</li>
+              <li>Width = width of floor or height of wall</li>
+              <li>Total Area = area where tiles will be installed</li>
+            </ul>
+
+            <p className="mt-4 leading-8">
+              For wall tiles, wall length and wall height are used. For floor tiles,
+              room length and room width are used.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
               Tile Quantity Formula
             </h2>
 
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 mb-5">
-              <p className="text-slate-200 font-mono leading-8">
-                Total Area = Length × Width
-                <br />
-                Area of One Tile = Tile Length × Tile Width
-                <br />
+            <p className="leading-8">
+              After calculating total area, tile quantity is calculated using area of
+              one tile.
+            </p>
+
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
                 Number of Tiles = Total Area / Area of One Tile
-                <br />
+              </p>
+            </div>
+
+            <p className="leading-8">
+              Area of one tile is calculated as:
+            </p>
+
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
+                Tile Area = Tile Length × Tile Width
+              </p>
+            </div>
+
+            <p className="leading-8">
+              After calculating tile quantity, wastage is added for cutting, breakage,
+              edge fitting and site handling.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Tile Wastage Calculation
+            </h2>
+
+            <p className="leading-8">
+              Tile wastage is added because tiles need cutting near corners, edges,
+              doors, columns and wall junctions. Some tiles may also break during
+              handling and installation.
+            </p>
+
+            <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+              <p className="text-xl font-bold text-orange-300">
                 Final Tiles = Number of Tiles + Wastage
               </p>
             </div>
 
-            <p className="text-slate-300 leading-7">
-              For wall tiles, use wall length and wall height to calculate wall
-              area. For floor tiles, use room length and room width to calculate
-              floor area.
+            <p className="leading-8">
+              For normal tile work, 5% to 10% wastage is commonly considered. For
+              diagonal patterns, complex layouts or large cutting areas, wastage may
+              be higher.
             </p>
-          </div>
+          </section>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 overflow-x-auto">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Common Tile Calculation Inputs
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Common Tile Sizes Used in Construction
             </h2>
 
-            <table className="w-full border-collapse text-left text-slate-300">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="py-3 pr-4 text-white">Input</th>
-                  <th className="py-3 pr-4 text-white">Meaning</th>
-                  <th className="py-3 pr-4 text-white">Example</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                <tr className="border-b border-slate-800">
-                  <td className="py-3 pr-4">Surface Length</td>
-                  <td className="py-3 pr-4">Length of floor or wall</td>
-                  <td className="py-3 pr-4">Room length = 12 ft</td>
-                </tr>
-
-                <tr className="border-b border-slate-800">
-                  <td className="py-3 pr-4">Surface Width / Height</td>
-                  <td className="py-3 pr-4">
-                    Width for floor or height for wall
-                  </td>
-                  <td className="py-3 pr-4">Room width = 10 ft</td>
-                </tr>
-
-                <tr className="border-b border-slate-800">
-                  <td className="py-3 pr-4">Tile Size</td>
-                  <td className="py-3 pr-4">Length and width of one tile</td>
-                  <td className="py-3 pr-4">2 ft × 2 ft</td>
-                </tr>
-
-                <tr className="border-b border-slate-800">
-                  <td className="py-3 pr-4">Wastage</td>
-                  <td className="py-3 pr-4">
-                    Extra tiles for cutting and breakage
-                  </td>
-                  <td className="py-3 pr-4">5% to 10%</td>
-                </tr>
-
-                <tr>
-                  <td className="py-3 pr-4">Tiles per Box</td>
-                  <td className="py-3 pr-4">Number of tiles in one box</td>
-                  <td className="py-3 pr-4">4 tiles per box</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Floor Tile Calculation
-              </h2>
-
-              <p className="text-slate-300 leading-7">
-                Floor tile calculation is used for bedrooms, halls, kitchens,
-                bathrooms, balconies, parking areas and commercial spaces. The
-                floor area is calculated using length and width, then divided by
-                the area of one tile.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Wall Tile Calculation
-              </h2>
-
-              <p className="text-slate-300 leading-7">
-                Wall tile calculation is commonly used for bathrooms, kitchens
-                and dado work. The wall area is calculated using wall length and
-                height. Door and window openings can be deducted if required.
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Practical Example
-            </h2>
-
-            <p className="text-slate-300 leading-7 mb-4">
-              Suppose a room size is 12 ft × 10 ft and tile size is 2 ft × 2 ft.
+            <p className="leading-8">
+              Tile size depends on design, location, flooring type and project
+              requirement. Some common tile sizes are:
             </p>
 
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-5">
-              <p className="text-slate-300 leading-8 font-mono">
-                Floor Area = 12 × 10 = 120 sq ft
-                <br />
-                One Tile Area = 2 × 2 = 4 sq ft
-                <br />
-                Tiles Required = 120 / 4 = 30 tiles
-                <br />
-                Add 10% Wastage = 3 tiles
-                <br />
-                Final Quantity = 33 tiles
-              </p>
+            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-800">
+              <table className="w-full border-collapse text-left">
+                <thead className="bg-slate-900">
+                  <tr>
+                    <th className="border-b border-slate-800 px-4 py-3 text-white">
+                      Tile Size
+                    </th>
+                    <th className="border-b border-slate-800 px-4 py-3 text-white">
+                      Common Use
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tileSizes.map((row) => (
+                    <tr key={row[0]} className="bg-slate-900/40">
+                      <td className="border-b border-slate-800 px-4 py-3">
+                        {row[0]}
+                      </td>
+                      <td className="border-b border-slate-800 px-4 py-3">
+                        {row[1]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          </section>
 
-            <p className="text-slate-300 leading-7 mt-4">
-              If one box contains 4 tiles, then boxes required = 33 / 4 = 8.25,
-              so you should order 9 boxes.
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Inputs Required for Tile Calculator
+            </h2>
+
+            <p className="leading-8">
+              To calculate tile quantity accurately, the following inputs are commonly
+              required:
             </p>
-          </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Recommended Wastage for Tile Work
-            </h2>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-5">
-                <h3 className="font-semibold text-orange-400 mb-2">
-                  Simple Layout
-                </h3>
-                <p className="text-slate-200 text-2xl font-bold">5%</p>
-                <p className="text-slate-400 mt-2 text-sm">
-                  Normal rectangular room
-                </p>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-5">
-                <h3 className="font-semibold text-orange-400 mb-2">
-                  Normal Work
-                </h3>
-                <p className="text-slate-200 text-2xl font-bold">10%</p>
-                <p className="text-slate-400 mt-2 text-sm">
-                  Common site practice
-                </p>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-5">
-                <h3 className="font-semibold text-orange-400 mb-2">
-                  Complex Layout
-                </h3>
-                <p className="text-slate-200 text-2xl font-bold">12%–15%</p>
-                <p className="text-slate-400 mt-2 text-sm">
-                  Diagonal pattern or many cuts
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-5">
-              Frequently Asked Questions
-            </h2>
-
-            <div className="space-y-5">
-              <div>
-                <h3 className="font-semibold text-white mb-2">
-                  What is a tile calculator?
-                </h3>
-                <p className="text-slate-300 leading-7">
-                  A tile calculator estimates the number of tiles required for a
-                  floor or wall surface based on area, tile size and wastage.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-white mb-2">
-                  How do you calculate tiles required?
-                </h3>
-                <p className="text-slate-300 leading-7">
-                  Calculate total area, calculate one tile area, then divide
-                  total area by one tile area. Add wastage to get final
-                  quantity.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-white mb-2">
-                  How much wastage should be added for tiles?
-                </h3>
-                <p className="text-slate-300 leading-7">
-                  Usually 5% to 10% wastage is added. For diagonal or complex
-                  layouts, 12% to 15% may be required.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-white mb-2">
-                  Can this be used for wall tiles?
-                </h3>
-                <p className="text-slate-300 leading-7">
-                  Yes, the same method can be used for wall tiles by calculating
-                  wall area using wall length and height.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Related Calculators
-            </h2>
-
-            <ul className="grid md:grid-cols-2 gap-3 text-slate-300">
-              <li>
-                <Link
-                  href="/home-construction-cost-calculator"
-                  className="text-orange-400 hover:text-orange-300"
-                >
-                  Home Construction Cost Calculator
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/plaster-calculator"
-                  className="text-orange-400 hover:text-orange-300"
-                >
-                  Plaster Calculator
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/paint-calculator"
-                  className="text-orange-400 hover:text-orange-300"
-                >
-                  Paint Calculator
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/unit-converter"
-                  className="text-orange-400 hover:text-orange-300"
-                >
-                  Unit Converter
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/boq-generator"
-                  className="text-orange-400 hover:text-orange-300"
-                >
-                  BOQ Generator
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/civil-engineering-calculators"
-                  className="text-orange-400 hover:text-orange-300"
-                >
-                  All Civil Engineering Calculators
-                </Link>
-              </li>
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              {inputs.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
-          </div>
+          </section>
 
-          <div className="mt-10 text-center">
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Example of Tile Quantity Calculation
+            </h2>
+
+            <p className="leading-8">
+              Suppose a room has length 12 ft and width 10 ft. Tile size is 2 ft × 2 ft.
+            </p>
+
+            <div className="my-6 rounded-2xl border border-slate-700 bg-slate-900 p-5 leading-8">
+              <p>Total floor area = 12 × 10</p>
+              <p>Total floor area = 120 sq ft</p>
+              <p>Area of one tile = 2 × 2</p>
+              <p>Area of one tile = 4 sq ft</p>
+              <p>Number of tiles = 120 / 4</p>
+              <p>Number of tiles = 30 tiles</p>
+              <p>Adding 10% wastage = 30 + 3</p>
+              <p>Final tiles required = 33 tiles</p>
+            </div>
+
+            <p className="leading-8">
+              So, approximately{' '}
+              <strong className="text-white">33 tiles</strong> are required for this
+              room after adding 10% wastage.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              How to Use CivilCalc Pro Tile Calculator
+            </h2>
+
+            <p className="leading-8">
+              Enter room length, room width, tile length, tile width and wastage
+              percentage. After entering the values, click on calculate. The tool will
+              show total area, area of one tile, number of tiles and final tile
+              quantity including wastage.
+            </p>
+
+            <p className="mt-4 leading-8">
+              This makes tile estimation faster and easier for civil engineers,
+              contractors, interior workers and construction professionals.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Where Tile Calculator is Used
+            </h2>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              {useCases.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Tile Calculator for Civil Engineers and Contractors
+            </h2>
+
+            <p className="leading-8">
+              Civil engineers and contractors need quick quantity calculation for
+              flooring and finishing work. CivilCalc Pro Tile Calculator is designed
+              for practical construction use. It helps users calculate tile quantity,
+              floor area and wastage without using repeated manual calculations.
+            </p>
+
+            <p className="mt-4 leading-8">
+              Whether you are preparing BOQ, checking contractor bills, planning tile
+              purchase or estimating flooring cost, this calculator helps you get
+              quick and clear results.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">
+              Benefits of CivilCalc Pro Tile Calculator
+            </h2>
+
+            <ul className="list-disc space-y-2 pl-6 leading-8">
+              <li>Fast floor tile quantity calculation</li>
+              <li>Useful for wall tile and bathroom tile estimation</li>
+              <li>Calculates total tile area and number of tiles</li>
+              <li>Adds wastage for cutting and breakage</li>
+              <li>Useful for BOQ preparation and billing</li>
+              <li>Reduces material shortage and extra wastage</li>
+              <li>Helpful for engineers, contractors and homeowners</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-4 text-3xl font-bold text-white">Conclusion</h2>
+
+            <p className="leading-8">
+              Tile quantity calculation is an important part of flooring and finishing
+              work. CivilCalc Pro Tile Calculator helps civil engineers, contractors,
+              builders and homeowners calculate number of tiles, total area and
+              wastage quickly.
+            </p>
+
+            <p className="mt-4 leading-8">
+              For better tile purchase planning, BOQ preparation and flooring
+              estimation, use CivilCalc Pro Tile Calculator before starting tile work
+              on site.
+            </p>
+          </section>
+
+          <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-slate-900 p-6">
+            <h2 className="text-2xl font-extrabold text-white">
+              Calculate Tile Quantity Instantly
+            </h2>
+
+            <p className="mt-3 leading-8 text-slate-300">
+              Open CivilCalc Pro Tile Calculator and calculate floor tiles, wall
+              tiles, total area and wastage for your construction project.
+            </p>
+
             <Link
               href="/dashboard/calculators/tile"
-              className="inline-block border border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white transition px-6 py-3 rounded-xl font-semibold"
+              className="mt-5 inline-flex rounded-xl bg-orange-500 px-6 py-3 font-bold text-white transition hover:bg-orange-600"
             >
-              Open Tile Calculator Tool
+              Use Tile Calculator
             </Link>
           </div>
-        </section>
-      </div>
+
+          <section>
+            <h2 className="mb-6 text-3xl font-bold text-white">FAQs</h2>
+
+            <div className="space-y-5">
+              {faqs.map((item) => (
+                <div
+                  key={item.q}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5"
+                >
+                  <h3 className="text-xl font-bold text-white">{item.q}</h3>
+                  <p className="mt-2 leading-8 text-slate-300">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </article>
+      </section>
     </main>
   )
 }
