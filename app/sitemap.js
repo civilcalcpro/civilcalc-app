@@ -67,10 +67,11 @@ export default function sitemap() {
   priority: 0.8,
   changeFrequency: 'monthly',
 },
-    {
-  path: '/tile-calculator',
-  priority: 0.8,
-  changeFrequency: 'monthly',
+  {
+  url: `${baseUrl}/tile-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.84,
 },
     {
   path: '/paint-calculator',
