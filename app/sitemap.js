@@ -73,10 +73,11 @@ export default function sitemap() {
   changeFrequency: 'weekly',
   priority: 0.84,
 },
-    {
-  path: '/paint-calculator',
-  priority: 0.8,
-  changeFrequency: 'monthly',
+   {
+  url: `${baseUrl}/paint-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.84,
 },
     {
       path: '/beam-design',
