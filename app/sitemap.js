@@ -32,11 +32,12 @@ export default function sitemap() {
       priority: 0.9,
       changeFrequency: 'weekly',
     },
-    {
-      path: '/quantity-estimation-calculators',
-      priority: 0.9,
-      changeFrequency: 'weekly',
-    },
+   {
+  url: `${baseUrl}/quantity-estimation-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
     {
       path: '/reinforcement-calculators',
       priority: 0.9,
