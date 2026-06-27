@@ -1,385 +1,305 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 export const metadata = {
-  title: "Excavation Calculator | Earthwork Quantity | CivilCalc Pro",
+  title: 'Excavation Calculator Online | Earthwork Quantity Calculator',
   description:
-    "Free online excavation calculator for civil engineers and contractors. Calculate earthwork quantity, excavation volume, cutting volume, filling volume and construction cost estimation.",
+    'Use CivilCalc Pro Excavation Calculator to calculate earthwork quantity, excavation volume, trench excavation, foundation excavation and construction earthwork in m³ or ft³.',
+  keywords: [
+    'excavation calculator',
+    'earthwork calculator',
+    'earthwork quantity calculator',
+    'excavation quantity calculator',
+    'foundation excavation calculator',
+    'trench excavation calculator',
+    'civil engineering calculator',
+    'construction calculator India',
+  ],
   alternates: {
-    canonical: "https://civilcalcpro.in/excavation-calculator",
+    canonical: 'https://www.civilcalcpro.in/excavation-calculator',
   },
   openGraph: {
-    title: "Excavation Calculator | Earthwork Quantity | CivilCalc Pro",
+    title: 'Excavation Calculator Online | CivilCalc Pro',
     description:
-      "Free online excavation calculator for civil engineers and contractors. Calculate earthwork quantity, excavation volume, cutting volume, filling volume and construction cost estimation.",
-    url: "https://civilcalcpro.in/excavation-calculator",
-    siteName: "CivilCalc Pro",
-    type: "website",
-    locale: "en_US",
+      'Calculate excavation quantity, earthwork volume, foundation excavation and trench excavation online with CivilCalc Pro.',
+    url: 'https://www.civilcalcpro.in/excavation-calculator',
+    siteName: 'CivilCalc Pro',
+    type: 'article',
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Excavation Calculator | Earthwork Quantity | CivilCalc Pro",
-    description:
-      "Free online excavation calculator for civil engineers and contractors. Calculate earthwork quantity, excavation volume, cutting volume, filling volume and construction cost estimation.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-snippet": -1,
-      "max-image-preview": "large",
-      "max-video-preview": -1,
-    },
-  },
-};
+}
 
-export default function ExcavationCalculatorPage() {
+const faqs = [
+  {
+    q: 'What is an excavation calculator?',
+    a: 'An excavation calculator is a civil engineering tool used to calculate the quantity of earthwork required for foundation, trench, basement, roadwork and other construction activities.',
+  },
+  {
+    q: 'What is the formula for excavation quantity?',
+    a: 'The basic excavation formula is Length × Width × Depth. The answer is usually measured in cubic meter or cubic feet.',
+  },
+  {
+    q: 'In which unit is excavation measured?',
+    a: 'Excavation is generally measured in cubic meter, cubic feet or brass depending on the project and local measurement practice.',
+  },
+  {
+    q: 'Who can use this excavation calculator?',
+    a: 'Civil engineers, contractors, site engineers, estimators, builders and civil engineering students can use this excavation calculator.',
+  },
+]
+
+export default function ExcavationCalculatorArticle() {
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: 'Excavation Calculator Online | Earthwork Quantity Calculator',
+    description:
+      'Complete guide to calculate excavation quantity and earthwork volume for construction projects.',
+    author: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'CivilCalc Pro',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': 'https://www.civilcalcpro.in/excavation-calculator',
+    },
+  }
+
   const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "How is excavation quantity calculated?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Excavation quantity is calculated by multiplying excavation length, width and depth. The formula is length multiplied by width multiplied by depth.",
-        },
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
       },
-      {
-        "@type": "Question",
-        name: "What is the formula for excavation volume?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "The basic excavation volume formula is length multiplied by width multiplied by depth. The result gives excavation quantity in cubic meters when dimensions are entered in meters.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How do you calculate earthwork quantity?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Earthwork quantity is calculated by measuring the length, width and depth of excavation or filling and multiplying these dimensions to get volume.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Where is excavation calculation used?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Excavation calculation is used for foundation excavation, trench work, basement excavation, road cutting and filling, pipeline work and site leveling.",
-        },
-      },
-    ],
-  };
+    })),
+  }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-6 py-16">
+    <main className="min-h-screen bg-[#050B1F] text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqSchema),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-5xl font-bold mb-6">
-          Excavation Calculator
-        </h1>
-
-        <p className="text-slate-300 text-lg mb-10">
-          Free online excavation calculator for civil engineers, contractors,
-          and site engineers. Calculate earthwork quantity, excavation volume,
-          cutting volume, filling volume, and construction cost estimation.
-        </p>
-
-        <Link
-          href="/login?redirect=/dashboard/calculators/excavation"
-          className="inline-block bg-orange-500 hover:bg-orange-600 transition px-6 py-3 rounded-xl font-semibold mb-16"
-        >
-          Open Excavation Calculator
-        </Link>
-
-        <section className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-8 mb-12">
-          <p className="text-orange-400 font-semibold mb-3">
-            QUICK ANSWER
+      <section className="mx-auto max-w-5xl px-5 py-16">
+        <div className="mb-8">
+          <p className="mb-3 text-sm font-bold uppercase tracking-wider text-orange-400">
+            Civil Engineering Article
           </p>
 
-          <h2 className="text-3xl font-bold mb-5">
-            How to calculate excavation quantity?
-          </h2>
+          <h1 className="max-w-4xl text-4xl font-extrabold leading-tight md:text-5xl">
+            Excavation Calculator Online – Calculate Earthwork Quantity for Construction
+          </h1>
 
-          <p className="text-slate-300 leading-8 mb-4">
-            Excavation quantity is calculated by multiplying excavation length,
-            width and depth. The result gives earthwork excavation volume in
-            cubic meters. For trenches, footings and foundation pits, the same
-            basic formula is used with the required dimensions.
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+            Use CivilCalc Pro Excavation Calculator to calculate excavation quantity,
+            earthwork volume, foundation excavation, trench excavation and construction
+            earthwork in cubic meter or cubic feet.
           </p>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 my-6">
-            <p className="text-xl font-bold text-white mb-2">
-              Excavation Volume = Length × Width × Depth
-            </p>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link
+              href="/dashboard/calculators/excavation"
+              className="rounded-xl bg-orange-500 px-6 py-3 font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+            >
+              Open Excavation Calculator
+            </Link>
 
-            <p className="text-slate-400">
-              Length, width and depth should be entered in the same unit.
-            </p>
-          </div>
+            <Link
 
-          <div className="overflow-x-auto mt-6">
-            <table className="w-full border border-slate-800 text-left">
-              <thead className="bg-slate-900">
-                <tr>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Item
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Formula / Value
-                  </th>
-                  <th className="border border-slate-800 p-3 text-white">
-                    Example Result
-                  </th>
-                </tr>
-              </thead>
 
-              <tbody className="text-slate-300">
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Excavation Length
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    L
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    10 m
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Excavation Width
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    W
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    1.2 m
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Excavation Depth
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    D
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    1.5 m
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    Excavation Volume
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    10 × 1.2 × 1.5
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    18 m³
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="border border-slate-800 p-3">
-                    With 10% Extra
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    18 × 1.10
-                  </td>
-                  <td className="border border-slate-800 p-3">
-                    19.8 m³
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p className="text-slate-400 leading-7 mt-5">
-            Example: If excavation length is 10 m, width is 1.2 m and depth is
-            1.5 m, excavation quantity is 10 × 1.2 × 1.5 = 18 m³. Extra quantity
-            can be added for working space, side slope, soil bulking or site
-            condition.
-          </p>
-        </section>
-
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Features
-            </h2>
-
-            <ul className="space-y-3 text-slate-300">
-              <li>• Excavation volume calculation</li>
-              <li>• Earthwork quantity estimation</li>
-              <li>• Cutting and filling volume calculation</li>
-              <li>• Foundation excavation planning</li>
-              <li>• Construction cost estimation</li>
-              <li>• Site quantity analysis</li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-4">
-              Why Use CivilCalc Pro?
-            </h2>
-
-            <p className="text-slate-300 leading-8">
-              CivilCalc Pro helps engineers and contractors calculate excavation
-              quantities quickly using professional construction estimation
-              tools. Useful for site engineers, quantity surveyors, contractors,
-              and construction professionals.
-            </p>
+              href="/articles"
+              className="rounded-xl border border-slate-700 px-6 py-3 font-bold text-slate-200 transition hover:border-orange-400 hover:text-orange-300"
+            >
+              View More Articles
+            </Link>
           </div>
         </div>
 
-        <section className="mt-16 space-y-8">
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Excavation Volume Formula
-            </h2>
+        <article className="prose prose-invert prose-slate max-w-none">
+          <h2>What is an Excavation Calculator?</h2>
 
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-orange-400 font-mono text-lg">
-              Volume = Length × Width × Depth
-            </div>
+          <p>
+            An Excavation Calculator is an online civil engineering tool used to
+            calculate the quantity of earthwork required for construction work. In
+            any building, road, drainage, foundation or infrastructure project,
+            excavation is one of the first activities on site.
+          </p>
 
-            <p className="text-slate-300 mt-4">
-              Excavation quantity is generally calculated by multiplying length,
-              width, and depth of the excavated area.
-            </p>
-          </div>
+          <p>
+            CivilCalc Pro Excavation Calculator helps civil engineers, contractors,
+            estimators, builders and site engineers calculate excavation volume
+            quickly by entering length, width and depth.
+          </p>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              What is an Excavation Calculator?
-            </h2>
+          <h2>Why Excavation Quantity Calculation is Important</h2>
 
-            <p className="text-slate-300 leading-7 mb-4">
-              An Excavation Calculator is used to estimate the quantity of
-              earthwork required for foundations, trenches, basements, pits,
-              roadwork, and site preparation. It helps civil engineers and
-              contractors calculate excavation volume before starting
-              construction work.
-            </p>
+          <p>
+            Excavation quantity calculation is required before starting foundation
+            work, footing work, basement work, trench work or roadwork. Accurate
+            earthwork quantity helps in cost estimation, labour planning, machine
+            planning, truck load planning and contractor billing.
+          </p>
 
-            <p className="text-slate-300 leading-7">
-              Accurate excavation quantity estimation helps control project
-              cost, plan machinery, estimate labour, and reduce material
-              handling errors at construction sites.
-            </p>
-          </div>
+          <p>
+            If excavation quantity is calculated incorrectly, the project may face
+            extra cost, soil disposal issues, wrong billing or delay in construction
+            work. That is why every civil engineer and contractor should calculate
+            earthwork quantity before execution.
+          </p>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Common Uses of Excavation Calculation
-            </h2>
+          <h2>Excavation Formula</h2>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>Foundation excavation</li>
-              <li>Trench excavation</li>
-              <li>Basement excavation</li>
-              <li>Road cutting and filling</li>
-              <li>Pipeline trench work</li>
-              <li>Site leveling and earthwork estimation</li>
-            </ul>
-          </div>
+          <p>The basic formula for excavation quantity is:</p>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Excavation Calculation Example
-            </h2>
-
-            <p className="text-slate-300 leading-7">
-              Consider an excavation pit with:
-            </p>
-
-            <ul className="list-disc pl-6 space-y-2 text-slate-300 mt-4">
-              <li>Length = 10 m</li>
-              <li>Width = 5 m</li>
-              <li>Depth = 2 m</li>
-            </ul>
-
-            <p className="text-slate-300 leading-7 mt-4">
+          <div className="my-6 rounded-2xl border border-orange-500/30 bg-slate-900 p-5">
+            <p className="text-xl font-bold text-orange-300">
               Excavation Volume = Length × Width × Depth
-              <br />
-              Volume = 10 × 5 × 2
-              <br />
-              Volume = 100 m³
             </p>
           </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Benefits of Accurate Excavation Estimation
-            </h2>
+          <p>Where:</p>
 
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>Improves earthwork cost estimation</li>
-              <li>Helps plan labour and machinery</li>
-              <li>Reduces site measurement errors</li>
-              <li>Supports contractor billing and BOQ preparation</li>
-              <li>Improves project scheduling</li>
-              <li>Reduces wastage and rework</li>
-            </ul>
+          <ul>
+            <li>
+              <strong>Length</strong> = total excavation length
+            </li>
+            <li>
+              <strong>Width</strong> = excavation width
+            </li>
+            <li>
+              <strong>Depth</strong> = excavation depth
+            </li>
+            <li>
+              <strong>Excavation Volume</strong> = final earthwork quantity
+            </li>
+          </ul>
+
+          <p>
+            The final answer is usually shown in cubic meter, cubic feet or brass
+            depending on site requirement.
+          </p>
+
+          <h2>Example of Excavation Calculation</h2>
+
+          <p>
+            Suppose excavation length is 10 m, width is 4 m and depth is 1.5 m.
+          </p>
+
+          <div className="my-6 rounded-2xl border border-slate-700 bg-slate-900 p-5">
+            <p>Excavation Volume = 10 × 4 × 1.5</p>
+            <p>Excavation Volume = 60 m³</p>
           </div>
 
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Related Calculators
+          <p>
+            So, the total excavation quantity is <strong>60 cubic meter</strong>.
+          </p>
+
+          <h2>How to Use CivilCalc Pro Excavation Calculator</h2>
+
+          <p>
+            Using the Excavation Calculator is simple. Enter the length, width and
+            depth of the excavation area. Select the required unit and click on the
+            calculate button. The tool will instantly show total excavation quantity.
+          </p>
+
+          <p>
+            This helps site engineers and contractors avoid repeated manual
+            calculation and reduces mistakes in site estimation.
+          </p>
+
+          <h2>Where Excavation Calculator is Used</h2>
+
+          <ul>
+            <li>Foundation excavation</li>
+            <li>Footing excavation</li>
+            <li>Trench excavation</li>
+            <li>Basement excavation</li>
+            <li>Roadwork earthwork</li>
+            <li>Drainage and pipeline excavation</li>
+            <li>Site quantity estimation</li>
+            <li>Contractor billing</li>
+            <li>BOQ preparation</li>
+            <li>Civil engineering student practice</li>
+          </ul>
+
+          <h2>Excavation Calculator for Civil Engineers and Contractors</h2>
+
+          <p>
+            Civil engineers and contractors need fast and accurate quantity
+            calculation on site. CivilCalc Pro Excavation Calculator is designed for
+            practical construction use. It helps users calculate excavation quantity
+            without complex formulas or spreadsheet work.
+          </p>
+
+          <p>
+            Whether you are working on a residential building, commercial project,
+            roadwork, drainage work or foundation work, this tool can help you
+            calculate earthwork quantity quickly.
+          </p>
+
+          <h2>Benefits of CivilCalc Pro Excavation Calculator</h2>
+
+          <ul>
+            <li>Fast earthwork quantity calculation</li>
+            <li>Simple input and clear output</li>
+            <li>Useful for site engineers and contractors</li>
+            <li>Helps in project cost estimation</li>
+            <li>Reduces manual calculation mistakes</li>
+            <li>Useful for billing and BOQ preparation</li>
+            <li>Works for foundation, trench and basement excavation</li>
+          </ul>
+
+          <h2>Conclusion</h2>
+
+          <p>
+            Excavation calculation is one of the most important steps in
+            construction estimation. CivilCalc Pro Excavation Calculator helps civil
+            engineers, contractors, site engineers and students calculate earthwork
+            quantity quickly and accurately.
+          </p>
+
+          <p>
+            For better site planning, cost estimation and billing, use CivilCalc Pro
+            Excavation Calculator before starting excavation work.
+          </p>
+
+          <div className="not-prose my-10 rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 to-slate-900 p-6">
+            <h2 className="text-2xl font-extrabold text-white">
+              Calculate Excavation Quantity Instantly
             </h2>
-
-            <ul className="list-disc pl-6 space-y-2 text-slate-300">
-              <li>
-                <Link href="/concrete-volume-calculator">
-                  Concrete Volume Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/footing-design">
-                  Footing Design Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/brickwork-calculator">
-                  Brickwork Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/plaster-calculator">
-                  Plaster Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="/steel-weight-calculator">
-                  Steel Weight Calculator
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="mt-10 text-center">
+            <p className="mt-3 text-slate-300">
+              Open CivilCalc Pro Excavation Calculator and calculate earthwork
+              quantity for your construction project.
+            </p>
             <Link
-              href="/civil-engineering-calculators"
-              className="inline-block border border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white transition px-6 py-3 rounded-xl font-semibold"
+              href="/dashboard/calculators/excavation"
+              className="mt-5 inline-flex rounded-xl bg-orange-500 px-6 py-3 font-bold text-white transition hover:bg-orange-600"
             >
-              View All Civil Engineering Calculators
+              Use Excavation Calculator
             </Link>
           </div>
-        </section>
-      </div>
+
+          <h2>FAQs</h2>
+
+          {faqs.map((item) => (
+            <div key={item.q}>
+              <h3>{item.q}</h3>
+              <p>{item.a}</p>
+            </div>
+          ))}
+        </article>
+      </section>
     </main>
-  );
+  )
 }
