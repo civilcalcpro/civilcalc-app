@@ -33,6 +33,8 @@ import { db } from '@/lib/firebase'
 import { supabase } from '@/lib/supabase'
 
 const LABOUR_PROFILE_KEY = 'civilcalc_site_diary_labour_profile_v2'
+const MAX_PHOTO_SIZE = 2 * 1024 * 1024
+const MAX_PHOTO_DIMENSION = 1800
 
 const emptyOwnerForm = {
   siteName: '',
@@ -120,7 +122,93 @@ function toMillis(value) {
 function sortNewest(items) {
   return [...items].sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
 }
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
 
+    reader.onload = () => {
+      const image = new Image()
+
+      image.onload = () => resolve(image)
+      image.onerror = () => reject(new Error('Unable to read image file. Please use JPG, PNG or WEBP.'))
+
+      image.src = reader.result
+    }
+
+    reader.onerror = () => reject(new Error('Unable to read image file.'))
+    reader.readAsDataURL(file)
+  })
+}
+
+function canvasToJpegBlob(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('Image compression failed.'))
+      },
+      'image/jpeg',
+      quality
+    )
+  })
+}
+
+async function compressImageToUnder2MB(file) {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Only image files are allowed.')
+  }
+
+  if (file.size <= MAX_PHOTO_SIZE) {
+    return file
+  }
+
+  const image = await loadImageFromFile(file)
+
+  let quality = 0.82
+  let maxDimension = MAX_PHOTO_DIMENSION
+  let finalBlob = null
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const scale = Math.min(1, maxDimension / Math.max(image.width, image.height))
+    const width = Math.max(1, Math.round(image.width * scale))
+    const height = Math.max(1, Math.round(image.height * scale))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+
+    const context = canvas.getContext('2d')
+    context.drawImage(image, 0, 0, width, height)
+
+    const blob = await canvasToJpegBlob(canvas, quality)
+    finalBlob = blob
+
+    if (blob.size <= MAX_PHOTO_SIZE) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '')
+      return new File([blob], `${cleanName}-compressed.jpg`, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      })
+    }
+
+    if (quality > 0.45) {
+      quality -= 0.12
+    } else {
+      maxDimension = Math.floor(maxDimension * 0.75)
+      quality = 0.78
+    }
+  }
+
+  if (finalBlob && finalBlob.size <= MAX_PHOTO_SIZE) {
+    const cleanName = file.name.replace(/\.[^/.]+$/, '')
+    return new File([finalBlob], `${cleanName}-compressed.jpg`, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    })
+  }
+
+  throw new Error('Photo is too large to compress. Please try another image.')
+}
 function calculateMaterialCost(report, site) {
   return (
     num(report.cementBags) * num(site.cementRate) +
@@ -522,18 +610,39 @@ export default function SiteDiaryPage() {
     }
   }
 
-  const handlePhotoUpload = (files) => {
-    const selected = Array.from(files || []).slice(0, 3)
-    const validFiles = selected.filter((file) => file.size <= 2 * 1024 * 1024)
+const handlePhotoUpload = async (files) => {
+  const selected = Array.from(files || []).slice(0, 3)
 
-    if (validFiles.length !== selected.length) {
-      showMessage('Each photo should be under 2 MB. Large photos were skipped.')
-    }
-
-    setPhotoFiles(validFiles)
-    setPhotoPreviews(validFiles.map((file) => URL.createObjectURL(file)))
+  if (!selected.length) {
+    setPhotoFiles([])
+    setPhotoPreviews([])
+    return
   }
 
+  setLoading(true)
+
+  try {
+    photoPreviews.forEach((url) => URL.revokeObjectURL(url))
+
+    const compressedFiles = []
+
+    for (const file of selected) {
+      const compressedFile = await compressImageToUnder2MB(file)
+      compressedFiles.push(compressedFile)
+    }
+
+    setPhotoFiles(compressedFiles)
+    setPhotoPreviews(compressedFiles.map((file) => URL.createObjectURL(file)))
+
+    showMessage('Photos compressed successfully and ready to upload.')
+  } catch (error) {
+    setPhotoFiles([])
+    setPhotoPreviews([])
+    showMessage(error?.message || 'Photo compression failed.')
+  } finally {
+    setLoading(false)
+  }
+}
 const uploadPhotos = async (reportId) => {
   const uploaded = []
 
@@ -1212,7 +1321,7 @@ const uploadPhotos = async (reportId) => {
 
             <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
               <label className="block text-sm font-medium text-slate-300">
-                Upload Site Photos - max 3, each under 2 MB
+              Upload Site Photos - max 3.
               </label>
 
               <input
