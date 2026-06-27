@@ -446,7 +446,334 @@ function getKeyRows(result) {
     }
   })
 }
+function cleanHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
+}
 
+function buildPlainReport(result, form) {
+  const keyRows = getKeyRows(result)
+
+  const loadSummary = result.resultants
+    .map((item, index) => {
+      const moment =
+        item.load.type === 'moment'
+          ? `${fmt(getMomentSign(item.load) * item.load.M)} kN·m`
+          : `${fmt(item.W * item.xBar)} kN·m`
+
+      return `${index + 1}. ${item.label}
+   Resultant W: ${item.load.type === 'moment' ? '-' : `${fmt(item.W)} kN`}
+   Location x̄: ${fmt(item.xBar)} m
+   Moment: ${moment}`
+    })
+    .join('\n\n')
+
+  const keyValues = keyRows
+    .map(
+      (row) =>
+        `${row.point} | x = ${fmt(row.x)} m | SF = ${fmt(row.shear)} kN | BM = ${fmt(row.moment)} kN·m`
+    )
+    .join('\n')
+
+  return `
+${form.reportTitle || 'Structural Analysis Report'}
+Prepared By: ${form.preparedBy || '-'}
+Beam Type: ${result.beamType === 'simple' ? 'Simply Supported Beam' : 'Cantilever Beam'}
+Span L: ${fmt(result.L)} m
+
+RESULT SUMMARY
+${result.summary.map((item) => `${item.label}: ${item.value}`).join('\n')}
+
+LOAD RESULTANT SUMMARY
+${loadSummary}
+
+SFD & BMD KEY VALUES
+${keyValues}
+
+FORMULAS USED
+${result.formulas.map((formula, index) => `${index + 1}. ${formula}`).join('\n')}
+
+STEP-BY-STEP SOLUTION
+${result.steps.map((step, index) => `${index + 1}. ${step}`).join('\n')}
+
+FINAL ANSWER
+${result.examAnswer}
+`.trim()
+}
+
+function copyToClipboard(text, message) {
+  if (typeof window === 'undefined') return
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text)
+    alert(message)
+    return
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.focus()
+  textarea.select()
+  document.execCommand('copy')
+  document.body.removeChild(textarea)
+
+  alert(message)
+}
+
+function buildReportHtml(result, form) {
+  const keyRows = getKeyRows(result)
+  const title = form.reportTitle || 'Structural Analysis Report'
+
+  const summaryRows = result.summary
+    .map(
+      (item) => `
+        <tr>
+          <td>${cleanHtml(item.label)}</td>
+          <td><strong>${cleanHtml(item.value)}</strong></td>
+        </tr>
+      `
+    )
+    .join('')
+
+  const loadRows = result.resultants
+    .map((item, index) => {
+      const W = item.load.type === 'moment' ? '-' : `${fmt(item.W)} kN`
+      const moment =
+        item.load.type === 'moment'
+          ? `${fmt(getMomentSign(item.load) * item.load.M)} kN·m`
+          : `${fmt(item.W * item.xBar)} kN·m`
+
+      return `
+        <tr>
+          <td>${index + 1}. ${cleanHtml(item.label)}</td>
+          <td>${cleanHtml(W)}</td>
+          <td>${fmt(item.xBar)} m</td>
+          <td>${cleanHtml(moment)}</td>
+        </tr>
+      `
+    })
+    .join('')
+
+  const keyRowsHtml = keyRows
+    .map(
+      (row) => `
+        <tr>
+          <td>${cleanHtml(row.point)}</td>
+          <td>${fmt(row.x)} m</td>
+          <td>${fmt(row.shear)} kN</td>
+          <td>${fmt(row.moment)} kN·m</td>
+        </tr>
+      `
+    )
+    .join('')
+
+  const formulasHtml = result.formulas
+    .map((formula) => `<li>${cleanHtml(formula)}</li>`)
+    .join('')
+
+  const stepsHtml = result.steps
+    .map((step, index) => `<li><strong>Step ${index + 1}:</strong> ${cleanHtml(step)}</li>`)
+    .join('')
+
+  return `
+<!doctype html>
+<html>
+<head>
+  <title>${cleanHtml(title)}</title>
+  <meta charset="utf-8" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      color: #111827;
+      margin: 0;
+      padding: 28px;
+      background: #ffffff;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      border-bottom: 4px solid #f97316;
+      padding-bottom: 18px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      color: #0f172a;
+    }
+
+    .sub {
+      margin-top: 8px;
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    h2 {
+      margin-top: 28px;
+      margin-bottom: 10px;
+      color: #0f172a;
+      font-size: 20px;
+      border-left: 5px solid #f97316;
+      padding-left: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th {
+      background: #0f172a;
+      color: white;
+      text-align: left;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+    }
+
+    td {
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
+    }
+
+    .answer {
+      margin-top: 12px;
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      padding: 14px;
+      border-radius: 10px;
+      line-height: 1.7;
+      font-weight: 600;
+    }
+
+    li {
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+
+    .footer {
+      margin-top: 30px;
+      padding-top: 12px;
+      border-top: 1px solid #cbd5e1;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    @media print {
+      body {
+        padding: 16px;
+      }
+
+      .page {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1>${cleanHtml(title)}</h1>
+      <div class="sub">
+        Prepared By: ${cleanHtml(form.preparedBy || '-')}<br/>
+        Beam Type: ${result.beamType === 'simple' ? 'Simply Supported Beam' : 'Cantilever Beam'}<br/>
+        Span L: ${fmt(result.L)} m
+      </div>
+    </div>
+
+    <h2>Result Summary</h2>
+    <table>
+      <tbody>
+        ${summaryRows}
+      </tbody>
+    </table>
+
+    <h2>Load Resultant Summary</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Load</th>
+          <th>Resultant W</th>
+          <th>Location x̄</th>
+          <th>Moment About A / Fixed</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${loadRows}
+      </tbody>
+    </table>
+
+    <h2>SFD & BMD Key Values</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Point</th>
+          <th>x Location</th>
+          <th>Shear Force</th>
+          <th>Bending Moment</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${keyRowsHtml}
+      </tbody>
+    </table>
+
+    <h2>Formulas Used</h2>
+    <ol>${formulasHtml}</ol>
+
+    <h2>Step-by-Step Solution</h2>
+    <ol>${stepsHtml}</ol>
+
+    <h2>Final Answer</h2>
+    <div class="answer">${cleanHtml(result.examAnswer)}</div>
+
+    <div class="footer">
+      Generated using CivilCalc Pro Structural Analysis Calculator.
+    </div>
+  </div>
+</body>
+</html>
+`
+}
+
+function printReport(result, form) {
+  if (typeof window === 'undefined') return
+
+  const reportWindow = window.open('', '_blank', 'width=1000,height=800')
+
+  if (!reportWindow) {
+    alert('Popup blocked. Please allow popups for this site and try again.')
+    return
+  }
+
+  reportWindow.document.open()
+  reportWindow.document.write(buildReportHtml(result, form))
+  reportWindow.document.close()
+
+  setTimeout(() => {
+    reportWindow.focus()
+    reportWindow.print()
+  }, 500)
+}
 function NumberField({ label, value, onChange, suffix, helper, min = 0, step = 'any' }) {
   return (
     <label className="block">
@@ -472,7 +799,23 @@ function NumberField({ label, value, onChange, suffix, helper, min = 0, step = '
     </label>
   )
 }
+function TextField({ label, value, onChange, helper, placeholder }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
 
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none placeholder:text-slate-500"
+      />
+
+      {helper && <p className="mt-2 text-xs leading-5 text-slate-500">{helper}</p>}
+    </label>
+  )
+}
 function SelectField({ label, value, onChange, children, helper }) {
   return (
     <label className="block">
@@ -1036,14 +1379,57 @@ function FormulaLibrary() {
     </div>
   )
 }
+function ActionButtons({ result, form }) {
+  const plainReport = buildPlainReport(result, form)
 
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-white">Export & Share</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Copy answer, copy full solution, or print/save the report as PDF.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => copyToClipboard(result.examAnswer, 'Final answer copied.')}
+            className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm font-black text-sky-200 hover:bg-sky-500/20"
+          >
+            Copy Answer
+          </button>
+
+          <button
+            type="button"
+            onClick={() => copyToClipboard(plainReport, 'Full solution copied.')}
+            className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm font-black text-orange-200 hover:bg-orange-500/20"
+          >
+            Copy Solution
+          </button>
+
+          <button
+            type="button"
+            onClick={() => printReport(result, form)}
+            className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-white hover:bg-orange-600"
+          >
+            Print / Save PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 export default function StructuralAnalysisPage() {
-  const [form, setForm] = useState({
-    beamType: 'simple',
-    L: 6,
-    x: 3,
-    loads: defaultLoads,
-  })
+ const [form, setForm] = useState({
+  reportTitle: 'Combined Beam Loading Analysis',
+  preparedBy: '',
+  beamType: 'simple',
+  L: 6,
+  x: 3,
+  loads: defaultLoads,
+})
 
   const result = useMemo(() => solveBeam(form), [form])
 
@@ -1083,12 +1469,14 @@ export default function StructuralAnalysisPage() {
   }
 
   const reset = () => {
-    setForm({
-      beamType: 'simple',
-      L: 6,
-      x: 3,
-      loads: defaultLoads,
-    })
+   setForm({
+  reportTitle: 'Combined Beam Loading Analysis',
+  preparedBy: '',
+  beamType: 'simple',
+  L: 6,
+  x: 3,
+  loads: defaultLoads,
+})
   }
 
   return (
@@ -1122,6 +1510,21 @@ export default function StructuralAnalysisPage() {
               <h2 className="text-2xl font-black text-white">Beam Setup</h2>
 
               <div className="mt-6 space-y-5">
+          <TextField
+  label="Question / Report Title"
+  value={form.reportTitle}
+  onChange={(value) => updateForm('reportTitle', value)}
+  placeholder="Example: Combined Loading Beam Problem"
+  helper="This title will appear in print/PDF report."
+/>
+
+<TextField
+  label="Prepared By"
+  value={form.preparedBy}
+  onChange={(value) => updateForm('preparedBy', value)}
+  placeholder="Your name"
+  helper="Optional. Used only in report."
+/>
                 <SelectField
                   label="Beam Type"
                   value={form.beamType}
@@ -1238,7 +1641,7 @@ export default function StructuralAnalysisPage() {
                 ))}
               </div>
             </div>
-
+<ActionButtons result={result} form={form} />
             <BeamSketch result={result} />
 
             <div className="grid gap-6 xl:grid-cols-2">
