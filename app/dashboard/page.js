@@ -90,6 +90,13 @@ const quickTools = [
   desc: 'Continuous beam support moments, reactions, SFD and BMD solver',
 },
   {
+  name: 'Arches & Cables',
+  icon: Ruler,
+  href: '/dashboard/calculators/arches-cables',
+  color: 'orange',
+  desc: 'Three-hinged arch, two-hinged arch, cable sag and tension solver',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
