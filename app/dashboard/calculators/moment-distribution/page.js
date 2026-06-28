@@ -1,7 +1,14 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import { Calculator, Plus, Trash2, RotateCcw, Activity } from 'lucide-react'
+import {
+  Calculator,
+  Plus,
+  Trash2,
+  RotateCcw,
+  Activity,
+  Download,
+} from 'lucide-react'
 
 const fmt = (v, d = 3) => {
   const n = Number(v)
@@ -16,6 +23,7 @@ const num = (v, fallback = 0) => {
 
 const jointName = (i) => String.fromCharCode(65 + i)
 const isSimpleSupport = (type) => type === 'pin' || type === 'roller'
+
 const createInitialSpan = (length = 5) => ({
   length,
   EI: 1,
@@ -156,7 +164,7 @@ function createStations(span, RA, leftMoment) {
 function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.001) {
   const totalSpans = spans.length
 
-  let moments = spans.map((span) => {
+  const moments = spans.map((span) => {
     const fem = fixedEndMoments(span)
     return {
       left: fem.left,
@@ -212,85 +220,7 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
         label: `${jointName(jointIndex)}${jointName(farJoint)}`,
       })
     }
-const stepSolution = []
 
-stepSolution.push({
-  title: 'Step 1: Given Data',
-  lines: spans.map((span, index) => {
-    const spanName = `${jointName(index)}${jointName(index + 1)}`
-    if (span.loadType === 'udl') {
-      return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, UDL w = ${fmt(span.w)} kN/m`
-    }
-    if (span.loadType === 'point') {
-      return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, Point Load P = ${fmt(span.P)} kN at a = ${fmt(span.a)} m from left support`
-    }
-    return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, No external load`
-  }),
-})
-
-stepSolution.push({
-  title: 'Step 2: Fixed End Moments',
-  lines: femTable.map((row) => {
-    return `${row.span}: FEM Left = ${fmt(row.FEMLeft)} kNm, FEM Right = ${fmt(row.FEMRight)} kNm`
-  }),
-})
-
-stepSolution.push({
-  title: 'Step 3: Distribution Factors',
-  lines: Array.from({ length: totalSpans + 1 }, (_, j) => {
-    if (joints[j] === 'fixed') {
-      return `Joint ${jointName(j)} is fixed, so distribution is not required at this joint.`
-    }
-
-    const connected = getConnectedEnds(j)
-
-    if (!connected.length) {
-      return `Joint ${jointName(j)} has no connected member.`
-    }
-
-    const totalStiffness = connected.reduce((sum, item) => sum + item.stiffness, 0)
-
-    const dfText = connected
-      .map((item) => {
-        const df = totalStiffness > 0 ? item.stiffness / totalStiffness : 0
-        return `${item.member || item.label}: K = ${fmt(item.stiffness)}, DF = ${fmt(df)}`
-      })
-      .join('; ')
-
-    return `At Joint ${jointName(j)}: ${dfText}`
-  }),
-})
-
-stepSolution.push({
-  title: 'Step 4: Moment Distribution and Carry Over',
-  lines:
-    distributionRows.length > 0
-      ? distributionRows.slice(0, 25).map((row) => {
-          return `Iteration ${row.iteration}, Joint ${row.joint}, Member ${row.member}: Unbalanced Moment = ${fmt(row.unbalancedMoment)} kNm, DF = ${fmt(row.distributionFactor)}, Distributed Moment = ${fmt(row.distributedMoment)} kNm, Carry Over to ${row.carryTo} = ${fmt(row.carryOverMoment)} kNm`
-        })
-      : ['No moment distribution is required because all joints are already balanced.'],
-})
-
-stepSolution.push({
-  title: 'Step 5: Final Member End Moments',
-  lines: finalMoments.map((row) => {
-    return `${row.span}: Moment at ${row.leftJoint} = ${fmt(row.leftMoment)} kNm, Moment at ${row.rightJoint} = ${fmt(row.rightMoment)} kNm`
-  }),
-})
-
-stepSolution.push({
-  title: 'Step 6: Support Reactions',
-  lines: supportReactions.map((row) => {
-    return `Joint ${row.joint}: Vertical Reaction = ${fmt(row.verticalReaction)} kN, Moment Reaction = ${fmt(row.momentReaction)} kNm`
-  }),
-})
-
-stepSolution.push({
-  title: 'Step 7: Maximum Shear Force and Bending Moment',
-  lines: spanAnalysis.map((span) => {
-    return `${span.span}: Max Shear = ${fmt(span.maxShear.shear)} kN at x = ${fmt(span.maxShear.x)} m, Max BM = ${fmt(span.maxMoment.moment)} kNm at x = ${fmt(span.maxMoment.x)} m`
-  }),
-})
     return connected
   }
 
@@ -416,20 +346,107 @@ stepSolution.push({
     }
   })
 
- return {
-  femTable,
-  distributionRows,
-  finalMoments,
-  jointBalance,
-  spanAnalysis,
-  supportReactions,
-  stepSolution,
-}
+  const stepSolution = []
+
+  stepSolution.push({
+    title: 'Step 1: Given Data',
+    lines: spans.map((span, index) => {
+      const spanName = `${jointName(index)}${jointName(index + 1)}`
+
+      if (span.loadType === 'udl') {
+        return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, UDL w = ${fmt(span.w)} kN/m`
+      }
+
+      if (span.loadType === 'point') {
+        return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, Point Load P = ${fmt(span.P)} kN at a = ${fmt(span.a)} m from left support`
+      }
+
+      return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, No external load`
+    }),
+  })
+
+  stepSolution.push({
+    title: 'Step 2: Fixed End Moments',
+    lines: femTable.map((row) => {
+      return `${row.span}: FEM Left = ${fmt(row.FEMLeft)} kNm, FEM Right = ${fmt(row.FEMRight)} kNm`
+    }),
+  })
+
+  stepSolution.push({
+    title: 'Step 3: Distribution Factors',
+    lines: Array.from({ length: totalSpans + 1 }, (_, j) => {
+      if (joints[j] === 'fixed') {
+        return `Joint ${jointName(j)} is fixed, so distribution is not required at this joint.`
+      }
+
+      const connected = getConnectedEnds(j)
+
+      if (!connected.length) {
+        return `Joint ${jointName(j)} has no connected member.`
+      }
+
+      const totalStiffness = connected.reduce(
+        (sum, item) => sum + item.stiffness,
+        0
+      )
+
+      const dfText = connected
+        .map((item) => {
+          const df = totalStiffness > 0 ? item.stiffness / totalStiffness : 0
+          return `${item.label}: K = ${fmt(item.stiffness)}, DF = ${fmt(df)}`
+        })
+        .join('; ')
+
+      return `At Joint ${jointName(j)}: ${dfText}`
+    }),
+  })
+
+  stepSolution.push({
+    title: 'Step 4: Moment Distribution and Carry Over',
+    lines:
+      distributionRows.length > 0
+        ? distributionRows.slice(0, 25).map((row) => {
+            return `Iteration ${row.iteration}, Joint ${row.joint}, Member ${row.member}: Unbalanced Moment = ${fmt(row.unbalancedMoment)} kNm, DF = ${fmt(row.distributionFactor)}, Distributed Moment = ${fmt(row.distributedMoment)} kNm, Carry Over to ${row.carryTo} = ${fmt(row.carryOverMoment)} kNm`
+          })
+        : ['No moment distribution is required because all joints are already balanced.'],
+  })
+
+  stepSolution.push({
+    title: 'Step 5: Final Member End Moments',
+    lines: finalMoments.map((row) => {
+      return `${row.span}: Moment at ${row.leftJoint} = ${fmt(row.leftMoment)} kNm, Moment at ${row.rightJoint} = ${fmt(row.rightMoment)} kNm`
+    }),
+  })
+
+  stepSolution.push({
+    title: 'Step 6: Support Reactions',
+    lines: supportReactions.map((row) => {
+      return `Joint ${row.joint}: Vertical Reaction = ${fmt(row.verticalReaction)} kN, Moment Reaction = ${fmt(row.momentReaction)} kNm`
+    }),
+  })
+
+  stepSolution.push({
+    title: 'Step 7: Maximum Shear Force and Bending Moment',
+    lines: spanAnalysis.map((span) => {
+      return `${span.span}: Max Shear = ${fmt(span.maxShear.shear)} kN at x = ${fmt(span.maxShear.x)} m, Max BM = ${fmt(span.maxMoment.moment)} kNm at x = ${fmt(span.maxMoment.x)} m`
+    }),
+  })
+
+  return {
+    femTable,
+    distributionRows,
+    finalMoments,
+    jointBalance,
+    spanAnalysis,
+    supportReactions,
+    stepSolution,
+  }
 }
 
 export default function MomentDistributionPage() {
   const inputDiagramRef = useRef(null)
-const outputDiagramRef = useRef(null)
+  const outputDiagramRef = useRef(null)
+
   const [spans, setSpans] = useState([
     createInitialSpan(6),
     {
@@ -442,7 +459,7 @@ const outputDiagramRef = useRef(null)
     },
   ])
 
- const [joints, setJoints] = useState(['pin', 'continuous', 'roller'])
+  const [joints, setJoints] = useState(['pin', 'continuous', 'roller'])
   const [maxIterations, setMaxIterations] = useState(30)
   const [tolerance, setTolerance] = useState(0.001)
 
@@ -488,7 +505,7 @@ const outputDiagramRef = useRef(null)
     if (newJoints.length === newSpans.length + 1) {
       if (!newJoints[0]) newJoints[0] = 'pin'
       if (!newJoints[newJoints.length - 1]) {
-        newJoints[newJoints.length - 1] = 'pin'
+        newJoints[newJoints.length - 1] = 'roller'
       }
     }
 
@@ -508,220 +525,213 @@ const outputDiagramRef = useRef(null)
         a: 2.5,
       },
     ])
+
     setJoints(['pin', 'continuous', 'roller'])
     setMaxIterations(30)
     setTolerance(0.001)
   }
-const downloadPDF = async () => {
-  try {
-    const { default: jsPDF } = await import('jspdf')
-    const autoTableModule = await import('jspdf-autotable')
-    const html2canvasModule = await import('html2canvas')
 
-    const autoTable = autoTableModule.default || autoTableModule.autoTable
-    const html2canvas = html2canvasModule.default
+  const downloadPDF = async () => {
+    try {
+      const { default: jsPDF } = await import('jspdf')
+      const autoTableModule = await import('jspdf-autotable')
+      const html2canvasModule = await import('html2canvas')
 
-    const doc = new jsPDF('p', 'mm', 'a4')
-    const pageWidth = doc.internal.pageSize.getWidth()
-    const pageHeight = doc.internal.pageSize.getHeight()
+      const autoTable = autoTableModule.default || autoTableModule.autoTable
+      const html2canvas = html2canvasModule.default
 
-    let y = 15
+      const doc = new jsPDF('p', 'mm', 'a4')
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const pageHeight = doc.internal.pageSize.getHeight()
 
-    const addTitle = (title, subtitle = '') => {
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(18)
-      doc.text(title, pageWidth / 2, y, { align: 'center' })
+      let y = 15
 
-      y += 7
+      const addTitle = (title, subtitle = '') => {
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(18)
+        doc.text(title, pageWidth / 2, y, { align: 'center' })
 
-      if (subtitle) {
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(10)
-        doc.text(subtitle, pageWidth / 2, y, { align: 'center' })
         y += 7
-      }
-    }
 
-    const addSectionTitle = (title) => {
-      if (y > 260) {
-        doc.addPage()
-        y = 15
-      }
-
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(13)
-      doc.text(title, 14, y)
-      y += 6
-    }
-
-    const addCapturedElement = async (element, title) => {
-      if (!element) return
-
-      if (y > 225) {
-        doc.addPage()
-        y = 15
+        if (subtitle) {
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(10)
+          doc.text(subtitle, pageWidth / 2, y, { align: 'center' })
+          y += 7
+        }
       }
 
-      addSectionTitle(title)
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        backgroundColor: '#020617',
-        useCORS: true,
-      })
-
-      const imgData = canvas.toDataURL('image/png')
-      const imgWidth = pageWidth - 28
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-
-      if (y + imgHeight > pageHeight - 18) {
-        doc.addPage()
-        y = 15
-        addSectionTitle(title)
-      }
-
-      doc.addImage(
-        imgData,
-        'PNG',
-        14,
-        y,
-        imgWidth,
-        Math.min(imgHeight, 170)
-      )
-
-      y += Math.min(imgHeight, 170) + 8
-    }
-
-    addTitle(
-      'Moment Distribution Method Report',
-      'Generated by CivilCalc Pro'
-    )
-
-    await addCapturedElement(inputDiagramRef.current, '1. Input Beam Diagram')
-
-    addSectionTitle('2. Step-by-step Solution')
-
-    result.stepSolution.forEach((step) => {
-      if (y > 250) {
-        doc.addPage()
-        y = 15
-      }
-
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(11)
-      doc.text(step.title, 14, y)
-      y += 5
-
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(8.5)
-
-      step.lines.forEach((line, index) => {
-        const text = `${index + 1}. ${line}`
-        const splitText = doc.splitTextToSize(text, pageWidth - 28)
-
-        if (y + splitText.length * 4 > 280) {
+      const addSectionTitle = (title) => {
+        if (y > 260) {
           doc.addPage()
           y = 15
         }
 
-        doc.text(splitText, 14, y)
-        y += splitText.length * 4 + 1
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(13)
+        doc.text(title, 14, y)
+        y += 6
+      }
+
+      const addCapturedElement = async (element, title) => {
+        if (!element) return
+
+        if (y > 225) {
+          doc.addPage()
+          y = 15
+        }
+
+        addSectionTitle(title)
+
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          backgroundColor: '#020617',
+          useCORS: true,
+        })
+
+        const imgData = canvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 28
+        const imgHeight = (canvas.height * imgWidth) / canvas.width
+        const safeHeight = Math.min(imgHeight, 170)
+
+        if (y + safeHeight > pageHeight - 18) {
+          doc.addPage()
+          y = 15
+          addSectionTitle(title)
+        }
+
+        doc.addImage(imgData, 'PNG', 14, y, imgWidth, safeHeight)
+        y += safeHeight + 8
+      }
+
+      addTitle('Moment Distribution Method Report', 'Generated by CivilCalc Pro')
+
+      await addCapturedElement(inputDiagramRef.current, '1. Input Beam Diagram')
+
+      addSectionTitle('2. Step-by-step Solution')
+
+      result.stepSolution.forEach((step) => {
+        if (y > 250) {
+          doc.addPage()
+          y = 15
+        }
+
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(11)
+        doc.text(step.title, 14, y)
+        y += 5
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8.5)
+
+        step.lines.forEach((line, index) => {
+          const text = `${index + 1}. ${line}`
+          const splitText = doc.splitTextToSize(text, pageWidth - 28)
+
+          if (y + splitText.length * 4 > 280) {
+            doc.addPage()
+            y = 15
+          }
+
+          doc.text(splitText, 14, y)
+          y += splitText.length * 4 + 1
+        })
+
+        y += 4
       })
 
-      y += 4
-    })
+      if (y > 220) {
+        doc.addPage()
+        y = 15
+      }
 
-    if (y > 220) {
-      doc.addPage()
-      y = 15
-    }
+      addSectionTitle('3. Final Answer')
 
-    addSectionTitle('3. Final Answer')
+      autoTable(doc, {
+        startY: y,
+        head: [['Span', 'Left End Moment', 'Right End Moment']],
+        body: result.finalMoments.map((row) => [
+          row.span,
+          `${fmt(row.leftMoment)} kNm`,
+          `${fmt(row.rightMoment)} kNm`,
+        ]),
+        styles: {
+          fontSize: 8,
+        },
+        headStyles: {
+          fillColor: [255, 122, 0],
+          textColor: [0, 0, 0],
+        },
+      })
 
-    autoTable(doc, {
-      startY: y,
-      head: [['Span', 'Left End Moment', 'Right End Moment']],
-      body: result.finalMoments.map((row) => [
-        row.span,
-        `${fmt(row.leftMoment)} kNm`,
-        `${fmt(row.rightMoment)} kNm`,
-      ]),
-      styles: {
-        fontSize: 8,
-      },
-      headStyles: {
-        fillColor: [255, 122, 0],
-        textColor: [0, 0, 0],
-      },
-    })
+      y = doc.lastAutoTable.finalY + 7
 
-    y = doc.lastAutoTable.finalY + 7
+      autoTable(doc, {
+        startY: y,
+        head: [['Joint', 'Support Type', 'Vertical Reaction', 'Moment Reaction']],
+        body: result.supportReactions.map((row) => [
+          row.joint,
+          supportLabel(row.type),
+          `${fmt(row.verticalReaction)} kN`,
+          `${fmt(row.momentReaction)} kNm`,
+        ]),
+        styles: {
+          fontSize: 8,
+        },
+        headStyles: {
+          fillColor: [255, 122, 0],
+          textColor: [0, 0, 0],
+        },
+      })
 
-    autoTable(doc, {
-      startY: y,
-      head: [['Joint', 'Support Type', 'Vertical Reaction', 'Moment Reaction']],
-      body: result.supportReactions.map((row) => [
-        row.joint,
-        supportLabel(row.type),
-        `${fmt(row.verticalReaction)} kN`,
-        `${fmt(row.momentReaction)} kNm`,
-      ]),
-      styles: {
-        fontSize: 8,
-      },
-      headStyles: {
-        fillColor: [255, 122, 0],
-        textColor: [0, 0, 0],
-      },
-    })
+      y = doc.lastAutoTable.finalY + 7
 
-    y = doc.lastAutoTable.finalY + 7
+      autoTable(doc, {
+        startY: y,
+        head: [['Span', 'Max Shear', 'Location', 'Max BM', 'Location']],
+        body: result.spanAnalysis.map((span) => [
+          span.span,
+          `${fmt(span.maxShear.shear)} kN`,
+          `${fmt(span.maxShear.x)} m`,
+          `${fmt(span.maxMoment.moment)} kNm`,
+          `${fmt(span.maxMoment.x)} m`,
+        ]),
+        styles: {
+          fontSize: 8,
+        },
+        headStyles: {
+          fillColor: [255, 122, 0],
+          textColor: [0, 0, 0],
+        },
+      })
 
-    autoTable(doc, {
-      startY: y,
-      head: [['Span', 'Max Shear', 'Location', 'Max BM', 'Location']],
-      body: result.spanAnalysis.map((span) => [
-        span.span,
-        `${fmt(span.maxShear.shear)} kN`,
-        `${fmt(span.maxShear.x)} m`,
-        `${fmt(span.maxMoment.moment)} kNm`,
-        `${fmt(span.maxMoment.x)} m`,
-      ]),
-      styles: {
-        fontSize: 8,
-      },
-      headStyles: {
-        fillColor: [255, 122, 0],
-        textColor: [0, 0, 0],
-      },
-    })
+      y = doc.lastAutoTable.finalY + 8
 
-    y = doc.lastAutoTable.finalY + 8
+      await addCapturedElement(outputDiagramRef.current, '4. SFD / BMD Diagrams')
 
-    await addCapturedElement(outputDiagramRef.current, '4. SFD / BMD Diagrams')
+      const pageCount = doc.internal.getNumberOfPages()
 
-    const pageCount = doc.internal.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.text(
+          `CivilCalc Pro | Moment Distribution Method | Page ${i} of ${pageCount}`,
+          pageWidth / 2,
+          290,
+          { align: 'center' }
+        )
+      }
 
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i)
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(8)
-      doc.text(
-        `CivilCalc Pro | Moment Distribution Method | Page ${i} of ${pageCount}`,
-        pageWidth / 2,
-        290,
-        { align: 'center' }
+      doc.save('moment-distribution-solution.pdf')
+    } catch (error) {
+      console.error(error)
+      alert(
+        'PDF generate nahi ho paya. Please jspdf, jspdf-autotable aur html2canvas install check karo.'
       )
     }
-
-    doc.save('moment-distribution-solution.pdf')
-  } catch (error) {
-    console.error(error)
-    alert(
-      'PDF generate nahi ho paya. Please jspdf, jspdf-autotable aur html2canvas install check karo.'
-    )
   }
-}
+
   return (
     <div className="min-h-screen bg-[#050B1F] text-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -742,27 +752,31 @@ const downloadPDF = async () => {
                 final end moment, support reaction, SFD aur BMD automatic solve karo.
               </p>
             </div>
-<button
-  onClick={downloadPDF}
-  className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-bold text-black hover:bg-orange-400"
->
-  <Download size={18} />
-  Download PDF
-</button>
-            <button
-              onClick={resetExample}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 hover:bg-slate-800"
-            >
-              <RotateCcw size={18} />
-              Reset Example
-            </button>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={downloadPDF}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-bold text-black hover:bg-orange-400"
+              >
+                <Download size={18} />
+                Download PDF
+              </button>
+
+              <button
+                onClick={resetExample}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 hover:bg-slate-800"
+              >
+                <RotateCcw size={18} />
+                Reset Example
+              </button>
+            </div>
           </div>
         </div>
-<div ref={inputDiagramRef}>
- <div ref={inputDiagramRef}>
-  <BeamInputDiagram spans={spans} joints={joints} />
-</div>
-</div>
+
+        <div ref={inputDiagramRef}>
+          <BeamInputDiagram spans={spans} joints={joints} />
+        </div>
+
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
@@ -876,15 +890,16 @@ const downloadPDF = async () => {
                     <label className="text-sm text-slate-400">
                       Joint {jointName(index)}
                     </label>
+
                     <select
                       value={type}
                       onChange={(e) => updateJoint(index, e.target.value)}
                       className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
                     >
-                     <option value="pin">Pin Support</option>
-<option value="roller">Roller Support</option>
-<option value="continuous">Continuous Joint</option>
-<option value="fixed">Fixed Support</option>
+                      <option value="pin">Pin Support</option>
+                      <option value="roller">Roller Support</option>
+                      <option value="continuous">Continuous Joint</option>
+                      <option value="fixed">Fixed Support</option>
                     </select>
                   </div>
                 ))}
@@ -916,34 +931,37 @@ const downloadPDF = async () => {
               <div className="mt-5 rounded-xl border border-slate-800 bg-slate-950 p-4">
                 <p className="text-sm text-slate-400">Sign Convention</p>
                 <p className="text-sm text-slate-200 mt-2">
-                  Member end moment convention use kiya gaya hai. BMD ke right end par sign converted form me show hota hai.
+                  Member end moment convention use kiya gaya hai. BMD ke right
+                  end par sign converted form me show hota hai.
                 </p>
               </div>
             </div>
           </div>
         </div>
-<ResultSection title="Step-by-step Solution">
-  <div className="space-y-5">
-    {result.stepSolution.map((step, index) => (
-      <div
-        key={index}
-        className="rounded-2xl border border-slate-800 bg-slate-950 p-5"
-      >
-        <h3 className="text-lg font-bold text-orange-300 mb-3">
-          {step.title}
-        </h3>
 
-        <div className="space-y-2">
-          {step.lines.map((line, i) => (
-            <p key={i} className="text-sm leading-6 text-slate-300">
-              {i + 1}. {line}
-            </p>
-          ))}
-        </div>
-      </div>
-    ))}
-  </div>
-</ResultSection>
+        <ResultSection title="Step-by-step Solution">
+          <div className="space-y-5">
+            {result.stepSolution.map((step, index) => (
+              <div
+                key={index}
+                className="rounded-2xl border border-slate-800 bg-slate-950 p-5"
+              >
+                <h3 className="text-lg font-bold text-orange-300 mb-3">
+                  {step.title}
+                </h3>
+
+                <div className="space-y-2">
+                  {step.lines.map((line, i) => (
+                    <p key={i} className="text-sm leading-6 text-slate-300">
+                      {i + 1}. {line}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ResultSection>
+
         <ResultSection title="1. Fixed End Moments">
           <Table
             headers={['Span', 'FEM Left', 'FEM Right']}
@@ -983,13 +1001,23 @@ const downloadPDF = async () => {
                   result.distributionRows.slice(0, 150).map((row, i) => (
                     <tr key={i} className="border-b border-slate-800/60">
                       <td className="p-3">{row.iteration}</td>
-                      <td className="p-3 text-orange-300 font-semibold">{row.joint}</td>
+                      <td className="p-3 text-orange-300 font-semibold">
+                        {row.joint}
+                      </td>
                       <td className="p-3">{row.member}</td>
-                      <td className="p-3 text-right">{fmt(row.unbalancedMoment)}</td>
+                      <td className="p-3 text-right">
+                        {fmt(row.unbalancedMoment)}
+                      </td>
                       <td className="p-3 text-right">{fmt(row.stiffness)}</td>
-                      <td className="p-3 text-right">{fmt(row.distributionFactor)}</td>
-                      <td className="p-3 text-right">{fmt(row.distributedMoment)}</td>
-                      <td className="p-3 text-right">{fmt(row.carryOverMoment)}</td>
+                      <td className="p-3 text-right">
+                        {fmt(row.distributionFactor)}
+                      </td>
+                      <td className="p-3 text-right">
+                        {fmt(row.distributedMoment)}
+                      </td>
+                      <td className="p-3 text-right">
+                        {fmt(row.carryOverMoment)}
+                      </td>
                       <td className="p-3">{row.carryTo}</td>
                     </tr>
                   ))
@@ -1030,41 +1058,58 @@ const downloadPDF = async () => {
           </div>
         </ResultSection>
 
-      <div ref={outputDiagramRef}>
-  <ResultSection title="SFD / BMD Diagrams">
-    <div className="grid lg:grid-cols-2 gap-5">
-            {result.spanAnalysis.map((span, i) => (
-              <div
-                key={i}
-                className="rounded-2xl border border-slate-800 bg-slate-950 p-5 space-y-5"
-              >
-                <div className="flex items-center gap-2">
-                  <Activity className="text-orange-300" size={20} />
-                  <h3 className="text-lg font-bold text-orange-300">
-                    Span {span.span}
-                  </h3>
-                </div>
+        <div ref={outputDiagramRef}>
+          <ResultSection title="SFD / BMD Diagrams">
+            <div className="grid lg:grid-cols-2 gap-5">
+              {result.spanAnalysis.map((span, i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl border border-slate-800 bg-slate-950 p-5 space-y-5"
+                >
+                  <div className="flex items-center gap-2">
+                    <Activity className="text-orange-300" size={20} />
+                    <h3 className="text-lg font-bold text-orange-300">
+                      Span {span.span}
+                    </h3>
+                  </div>
 
-                <div className="grid md:grid-cols-2 gap-3">
-                  <MiniStat label={`Reaction at ${span.leftJoint}`} value={`${fmt(span.RA)} kN`} />
-                  <MiniStat label={`Reaction at ${span.rightJoint}`} value={`${fmt(span.RB)} kN`} />
-                  <MiniStat label="Max Shear" value={`${fmt(span.maxShear.shear)} kN at ${fmt(span.maxShear.x)} m`} />
-                  <MiniStat label="Max BM" value={`${fmt(span.maxMoment.moment)} kNm at ${fmt(span.maxMoment.x)} m`} />
-                </div>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <MiniStat
+                      label={`Reaction at ${span.leftJoint}`}
+                      value={`${fmt(span.RA)} kN`}
+                    />
+                    <MiniStat
+                      label={`Reaction at ${span.rightJoint}`}
+                      value={`${fmt(span.RB)} kN`}
+                    />
+                    <MiniStat
+                      label="Max Shear"
+                      value={`${fmt(span.maxShear.shear)} kN at ${fmt(
+                        span.maxShear.x
+                      )} m`}
+                    />
+                    <MiniStat
+                      label="Max BM"
+                      value={`${fmt(span.maxMoment.moment)} kNm at ${fmt(
+                        span.maxMoment.x
+                      )} m`}
+                    />
+                  </div>
 
-                <div>
-                  <p className="text-sm text-slate-400 mb-2">SFD</p>
-                  <MiniDiagram points={span.stations} valueKey="shear" />
-                </div>
+                  <div>
+                    <p className="text-sm text-slate-400 mb-2">SFD</p>
+                    <MiniDiagram points={span.stations} valueKey="shear" />
+                  </div>
 
-                <div>
-                  <p className="text-sm text-slate-400 mb-2">BMD</p>
-                  <MiniDiagram points={span.stations} valueKey="moment" />
+                  <div>
+                    <p className="text-sm text-slate-400 mb-2">BMD</p>
+                    <MiniDiagram points={span.stations} valueKey="moment" />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </ResultSection>
+              ))}
+            </div>
+          </ResultSection>
+        </div>
 
         <ResultSection title="6. Joint Balance Check">
           <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -1135,7 +1180,9 @@ function Table({ headers, rows }) {
               {row.map((cell, j) => (
                 <td
                   key={j}
-                  className={`p-3 ${j === 0 ? 'font-semibold text-orange-300' : ''}`}
+                  className={`p-3 ${
+                    j === 0 ? 'font-semibold text-orange-300' : ''
+                  }`}
                 >
                   {cell}
                 </td>
@@ -1242,6 +1289,7 @@ function MiniDiagram({ points, valueKey }) {
     </div>
   )
 }
+
 function BeamInputDiagram({ spans, joints }) {
   const width = 900
   const height = 280
@@ -1338,6 +1386,41 @@ function BeamInputDiagram({ spans, joints }) {
       )
     }
 
+    if (type === 'roller') {
+      return (
+        <g key={`support-${index}`}>
+          <path
+            d={`M ${x} ${beamY + 8} L ${x - 24} ${supportY} L ${x + 24} ${supportY} Z`}
+            fill="#0f172a"
+            stroke="#f97316"
+            strokeWidth="2"
+          />
+
+          <circle cx={x - 12} cy={supportY + 8} r="4" fill="#94a3b8" />
+          <circle cx={x + 12} cy={supportY + 8} r="4" fill="#94a3b8" />
+
+          <line
+            x1={x - 32}
+            y1={supportY + 14}
+            x2={x + 32}
+            y2={supportY + 14}
+            stroke="#64748b"
+            strokeWidth="2"
+          />
+
+          <text
+            x={x}
+            y={supportY + 34}
+            textAnchor="middle"
+            fontSize="12"
+            fill="#cbd5e1"
+          >
+            Roller
+          </text>
+        </g>
+      )
+    }
+
     return (
       <g key={`support-${index}`}>
         <path
@@ -1363,7 +1446,7 @@ function BeamInputDiagram({ spans, joints }) {
           fontSize="12"
           fill="#cbd5e1"
         >
-          Pin/Roller
+          Pin
         </text>
       </g>
     )
@@ -1547,78 +1630,15 @@ function BeamInputDiagram({ spans, joints }) {
             </g>
           ))}
 
-          {joints.map((type, index) => renderSupport(type, jointXs[index], index))}
+          {joints.map((type, index) =>
+            renderSupport(type, jointXs[index], index)
+          )}
 
           {spans.map((span, index) => {
             const x1 = jointXs[index]
             const x2 = jointXs[index + 1]
             const midX = (x1 + x2) / 2
-if (type === 'pin') {
-  return (
-    <g key={`support-${index}`}>
-      <path
-        d={`M ${x} ${beamY + 8} L ${x - 24} ${supportY} L ${x + 24} ${supportY} Z`}
-        fill="#0f172a"
-        stroke="#f97316"
-        strokeWidth="2"
-      />
 
-      <line
-        x1={x - 32}
-        y1={supportY + 8}
-        x2={x + 32}
-        y2={supportY + 8}
-        stroke="#64748b"
-        strokeWidth="2"
-      />
-
-      <text
-        x={x}
-        y={supportY + 34}
-        textAnchor="middle"
-        fontSize="12"
-        fill="#cbd5e1"
-      >
-        Pin
-      </text>
-    </g>
-  )
-}
-
-if (type === 'roller') {
-  return (
-    <g key={`support-${index}`}>
-      <path
-        d={`M ${x} ${beamY + 8} L ${x - 24} ${supportY} L ${x + 24} ${supportY} Z`}
-        fill="#0f172a"
-        stroke="#f97316"
-        strokeWidth="2"
-      />
-
-      <circle cx={x - 12} cy={supportY + 8} r="4" fill="#94a3b8" />
-      <circle cx={x + 12} cy={supportY + 8} r="4" fill="#94a3b8" />
-
-      <line
-        x1={x - 32}
-        y1={supportY + 14}
-        x2={x + 32}
-        y2={supportY + 14}
-        stroke="#64748b"
-        strokeWidth="2"
-      />
-
-      <text
-        x={x}
-        y={supportY + 34}
-        textAnchor="middle"
-        fontSize="12"
-        fill="#cbd5e1"
-      >
-        Roller
-      </text>
-    </g>
-  )
-}
             return (
               <g key={`span-label-${index}`}>
                 <line
@@ -1676,6 +1696,7 @@ if (type === 'roller') {
     </div>
   )
 }
+
 function supportLabel(type) {
   if (type === 'pin') return 'Pin Support'
   if (type === 'roller') return 'Roller Support'
