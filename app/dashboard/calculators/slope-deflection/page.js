@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 
 const supportOptions = [
   { value: 'fixed', label: 'Fixed' },
@@ -999,6 +999,340 @@ function FinalSupportReactionTable({ joints, members, endMoments }) {
     </div>
   )
 }
+function loadDescription(member) {
+  const L = Math.max(n(member.length, 1), 0.000001)
+
+  if (member.loadType === 'none') {
+    return 'No external load on this span.'
+  }
+
+  if (member.loadType === 'point') {
+    const a = Math.min(Math.max(n(member.a), 0), L)
+    const b = L - a
+    return `Point load P = ${round(member.P)} kN at a = ${round(a)} m from ${member.left}, b = ${round(b)} m from ${member.right}.`
+  }
+
+  if (member.loadType === 'udl') {
+    return `UDL w = ${round(member.w)} kN/m over full span.`
+  }
+
+  if (member.loadType === 'uvl_inc') {
+    return `UVL increasing from 0 to ${round(member.w)} kN/m.`
+  }
+
+  if (member.loadType === 'uvl_dec') {
+    return `UVL decreasing from ${round(member.w)} kN/m to 0.`
+  }
+
+  if (member.loadType === 'trapezoidal') {
+    return `Trapezoidal load from w1 = ${round(member.w1)} kN/m to w2 = ${round(member.w2)} kN/m.`
+  }
+
+  if (member.loadType === 'end_moment') {
+    return `Applied end moments: left = ${round(member.endMomentLeft)} kNm, right = ${round(member.endMomentRight)} kNm.`
+  }
+
+  return 'Load data entered.'
+}
+
+function femSubstitution(member) {
+  const L = Math.max(n(member.length, 1), 0.000001)
+  const fem = calculateFEM(member)
+
+  if (member.loadType === 'point') {
+    const P = n(member.P)
+    const a = Math.min(Math.max(n(member.a), 0), L)
+    const b = L - a
+
+    return [
+      `For point load, FEM_${member.left}${member.right} = -Pab²/L²`,
+      `FEM_${member.left}${member.right} = -(${round(P)} × ${round(a)} × ${round(b)}²) / ${round(L)}² = ${round(fem.femLeft)} kNm`,
+      `FEM_${member.right}${member.left} = +(P a² b)/L²`,
+      `FEM_${member.right}${member.left} = +(${round(P)} × ${round(a)}² × ${round(b)}) / ${round(L)}² = ${round(fem.femRight)} kNm`,
+    ]
+  }
+
+  if (member.loadType === 'udl') {
+    const w = n(member.w)
+
+    return [
+      `For UDL, FEM_${member.left}${member.right} = -wL²/12`,
+      `FEM_${member.left}${member.right} = -(${round(w)} × ${round(L)}²) / 12 = ${round(fem.femLeft)} kNm`,
+      `FEM_${member.right}${member.left} = +wL²/12`,
+      `FEM_${member.right}${member.left} = +(${round(w)} × ${round(L)}²) / 12 = ${round(fem.femRight)} kNm`,
+    ]
+  }
+
+  if (member.loadType === 'uvl_inc') {
+    const w = n(member.w)
+
+    return [
+      `For increasing UVL, FEM_${member.left}${member.right} = -wL²/30`,
+      `FEM_${member.left}${member.right} = -(${round(w)} × ${round(L)}²) / 30 = ${round(fem.femLeft)} kNm`,
+      `FEM_${member.right}${member.left} = +wL²/20`,
+      `FEM_${member.right}${member.left} = +(${round(w)} × ${round(L)}²) / 20 = ${round(fem.femRight)} kNm`,
+    ]
+  }
+
+  if (member.loadType === 'uvl_dec') {
+    const w = n(member.w)
+
+    return [
+      `For decreasing UVL, FEM_${member.left}${member.right} = -wL²/20`,
+      `FEM_${member.left}${member.right} = -(${round(w)} × ${round(L)}²) / 20 = ${round(fem.femLeft)} kNm`,
+      `FEM_${member.right}${member.left} = +wL²/30`,
+      `FEM_${member.right}${member.left} = +(${round(w)} × ${round(L)}²) / 30 = ${round(fem.femRight)} kNm`,
+    ]
+  }
+
+  if (member.loadType === 'trapezoidal') {
+    return [
+      `Trapezoidal load is solved as UDL part + triangular UVL part.`,
+      `w1 = ${round(member.w1)} kN/m, w2 = ${round(member.w2)} kN/m, L = ${round(L)} m`,
+      `Final FEM_${member.left}${member.right} = ${round(fem.femLeft)} kNm`,
+      `Final FEM_${member.right}${member.left} = ${round(fem.femRight)} kNm`,
+    ]
+  }
+
+  if (member.loadType === 'end_moment') {
+    return [
+      `Applied end moments are directly used.`,
+      `FEM_${member.left}${member.right} = ${round(fem.femLeft)} kNm`,
+      `FEM_${member.right}${member.left} = ${round(fem.femRight)} kNm`,
+    ]
+  }
+
+  return [
+    `No load on member ${member.left}${member.right}.`,
+    `FEM_${member.left}${member.right} = 0 kNm`,
+    `FEM_${member.right}${member.left} = 0 kNm`,
+  ]
+}
+
+function slopeEquationText(member, rotations, endMomentRow) {
+  const L = Math.max(n(member.length, 1), 0.000001)
+  const EI = getEI(member)
+  const fem = calculateFEM(member)
+  const settlement = n(member.settlement)
+  const thetaL = rotations?.[member.left] || 0
+  const thetaR = rotations?.[member.right] || 0
+
+  return [
+    `For member ${member.left}${member.right}: L = ${round(L)} m, EI = ${getEIFullText(member)}`,
+    `M_${member.left}${member.right} = FEM_${member.left}${member.right} + (2EI/L)(2θ_${member.left} + θ_${member.right} - 3Δ/L)`,
+    `M_${member.left}${member.right} = ${round(fem.femLeft)} + (2 × ${round(EI)} / ${round(L)})(2 × ${round(thetaL, 5)} + ${round(thetaR, 5)} - 3 × ${round(settlement)} / ${round(L)})`,
+    `M_${member.left}${member.right} = ${round(endMomentRow?.Mleft)} kNm`,
+    `M_${member.right}${member.left} = FEM_${member.right}${member.left} + (2EI/L)(2θ_${member.right} + θ_${member.left} - 3Δ/L)`,
+    `M_${member.right}${member.left} = ${round(fem.femRight)} + (2 × ${round(EI)} / ${round(L)})(2 × ${round(thetaR, 5)} + ${round(thetaL, 5)} - 3 × ${round(settlement)} / ${round(L)})`,
+    `M_${member.right}${member.left} = ${round(endMomentRow?.Mright)} kNm`,
+  ]
+}
+
+function DetailedStepByStepSolution({ joints, members, result }) {
+  const spanReactionRows = members.map(member => {
+    const row = result.endMoments.find(item => item.member === `${member.left}${member.right}`)
+    return calculateMemberSfdBmd(member, row)
+  })
+
+  const totalLoad = members.reduce((sum, member) => {
+    return sum + loadResultantAndMoment(member).totalLoad
+  }, 0)
+
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+      <div className="mb-5">
+        <h2 className="text-2xl font-black text-orange-300">
+          Detailed Step-by-Step Solution
+        </h2>
+        <p className="mt-2 text-slate-300">
+          Exam-style solution generated from input diagram, FEM, slope deflection equations, joint equilibrium, rotations, final end moments, SFD/BMD and reactions.
+        </p>
+      </div>
+
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h3 className="mb-3 text-xl font-bold text-white">
+            Step A: Given Data
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[780px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-slate-700 text-slate-300">
+                  <th className="p-3">Member</th>
+                  <th className="p-3">Length</th>
+                  <th className="p-3">EI</th>
+                  <th className="p-3">Load</th>
+                  <th className="p-3">Settlement</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {members.map(member => (
+                  <tr key={member.id} className="border-b border-slate-800">
+                    <td className="p-3 font-bold text-white">
+                      {member.left}{member.right}
+                    </td>
+                    <td className="p-3 text-slate-300">
+                      {round(member.length)} m
+                    </td>
+                    <td className="p-3 text-slate-300">
+                      {getEIFullText(member)}
+                    </td>
+                    <td className="p-3 text-slate-300">
+                      {loadDescription(member)}
+                    </td>
+                    <td className="p-3 text-slate-300">
+                      Δ = {round(member.settlement)} m
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950 p-3 text-slate-300">
+            <p className="font-semibold text-white">Support conditions:</p>
+            <p className="mt-1">
+              {joints.map(joint => `${joint.name}: ${joint.support}`).join(', ')}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h3 className="mb-3 text-xl font-bold text-white">
+            Step B: Fixed End Moment Calculation
+          </h3>
+
+          <div className="space-y-4">
+            {members.map(member => (
+              <div key={member.id} className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                <h4 className="mb-2 font-bold text-orange-300">
+                  Member {member.left}{member.right}
+                </h4>
+
+                <div className="space-y-1 text-slate-300">
+                  {femSubstitution(member).map((line, index) => (
+                    <p key={index}>{line}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h3 className="mb-3 text-xl font-bold text-white">
+            Step C: Slope Deflection Formula
+          </h3>
+
+          <div className="space-y-2 rounded-xl border border-slate-700 bg-slate-950 p-4 text-slate-300">
+            <p>M_AB = FEM_AB + (2EI/L)(2θ_A + θ_B - 3Δ/L)</p>
+            <p>M_BA = FEM_BA + (2EI/L)(2θ_B + θ_A - 3Δ/L)</p>
+            <p className="pt-2 text-orange-200">
+              Fixed joint rotation is taken as zero. Hinged / roller / internal continuous joints are solved using joint equilibrium.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h3 className="mb-3 text-xl font-bold text-white">
+            Step D: Joint Equilibrium Equations
+          </h3>
+
+          <div className="space-y-3">
+            {result.equations.map(eq => (
+              <div key={eq.joint} className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-slate-300">
+                {eq.text}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h3 className="mb-3 text-xl font-bold text-white">
+            Step E: Solved Joint Rotations
+          </h3>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            {Object.entries(result.rotations).map(([joint, value]) => (
+              <div key={joint} className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                <p className="text-sm text-slate-400">Joint {joint}</p>
+                <p className="mt-1 text-xl font-black text-white">
+                  θ{joint} = {round(value, 5)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h3 className="mb-3 text-xl font-bold text-white">
+            Step F: Final End Moment Calculation
+          </h3>
+
+          <div className="space-y-4">
+            {members.map(member => {
+              const row = result.endMoments.find(item => item.member === `${member.left}${member.right}`)
+
+              return (
+                <div key={member.id} className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                  <h4 className="mb-2 font-bold text-orange-300">
+                    Member {member.left}{member.right}
+                  </h4>
+
+                  <div className="space-y-1 text-slate-300">
+                    {slopeEquationText(member, result.rotations, row).map((line, index) => (
+                      <p key={index}>{line}</p>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h3 className="mb-3 text-xl font-bold text-white">
+            Step G: Reactions for SFD and BMD
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-slate-700 text-slate-300">
+                  <th className="p-3">Member</th>
+                  <th className="p-3">Total Load</th>
+                  <th className="p-3">Left Reaction</th>
+                  <th className="p-3">Right Reaction</th>
+                  <th className="p-3">Max BM</th>
+                  <th className="p-3">Min BM</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {spanReactionRows.map(row => (
+                  <tr key={row.member} className="border-b border-slate-800">
+                    <td className="p-3 font-bold text-white">{row.member}</td>
+                    <td className="p-3 text-slate-300">{round(row.totalLoad)} kN</td>
+                    <td className="p-3 text-sky-300">R{row.leftJoint} = {round(row.RA)} kN</td>
+                    <td className="p-3 text-sky-300">R{row.rightJoint} = {round(row.RB)} kN</td>
+                    <td className="p-3 text-orange-300">{round(row.maxMoment)} kNm</td>
+                    <td className="p-3 text-orange-300">{round(row.minMoment)} kNm</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 text-orange-100">
+            Total vertical load on beam = {round(totalLoad)} kN
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 function SupportSymbol({ type, x, y }) {
   if (type === 'fixed') {
     return (
@@ -1258,6 +1592,8 @@ export default function StructuralAnalysisPage() {
   const [members, setMembers] = useState(deepClone(templates.continuous3.members))
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const pdfRef = useRef(null)
+const [pdfLoading, setPdfLoading] = useState(false)
 
   const canAddMember = members.length < 5
 
@@ -1349,7 +1685,98 @@ export default function StructuralAnalysisPage() {
   const totalLength = useMemo(() => {
     return members.reduce((sum, m) => sum + n(m.length), 0)
   }, [members])
+const downloadPDF = async () => {
+  if (!result) {
+    setError('Please calculate first, then download PDF.')
+    return
+  }
 
+  if (!pdfRef.current) {
+    setError('PDF report section not found.')
+    return
+  }
+
+  setPdfLoading(true)
+  setError('')
+
+  try {
+    const { jsPDF } = await import('jspdf')
+    const html2canvas = (await import('html2canvas')).default
+
+    await new Promise(resolve => setTimeout(resolve, 300))
+
+    const canvas = await html2canvas(pdfRef.current, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#050B1F',
+      logging: false,
+      windowWidth: pdfRef.current.scrollWidth,
+      windowHeight: pdfRef.current.scrollHeight,
+    })
+
+    const pdf = new jsPDF('p', 'mm', 'a4')
+
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+
+    const margin = 8
+    const imgWidth = pageWidth - margin * 2
+
+    const pxPerMm = canvas.width / imgWidth
+    const usablePageHeightMm = pageHeight - margin * 2
+    const pageCanvasHeightPx = Math.floor(usablePageHeightMm * pxPerMm)
+
+    let renderedHeight = 0
+    let pageIndex = 0
+
+    while (renderedHeight < canvas.height) {
+      const sliceHeight = Math.min(pageCanvasHeightPx, canvas.height - renderedHeight)
+
+      const pageCanvas = document.createElement('canvas')
+      pageCanvas.width = canvas.width
+      pageCanvas.height = sliceHeight
+
+      const ctx = pageCanvas.getContext('2d')
+      ctx.fillStyle = '#050B1F'
+      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
+
+      ctx.drawImage(
+        canvas,
+        0,
+        renderedHeight,
+        canvas.width,
+        sliceHeight,
+        0,
+        0,
+        canvas.width,
+        sliceHeight
+      )
+
+      const imgData = pageCanvas.toDataURL('image/png')
+      const imgHeightMm = sliceHeight / pxPerMm
+
+      if (pageIndex > 0) pdf.addPage()
+
+      pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeightMm)
+
+      renderedHeight += sliceHeight
+      pageIndex += 1
+    }
+
+    const safeName = String(problemName || 'structural-analysis')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+
+    pdf.save(`${safeName || 'structural-analysis'}-report.pdf`)
+  } catch (err) {
+    console.error(err)
+    setError('PDF download failed. Please check jspdf/html2canvas installation.')
+  } finally {
+    setPdfLoading(false)
+  }
+}
   return (
     <main className="min-h-screen bg-[#050B1F] px-4 py-8 text-white md:px-8">
       <div className="mx-auto max-w-7xl">
@@ -1367,12 +1794,22 @@ export default function StructuralAnalysisPage() {
               </p>
             </div>
 
-            <button
-              onClick={calculate}
-              className="rounded-2xl bg-orange-500 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/30 transition hover:bg-orange-600"
-            >
-              Calculate Now
-            </button>
+           <div className="flex flex-col gap-3 sm:flex-row">
+  <button
+    onClick={calculate}
+    className="rounded-2xl bg-orange-500 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/30 transition hover:bg-orange-600"
+  >
+    Calculate Now
+  </button>
+
+  <button
+    onClick={downloadPDF}
+    disabled={!result || pdfLoading}
+    className="rounded-2xl border border-orange-500/50 bg-orange-500/10 px-8 py-4 text-lg font-bold text-orange-300 transition hover:bg-orange-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+  >
+    {pdfLoading ? 'Preparing PDF...' : 'Download PDF'}
+  </button>
+</div>
           </div>
         </div>
 
@@ -1591,128 +2028,225 @@ export default function StructuralAnalysisPage() {
                 ))}
               </div>
             </div>
+<div ref={pdfRef} className="space-y-6 rounded-3xl bg-[#050B1F] p-2">
+  {result && (
+    <div className="rounded-3xl border border-orange-500/30 bg-slate-950 p-5">
+      <p className="text-sm font-semibold uppercase tracking-[0.25em] text-orange-400">
+        CivilCalc Pro
+      </p>
 
-            <BeamDiagram joints={joints} members={members} />
+      <h2 className="mt-2 text-3xl font-black text-white">
+        Structural Analysis Report
+      </h2>
 
-            {error && (
-              <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-red-200">
-                {error}
-              </div>
-            )}
+      <p className="mt-2 text-slate-300">
+        Method: Slope Deflection Method
+      </p>
 
-            {result && (
-              <div className="space-y-6">
-                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
-                  <h2 className="mb-4 text-2xl font-black text-orange-300">Step 1: Fixed End Moments</h2>
+      <p className="text-slate-300">
+        Problem: {problemName}
+      </p>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px] border-collapse text-left">
-                      <thead>
-                        <tr className="border-b border-slate-800 text-slate-300">
-                          <th className="p-3">Member</th>
-                          <th className="p-3">Load</th>
-                          <th className="p-3">Formula</th>
-                          <th className="p-3">FEM Left</th>
-                          <th className="p-3">FEM Right</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.endMoments.map(row => (
-                          <tr key={row.member} className="border-b border-slate-800">
-                            <td className="p-3 font-bold text-white">{row.member}</td>
-                            <td className="p-3 text-slate-300">{row.loadType}</td>
-                            <td className="p-3 text-slate-300">{row.femFormula}</td>
-                            <td className="p-3 text-orange-300">{round(row.femLeft)} kNm</td>
-                            <td className="p-3 text-orange-300">{round(row.femRight)} kNm</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+      <p className="text-slate-300">
+        Sign Convention: Clockwise end moment positive
+      </p>
+    </div>
+  )}
 
-                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
-                  <h2 className="mb-4 text-2xl font-black text-orange-300">Step 2: Slope Deflection Equations</h2>
+  <BeamDiagram joints={joints} members={members} />
 
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-slate-200">
-                    <p className="font-bold text-white">Formula Used:</p>
-                    <p className="mt-2">M_AB = FEM_AB + (2EI/L)(2θ_A + θ_B - 3Δ/L)</p>
-                    <p>M_BA = FEM_BA + (2EI/L)(2θ_B + θ_A - 3Δ/L)</p>
-                  </div>
+  {error && (
+    <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-red-200">
+      {error}
+    </div>
+  )}
 
-                  <div className="mt-4 space-y-3">
-                    {result.equations.map(eq => (
-                      <div key={eq.joint} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-                        <p className="font-semibold text-slate-200">{eq.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+  {result && (
+    <div className="space-y-6">
+      <DetailedStepByStepSolution
+        joints={joints}
+        members={members}
+        result={result}
+      />
 
-                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
-                  <h2 className="mb-4 text-2xl font-black text-orange-300">Step 3: Solved Rotations</h2>
+      <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+        <h2 className="mb-4 text-2xl font-black text-orange-300">
+          Step 1: Fixed End Moments
+        </h2>
 
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {Object.entries(result.rotations).map(([joint, value]) => (
-                      <div key={joint} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-                        <p className="text-sm text-slate-400">Rotation at Joint {joint}</p>
-                        <p className="mt-2 text-2xl font-black text-white">θ{joint} = {round(value, 5)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-slate-800 text-slate-300">
+                <th className="p-3">Member</th>
+                <th className="p-3">Load</th>
+                <th className="p-3">Formula</th>
+                <th className="p-3">FEM Left</th>
+                <th className="p-3">FEM Right</th>
+              </tr>
+            </thead>
 
-                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
-                  <h2 className="mb-4 text-2xl font-black text-orange-300">Step 4: Final End Moments</h2>
+            <tbody>
+              {result.endMoments.map(row => (
+                <tr key={row.member} className="border-b border-slate-800">
+                  <td className="p-3 font-bold text-white">
+                    {row.member}
+                  </td>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[760px] border-collapse text-left">
-                      <thead>
-                        <tr className="border-b border-slate-800 text-slate-300">
-                          <th className="p-3">Member</th>
-                          <th className="p-3">EI</th>
-                          <th className="p-3">Length</th>
-                          <th className="p-3">Left End Moment</th>
-                          <th className="p-3">Right End Moment</th>
-                          <th className="p-3">Remark</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {result.endMoments.map(row => (
-                          <tr key={row.member} className="border-b border-slate-800">
-                            <td className="p-3 font-bold text-white">{row.member}</td>
-                            <td className="p-3 text-slate-300">{row.eiText}</td>
-                            <td className="p-3 text-slate-300">{round(row.L)} m</td>
-                            <td className="p-3 font-bold text-orange-300">
-                              M{row.leftJoint}{row.rightJoint} = {round(row.Mleft)} kNm
-                            </td>
-                            <td className="p-3 font-bold text-orange-300">
-                              M{row.rightJoint}{row.leftJoint} = {round(row.Mright)} kNm
-                            </td>
-                            <td className="p-3 text-slate-300">
-                              {row.Mleft < 0 || row.Mright < 0 ? 'Hogging/Sagging possible' : 'Positive end moments'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <SfdBmdDiagrams members={members} endMoments={result.endMoments} />
-                          <FinalSupportReactionTable
-  joints={joints}
-  members={members}
-  endMoments={result.endMoments}
-/>
-                          
-                <div className="rounded-3xl border border-orange-500/30 bg-orange-500/10 p-5">
-                  <h2 className="mb-3 text-2xl font-black text-orange-300">Exam Style Final Answer</h2>
-                  <p className="text-slate-200">
-                    Using slope deflection method, fixed end moments were calculated first. Then joint equilibrium equations were formed at all non-fixed joints. After solving rotations, final end moments are obtained as shown in the table above.
-                  </p>
-                </div>
-              </div>
-            )}
+                  <td className="p-3 text-slate-300">
+                    {row.loadType}
+                  </td>
+
+                  <td className="p-3 text-slate-300">
+                    {row.femFormula}
+                  </td>
+
+                  <td className="p-3 text-orange-300">
+                    {round(row.femLeft)} kNm
+                  </td>
+
+                  <td className="p-3 text-orange-300">
+                    {round(row.femRight)} kNm
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+        <h2 className="mb-4 text-2xl font-black text-orange-300">
+          Step 2: Slope Deflection Equations
+        </h2>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-slate-200">
+          <p className="font-bold text-white">Formula Used:</p>
+          <p className="mt-2">
+            M_AB = FEM_AB + (2EI/L)(2θ_A + θ_B - 3Δ/L)
+          </p>
+          <p>
+            M_BA = FEM_BA + (2EI/L)(2θ_B + θ_A - 3Δ/L)
+          </p>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {result.equations.map(eq => (
+            <div
+              key={eq.joint}
+              className="rounded-2xl border border-slate-800 bg-slate-900 p-4"
+            >
+              <p className="font-semibold text-slate-200">
+                {eq.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+        <h2 className="mb-4 text-2xl font-black text-orange-300">
+          Step 3: Solved Rotations
+        </h2>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {Object.entries(result.rotations).map(([joint, value]) => (
+            <div
+              key={joint}
+              className="rounded-2xl border border-slate-800 bg-slate-900 p-4"
+            >
+              <p className="text-sm text-slate-400">
+                Rotation at Joint {joint}
+              </p>
+
+              <p className="mt-2 text-2xl font-black text-white">
+                θ{joint} = {round(value, 5)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+        <h2 className="mb-4 text-2xl font-black text-orange-300">
+          Step 4: Final End Moments
+        </h2>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-slate-800 text-slate-300">
+                <th className="p-3">Member</th>
+                <th className="p-3">EI</th>
+                <th className="p-3">Length</th>
+                <th className="p-3">Left End Moment</th>
+                <th className="p-3">Right End Moment</th>
+                <th className="p-3">Remark</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {result.endMoments.map(row => (
+                <tr key={row.member} className="border-b border-slate-800">
+                  <td className="p-3 font-bold text-white">
+                    {row.member}
+                  </td>
+
+                  <td className="p-3 text-slate-300">
+                    {row.eiText}
+                  </td>
+
+                  <td className="p-3 text-slate-300">
+                    {round(row.L)} m
+                  </td>
+
+                  <td className="p-3 font-bold text-orange-300">
+                    M{row.leftJoint}{row.rightJoint} = {round(row.Mleft)} kNm
+                  </td>
+
+                  <td className="p-3 font-bold text-orange-300">
+                    M{row.rightJoint}{row.leftJoint} = {round(row.Mright)} kNm
+                  </td>
+
+                  <td className="p-3 text-slate-300">
+                    {row.Mleft < 0 || row.Mright < 0
+                      ? 'Hogging/Sagging possible'
+                      : 'Positive end moments'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <SfdBmdDiagrams
+        members={members}
+        endMoments={result.endMoments}
+      />
+
+      <FinalSupportReactionTable
+        joints={joints}
+        members={members}
+        endMoments={result.endMoments}
+      />
+
+      <div className="rounded-3xl border border-orange-500/30 bg-orange-500/10 p-5">
+        <h2 className="mb-3 text-2xl font-black text-orange-300">
+          Exam Style Final Answer
+        </h2>
+
+        <p className="text-slate-200">
+          Using slope deflection method, fixed end moments were calculated first.
+          Then slope deflection equations were formed for each member. Joint
+          equilibrium equations were applied at all non-fixed joints. After
+          solving the unknown rotations, final end moments, support reactions,
+          SFD and BMD were obtained as shown above.
+        </p>
+      </div>
+    </div>
+  )}
+</div>
           </section>
         </div>
       </div>
