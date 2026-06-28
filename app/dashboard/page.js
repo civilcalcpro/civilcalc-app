@@ -69,6 +69,13 @@ const quickTools = [
   desc: 'Unit load, virtual work, strain energy and Castigliano solver',
 },
   {
+  name: 'Indeterminate Beam',
+  icon: Ruler,
+  href: '/dashboard/calculators/indeterminate-beam',
+  color: 'orange',
+  desc: 'Force method, fixed beam, propped cantilever and continuous beam solver',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
