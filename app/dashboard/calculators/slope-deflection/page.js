@@ -888,7 +888,117 @@ function SfdBmdDiagrams({ members, endMoments }) {
     endMoments,
   }
 }
+function FinalSupportReactionTable({ joints, members, endMoments }) {
+  const supportReactions = {}
 
+  joints.forEach(joint => {
+    supportReactions[joint.name] = {
+      joint: joint.name,
+      support: joint.support,
+      reaction: 0,
+      contributions: [],
+    }
+  })
+
+  members.forEach(member => {
+    const row = endMoments.find(item => item.member === `${member.left}${member.right}`)
+    const spanReaction = calculateMemberSfdBmd(member, row)
+
+    if (supportReactions[member.left]) {
+      supportReactions[member.left].reaction += spanReaction.RA
+      supportReactions[member.left].contributions.push(
+        `From ${member.left}${member.right}: ${round(spanReaction.RA)} kN`
+      )
+    }
+
+    if (supportReactions[member.right]) {
+      supportReactions[member.right].reaction += spanReaction.RB
+      supportReactions[member.right].contributions.push(
+        `From ${member.left}${member.right}: ${round(spanReaction.RB)} kN`
+      )
+    }
+  })
+
+  const rows = Object.values(supportReactions)
+
+  const totalVerticalReaction = rows.reduce((sum, row) => sum + row.reaction, 0)
+
+  const totalLoad = members.reduce((sum, member) => {
+    return sum + loadResultantAndMoment(member).totalLoad
+  }, 0)
+
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+      <div className="mb-4">
+        <h2 className="text-2xl font-black text-orange-300">
+          Step 6: Final Support Reactions
+        </h2>
+        <p className="mt-2 text-slate-300">
+          Final support reactions are calculated by adding adjacent span reactions at internal supports.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-slate-800 text-slate-300">
+              <th className="p-3">Joint</th>
+              <th className="p-3">Support Type</th>
+              <th className="p-3">Reaction Contribution</th>
+              <th className="p-3">Final Reaction</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.joint} className="border-b border-slate-800">
+                <td className="p-3 text-lg font-black text-white">
+                  {row.joint}
+                </td>
+
+                <td className="p-3 capitalize text-slate-300">
+                  {row.support}
+                </td>
+
+                <td className="p-3 text-slate-300">
+                  <div className="space-y-1">
+                    {row.contributions.map((item, index) => (
+                      <div key={index}>{item}</div>
+                    ))}
+                  </div>
+                </td>
+
+                <td className="p-3 text-lg font-black text-sky-300">
+                  R{row.joint} = {round(row.reaction)} kN
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <p className="text-sm text-slate-400">Total Vertical Load</p>
+          <p className="mt-2 text-2xl font-black text-white">
+            {round(totalLoad)} kN
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <p className="text-sm text-slate-400">Total Support Reaction</p>
+          <p className="mt-2 text-2xl font-black text-white">
+            {round(totalVerticalReaction)} kN
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 p-4 text-sm text-orange-100">
+        Check: Total vertical reactions should approximately match total vertical load.
+      </div>
+    </div>
+  )
+}
 function SupportSymbol({ type, x, y }) {
   if (type === 'fixed') {
     return (
@@ -1589,6 +1699,11 @@ export default function StructuralAnalysisPage() {
                   </div>
                 </div>
                 <SfdBmdDiagrams members={members} endMoments={result.endMoments} />
+                          <FinalSupportReactionTable
+  joints={joints}
+  members={members}
+  endMoments={result.endMoments}
+/>
                           
                 <div className="rounded-3xl border border-orange-500/30 bg-orange-500/10 p-5">
                   <h2 className="mb-3 text-2xl font-black text-orange-300">Exam Style Final Answer</h2>
