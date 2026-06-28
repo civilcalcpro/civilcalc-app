@@ -28,7 +28,12 @@ const createDefaultLoad = (length = 5) => ({
   type: 'udl',
   w: 20,
   P: 50,
+  M: 25,
   a: length / 2,
+  start: 0,
+  end: length,
+  w1: 0,
+  w2: 20,
 })
 
 const createInitialSpan = (length = 5) => ({
@@ -67,6 +72,150 @@ function normalizeLoads(span) {
   return []
 }
 
+
+function clampValue(value, min, max) {
+  return Math.min(Math.max(num(value, min), min), max)
+}
+
+function getLoadSegment(load, L) {
+  let start = clampValue(load.start ?? 0, 0, L)
+  let end = clampValue(load.end ?? L, 0, L)
+
+  if (end < start) {
+    const temp = start
+    start = end
+    end = temp
+  }
+
+  if (end <= start) return null
+
+  return { start, end }
+}
+
+function getPointPosition(load, L) {
+  const a = num(load.a, L / 2)
+  if (a <= 0 || a >= L) return L / 2
+  return a
+}
+
+function distributedIntensity(load, x, L) {
+  if (load.type === 'udl') {
+    return x >= 0 && x <= L ? num(load.w) : 0
+  }
+
+  if (load.type === 'partialUdl') {
+    const segment = getLoadSegment(load, L)
+    if (!segment || x < segment.start || x > segment.end) return 0
+    return num(load.w)
+  }
+
+  if (load.type === 'uvl') {
+    const segment = getLoadSegment(load, L)
+    if (!segment || x < segment.start || x > segment.end) return 0
+
+    const range = segment.end - segment.start || 1
+    const ratio = (x - segment.start) / range
+    return num(load.w1) + (num(load.w2) - num(load.w1)) * ratio
+  }
+
+  return 0
+}
+
+function integrateBetween(a, b, fn, slices = 120) {
+  if (b <= a) return 0
+
+  const n = slices % 2 === 0 ? slices : slices + 1
+  const h = (b - a) / n
+  let sum = fn(a) + fn(b)
+
+  for (let i = 1; i < n; i++) {
+    const x = a + i * h
+    sum += (i % 2 === 0 ? 2 : 4) * fn(x)
+  }
+
+  return (sum * h) / 3
+}
+
+function integrateDistributedLoad(load, L, fn) {
+  if (load.type === 'udl') {
+    return integrateBetween(0, L, (x) => num(load.w) * fn(x), 160)
+  }
+
+  if (load.type === 'partialUdl' || load.type === 'uvl') {
+    const segment = getLoadSegment(load, L)
+    if (!segment) return 0
+
+    return integrateBetween(
+      segment.start,
+      segment.end,
+      (x) => distributedIntensity(load, x, L) * fn(x),
+      160
+    )
+  }
+
+  return 0
+}
+
+function loadDescription(load, loadIndex, L) {
+  if (load.type === 'udl') {
+    return `Load ${loadIndex + 1}: Full UDL w = ${fmt(load.w)} kN/m over full span`
+  }
+
+  if (load.type === 'partialUdl') {
+    const segment = getLoadSegment(load, L)
+    const start = segment ? segment.start : 0
+    const end = segment ? segment.end : L
+    return `Load ${loadIndex + 1}: Partial UDL w = ${fmt(load.w)} kN/m from x = ${fmt(start)} m to x = ${fmt(end)} m`
+  }
+
+  if (load.type === 'uvl') {
+    const segment = getLoadSegment(load, L)
+    const start = segment ? segment.start : 0
+    const end = segment ? segment.end : L
+    return `Load ${loadIndex + 1}: UVL/Trapezoidal load from ${fmt(load.w1)} to ${fmt(load.w2)} kN/m, x = ${fmt(start)} m to ${fmt(end)} m`
+  }
+
+  if (load.type === 'point') {
+    return `Load ${loadIndex + 1}: Point Load P = ${fmt(load.P)} kN at x = ${fmt(getPointPosition(load, L))} m from left support`
+  }
+
+  if (load.type === 'moment') {
+    return `Load ${loadIndex + 1}: Applied moment M = ${fmt(load.M)} kNm at x = ${fmt(getPointPosition(load, L))} m; positive value is taken as clockwise`
+  }
+
+  return `Load ${loadIndex + 1}: No load`
+}
+
+function loadFormulaLine(load, loadIndex, L) {
+  if (load.type === 'udl') {
+    return `Load ${loadIndex + 1} UDL: FEM_left = -wL²/12 = -${fmt(load.w)}×${fmt(L)}²/12; FEM_right = +wL²/12 = +${fmt(load.w)}×${fmt(L)}²/12`
+  }
+
+  if (load.type === 'point') {
+    const a = getPointPosition(load, L)
+    const b = L - a
+    return `Load ${loadIndex + 1} point load: a = ${fmt(a)} m, b = ${fmt(b)} m; FEM_left = -Pab²/L², FEM_right = +Pa²b/L²`
+  }
+
+  if (load.type === 'partialUdl') {
+    const segment = getLoadSegment(load, L)
+    const start = segment ? segment.start : 0
+    const end = segment ? segment.end : L
+    return `Load ${loadIndex + 1} partial UDL: load acts from x = ${fmt(start)} m to ${fmt(end)} m; FEM calculated using equivalent fixed-end integration over loaded length.`
+  }
+
+  if (load.type === 'uvl') {
+    return `Load ${loadIndex + 1} UVL/Trapezoidal: intensity varies linearly from ${fmt(load.w1)} to ${fmt(load.w2)} kN/m; FEM calculated using integration of varying load intensity.`
+  }
+
+  if (load.type === 'moment') {
+    const a = getPointPosition(load, L)
+    return `Load ${loadIndex + 1} applied moment: M = ${fmt(load.M)} kNm at x = ${fmt(a)} m; FEM calculated using beam shape-function rotation terms.`
+  }
+
+  return `Load ${loadIndex + 1}: no formula required.`
+}
+
 function fixedEndMoments(span) {
   const L = num(span.length)
   if (L <= 0) return { left: 0, right: 0 }
@@ -75,26 +224,46 @@ function fixedEndMoments(span) {
 
   return loads.reduce(
     (sum, load) => {
-      if (load.type === 'udl') {
-        const w = num(load.w)
+      if (load.type === 'udl' || load.type === 'partialUdl' || load.type === 'uvl') {
+        const leftContribution = -integrateDistributedLoad(
+          load,
+          L,
+          (x) => (x * (L - x) * (L - x)) / (L * L)
+        )
+
+        const rightContribution = integrateDistributedLoad(
+          load,
+          L,
+          (x) => (x * x * (L - x)) / (L * L)
+        )
 
         return {
-          left: sum.left - (w * L * L) / 12,
-          right: sum.right + (w * L * L) / 12,
+          left: sum.left + leftContribution,
+          right: sum.right + rightContribution,
         }
       }
 
       if (load.type === 'point') {
         const P = num(load.P)
-        let a = num(load.a, L / 2)
-
-        if (a <= 0 || a >= L) a = L / 2
-
+        const a = getPointPosition(load, L)
         const b = L - a
 
         return {
           left: sum.left - (P * a * b * b) / (L * L),
           right: sum.right + (P * a * a * b) / (L * L),
+        }
+      }
+
+      if (load.type === 'moment') {
+        const M = num(load.M)
+        const a = getPointPosition(load, L)
+        const r = a / L
+        const dN2 = 1 - 4 * r + 3 * r * r
+        const dN4 = -2 * r + 3 * r * r
+
+        return {
+          left: sum.left - M * dN2,
+          right: sum.right - M * dN4,
         }
       }
 
@@ -112,24 +281,30 @@ function loadSummary(span) {
 
   return loads.reduce(
     (sum, load) => {
-      if (load.type === 'udl') {
-        const w = num(load.w)
+      if (load.type === 'udl' || load.type === 'partialUdl' || load.type === 'uvl') {
+        const totalLoad = integrateDistributedLoad(load, L, () => 1)
+        const momentAboutLeft = integrateDistributedLoad(load, L, (x) => x)
 
         return {
-          totalLoad: sum.totalLoad + w * L,
-          momentAboutLeft: sum.momentAboutLeft + (w * L * L) / 2,
+          totalLoad: sum.totalLoad + totalLoad,
+          momentAboutLeft: sum.momentAboutLeft + momentAboutLeft,
         }
       }
 
       if (load.type === 'point') {
         const P = num(load.P)
-        let a = num(load.a, L / 2)
-
-        if (a <= 0 || a >= L) a = L / 2
+        const a = getPointPosition(load, L)
 
         return {
           totalLoad: sum.totalLoad + P,
           momentAboutLeft: sum.momentAboutLeft + P * a,
+        }
+      }
+
+      if (load.type === 'moment') {
+        return {
+          totalLoad: sum.totalLoad,
+          momentAboutLeft: sum.momentAboutLeft + num(load.M),
         }
       }
 
@@ -149,14 +324,13 @@ function shearAt(span, RA, x) {
   const loads = normalizeLoads(span)
 
   return loads.reduce((V, load) => {
-    if (load.type === 'udl') {
-      return V - num(load.w) * x
+    if (load.type === 'udl' || load.type === 'partialUdl' || load.type === 'uvl') {
+      const endX = clampValue(x, 0, L)
+      return V - integrateBetween(0, endX, (t) => distributedIntensity(load, t, L), 80)
     }
 
     if (load.type === 'point') {
-      let a = num(load.a, L / 2)
-      if (a <= 0 || a >= L) a = L / 2
-
+      const a = getPointPosition(load, L)
       return x >= a ? V - num(load.P) : V
     }
 
@@ -169,15 +343,24 @@ function momentAt(span, RA, leftMoment, x) {
   const loads = normalizeLoads(span)
 
   return loads.reduce((M, load) => {
-    if (load.type === 'udl') {
-      return M - (num(load.w) * x * x) / 2
+    if (load.type === 'udl' || load.type === 'partialUdl' || load.type === 'uvl') {
+      const endX = clampValue(x, 0, L)
+      return M - integrateBetween(
+        0,
+        endX,
+        (t) => distributedIntensity(load, t, L) * (x - t),
+        80
+      )
     }
 
     if (load.type === 'point') {
-      let a = num(load.a, L / 2)
-      if (a <= 0 || a >= L) a = L / 2
-
+      const a = getPointPosition(load, L)
       return x >= a ? M - num(load.P) * (x - a) : M
+    }
+
+    if (load.type === 'moment') {
+      const a = getPointPosition(load, L)
+      return x >= a ? M + num(load.M) : M
     }
 
     return M
@@ -188,50 +371,51 @@ function createStations(span, RA, leftMoment) {
   const L = num(span.length, 1)
   const stations = []
 
-  for (let i = 0; i <= 100; i++) {
-    stations.push((L * i) / 100)
+  for (let i = 0; i <= 160; i++) {
+    stations.push((L * i) / 160)
   }
 
-  const loads = normalizeLoads(span)
-  const pointLoads = loads
-    .filter((load) => load.type === 'point')
-    .map((load) => {
-      let a = num(load.a, L / 2)
-      if (a <= 0 || a >= L) a = L / 2
-      return {
-        a,
-        P: num(load.P),
-      }
-    })
-    .sort((a, b) => a.a - b.a)
+  normalizeLoads(span).forEach((load) => {
+    if (load.type === 'point' || load.type === 'moment') {
+      const a = getPointPosition(load, L)
+      stations.push(a)
+      stations.push(Math.max(0, a - L / 1000))
+      stations.push(Math.min(L, a + L / 1000))
+    }
 
-  pointLoads.forEach((load) => {
-    if (load.a > 0 && load.a < L) {
-      stations.push(load.a)
-      stations.push(Math.max(0, load.a - L / 1000))
-      stations.push(Math.min(L, load.a + L / 1000))
+    if (load.type === 'partialUdl' || load.type === 'uvl') {
+      const segment = getLoadSegment(load, L)
+      if (segment) {
+        stations.push(segment.start)
+        stations.push(segment.end)
+      }
     }
   })
 
-  const totalUdl = loads.reduce((sum, load) => {
-    return load.type === 'udl' ? sum + num(load.w) : sum
-  }, 0)
+  for (let i = 0; i < 160; i++) {
+    const x1 = (L * i) / 160
+    const x2 = (L * (i + 1)) / 160
+    const v1 = shearAt(span, RA, x1)
+    const v2 = shearAt(span, RA, x2)
 
-  if (totalUdl !== 0) {
-    const breakPoints = [0, ...pointLoads.map((load) => load.a), L]
+    if (Math.abs(v1) < 0.0001) stations.push(x1)
 
-    for (let i = 0; i < breakPoints.length - 1; i++) {
-      const start = breakPoints[i]
-      const end = breakPoints[i + 1]
-      const pointLoadBeforeInterval = pointLoads
-        .filter((load) => load.a <= start)
-        .reduce((sum, load) => sum + load.P, 0)
+    if (v1 * v2 < 0) {
+      let low = x1
+      let high = x2
 
-      const zeroShearX = (RA - pointLoadBeforeInterval) / totalUdl
+      for (let k = 0; k < 30; k++) {
+        const mid = (low + high) / 2
+        const vmid = shearAt(span, RA, mid)
 
-      if (zeroShearX > start && zeroShearX < end) {
-        stations.push(zeroShearX)
+        if (v1 * vmid <= 0) {
+          high = mid
+        } else {
+          low = mid
+        }
       }
+
+      stations.push((low + high) / 2)
     }
   }
 
@@ -442,17 +626,7 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
       const loadText =
         loads.length > 0
           ? loads
-              .map((load, loadIndex) => {
-                if (load.type === 'udl') {
-                  return `Load ${loadIndex + 1}: UDL w = ${fmt(load.w)} kN/m`
-                }
-
-                if (load.type === 'point') {
-                  return `Load ${loadIndex + 1}: Point Load P = ${fmt(load.P)} kN at a = ${fmt(load.a)} m from left support`
-                }
-
-                return `Load ${loadIndex + 1}: No load`
-              })
+              .map((load, loadIndex) => loadDescription(load, loadIndex, num(span.length, 1)))
               .join(', ')
           : 'No external load'
 
@@ -462,8 +636,18 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
 
   stepSolution.push({
     title: 'Step 2: Fixed End Moments',
-    lines: femTable.map((row) => {
-      return `${row.span}: FEM Left = ${fmt(row.FEMLeft)} kNm, FEM Right = ${fmt(row.FEMRight)} kNm`
+    lines: spans.flatMap((span, index) => {
+      const spanName = `${jointName(index)}${jointName(index + 1)}`
+      const L = num(span.length, 1)
+      const fem = femTable[index]
+      const loadFormulaLines = normalizeLoads(span).map((load, loadIndex) =>
+        `${spanName} ${loadFormulaLine(load, loadIndex, L)}`
+      )
+
+      return [
+        ...loadFormulaLines,
+        `${spanName} Total FEM: Left = ${fmt(fem.FEMLeft)} kNm, Right = ${fmt(fem.FEMRight)} kNm`,
+      ]
     }),
   })
 
@@ -543,17 +727,21 @@ export default function MomentDistributionPage() {
   const outputDiagramRef = useRef(null)
 
   const [spans, setSpans] = useState([
-    createInitialSpan(6),
+    {
+      length: 6,
+      EI: 1,
+      loads: [
+        { type: 'udl', w: 18, P: 50, M: 25, a: 3, start: 0, end: 6, w1: 0, w2: 20 },
+        { type: 'point', w: 20, P: 35, M: 25, a: 2, start: 0, end: 6, w1: 0, w2: 20 },
+        { type: 'moment', w: 20, P: 50, M: 20, a: 4, start: 0, end: 6, w1: 0, w2: 20 },
+      ],
+    },
     {
       length: 5,
       EI: 1,
       loads: [
-        {
-          type: 'point',
-          w: 20,
-          P: 60,
-          a: 2.5,
-        },
+        { type: 'partialUdl', w: 15, P: 50, M: 25, a: 2.5, start: 1, end: 4, w1: 0, w2: 20 },
+        { type: 'uvl', w: 20, P: 50, M: 25, a: 2.5, start: 0, end: 5, w1: 5, w2: 25 },
       ],
     },
   ])
@@ -671,30 +859,17 @@ export default function MomentDistributionPage() {
         length: 6,
         EI: 1,
         loads: [
-          {
-            type: 'udl',
-            w: 20,
-            P: 50,
-            a: 3,
-          },
-          {
-            type: 'point',
-            w: 20,
-            P: 35,
-            a: 2,
-          },
+          { type: 'udl', w: 18, P: 50, M: 25, a: 3, start: 0, end: 6, w1: 0, w2: 20 },
+          { type: 'point', w: 20, P: 35, M: 25, a: 2, start: 0, end: 6, w1: 0, w2: 20 },
+          { type: 'moment', w: 20, P: 50, M: 20, a: 4, start: 0, end: 6, w1: 0, w2: 20 },
         ],
       },
       {
         length: 5,
         EI: 1,
         loads: [
-          {
-            type: 'point',
-            w: 20,
-            P: 60,
-            a: 2.5,
-          },
+          { type: 'partialUdl', w: 15, P: 50, M: 25, a: 2.5, start: 1, end: 4, w1: 0, w2: 20 },
+          { type: 'uvl', w: 20, P: 50, M: 25, a: 2.5, start: 0, end: 5, w1: 5, w2: 25 },
         ],
       },
     ])
@@ -765,12 +940,13 @@ export default function MomentDistributionPage() {
         const imgData = canvas.toDataURL('image/png')
         const imgWidth = pageWidth - 28
         const imgHeight = (canvas.height * imgWidth) / canvas.width
-        const safeHeight = Math.min(imgHeight, 170)
+        let safeHeight = Math.min(imgHeight, pageHeight - y - 20)
 
-        if (y + safeHeight > pageHeight - 18) {
+        if (safeHeight < 80 || y + safeHeight > pageHeight - 18) {
           doc.addPage()
           y = 15
           addSectionTitle(title)
+          safeHeight = Math.min(imgHeight, pageHeight - y - 20)
         }
 
         doc.addImage(imgData, 'PNG', 14, y, imgWidth, safeHeight)
@@ -1050,8 +1226,11 @@ export default function MomentDistributionPage() {
                                       }
                                       className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
                                     >
-                                      <option value="udl">UDL</option>
+                                      <option value="udl">Full UDL</option>
                                       <option value="point">Point Load</option>
+                                      <option value="partialUdl">Partial UDL</option>
+                                      <option value="moment">Applied Moment</option>
+                                      <option value="uvl">UVL / Trapezoidal</option>
                                     </select>
                                   </div>
 
@@ -1080,6 +1259,90 @@ export default function MomentDistributionPage() {
                                         value={load.a}
                                         onChange={(value) =>
                                           updateLoad(index, loadIndex, 'a', value)
+                                        }
+                                      />
+                                    </>
+                                  )}
+
+                                  {load.type === 'partialUdl' && (
+                                    <>
+                                      <Field
+                                        label="Partial UDL w kN/m"
+                                        value={load.w}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'w', value)
+                                        }
+                                      />
+
+                                      <Field
+                                        label="Start x"
+                                        value={load.start}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'start', value)
+                                        }
+                                      />
+
+                                      <Field
+                                        label="End x"
+                                        value={load.end}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'end', value)
+                                        }
+                                      />
+                                    </>
+                                  )}
+
+                                  {load.type === 'moment' && (
+                                    <>
+                                      <Field
+                                        label="Moment M kNm"
+                                        value={load.M}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'M', value)
+                                        }
+                                      />
+
+                                      <Field
+                                        label="Distance a from left"
+                                        value={load.a}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'a', value)
+                                        }
+                                      />
+                                    </>
+                                  )}
+
+                                  {load.type === 'uvl' && (
+                                    <>
+                                      <Field
+                                        label="w1 kN/m"
+                                        value={load.w1}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'w1', value)
+                                        }
+                                      />
+
+                                      <Field
+                                        label="w2 kN/m"
+                                        value={load.w2}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'w2', value)
+                                        }
+                                      />
+
+                                      <Field
+                                        label="Start x"
+                                        value={load.start}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'start', value)
+                                        }
+                                      />
+
+                                      <Field
+                                        label="End x"
+                                        value={load.end}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'end', value)
                                         }
                                       />
                                     </>
@@ -1709,31 +1972,32 @@ function BeamInputDiagram({ spans, joints }) {
     return (
       <g key={`loads-${index}`}>
         {loads.map((load, loadIndex) => {
-          const levelOffset = loadIndex * 28
+          const levelOffset = loadIndex * 30
           const yTop = loadTopY + levelOffset
 
-          if (load.type === 'udl') {
-            const arrowCount = Math.max(
-              4,
-              Math.min(10, Math.floor(spanWidth / 45))
-            )
+          if (load.type === 'udl' || load.type === 'partialUdl') {
+            const segment = load.type === 'partialUdl' ? getLoadSegment(load, L) : { start: 0, end: L }
+            if (!segment) return null
+
+            const sx = x1 + (segment.start / L) * spanWidth
+            const ex = x1 + (segment.end / L) * spanWidth
+            const loadWidth = ex - sx
+            const arrowCount = Math.max(3, Math.min(8, Math.floor(loadWidth / 45)))
+            const label = load.type === 'partialUdl' ? 'Partial UDL' : 'UDL'
 
             return (
               <g key={`load-${index}-${loadIndex}`}>
                 <line
-                  x1={x1 + 12}
+                  x1={sx + 8}
                   y1={yTop}
-                  x2={x2 - 12}
+                  x2={ex - 8}
                   y2={yTop}
                   stroke="#fb923c"
                   strokeWidth="3"
                 />
 
                 {Array.from({ length: arrowCount }).map((_, i) => {
-                  const x =
-                    x1 +
-                    18 +
-                    (i * (spanWidth - 36)) / Math.max(arrowCount - 1, 1)
+                  const x = sx + 12 + (i * (loadWidth - 24)) / Math.max(arrowCount - 1, 1)
 
                   return (
                     <line
@@ -1750,23 +2014,75 @@ function BeamInputDiagram({ spans, joints }) {
                 })}
 
                 <text
-                  x={midX}
+                  x={(sx + ex) / 2}
                   y={yTop - 8}
                   textAnchor="middle"
                   fontSize="12"
                   fontWeight="700"
                   fill="#fed7aa"
                 >
-                  UDL {loadIndex + 1}: {fmt(load.w)} kN/m
+                  {label} {loadIndex + 1}: {fmt(load.w)} kN/m
+                </text>
+              </g>
+            )
+          }
+
+          if (load.type === 'uvl') {
+            const segment = getLoadSegment(load, L)
+            if (!segment) return null
+
+            const sx = x1 + (segment.start / L) * spanWidth
+            const ex = x1 + (segment.end / L) * spanWidth
+            const loadWidth = ex - sx
+            const arrowCount = Math.max(4, Math.min(9, Math.floor(loadWidth / 42)))
+
+            return (
+              <g key={`load-${index}-${loadIndex}`}>
+                <line
+                  x1={sx + 8}
+                  y1={yTop + 12}
+                  x2={ex - 8}
+                  y2={yTop - 6}
+                  stroke="#fb923c"
+                  strokeWidth="3"
+                />
+
+                {Array.from({ length: arrowCount }).map((_, i) => {
+                  const ratio = i / Math.max(arrowCount - 1, 1)
+                  const x = sx + 12 + ratio * (loadWidth - 24)
+                  const localW = num(load.w1) + (num(load.w2) - num(load.w1)) * ratio
+                  const arrowStart = yTop + 18 - Math.min(18, Math.abs(localW) * 0.6)
+
+                  return (
+                    <line
+                      key={i}
+                      x1={x}
+                      y1={arrowStart}
+                      x2={x}
+                      y2={beamY - 10}
+                      stroke="#fb923c"
+                      strokeWidth="2.5"
+                      markerEnd="url(#arrowHead)"
+                    />
+                  )
+                })}
+
+                <text
+                  x={(sx + ex) / 2}
+                  y={yTop - 12}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fontWeight="700"
+                  fill="#fed7aa"
+                >
+                  UVL {loadIndex + 1}: {fmt(load.w1)} → {fmt(load.w2)} kN/m
                 </text>
               </g>
             )
           }
 
           if (load.type === 'point') {
-            let a = num(load.a, L / 2)
-            if (a <= 0 || a >= L) a = L / 2
-
+            const a = getPointPosition(load, L)
             const px = x1 + (a / L) * spanWidth
 
             return (
@@ -1795,6 +2111,44 @@ function BeamInputDiagram({ spans, joints }) {
                 <text
                   x={px}
                   y={beamY - 22}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="#cbd5e1"
+                >
+                  a = {fmt(a)} m
+                </text>
+              </g>
+            )
+          }
+
+          if (load.type === 'moment') {
+            const a = getPointPosition(load, L)
+            const px = x1 + (a / L) * spanWidth
+
+            return (
+              <g key={`load-${index}-${loadIndex}`}>
+                <path
+                  d={`M ${px - 18} ${beamY - 28} A 18 18 0 1 1 ${px + 18} ${beamY - 28}`}
+                  fill="none"
+                  stroke="#fb923c"
+                  strokeWidth="3"
+                  markerEnd="url(#arrowHead)"
+                />
+
+                <text
+                  x={px}
+                  y={yTop - 8}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fontWeight="700"
+                  fill="#fed7aa"
+                >
+                  M{loadIndex + 1} = {fmt(load.M)} kNm
+                </text>
+
+                <text
+                  x={px}
+                  y={beamY - 48}
                   textAnchor="middle"
                   fontSize="11"
                   fill="#cbd5e1"
