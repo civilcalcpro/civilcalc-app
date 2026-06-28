@@ -38,7 +38,7 @@ const createInitialSpan = (length = 5) => ({
 })
 
 function normalizeLoads(span) {
-  if (Array.isArray(span.loads) && span.loads.length > 0) {
+  if (Array.isArray(span.loads)) {
     return span.loads
   }
 
@@ -66,6 +66,7 @@ function normalizeLoads(span) {
 
   return []
 }
+
 function fixedEndMoments(span) {
   const L = num(span.length)
   if (L <= 0) return { left: 0, right: 0 }
@@ -102,6 +103,7 @@ function fixedEndMoments(span) {
     { left: 0, right: 0 }
   )
 }
+
 function loadSummary(span) {
   const L = num(span.length)
   if (L <= 0) return { totalLoad: 0, momentAboutLeft: 0 }
@@ -136,6 +138,7 @@ function loadSummary(span) {
     { totalLoad: 0, momentAboutLeft: 0 }
   )
 }
+
 function isActualPinEnd(jointIndex, totalSpans, joints) {
   const isEndJoint = jointIndex === 0 || jointIndex === totalSpans
   return isEndJoint && isSimpleSupport(joints[jointIndex])
@@ -185,27 +188,56 @@ function createStations(span, RA, leftMoment) {
   const L = num(span.length, 1)
   const stations = []
 
-  for (let i = 0; i <= 60; i++) {
-    stations.push((L * i) / 60)
+  for (let i = 0; i <= 100; i++) {
+    stations.push((L * i) / 100)
   }
 
-  const totalUdl = normalizeLoads(span).reduce((sum, load) => {
-  return load.type === 'udl' ? sum + num(load.w) : sum
-}, 0)
+  const loads = normalizeLoads(span)
+  const pointLoads = loads
+    .filter((load) => load.type === 'point')
+    .map((load) => {
+      let a = num(load.a, L / 2)
+      if (a <= 0 || a >= L) a = L / 2
+      return {
+        a,
+        P: num(load.P),
+      }
+    })
+    .sort((a, b) => a.a - b.a)
 
-if (totalUdl !== 0) {
-  const zeroShearX = RA / totalUdl
-  if (zeroShearX > 0 && zeroShearX < L) stations.push(zeroShearX)
-}
+  pointLoads.forEach((load) => {
+    if (load.a > 0 && load.a < L) {
+      stations.push(load.a)
+      stations.push(Math.max(0, load.a - L / 1000))
+      stations.push(Math.min(L, load.a + L / 1000))
+    }
+  })
 
-  if (span.loadType === 'point') {
-    let a = num(span.a, L / 2)
-    if (a > 0 && a < L) stations.push(a)
+  const totalUdl = loads.reduce((sum, load) => {
+    return load.type === 'udl' ? sum + num(load.w) : sum
+  }, 0)
+
+  if (totalUdl !== 0) {
+    const breakPoints = [0, ...pointLoads.map((load) => load.a), L]
+
+    for (let i = 0; i < breakPoints.length - 1; i++) {
+      const start = breakPoints[i]
+      const end = breakPoints[i + 1]
+      const pointLoadBeforeInterval = pointLoads
+        .filter((load) => load.a <= start)
+        .reduce((sum, load) => sum + load.P, 0)
+
+      const zeroShearX = (RA - pointLoadBeforeInterval) / totalUdl
+
+      if (zeroShearX > start && zeroShearX < end) {
+        stations.push(zeroShearX)
+      }
+    }
   }
 
-  const unique = [...new Set(stations.map((x) => Number(x.toFixed(4))))].sort(
-    (a, b) => a - b
-  )
+  const unique = [...new Set(stations.map((x) => Number(x.toFixed(4))))]
+    .filter((x) => x >= 0 && x <= L)
+    .sort((a, b) => a - b)
 
   return unique.map((x) => ({
     x,
@@ -403,29 +435,29 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
 
   stepSolution.push({
     title: 'Step 1: Given Data',
-   lines: spans.map((span, index) => {
-  const spanName = `${jointName(index)}${jointName(index + 1)}`
-  const loads = normalizeLoads(span)
+    lines: spans.map((span, index) => {
+      const spanName = `${jointName(index)}${jointName(index + 1)}`
+      const loads = normalizeLoads(span)
 
-  const loadText =
-    loads.length > 0
-      ? loads
-          .map((load, loadIndex) => {
-            if (load.type === 'udl') {
-              return `Load ${loadIndex + 1}: UDL w = ${fmt(load.w)} kN/m`
-            }
+      const loadText =
+        loads.length > 0
+          ? loads
+              .map((load, loadIndex) => {
+                if (load.type === 'udl') {
+                  return `Load ${loadIndex + 1}: UDL w = ${fmt(load.w)} kN/m`
+                }
 
-            if (load.type === 'point') {
-              return `Load ${loadIndex + 1}: Point Load P = ${fmt(load.P)} kN at a = ${fmt(load.a)} m from left support`
-            }
+                if (load.type === 'point') {
+                  return `Load ${loadIndex + 1}: Point Load P = ${fmt(load.P)} kN at a = ${fmt(load.a)} m from left support`
+                }
 
-            return `Load ${loadIndex + 1}: No load`
-          })
-          .join(', ')
-      : 'No external load'
+                return `Load ${loadIndex + 1}: No load`
+              })
+              .join(', ')
+          : 'No external load'
 
-  return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, ${loadText}`
-}),
+      return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, ${loadText}`
+    }),
   })
 
   stepSolution.push({
@@ -512,18 +544,18 @@ export default function MomentDistributionPage() {
 
   const [spans, setSpans] = useState([
     createInitialSpan(6),
-   {
-  length: 5,
-  EI: 1,
-  loads: [
     {
-      type: 'point',
-      w: 20,
-      P: 60,
-      a: 2.5,
+      length: 5,
+      EI: 1,
+      loads: [
+        {
+          type: 'point',
+          w: 20,
+          P: 60,
+          a: 2.5,
+        },
+      ],
     },
-  ],
-},
   ])
 
   const [joints, setJoints] = useState(['pin', 'continuous', 'roller'])
@@ -546,58 +578,60 @@ export default function MomentDistributionPage() {
       )
     )
   }
-const updateLoad = (spanIndex, loadIndex, key, value) => {
-  setSpans((prev) =>
-    prev.map((span, i) => {
-      if (i !== spanIndex) return span
 
-      const loads = normalizeLoads(span).map((load, j) =>
-        j === loadIndex
-          ? {
-              ...load,
-              [key]: value,
-            }
-          : load
-      )
+  const updateLoad = (spanIndex, loadIndex, key, value) => {
+    setSpans((prev) =>
+      prev.map((span, i) => {
+        if (i !== spanIndex) return span
 
-      return {
-        ...span,
-        loads,
-      }
-    })
-  )
-}
+        const loads = normalizeLoads(span).map((load, j) =>
+          j === loadIndex
+            ? {
+                ...load,
+                [key]: value,
+              }
+            : load
+        )
 
-const addLoadToSpan = (spanIndex) => {
-  setSpans((prev) =>
-    prev.map((span, i) => {
-      if (i !== spanIndex) return span
+        return {
+          ...span,
+          loads,
+        }
+      })
+    )
+  }
 
-      return {
-        ...span,
-        loads: [
-          ...normalizeLoads(span),
-          createDefaultLoad(num(span.length, 5)),
-        ],
-      }
-    })
-  )
-}
+  const addLoadToSpan = (spanIndex) => {
+    setSpans((prev) =>
+      prev.map((span, i) => {
+        if (i !== spanIndex) return span
 
-const removeLoadFromSpan = (spanIndex, loadIndex) => {
-  setSpans((prev) =>
-    prev.map((span, i) => {
-      if (i !== spanIndex) return span
+        return {
+          ...span,
+          loads: [
+            ...normalizeLoads(span),
+            createDefaultLoad(num(span.length, 5)),
+          ],
+        }
+      })
+    )
+  }
 
-      const loads = normalizeLoads(span).filter((_, j) => j !== loadIndex)
+  const removeLoadFromSpan = (spanIndex, loadIndex) => {
+    setSpans((prev) =>
+      prev.map((span, i) => {
+        if (i !== spanIndex) return span
 
-      return {
-        ...span,
-        loads,
-      }
-    })
-  )
-}
+        const loads = normalizeLoads(span).filter((_, j) => j !== loadIndex)
+
+        return {
+          ...span,
+          loads,
+        }
+      })
+    )
+  }
+
   const updateJoint = (index, value) => {
     setJoints((prev) => prev.map((joint, i) => (i === index ? value : joint)))
   }
@@ -633,19 +667,36 @@ const removeLoadFromSpan = (spanIndex, loadIndex) => {
 
   const resetExample = () => {
     setSpans([
-      createInitialSpan(6),
-     {
-  length: 5,
-  EI: 1,
-  loads: [
-    {
-      type: 'point',
-      w: 20,
-      P: 60,
-      a: 2.5,
-    },
-  ],
-},
+      {
+        length: 6,
+        EI: 1,
+        loads: [
+          {
+            type: 'udl',
+            w: 20,
+            P: 50,
+            a: 3,
+          },
+          {
+            type: 'point',
+            w: 20,
+            P: 35,
+            a: 2,
+          },
+        ],
+      },
+      {
+        length: 5,
+        EI: 1,
+        loads: [
+          {
+            type: 'point',
+            w: 20,
+            P: 60,
+            a: 2.5,
+          },
+        ],
+      },
     ])
 
     setJoints(['pin', 'continuous', 'roller'])
@@ -954,97 +1005,102 @@ const removeLoadFromSpan = (spanIndex, loadIndex) => {
                         onChange={(value) => updateSpan(index, 'EI', value)}
                       />
 
-                      <div>
-                       <div className="md:col-span-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-  <div className="flex items-center justify-between gap-3 mb-4">
-    <div>
-      <h4 className="font-bold text-white">Loads on Span</h4>
-      <p className="text-xs text-slate-400">
-        Same span par multiple UDL aur point loads add kar sakte ho.
-      </p>
-    </div>
+                      <div className="md:col-span-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                          <div>
+                            <h4 className="font-bold text-white">Loads on Span</h4>
+                            <p className="text-xs text-slate-400">
+                              Same span par multiple UDL aur point loads add kar sakte ho.
+                            </p>
+                          </div>
 
-    <button
-      onClick={() => addLoadToSpan(index)}
-      className="rounded-xl bg-orange-500 px-3 py-2 text-sm font-bold text-black hover:bg-orange-400"
-    >
-      + Add Load
-    </button>
-  </div>
+                          <button
+                            onClick={() => addLoadToSpan(index)}
+                            className="rounded-xl bg-orange-500 px-3 py-2 text-sm font-bold text-black hover:bg-orange-400"
+                          >
+                            + Add Load
+                          </button>
+                        </div>
 
-  <div className="space-y-3">
-    {normalizeLoads(span).length === 0 ? (
-      <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">
-        No load added. Add Load button se load add karo.
-      </div>
-    ) : (
-      normalizeLoads(span).map((load, loadIndex) => (
-        <div
-          key={loadIndex}
-          className="rounded-xl border border-slate-800 bg-slate-950 p-4"
-        >
-          <div className="grid md:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm text-slate-400">
-                Load Type
-              </label>
-              <select
-                value={load.type}
-                onChange={(e) =>
-                  updateLoad(index, loadIndex, 'type', e.target.value)
-                }
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
-              >
-                <option value="udl">UDL</option>
-                <option value="point">Point Load</option>
-              </select>
-            </div>
+                        <div className="space-y-3">
+                          {normalizeLoads(span).length === 0 ? (
+                            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">
+                              No load added. Add Load button se load add karo.
+                            </div>
+                          ) : (
+                            normalizeLoads(span).map((load, loadIndex) => (
+                              <div
+                                key={loadIndex}
+                                className="rounded-xl border border-slate-800 bg-slate-950 p-4"
+                              >
+                                <div className="grid md:grid-cols-4 gap-4">
+                                  <div>
+                                    <label className="text-sm text-slate-400">
+                                      Load Type
+                                    </label>
+                                    <select
+                                      value={load.type}
+                                      onChange={(e) =>
+                                        updateLoad(
+                                          index,
+                                          loadIndex,
+                                          'type',
+                                          e.target.value
+                                        )
+                                      }
+                                      className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
+                                    >
+                                      <option value="udl">UDL</option>
+                                      <option value="point">Point Load</option>
+                                    </select>
+                                  </div>
 
-            {load.type === 'udl' && (
-              <Field
-                label="UDL w kN/m"
-                value={load.w}
-                onChange={(value) =>
-                  updateLoad(index, loadIndex, 'w', value)
-                }
-              />
-            )}
+                                  {load.type === 'udl' && (
+                                    <Field
+                                      label="UDL w kN/m"
+                                      value={load.w}
+                                      onChange={(value) =>
+                                        updateLoad(index, loadIndex, 'w', value)
+                                      }
+                                    />
+                                  )}
 
-            {load.type === 'point' && (
-              <>
-                <Field
-                  label="Point Load P kN"
-                  value={load.P}
-                  onChange={(value) =>
-                    updateLoad(index, loadIndex, 'P', value)
-                  }
-                />
+                                  {load.type === 'point' && (
+                                    <>
+                                      <Field
+                                        label="Point Load P kN"
+                                        value={load.P}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'P', value)
+                                        }
+                                      />
 
-                <Field
-                  label="Distance a from left"
-                  value={load.a}
-                  onChange={(value) =>
-                    updateLoad(index, loadIndex, 'a', value)
-                  }
-                />
-              </>
-            )}
+                                      <Field
+                                        label="Distance a from left"
+                                        value={load.a}
+                                        onChange={(value) =>
+                                          updateLoad(index, loadIndex, 'a', value)
+                                        }
+                                      />
+                                    </>
+                                  )}
 
-            <div className="flex items-end">
-              <button
-                onClick={() => removeLoadFromSpan(index, loadIndex)}
-                className="w-full rounded-xl border border-red-500/30 px-3 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/10"
-              >
-                Delete Load
-              </button>
-            </div>
-          </div>
-        </div>
-      ))
-    )}
-  </div>
-</div>
-                    
+                                  <div className="flex items-end">
+                                    <button
+                                      onClick={() => removeLoadFromSpan(index, loadIndex)}
+                                      className="w-full rounded-xl border border-red-500/30 px-3 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/10"
+                                    >
+                                      Delete Load
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1463,12 +1519,16 @@ function MiniDiagram({ points, valueKey }) {
 
 function BeamInputDiagram({ spans, joints }) {
   const width = 900
-  const height = 280
   const padding = 70
-  const beamY = 130
-  const supportY = 165
-  const loadTopY = 42
-  const dimY = 215
+  const maxLoadCount = Math.max(
+    1,
+    ...spans.map((span) => Math.max(1, normalizeLoads(span).length))
+  )
+  const loadTopY = 45
+  const beamY = Math.max(150, loadTopY + maxLoadCount * 28 + 45)
+  const supportY = beamY + 35
+  const dimY = supportY + 55
+  const height = dimY + 70
 
   const lengths = spans.map((span) => Math.max(num(span.length, 1), 0.1))
   const totalLength = lengths.reduce((sum, length) => sum + length, 0) || 1
@@ -1623,131 +1683,265 @@ function BeamInputDiagram({ spans, joints }) {
     )
   }
 
- const renderSpanLoad = (span, index) => {
-  const x1 = jointXs[index]
-  const x2 = jointXs[index + 1]
-  const spanWidth = x2 - x1
-  const midX = (x1 + x2) / 2
-  const L = num(span.length, 1)
-  const loads = normalizeLoads(span)
+  const renderSpanLoad = (span, index) => {
+    const x1 = jointXs[index]
+    const x2 = jointXs[index + 1]
+    const spanWidth = x2 - x1
+    const midX = (x1 + x2) / 2
+    const L = num(span.length, 1)
+    const loads = normalizeLoads(span)
 
-  if (loads.length === 0) {
+    if (loads.length === 0) {
+      return (
+        <text
+          key={`load-${index}`}
+          x={midX}
+          y={beamY - 30}
+          textAnchor="middle"
+          fontSize="12"
+          fill="#64748b"
+        >
+          No Load
+        </text>
+      )
+    }
+
     return (
-      <text
-        key={`load-${index}`}
-        x={midX}
-        y={beamY - 30}
-        textAnchor="middle"
-        fontSize="12"
-        fill="#64748b"
-      >
-        No Load
-      </text>
+      <g key={`loads-${index}`}>
+        {loads.map((load, loadIndex) => {
+          const levelOffset = loadIndex * 28
+          const yTop = loadTopY + levelOffset
+
+          if (load.type === 'udl') {
+            const arrowCount = Math.max(
+              4,
+              Math.min(10, Math.floor(spanWidth / 45))
+            )
+
+            return (
+              <g key={`load-${index}-${loadIndex}`}>
+                <line
+                  x1={x1 + 12}
+                  y1={yTop}
+                  x2={x2 - 12}
+                  y2={yTop}
+                  stroke="#fb923c"
+                  strokeWidth="3"
+                />
+
+                {Array.from({ length: arrowCount }).map((_, i) => {
+                  const x =
+                    x1 +
+                    18 +
+                    (i * (spanWidth - 36)) / Math.max(arrowCount - 1, 1)
+
+                  return (
+                    <line
+                      key={i}
+                      x1={x}
+                      y1={yTop}
+                      x2={x}
+                      y2={beamY - 10}
+                      stroke="#fb923c"
+                      strokeWidth="2.5"
+                      markerEnd="url(#arrowHead)"
+                    />
+                  )
+                })}
+
+                <text
+                  x={midX}
+                  y={yTop - 8}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fontWeight="700"
+                  fill="#fed7aa"
+                >
+                  UDL {loadIndex + 1}: {fmt(load.w)} kN/m
+                </text>
+              </g>
+            )
+          }
+
+          if (load.type === 'point') {
+            let a = num(load.a, L / 2)
+            if (a <= 0 || a >= L) a = L / 2
+
+            const px = x1 + (a / L) * spanWidth
+
+            return (
+              <g key={`load-${index}-${loadIndex}`}>
+                <line
+                  x1={px}
+                  y1={yTop}
+                  x2={px}
+                  y2={beamY - 10}
+                  stroke="#fb923c"
+                  strokeWidth="4"
+                  markerEnd="url(#arrowHead)"
+                />
+
+                <text
+                  x={px}
+                  y={yTop - 8}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fontWeight="700"
+                  fill="#fed7aa"
+                >
+                  P{loadIndex + 1} = {fmt(load.P)} kN
+                </text>
+
+                <text
+                  x={px}
+                  y={beamY - 22}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="#cbd5e1"
+                >
+                  a = {fmt(a)} m
+                </text>
+              </g>
+            )
+          }
+
+          return null
+        })}
+      </g>
     )
   }
 
   return (
-    <g key={`loads-${index}`}>
-      {loads.map((load, loadIndex) => {
-        const levelOffset = loadIndex * 24
-        const yTop = loadTopY + levelOffset
+    <div className="rounded-2xl border border-orange-500/20 bg-slate-900/70 p-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+        <div>
+          <h2 className="text-xl font-bold">Input Beam Diagram</h2>
+          <p className="text-sm text-slate-400">
+            Span, support, load, length aur EI ka live visual layout.
+          </p>
+        </div>
 
-        if (load.type === 'udl') {
-          const arrowCount = Math.max(
-            4,
-            Math.min(10, Math.floor(spanWidth / 45))
-          )
+        <div className="rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm text-orange-300">
+          Auto updates with input
+        </div>
+      </div>
 
-          return (
-            <g key={`load-${index}-${loadIndex}`}>
-              <line
-                x1={x1 + 12}
-                y1={yTop}
-                x2={x2 - 12}
-                y2={yTop}
-                stroke="#fb923c"
-                strokeWidth="3"
-              />
+      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-[#020617] p-3">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="min-w-[850px] w-full h-auto"
+        >
+          <defs>
+            <marker
+              id="arrowHead"
+              markerWidth="8"
+              markerHeight="8"
+              refX="4"
+              refY="4"
+              orient="auto"
+            >
+              <path d="M 0 0 L 8 4 L 0 8 Z" fill="#fb923c" />
+            </marker>
+          </defs>
 
-              {Array.from({ length: arrowCount }).map((_, i) => {
-                const x =
-                  x1 +
-                  18 +
-                  (i * (spanWidth - 36)) / Math.max(arrowCount - 1, 1)
+          <line
+            x1={padding}
+            y1={beamY}
+            x2={width - padding}
+            y2={beamY}
+            stroke="#e2e8f0"
+            strokeWidth="8"
+            strokeLinecap="round"
+          />
 
-                return (
-                  <line
-                    key={i}
-                    x1={x}
-                    y1={yTop}
-                    x2={x}
-                    y2={beamY - 10}
-                    stroke="#fb923c"
-                    strokeWidth="2.5"
-                    markerEnd="url(#arrowHead)"
-                  />
-                )
-              })}
+          {spans.map((span, index) => renderSpanLoad(span, index))}
 
-              <text
-                x={midX}
-                y={yTop - 8}
-                textAnchor="middle"
-                fontSize="12"
-                fontWeight="700"
-                fill="#fed7aa"
-              >
-                UDL {loadIndex + 1}: {fmt(load.w)} kN/m
-              </text>
-            </g>
-          )
-        }
-
-        if (load.type === 'point') {
-          let a = num(load.a, L / 2)
-          if (a <= 0 || a >= L) a = L / 2
-
-          const px = x1 + (a / L) * spanWidth
-
-          return (
-            <g key={`load-${index}-${loadIndex}`}>
-              <line
-                x1={px}
-                y1={yTop}
-                x2={px}
-                y2={beamY - 10}
-                stroke="#fb923c"
-                strokeWidth="4"
-                markerEnd="url(#arrowHead)"
+          {jointXs.map((x, index) => (
+            <g key={`joint-${index}`}>
+              <circle
+                cx={x}
+                cy={beamY}
+                r="8"
+                fill="#f97316"
+                stroke="#fed7aa"
+                strokeWidth="2"
               />
 
               <text
-                x={px}
-                y={yTop - 8}
+                x={x}
+                y={beamY - 18}
                 textAnchor="middle"
-                fontSize="12"
-                fontWeight="700"
-                fill="#fed7aa"
+                fontSize="14"
+                fontWeight="800"
+                fill="#ffffff"
               >
-                P{loadIndex + 1} = {fmt(load.P)} kN
-              </text>
-
-              <text
-                x={px}
-                y={beamY - 22}
-                textAnchor="middle"
-                fontSize="11"
-                fill="#cbd5e1"
-              >
-                a = {fmt(a)} m
+                {jointName(index)}
               </text>
             </g>
-          )
-        }
+          ))}
 
-        return null
-      })}
-    </g>
+          {joints.map((type, index) => renderSupport(type, jointXs[index], index))}
+
+          {spans.map((span, index) => {
+            const x1 = jointXs[index]
+            const x2 = jointXs[index + 1]
+            const midX = (x1 + x2) / 2
+
+            return (
+              <g key={`span-label-${index}`}>
+                <line
+                  x1={x1}
+                  y1={dimY}
+                  x2={x2}
+                  y2={dimY}
+                  stroke="#64748b"
+                  strokeWidth="2"
+                />
+
+                <line
+                  x1={x1}
+                  y1={dimY - 8}
+                  x2={x1}
+                  y2={dimY + 8}
+                  stroke="#64748b"
+                  strokeWidth="2"
+                />
+
+                <line
+                  x1={x2}
+                  y1={dimY - 8}
+                  x2={x2}
+                  y2={dimY + 8}
+                  stroke="#64748b"
+                  strokeWidth="2"
+                />
+
+                <text
+                  x={midX}
+                  y={dimY + 22}
+                  textAnchor="middle"
+                  fontSize="13"
+                  fill="#cbd5e1"
+                >
+                  Span {jointName(index)}
+                  {jointName(index + 1)} = {fmt(span.length)} m
+                </text>
+
+                <text
+                  x={midX}
+                  y={dimY + 42}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#94a3b8"
+                >
+                  Relative EI = {fmt(span.EI)}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+    </div>
   )
 }
 
