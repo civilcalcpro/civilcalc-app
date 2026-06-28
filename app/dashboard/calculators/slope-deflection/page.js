@@ -1230,26 +1230,72 @@ function CurveDiagram({ result, type }) {
   const x0 = 70
   const x1 = 570
   const yBase = 110
-  const amp = 72
+  const amp = 62
   const L = result.L || 1
   const mapX = (x) => x0 + (x / L) * (x1 - x0)
 
- const getValue = (item) => {
-  if (type === 'sfd') return item.shear
-  if (type === 'bmd') return item.moment
-  if (type === 'mei') return item.curvature
-  if (type === 'slope') return item.slope
-  return item.deflectionMm
-}
+  const getValue = (item) => {
+    if (type === 'sfd') return item.shear
+    if (type === 'bmd') return item.moment
+    if (type === 'mei') return item.curvature
+    if (type === 'slope') return item.slope
+    return item.deflectionMm
+  }
+
+  const meta = {
+    sfd: {
+      title: 'Shear Force Diagram',
+      color: '#f97316',
+      note: 'SF values along beam.',
+      unit: 'kN',
+      digits: 3,
+      formulaLabel: 'SF',
+    },
+    bmd: {
+      title: 'Bending Moment Diagram',
+      color: '#38bdf8',
+      note: 'BM values used for M/EI calculation.',
+      unit: 'kN·m',
+      digits: 3,
+      formulaLabel: 'BM',
+    },
+    mei: {
+      title: 'M/EI Diagram',
+      color: '#eab308',
+      note: 'M/EI diagram represents curvature of the beam.',
+      unit: '1/m',
+      digits: 8,
+      formulaLabel: 'M/EI',
+    },
+    slope: {
+      title: 'Slope Curve',
+      color: '#a78bfa',
+      note: 'Slope curve obtained by integrating M/EI once.',
+      unit: 'rad',
+      digits: 8,
+      formulaLabel: 'θ',
+    },
+    deflection: {
+      title: 'Deflection / Elastic Curve',
+      color: '#22c55e',
+      note: 'Deflection curve obtained by integrating M/EI twice.',
+      unit: 'mm',
+      digits: 4,
+      formulaLabel: 'y',
+    },
+  }[type]
+
   const values = result.values || []
- const rawMaxAbs = Math.max(...values.map((item) => Math.abs(getValue(item))))
-const maxAbs = rawMaxAbs > 1e-12 ? rawMaxAbs : 1
+
+  const rawMaxAbs = Math.max(...values.map((item) => Math.abs(getValue(item))))
+  const maxAbs = rawMaxAbs > 1e-12 ? rawMaxAbs : 1
 
   const points = values
     .map((item) => {
       const value = getValue(item)
+
       const y =
-       type === 'bmd' || type === 'mei' || type === 'deflection'
+        type === 'bmd' || type === 'mei' || type === 'deflection'
           ? yBase + (value / maxAbs) * amp
           : yBase - (value / maxAbs) * amp
 
@@ -1257,24 +1303,67 @@ const maxAbs = rawMaxAbs > 1e-12 ? rawMaxAbs : 1
     })
     .join(' ')
 
-  const meta = {
-  sfd: ['Shear Force Diagram', '#f97316', 'SF values along beam.'],
-  bmd: ['Bending Moment Diagram', '#38bdf8', 'BM values used for M/EI calculation.'],
-  mei: ['M/EI Diagram', '#eab308', 'M/EI diagram represents curvature of the beam.'],
-  slope: ['Slope Curve', '#a78bfa', 'Slope curve obtained by integrating M/EI once.'],
-  deflection: ['Deflection / Elastic Curve', '#22c55e', 'Deflection curve obtained by integrating M/EI twice.'],
-}[type]
+  const maxPoint = values.reduce((best, item) =>
+    getValue(item) > getValue(best) ? item : best
+  )
+
+  const minPoint = values.reduce((best, item) =>
+    getValue(item) < getValue(best) ? item : best
+  )
+
+  const selectedPoint = values.reduce((best, item) =>
+    Math.abs(item.x - result.sectionX) < Math.abs(best.x - result.sectionX)
+      ? item
+      : best
+  )
+
+  const pointY = (item) => {
+    const value = getValue(item)
+
+    return type === 'bmd' || type === 'mei' || type === 'deflection'
+      ? yBase + (value / maxAbs) * amp
+      : yBase - (value / maxAbs) * amp
+  }
+
+  const selectedValue = getValue(selectedPoint)
+  const maxValue = getValue(maxPoint)
+  const minValue = getValue(minPoint)
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
-      <h3 className="mb-3 text-lg font-black text-white">{meta[0]}</h3>
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-lg font-black text-white">{meta.title}</h3>
+          <p className="mt-1 text-xs leading-5 text-slate-400">{meta.note}</p>
+        </div>
 
-      <svg viewBox="0 0 640 240" className="h-auto w-full">
-        <line x1={x0} y1={yBase} x2={x1} y2={yBase} stroke="#64748b" strokeWidth="2" strokeDasharray="6 6" />
+        <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-3 py-2 text-xs font-bold text-orange-200">
+          {meta.formulaLabel} at x = {fmt(selectedPoint.x, 3)} m: {fmt(selectedValue, meta.digits)} {meta.unit}
+        </div>
+      </div>
+
+      <svg viewBox="0 0 640 280" className="h-auto w-full">
+        <line
+          x1={x0}
+          y1={yBase}
+          x2={x1}
+          y2={yBase}
+          stroke="#64748b"
+          strokeWidth="2"
+          strokeDasharray="6 6"
+        />
+
         <line x1={x0} y1="30" x2={x0} y2="190" stroke="#334155" strokeWidth="2" />
         <line x1={x1} y1="30" x2={x1} y2="190" stroke="#334155" strokeWidth="2" />
 
-        <polyline points={points} fill="none" stroke={meta[1]} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
+        <polyline
+          points={points}
+          fill="none"
+          stroke={meta.color}
+          strokeWidth="4"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
 
         <line
           x1={mapX(result.sectionX)}
@@ -1286,15 +1375,55 @@ const maxAbs = rawMaxAbs > 1e-12 ? rawMaxAbs : 1
           strokeDasharray="5 5"
         />
 
+        <circle
+          cx={mapX(selectedPoint.x)}
+          cy={pointY(selectedPoint)}
+          r="5"
+          fill="#eab308"
+          stroke="#020617"
+          strokeWidth="2"
+        />
+
+        <circle
+          cx={mapX(maxPoint.x)}
+          cy={pointY(maxPoint)}
+          r="4"
+          fill="#22c55e"
+          stroke="#020617"
+          strokeWidth="2"
+        />
+
+        <circle
+          cx={mapX(minPoint.x)}
+          cy={pointY(minPoint)}
+          r="4"
+          fill="#f97316"
+          stroke="#020617"
+          strokeWidth="2"
+        />
+
         <text x={x0 - 10} y="212" fill="#cbd5e1" fontSize="13" fontWeight="700">
           {result.beamType === 'simple' ? 'A' : 'Fixed'}
         </text>
+
         <text x={x1 - 16} y="212" fill="#cbd5e1" fontSize="13" fontWeight="700">
           {result.beamType === 'simple' ? 'B' : 'Free'}
         </text>
 
-        <text x="18" y="22" fill="#94a3b8" fontSize="13">
-          {meta[2]}
+        <text x="18" y="235" fill="#94a3b8" fontSize="13">
+          Max {meta.formulaLabel} = {fmt(maxValue, meta.digits)} {meta.unit} at x = {fmt(maxPoint.x, 3)} m
+        </text>
+
+        <text x="18" y="255" fill="#94a3b8" fontSize="13">
+          Min {meta.formulaLabel} = {fmt(minValue, meta.digits)} {meta.unit} at x = {fmt(minPoint.x, 3)} m
+        </text>
+
+        <text x="360" y="235" fill="#facc15" fontSize="13" fontWeight="800">
+          Selected x = {fmt(selectedPoint.x, 3)} m
+        </text>
+
+        <text x="360" y="255" fill="#facc15" fontSize="13" fontWeight="800">
+          {meta.formulaLabel} = {fmt(selectedValue, meta.digits)} {meta.unit}
         </text>
       </svg>
     </div>
