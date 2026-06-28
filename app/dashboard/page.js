@@ -55,6 +55,13 @@ const quickTools = [
   desc: '2D truss member forces, reactions, tension and compression',
 },
   {
+  name: 'Slope & Deflection',
+  icon: Ruler,
+  href: '/dashboard/calculators/slope-deflection',
+  color: 'blue',
+  desc: 'Beam slope, deflection, SFD, BMD and elastic curve solver',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
