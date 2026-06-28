@@ -393,6 +393,419 @@ function expressionToText(expr, unknownNames) {
 }
 
 function solveSlopeDeflection(joints, members) {
+  function loadResultantAndMoment(member) {
+  const L = Math.max(n(member.length, 1), 0.000001)
+  const type = member.loadType
+
+  if (type === 'point') {
+    const P = n(member.P)
+    const a = Math.min(Math.max(n(member.a), 0), L)
+    return {
+      totalLoad: P,
+      momentAboutLeft: P * a,
+      centroid: a,
+    }
+  }
+
+  if (type === 'udl') {
+    const w = n(member.w)
+    return {
+      totalLoad: w * L,
+      momentAboutLeft: w * L * L / 2,
+      centroid: L / 2,
+    }
+  }
+
+  if (type === 'uvl_inc') {
+    const w = n(member.w)
+    const W = w * L / 2
+    return {
+      totalLoad: W,
+      momentAboutLeft: W * (2 * L / 3),
+      centroid: 2 * L / 3,
+    }
+  }
+
+  if (type === 'uvl_dec') {
+    const w = n(member.w)
+    const W = w * L / 2
+    return {
+      totalLoad: W,
+      momentAboutLeft: W * (L / 3),
+      centroid: L / 3,
+    }
+  }
+
+  if (type === 'trapezoidal') {
+    const w1 = n(member.w1)
+    const w2 = n(member.w2)
+    const W = L * (w1 + w2) / 2
+    const M = (w1 * L * L / 2) + ((w2 - w1) * L * L / 3)
+
+    return {
+      totalLoad: W,
+      momentAboutLeft: M,
+      centroid: W === 0 ? L / 2 : M / W,
+    }
+  }
+
+  return {
+    totalLoad: 0,
+    momentAboutLeft: 0,
+    centroid: L / 2,
+  }
+}
+
+function loadBeforeSection(member, x) {
+  const L = Math.max(n(member.length, 1), 0.000001)
+  const type = member.loadType
+  const xx = Math.min(Math.max(x, 0), L)
+
+  if (type === 'point') {
+    const P = n(member.P)
+    const a = Math.min(Math.max(n(member.a), 0), L)
+    return xx >= a ? P : 0
+  }
+
+  if (type === 'udl') {
+    const w = n(member.w)
+    return w * xx
+  }
+
+  if (type === 'uvl_inc') {
+    const w = n(member.w)
+    return (w * xx * xx) / (2 * L)
+  }
+
+  if (type === 'uvl_dec') {
+    const w = n(member.w)
+    return w * (xx - (xx * xx) / (2 * L))
+  }
+
+  if (type === 'trapezoidal') {
+    const w1 = n(member.w1)
+    const w2 = n(member.w2)
+    return (w1 * xx) + ((w2 - w1) * xx * xx) / (2 * L)
+  }
+
+  return 0
+}
+
+function loadMomentBeforeSection(member, x) {
+  const L = Math.max(n(member.length, 1), 0.000001)
+  const type = member.loadType
+  const xx = Math.min(Math.max(x, 0), L)
+
+  if (type === 'point') {
+    const P = n(member.P)
+    const a = Math.min(Math.max(n(member.a), 0), L)
+    return xx >= a ? P * (xx - a) : 0
+  }
+
+  if (type === 'udl') {
+    const w = n(member.w)
+    return (w * xx * xx) / 2
+  }
+
+  if (type === 'uvl_inc') {
+    const w = n(member.w)
+    return (w * xx * xx * xx) / (6 * L)
+  }
+
+  if (type === 'uvl_dec') {
+    const w = n(member.w)
+    return (w * xx * xx / 2) - (w * xx * xx * xx / (6 * L))
+  }
+
+  if (type === 'trapezoidal') {
+    const w1 = n(member.w1)
+    const w2 = n(member.w2)
+    return (w1 * xx * xx / 2) + ((w2 - w1) * xx * xx * xx / (6 * L))
+  }
+
+  return 0
+}
+
+function calculateMemberSfdBmd(member, endMomentRow) {
+  const L = Math.max(n(member.length, 1), 0.000001)
+
+  const MLeft = n(endMomentRow?.Mleft)
+  const MRightClockwise = n(endMomentRow?.Mright)
+
+  const load = loadResultantAndMoment(member)
+
+  // BMD convention:
+  // Left end ordinate = M_AB
+  // Right end ordinate = -M_BA
+  const RA = ((-MRightClockwise - MLeft) + load.momentAboutLeft) / L
+  const RB = load.totalLoad - RA
+
+  const points = []
+  const divisions = 50
+
+  for (let i = 0; i <= divisions; i++) {
+    const x = (L * i) / divisions
+    const V = RA - loadBeforeSection(member, x)
+    const M = MLeft + RA * x - loadMomentBeforeSection(member, x)
+
+    points.push({
+      x,
+      shear: V,
+      moment: M,
+    })
+  }
+
+  const shears = points.map(p => p.shear)
+  const moments = points.map(p => p.moment)
+
+  return {
+    member: `${member.left}${member.right}`,
+    leftJoint: member.left,
+    rightJoint: member.right,
+    L,
+    RA,
+    RB,
+    totalLoad: load.totalLoad,
+    loadCentroid: load.centroid,
+    points,
+    maxShear: Math.max(...shears),
+    minShear: Math.min(...shears),
+    maxMoment: Math.max(...moments),
+    minMoment: Math.min(...moments),
+  }
+}
+
+function SfdBmdDiagrams({ members, endMoments }) {
+  const spanData = members.map(member => {
+    const row = endMoments.find(item => item.member === `${member.left}${member.right}`)
+    return calculateMemberSfdBmd(member, row)
+  })
+
+  const totalLength = spanData.reduce((sum, span) => sum + span.L, 0)
+
+  const allShear = spanData.flatMap(span => span.points.map(p => p.shear))
+  const allMoment = spanData.flatMap(span => span.points.map(p => p.moment))
+
+  const maxAbsShear = Math.max(1, ...allShear.map(v => Math.abs(v)))
+  const maxAbsMoment = Math.max(1, ...allMoment.map(v => Math.abs(v)))
+
+  const width = 940
+  const diagramWidth = 780
+  const startX = 80
+  const endX = startX + diagramWidth
+
+  const sfdZeroY = 130
+  const bmdZeroY = 390
+  const scaleShear = 85 / maxAbsShear
+  const scaleMoment = 100 / maxAbsMoment
+
+  let cumulative = 0
+  const spansWithPosition = spanData.map(span => {
+    const start = cumulative
+    cumulative += span.L
+    return {
+      ...span,
+      globalStart: start,
+      globalEnd: cumulative,
+    }
+  })
+
+  const mapX = globalX => startX + (globalX / totalLength) * diagramWidth
+
+  const sfdY = value => sfdZeroY - value * scaleShear
+
+  // BMD positive sagging downward
+  const bmdY = value => bmdZeroY + value * scaleMoment
+
+  const makePolyline = (span, type) => {
+    return span.points.map(point => {
+      const gx = span.globalStart + point.x
+      const y = type === 'sfd' ? sfdY(point.shear) : bmdY(point.moment)
+      return `${mapX(gx)},${y}`
+    }).join(' ')
+  }
+
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+      <div className="mb-4">
+        <h2 className="text-2xl font-black text-orange-300">
+          Step 5: SFD & BMD Diagrams
+        </h2>
+        <p className="mt-2 text-slate-300">
+          Shear Force Diagram and Bending Moment Diagram are generated span-wise using final end moments from slope deflection.
+        </p>
+      </div>
+
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900 p-3">
+        <svg width={width} height="560" viewBox={`0 0 ${width} 560`} className="min-w-[880px]">
+          <text x="30" y="35" fill="#f8fafc" fontSize="20" fontWeight="800">
+            Shear Force Diagram
+          </text>
+
+          <line x1={startX} y1={sfdZeroY} x2={endX} y2={sfdZeroY} stroke="#64748b" strokeWidth="2" />
+          <text x={endX + 10} y={sfdZeroY + 5} fill="#94a3b8" fontSize="13">
+            Zero
+          </text>
+
+          {spansWithPosition.map(span => (
+            <g key={`sfd-${span.member}`}>
+              <line
+                x1={mapX(span.globalStart)}
+                y1={sfdZeroY - 105}
+                x2={mapX(span.globalStart)}
+                y2={sfdZeroY + 105}
+                stroke="#334155"
+                strokeWidth="1"
+              />
+
+              <polyline
+                points={makePolyline(span, 'sfd')}
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="4"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+
+              <text
+                x={(mapX(span.globalStart) + mapX(span.globalEnd)) / 2 - 18}
+                y={sfdZeroY + 128}
+                fill="#cbd5e1"
+                fontSize="14"
+                fontWeight="700"
+              >
+                {span.member}
+              </text>
+
+              <text
+                x={(mapX(span.globalStart) + mapX(span.globalEnd)) / 2 - 42}
+                y={sfdZeroY - 112}
+                fill="#38bdf8"
+                fontSize="12"
+              >
+                Vmax {round(span.maxShear)} kN
+              </text>
+
+              <text
+                x={(mapX(span.globalStart) + mapX(span.globalEnd)) / 2 - 42}
+                y={sfdZeroY + 112}
+                fill="#38bdf8"
+                fontSize="12"
+              >
+                Vmin {round(span.minShear)} kN
+              </text>
+            </g>
+          ))}
+
+          <line x1={endX} y1={sfdZeroY - 105} x2={endX} y2={sfdZeroY + 105} stroke="#334155" strokeWidth="1" />
+
+          <text x="30" y="300" fill="#f8fafc" fontSize="20" fontWeight="800">
+            Bending Moment Diagram
+          </text>
+
+          <line x1={startX} y1={bmdZeroY} x2={endX} y2={bmdZeroY} stroke="#64748b" strokeWidth="2" />
+          <text x={endX + 10} y={bmdZeroY + 5} fill="#94a3b8" fontSize="13">
+            Zero
+          </text>
+
+          <text x={startX} y={bmdZeroY + 135} fill="#94a3b8" fontSize="13">
+            Positive sagging shown downward
+          </text>
+
+          {spansWithPosition.map(span => (
+            <g key={`bmd-${span.member}`}>
+              <line
+                x1={mapX(span.globalStart)}
+                y1={bmdZeroY - 125}
+                x2={mapX(span.globalStart)}
+                y2={bmdZeroY + 125}
+                stroke="#334155"
+                strokeWidth="1"
+              />
+
+              <polyline
+                points={makePolyline(span, 'bmd')}
+                fill="none"
+                stroke="#f97316"
+                strokeWidth="4"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+
+              <text
+                x={(mapX(span.globalStart) + mapX(span.globalEnd)) / 2 - 18}
+                y={bmdZeroY + 158}
+                fill="#cbd5e1"
+                fontSize="14"
+                fontWeight="700"
+              >
+                {span.member}
+              </text>
+
+              <text
+                x={(mapX(span.globalStart) + mapX(span.globalEnd)) / 2 - 48}
+                y={bmdZeroY - 132}
+                fill="#fb923c"
+                fontSize="12"
+              >
+                Mmin {round(span.minMoment)} kNm
+              </text>
+
+              <text
+                x={(mapX(span.globalStart) + mapX(span.globalEnd)) / 2 - 48}
+                y={bmdZeroY + 128}
+                fill="#fb923c"
+                fontSize="12"
+              >
+                Mmax {round(span.maxMoment)} kNm
+              </text>
+            </g>
+          ))}
+
+          <line x1={endX} y1={bmdZeroY - 125} x2={endX} y2={bmdZeroY + 125} stroke="#334155" strokeWidth="1" />
+        </svg>
+      </div>
+
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full min-w-[850px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-slate-800 text-slate-300">
+              <th className="p-3">Member</th>
+              <th className="p-3">Left Reaction</th>
+              <th className="p-3">Right Reaction</th>
+              <th className="p-3">Total Load</th>
+              <th className="p-3">Max SF</th>
+              <th className="p-3">Min SF</th>
+              <th className="p-3">Max BM</th>
+              <th className="p-3">Min BM</th>
+            </tr>
+          </thead>
+          <tbody>
+            {spanData.map(span => (
+              <tr key={span.member} className="border-b border-slate-800">
+                <td className="p-3 font-bold text-white">{span.member}</td>
+                <td className="p-3 text-sky-300">R{span.leftJoint} = {round(span.RA)} kN</td>
+                <td className="p-3 text-sky-300">R{span.rightJoint} = {round(span.RB)} kN</td>
+                <td className="p-3 text-slate-300">{round(span.totalLoad)} kN</td>
+                <td className="p-3 text-slate-300">{round(span.maxShear)} kN</td>
+                <td className="p-3 text-slate-300">{round(span.minShear)} kN</td>
+                <td className="p-3 text-orange-300">{round(span.maxMoment)} kNm</td>
+                <td className="p-3 text-orange-300">{round(span.minMoment)} kNm</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300">
+        <p>
+          Note: BMD is generated using final end moments from slope deflection. Positive bending moment is shown downward as sagging.
+        </p>
+      </div>
+    </div>
+  )
+}
+  
   const unknownJoints = joints
     .filter(j => j.support !== 'fixed')
     .map(j => j.name)
@@ -1175,7 +1588,8 @@ export default function StructuralAnalysisPage() {
                     </table>
                   </div>
                 </div>
-
+                <SfdBmdDiagrams members={members} endMoments={result.endMoments} />
+                          
                 <div className="rounded-3xl border border-orange-500/30 bg-orange-500/10 p-5">
                   <h2 className="mb-3 text-2xl font-black text-orange-300">Exam Style Final Answer</h2>
                   <p className="text-slate-200">
