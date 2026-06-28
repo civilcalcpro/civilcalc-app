@@ -97,6 +97,13 @@ const quickTools = [
   desc: 'Three-hinged arch, two-hinged arch, cable sag and tension solver',
 },
   {
+  name: 'Influence Line',
+  icon: Ruler,
+  href: '/dashboard/calculators/influence-line',
+  color: 'orange',
+  desc: 'ILD, moving loads, maximum reaction, SF and BM solver',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
