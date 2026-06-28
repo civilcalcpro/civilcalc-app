@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Calculator, Plus, Trash2, RotateCcw } from 'lucide-react'
+import { Calculator, Plus, Trash2, RotateCcw, Activity } from 'lucide-react'
 
 const fmt = (v, d = 3) => {
   const n = Number(v)
@@ -9,27 +9,39 @@ const fmt = (v, d = 3) => {
   return n.toFixed(d).replace(/\.?0+$/, '')
 }
 
+const num = (v, fallback = 0) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : fallback
+}
+
 const jointName = (i) => String.fromCharCode(65 + i)
 
-function fixedEndMoments(span) {
-  const L = Number(span.length) || 0
-  const type = span.loadType
+const createInitialSpan = (length = 5) => ({
+  length,
+  EI: 1,
+  loadType: 'udl',
+  w: 20,
+  P: 50,
+  a: length / 2,
+})
 
+function fixedEndMoments(span) {
+  const L = num(span.length)
   if (L <= 0) return { left: 0, right: 0 }
 
-  if (type === 'udl') {
-    const w = Number(span.w) || 0
+  if (span.loadType === 'udl') {
+    const w = num(span.w)
     return {
       left: -(w * L * L) / 12,
       right: (w * L * L) / 12,
     }
   }
 
-  if (type === 'point') {
-    const P = Number(span.P) || 0
-    let a = Number(span.a) || L / 2
-    if (a <= 0) a = L / 2
-    if (a >= L) a = L / 2
+  if (span.loadType === 'point') {
+    const P = num(span.P)
+    let a = num(span.a, L / 2)
+
+    if (a <= 0 || a >= L) a = L / 2
 
     const b = L - a
 
@@ -42,19 +54,107 @@ function fixedEndMoments(span) {
   return { left: 0, right: 0 }
 }
 
-function createInitialSpan(length = 5) {
-  return {
-    length,
-    EI: 1,
-    loadType: 'udl',
-    w: 20,
-    P: 50,
-    a: length / 2,
+function loadSummary(span) {
+  const L = num(span.length)
+  if (L <= 0) return { totalLoad: 0, momentAboutLeft: 0 }
+
+  if (span.loadType === 'udl') {
+    const w = num(span.w)
+    return {
+      totalLoad: w * L,
+      momentAboutLeft: (w * L * L) / 2,
+    }
   }
+
+  if (span.loadType === 'point') {
+    const P = num(span.P)
+    let a = num(span.a, L / 2)
+
+    if (a <= 0 || a >= L) a = L / 2
+
+    return {
+      totalLoad: P,
+      momentAboutLeft: P * a,
+    }
+  }
+
+  return { totalLoad: 0, momentAboutLeft: 0 }
+}
+
+function isActualPinEnd(jointIndex, totalSpans, joints) {
+  const isEndJoint = jointIndex === 0 || jointIndex === totalSpans
+  return isEndJoint && joints[jointIndex] === 'pin'
+}
+
+function shearAt(span, RA, x) {
+  if (span.loadType === 'udl') {
+    return RA - num(span.w) * x
+  }
+
+  if (span.loadType === 'point') {
+    const L = num(span.length)
+    let a = num(span.a, L / 2)
+
+    if (a <= 0 || a >= L) a = L / 2
+
+    return x >= a ? RA - num(span.P) : RA
+  }
+
+  return RA
+}
+
+function momentAt(span, RA, leftMoment, x) {
+  if (span.loadType === 'udl') {
+    return leftMoment + RA * x - (num(span.w) * x * x) / 2
+  }
+
+  if (span.loadType === 'point') {
+    const L = num(span.length)
+    let a = num(span.a, L / 2)
+
+    if (a <= 0 || a >= L) a = L / 2
+
+    const loadMoment = x >= a ? num(span.P) * (x - a) : 0
+    return leftMoment + RA * x - loadMoment
+  }
+
+  return leftMoment + RA * x
+}
+
+function createStations(span, RA, leftMoment) {
+  const L = num(span.length, 1)
+  const stations = []
+
+  for (let i = 0; i <= 60; i++) {
+    stations.push((L * i) / 60)
+  }
+
+  if (span.loadType === 'udl') {
+    const w = num(span.w)
+    if (w !== 0) {
+      const zeroShearX = RA / w
+      if (zeroShearX > 0 && zeroShearX < L) stations.push(zeroShearX)
+    }
+  }
+
+  if (span.loadType === 'point') {
+    let a = num(span.a, L / 2)
+    if (a > 0 && a < L) stations.push(a)
+  }
+
+  const unique = [...new Set(stations.map((x) => Number(x.toFixed(4))))].sort(
+    (a, b) => a - b
+  )
+
+  return unique.map((x) => ({
+    x,
+    shear: shearAt(span, RA, x),
+    moment: momentAt(span, RA, leftMoment, x),
+  }))
 }
 
 function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.001) {
-  const n = spans.length
+  const totalSpans = spans.length
 
   let moments = spans.map((span) => {
     const fem = fixedEndMoments(span)
@@ -66,8 +166,6 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
 
   const femTable = moments.map((m, i) => ({
     span: `${jointName(i)}${jointName(i + 1)}`,
-    leftJoint: jointName(i),
-    rightJoint: jointName(i + 1),
     FEMLeft: m.left,
     FEMRight: m.right,
   }))
@@ -80,32 +178,38 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
     if (jointIndex > 0) {
       const spanIndex = jointIndex - 1
       const span = spans[spanIndex]
-      const L = Number(span.length) || 1
-      const EI = Number(span.EI) || 1
+      const L = num(span.length, 1)
+      const EI = num(span.EI, 1)
+      const farJoint = jointIndex - 1
+      const farIsPinEnd = isActualPinEnd(farJoint, totalSpans, joints)
 
       connected.push({
         spanIndex,
         end: 'right',
         farEnd: 'left',
-        farJoint: jointIndex - 1,
-        stiffness: (4 * EI) / L,
-        label: `${jointName(spanIndex + 1)}${jointName(spanIndex)}`,
+        farJoint,
+        stiffness: farIsPinEnd ? (3 * EI) / L : (4 * EI) / L,
+        carryOverFactor: farIsPinEnd ? 0 : 0.5,
+        label: `${jointName(jointIndex)}${jointName(farJoint)}`,
       })
     }
 
-    if (jointIndex < n) {
+    if (jointIndex < totalSpans) {
       const spanIndex = jointIndex
       const span = spans[spanIndex]
-      const L = Number(span.length) || 1
-      const EI = Number(span.EI) || 1
+      const L = num(span.length, 1)
+      const EI = num(span.EI, 1)
+      const farJoint = jointIndex + 1
+      const farIsPinEnd = isActualPinEnd(farJoint, totalSpans, joints)
 
       connected.push({
         spanIndex,
         end: 'left',
         farEnd: 'right',
-        farJoint: jointIndex + 1,
-        stiffness: (4 * EI) / L,
-        label: `${jointName(spanIndex)}${jointName(spanIndex + 1)}`,
+        farJoint,
+        stiffness: farIsPinEnd ? (3 * EI) / L : (4 * EI) / L,
+        carryOverFactor: farIsPinEnd ? 0 : 0.5,
+        label: `${jointName(jointIndex)}${jointName(farJoint)}`,
       })
     }
 
@@ -115,11 +219,11 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
   for (let iteration = 1; iteration <= maxIterations; iteration++) {
     let maxUnbalance = 0
 
-    for (let j = 0; j <= n; j++) {
+    for (let j = 0; j <= totalSpans; j++) {
       if (joints[j] === 'fixed') continue
 
       const connected = getConnectedEnds(j)
-      if (connected.length === 0) continue
+      if (!connected.length) continue
 
       const jointMoment = connected.reduce((sum, item) => {
         return sum + moments[item.spanIndex][item.end]
@@ -129,7 +233,10 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
 
       if (Math.abs(jointMoment) < tolerance) continue
 
-      const totalStiffness = connected.reduce((sum, item) => sum + item.stiffness, 0)
+      const totalStiffness = connected.reduce((sum, item) => {
+        return sum + item.stiffness
+      }, 0)
+
       if (totalStiffness <= 0) continue
 
       const correctionTotal = -jointMoment
@@ -137,7 +244,7 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
       connected.forEach((item) => {
         const df = item.stiffness / totalStiffness
         const distributedMoment = correctionTotal * df
-        const carryOverMoment = distributedMoment / 2
+        const carryOverMoment = distributedMoment * item.carryOverFactor
 
         moments[item.spanIndex][item.end] += distributedMoment
         moments[item.spanIndex][item.farEnd] += carryOverMoment
@@ -167,11 +274,11 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
     rightMoment: m.right,
   }))
 
-  const jointBalance = Array.from({ length: n + 1 }, (_, j) => {
+  const jointBalance = Array.from({ length: totalSpans + 1 }, (_, j) => {
     let balance = 0
 
     if (j > 0) balance += moments[j - 1].right
-    if (j < n) balance += moments[j].left
+    if (j < totalSpans) balance += moments[j].left
 
     return {
       joint: jointName(j),
@@ -180,11 +287,64 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
     }
   })
 
+  const spanAnalysis = spans.map((span, i) => {
+    const L = num(span.length, 1)
+    const { totalLoad, momentAboutLeft } = loadSummary(span)
+
+    const leftMoment = moments[i].left
+    const rightMoment = moments[i].right
+
+    const RB = (momentAboutLeft + leftMoment + rightMoment) / L
+    const RA = totalLoad - RB
+
+    const stations = createStations(span, RA, leftMoment)
+
+    const maxShearItem = stations.reduce((max, item) => {
+      return Math.abs(item.shear) > Math.abs(max.shear) ? item : max
+    }, stations[0])
+
+    const maxMomentItem = stations.reduce((max, item) => {
+      return Math.abs(item.moment) > Math.abs(max.moment) ? item : max
+    }, stations[0])
+
+    return {
+      span: `${jointName(i)}${jointName(i + 1)}`,
+      leftJoint: jointName(i),
+      rightJoint: jointName(i + 1),
+      RA,
+      RB,
+      totalLoad,
+      leftMoment,
+      rightMoment,
+      bmdLeft: leftMoment,
+      bmdRight: -rightMoment,
+      stations,
+      maxShear: maxShearItem,
+      maxMoment: maxMomentItem,
+    }
+  })
+
+  const supportReactions = Array.from({ length: totalSpans + 1 }, (_, j) => {
+    let verticalReaction = 0
+
+    if (j > 0) verticalReaction += spanAnalysis[j - 1].RB
+    if (j < totalSpans) verticalReaction += spanAnalysis[j].RA
+
+    return {
+      joint: jointName(j),
+      type: joints[j],
+      verticalReaction,
+      momentReaction: jointBalance[j].balance,
+    }
+  })
+
   return {
     femTable,
     distributionRows,
     finalMoments,
     jointBalance,
+    spanAnalysis,
+    supportReactions,
   }
 }
 
@@ -201,8 +361,8 @@ export default function MomentDistributionPage() {
     },
   ])
 
-  const [joints, setJoints] = useState(['rotating', 'rotating', 'rotating'])
-  const [maxIterations, setMaxIterations] = useState(20)
+  const [joints, setJoints] = useState(['pin', 'continuous', 'pin'])
+  const [maxIterations, setMaxIterations] = useState(30)
   const [tolerance, setTolerance] = useState(0.001)
 
   const result = useMemo(() => {
@@ -223,23 +383,36 @@ export default function MomentDistributionPage() {
   }
 
   const updateJoint = (index, value) => {
-    setJoints((prev) => prev.map((j, i) => (i === index ? value : j)))
+    setJoints((prev) => prev.map((joint, i) => (i === index ? value : joint)))
   }
 
   const addSpan = () => {
     setSpans((prev) => [...prev, createInitialSpan(5)])
 
     setJoints((prev) => {
-      const last = prev[prev.length - 1] || 'rotating'
-      return [...prev.slice(0, -1), 'rotating', last]
+      const updated = [...prev]
+      if (updated.length > 0) updated[updated.length - 1] = 'continuous'
+      return [...updated, 'pin']
     })
   }
 
   const removeSpan = (index) => {
     if (spans.length <= 1) return
 
-    setSpans((prev) => prev.filter((_, i) => i !== index))
-    setJoints((prev) => prev.slice(0, -1))
+    const newSpans = spans.filter((_, i) => i !== index)
+    let newJoints = joints.filter((_, i) => i !== index + 1)
+
+    newJoints = newJoints.slice(0, newSpans.length + 1)
+
+    if (newJoints.length === newSpans.length + 1) {
+      if (!newJoints[0]) newJoints[0] = 'pin'
+      if (!newJoints[newJoints.length - 1]) {
+        newJoints[newJoints.length - 1] = 'pin'
+      }
+    }
+
+    setSpans(newSpans)
+    setJoints(newJoints)
   }
 
   const resetExample = () => {
@@ -254,8 +427,8 @@ export default function MomentDistributionPage() {
         a: 2.5,
       },
     ])
-    setJoints(['rotating', 'rotating', 'rotating'])
-    setMaxIterations(20)
+    setJoints(['pin', 'continuous', 'pin'])
+    setMaxIterations(30)
     setTolerance(0.001)
   }
 
@@ -275,8 +448,8 @@ export default function MomentDistributionPage() {
               </h1>
 
               <p className="text-slate-400 mt-3 max-w-3xl">
-                Continuous beam ke fixed end moments, distribution factors,
-                carry-over moments aur final end moments automatic calculate karo.
+                Continuous beam ke FEM, distribution factor, carry-over moment,
+                final end moment, support reaction, SFD aur BMD automatic solve karo.
               </p>
             </div>
 
@@ -297,7 +470,7 @@ export default function MomentDistributionPage() {
                 <div>
                   <h2 className="text-xl font-bold">Span Input</h2>
                   <p className="text-slate-400 text-sm">
-                    Har span ka length, relative EI aur load type enter karo.
+                    Length, relative EI aur load type enter karo.
                   </p>
                 </div>
 
@@ -333,33 +506,17 @@ export default function MomentDistributionPage() {
                     </div>
 
                     <div className="grid md:grid-cols-4 gap-4">
-                      <div>
-                        <label className="text-sm text-slate-400">
-                          Length L / लंबाई
-                        </label>
-                        <input
-                          type="number"
-                          value={span.length}
-                          onChange={(e) =>
-                            updateSpan(index, 'length', e.target.value)
-                          }
-                          className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
-                        />
-                      </div>
+                      <Field
+                        label="Length L"
+                        value={span.length}
+                        onChange={(value) => updateSpan(index, 'length', value)}
+                      />
 
-                      <div>
-                        <label className="text-sm text-slate-400">
-                          Relative EI
-                        </label>
-                        <input
-                          type="number"
-                          value={span.EI}
-                          onChange={(e) =>
-                            updateSpan(index, 'EI', e.target.value)
-                          }
-                          className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
-                        />
-                      </div>
+                      <Field
+                        label="Relative EI"
+                        value={span.EI}
+                        onChange={(value) => updateSpan(index, 'EI', value)}
+                      />
 
                       <div>
                         <label className="text-sm text-slate-400">
@@ -379,50 +536,26 @@ export default function MomentDistributionPage() {
                       </div>
 
                       {span.loadType === 'udl' && (
-                        <div>
-                          <label className="text-sm text-slate-400">
-                            UDL w
-                          </label>
-                          <input
-                            type="number"
-                            value={span.w}
-                            onChange={(e) =>
-                              updateSpan(index, 'w', e.target.value)
-                            }
-                            className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
-                          />
-                        </div>
+                        <Field
+                          label="UDL w"
+                          value={span.w}
+                          onChange={(value) => updateSpan(index, 'w', value)}
+                        />
                       )}
 
                       {span.loadType === 'point' && (
                         <>
-                          <div>
-                            <label className="text-sm text-slate-400">
-                              Point Load P
-                            </label>
-                            <input
-                              type="number"
-                              value={span.P}
-                              onChange={(e) =>
-                                updateSpan(index, 'P', e.target.value)
-                              }
-                              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
-                            />
-                          </div>
+                          <Field
+                            label="Point Load P"
+                            value={span.P}
+                            onChange={(value) => updateSpan(index, 'P', value)}
+                          />
 
-                          <div>
-                            <label className="text-sm text-slate-400">
-                              Distance a from left
-                            </label>
-                            <input
-                              type="number"
-                              value={span.a}
-                              onChange={(e) =>
-                                updateSpan(index, 'a', e.target.value)
-                              }
-                              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
-                            />
-                          </div>
+                          <Field
+                            label="Distance a from left"
+                            value={span.a}
+                            onChange={(value) => updateSpan(index, 'a', value)}
+                          />
                         </>
                       )}
                     </div>
@@ -434,8 +567,7 @@ export default function MomentDistributionPage() {
             <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
               <h2 className="text-xl font-bold mb-2">Joint / Support Type</h2>
               <p className="text-slate-400 text-sm mb-5">
-                Fixed joint par distribution nahi hoga. Rotating support par
-                moment distribute hoga.
+                End support ke liye Pin/Roller use karo. Internal support ke liye Continuous Joint use karo.
               </p>
 
               <div className="grid md:grid-cols-4 gap-4">
@@ -449,8 +581,9 @@ export default function MomentDistributionPage() {
                       onChange={(e) => updateJoint(index, e.target.value)}
                       className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
                     >
-                      <option value="rotating">Rotating / Pin / Roller</option>
-                      <option value="fixed">Fixed</option>
+                      <option value="pin">Pin / Roller Support</option>
+                      <option value="continuous">Continuous Joint</option>
+                      <option value="fixed">Fixed Support</option>
                     </select>
                   </div>
                 ))}
@@ -465,37 +598,24 @@ export default function MomentDistributionPage() {
               </h2>
 
               <div className="mt-5 space-y-4">
-                <div>
-                  <label className="text-sm text-slate-300">
-                    Maximum Iterations
-                  </label>
-                  <input
-                    type="number"
-                    value={maxIterations}
-                    onChange={(e) => setMaxIterations(Number(e.target.value))}
-                    className="mt-2 w-full rounded-xl border border-orange-500/30 bg-slate-950 p-3 text-white outline-none focus:border-orange-500"
-                  />
-                </div>
+                <Field
+                  label="Maximum Iterations"
+                  value={maxIterations}
+                  onChange={(value) => setMaxIterations(Number(value))}
+                />
 
-                <div>
-                  <label className="text-sm text-slate-300">
-                    Tolerance
-                  </label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={tolerance}
-                    onChange={(e) => setTolerance(Number(e.target.value))}
-                    className="mt-2 w-full rounded-xl border border-orange-500/30 bg-slate-950 p-3 text-white outline-none focus:border-orange-500"
-                  />
-                </div>
+                <Field
+                  label="Tolerance"
+                  value={tolerance}
+                  step="0.0001"
+                  onChange={(value) => setTolerance(Number(value))}
+                />
               </div>
 
               <div className="mt-5 rounded-xl border border-slate-800 bg-slate-950 p-4">
                 <p className="text-sm text-slate-400">Sign Convention</p>
                 <p className="text-sm text-slate-200 mt-2">
-                  UDL ke liye FEM: left end negative, right end positive.
-                  Final answer me sign ke sath moments show honge.
+                  Member end moment convention use kiya gaya hai. BMD ke right end par sign converted form me show hota hai.
                 </p>
               </div>
             </div>
@@ -503,28 +623,14 @@ export default function MomentDistributionPage() {
         </div>
 
         <ResultSection title="1. Fixed End Moments">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-400">
-                  <th className="p-3 text-left">Span</th>
-                  <th className="p-3 text-right">FEM Left</th>
-                  <th className="p-3 text-right">FEM Right</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.femTable.map((row, i) => (
-                  <tr key={i} className="border-b border-slate-800/60">
-                    <td className="p-3 font-semibold text-orange-300">
-                      {row.span}
-                    </td>
-                    <td className="p-3 text-right">{fmt(row.FEMLeft)}</td>
-                    <td className="p-3 text-right">{fmt(row.FEMRight)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            headers={['Span', 'FEM Left', 'FEM Right']}
+            rows={result.femTable.map((row) => [
+              row.span,
+              `${fmt(row.FEMLeft)} kNm`,
+              `${fmt(row.FEMRight)} kNm`,
+            ])}
+          />
         </ResultSection>
 
         <ResultSection title="2. Moment Distribution Table">
@@ -536,39 +642,32 @@ export default function MomentDistributionPage() {
                   <th className="p-3 text-left">Joint</th>
                   <th className="p-3 text-left">Member</th>
                   <th className="p-3 text-right">Unbalanced</th>
+                  <th className="p-3 text-right">Stiffness</th>
                   <th className="p-3 text-right">DF</th>
                   <th className="p-3 text-right">Distributed</th>
                   <th className="p-3 text-right">Carry Over</th>
                   <th className="p-3 text-left">Carry To</th>
                 </tr>
               </thead>
+
               <tbody>
                 {result.distributionRows.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="p-5 text-center text-slate-400">
+                    <td colSpan="9" className="p-5 text-center text-slate-400">
                       No distribution required.
                     </td>
                   </tr>
                 ) : (
-                  result.distributionRows.slice(0, 120).map((row, i) => (
+                  result.distributionRows.slice(0, 150).map((row, i) => (
                     <tr key={i} className="border-b border-slate-800/60">
                       <td className="p-3">{row.iteration}</td>
-                      <td className="p-3 text-orange-300 font-semibold">
-                        {row.joint}
-                      </td>
+                      <td className="p-3 text-orange-300 font-semibold">{row.joint}</td>
                       <td className="p-3">{row.member}</td>
-                      <td className="p-3 text-right">
-                        {fmt(row.unbalancedMoment)}
-                      </td>
-                      <td className="p-3 text-right">
-                        {fmt(row.distributionFactor)}
-                      </td>
-                      <td className="p-3 text-right">
-                        {fmt(row.distributedMoment)}
-                      </td>
-                      <td className="p-3 text-right">
-                        {fmt(row.carryOverMoment)}
-                      </td>
+                      <td className="p-3 text-right">{fmt(row.unbalancedMoment)}</td>
+                      <td className="p-3 text-right">{fmt(row.stiffness)}</td>
+                      <td className="p-3 text-right">{fmt(row.distributionFactor)}</td>
+                      <td className="p-3 text-right">{fmt(row.distributedMoment)}</td>
+                      <td className="p-3 text-right">{fmt(row.carryOverMoment)}</td>
                       <td className="p-3">{row.carryTo}</td>
                     </tr>
                   ))
@@ -581,35 +680,70 @@ export default function MomentDistributionPage() {
         <ResultSection title="3. Final Member End Moments">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {result.finalMoments.map((row, i) => (
+              <InfoCard
+                key={i}
+                title={`Span ${row.span}`}
+                rows={[
+                  [`Moment at ${row.leftJoint}`, `${fmt(row.leftMoment)} kNm`],
+                  [`Moment at ${row.rightJoint}`, `${fmt(row.rightMoment)} kNm`],
+                ]}
+              />
+            ))}
+          </div>
+        </ResultSection>
+
+        <ResultSection title="4. Support Reactions">
+          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {result.supportReactions.map((row, i) => (
+              <InfoCard
+                key={i}
+                title={`Joint ${row.joint}`}
+                rows={[
+                  ['Support Type', supportLabel(row.type)],
+                  ['Vertical Reaction', `${fmt(row.verticalReaction)} kN`],
+                  ['Moment Reaction', `${fmt(row.momentReaction)} kNm`],
+                ]}
+              />
+            ))}
+          </div>
+        </ResultSection>
+
+        <ResultSection title="5. Span-wise SFD / BMD Summary">
+          <div className="grid lg:grid-cols-2 gap-5">
+            {result.spanAnalysis.map((span, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-slate-800 bg-slate-950 p-5"
+                className="rounded-2xl border border-slate-800 bg-slate-950 p-5 space-y-5"
               >
-                <h3 className="text-lg font-bold text-orange-300 mb-4">
-                  Span {row.span}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <Activity className="text-orange-300" size={20} />
+                  <h3 className="text-lg font-bold text-orange-300">
+                    Span {span.span}
+                  </h3>
+                </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">
-                      Moment at {row.leftJoint}
-                    </span>
-                    <span className="font-bold">{fmt(row.leftMoment)} kNm</span>
-                  </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <MiniStat label={`Reaction at ${span.leftJoint}`} value={`${fmt(span.RA)} kN`} />
+                  <MiniStat label={`Reaction at ${span.rightJoint}`} value={`${fmt(span.RB)} kN`} />
+                  <MiniStat label="Max Shear" value={`${fmt(span.maxShear.shear)} kN at ${fmt(span.maxShear.x)} m`} />
+                  <MiniStat label="Max BM" value={`${fmt(span.maxMoment.moment)} kNm at ${fmt(span.maxMoment.x)} m`} />
+                </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">
-                      Moment at {row.rightJoint}
-                    </span>
-                    <span className="font-bold">{fmt(row.rightMoment)} kNm</span>
-                  </div>
+                <div>
+                  <p className="text-sm text-slate-400 mb-2">SFD</p>
+                  <MiniDiagram points={span.stations} valueKey="shear" />
+                </div>
+
+                <div>
+                  <p className="text-sm text-slate-400 mb-2">BMD</p>
+                  <MiniDiagram points={span.stations} valueKey="moment" />
                 </div>
               </div>
             ))}
           </div>
         </ResultSection>
 
-        <ResultSection title="4. Joint Balance Check">
+        <ResultSection title="6. Joint Balance Check">
           <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
             {result.jointBalance.map((row, i) => (
               <div
@@ -622,14 +756,29 @@ export default function MomentDistributionPage() {
                 </p>
                 <p className="text-xs text-slate-500 mt-2">
                   {row.type === 'fixed'
-                    ? 'Fixed joint: balance moment resisted by support'
-                    : 'Rotating joint: balance should be nearly zero'}
+                    ? 'Fixed support moment reaction.'
+                    : 'Balanced joint value should be close to zero.'}
                 </p>
               </div>
             ))}
           </div>
         </ResultSection>
       </div>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange, step = 'any' }) {
+  return (
+    <div>
+      <label className="text-sm text-slate-400">{label}</label>
+      <input
+        type="number"
+        step={step}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
+      />
     </div>
   )
 }
@@ -641,4 +790,138 @@ function ResultSection({ title, children }) {
       {children}
     </div>
   )
+}
+
+function Table({ headers, rows }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-800 text-slate-400">
+            {headers.map((header) => (
+              <th key={header} className="p-3 text-left">
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-slate-800/60">
+              {row.map((cell, j) => (
+                <td
+                  key={j}
+                  className={`p-3 ${j === 0 ? 'font-semibold text-orange-300' : ''}`}
+                >
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function InfoCard({ title, rows }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+      <h3 className="text-lg font-bold text-orange-300 mb-4">{title}</h3>
+
+      <div className="space-y-3">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between gap-3">
+            <span className="text-slate-400 text-sm">{label}</span>
+            <span className="font-bold text-right">{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="text-lg font-black mt-1">{value}</p>
+    </div>
+  )
+}
+
+function MiniDiagram({ points, valueKey }) {
+  if (!points || points.length < 2) {
+    return (
+      <div className="h-40 rounded-xl border border-slate-800 bg-slate-900" />
+    )
+  }
+
+  const width = 700
+  const height = 170
+  const padding = 18
+
+  const xValues = points.map((p) => p.x)
+  const yValues = points.map((p) => p[valueKey])
+
+  const minX = Math.min(...xValues)
+  const maxX = Math.max(...xValues)
+  const minY = Math.min(...yValues, 0)
+  const maxY = Math.max(...yValues, 0)
+
+  const xRange = maxX - minX || 1
+  const yRange = maxY - minY || 1
+
+  const mapX = (x) => padding + ((x - minX) / xRange) * (width - padding * 2)
+  const mapY = (y) =>
+    height - padding - ((y - minY) / yRange) * (height - padding * 2)
+
+  const polyline = points
+    .map((p) => `${mapX(p.x)},${mapY(p[valueKey])}`)
+    .join(' ')
+
+  const zeroY = mapY(0)
+
+  return (
+    <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-44">
+        <line
+          x1={padding}
+          x2={width - padding}
+          y1={zeroY}
+          y2={zeroY}
+          className="stroke-slate-600"
+          strokeWidth="1"
+        />
+
+        <polyline
+          points={polyline}
+          fill="none"
+          className="stroke-orange-400"
+          strokeWidth="3"
+        />
+
+        <circle
+          cx={mapX(points[0].x)}
+          cy={mapY(points[0][valueKey])}
+          r="4"
+          className="fill-orange-300"
+        />
+
+        <circle
+          cx={mapX(points[points.length - 1].x)}
+          cy={mapY(points[points.length - 1][valueKey])}
+          r="4"
+          className="fill-orange-300"
+        />
+      </svg>
+    </div>
+  )
+}
+
+function supportLabel(type) {
+  if (type === 'pin') return 'Pin / Roller'
+  if (type === 'fixed') return 'Fixed'
+  return 'Continuous'
 }
