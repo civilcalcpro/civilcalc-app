@@ -62,6 +62,13 @@ const quickTools = [
   desc: 'Beam slope, deflection, SFD, BMD and elastic curve solver',
 },
   {
+  name: 'Energy Method',
+  icon: Ruler,
+  href: '/dashboard/calculators/energy-method',
+  color: 'orange',
+  desc: 'Unit load, virtual work, strain energy and Castigliano solver',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
