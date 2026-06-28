@@ -104,6 +104,13 @@ const quickTools = [
   desc: 'ILD, moving loads, maximum reaction, SF and BM solver',
 },
   {
+  name: 'Frame Analysis',
+  icon: Ruler,
+  href: '/dashboard/calculators/frame-analysis',
+  color: 'orange',
+  desc: 'Portal frame reactions, member forces, moments and deflected shape solver',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
