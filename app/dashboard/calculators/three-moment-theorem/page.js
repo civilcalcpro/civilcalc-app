@@ -1,1325 +1,1502 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import {
+  Activity,
+  BookOpen,
+  Calculator,
+  Download,
+  FileText,
+  Plus,
+  RotateCcw,
+  Sigma,
+  Trash2,
+} from 'lucide-react'
 
-const topicCards = [
-  'Clapeyron Theorem',
-  'Continuous Beam',
-  '2 to 4 Spans',
-  'Different EI',
-  'UDL',
-  'Point Load',
-  'Support Settlement',
-  'Three Moment Equations',
-  'Support Moments',
-  'Support Reactions',
-  'SFD',
-  'BMD',
-  'Step-by-step',
-  'Exam Answer',
-  'Copy Solution',
-  'Print PDF',
-]
+const fmt = (v, d = 3) => {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return '0'
+  return n.toFixed(d).replace(/\.?0+$/, '')
+}
 
-function toNum(value, fallback = 0) {
-  const n = Number(value)
+const num = (v, fallback = 0) => {
+  const n = Number(v)
   return Number.isFinite(n) ? n : fallback
 }
 
-function fmt(value, digits = 4) {
-  const n = Number(value)
-  if (!Number.isFinite(n)) return '0'
-  return n.toFixed(digits).replace(/\.?0+$/, '')
-}
+const jointName = (i) => String.fromCharCode(65 + i)
 
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max)
-}
+const createDefaultLoad = (length = 5) => ({
+  type: 'udl',
+  w: 20,
+  P: 50,
+  a: length / 2,
+  start: 0,
+  end: length,
+  w1: 0,
+  w2: 20,
+  M: 20,
+  sense: 'clockwise',
+})
 
-function jointName(index) {
-  return String.fromCharCode(65 + index)
-}
+const createInitialSpan = (length = 5) => ({
+  length,
+  EI: 1,
+  loads: [createDefaultLoad(length)],
+})
 
-function cleanHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;')
-}
+function normalizeLoads(span) {
+  if (Array.isArray(span.loads)) return span.loads
 
-function getDefaults(spanCount = 2) {
-  const spans = [
-    { L: 4, EI: 1, udl: 5, pointLoad: 0, pointPosition: 2 },
-    { L: 4, EI: 1, udl: 0, pointLoad: 20, pointPosition: 2 },
-    { L: 4, EI: 1, udl: 6, pointLoad: 0, pointPosition: 2 },
-    { L: 4, EI: 1, udl: 4, pointLoad: 0, pointPosition: 2 },
-  ]
-
-  return {
-    spanCount,
-    leftEnd: 'pin',
-    rightEnd: 'pin',
-    spans,
-    settlements: [0, 0, 0, 0, 0],
-  }
-}
-
-function getJointPositions(spans, spanCount) {
-  const positions = [0]
-  let x = 0
-
-  for (let i = 0; i < spanCount; i += 1) {
-    x += Math.max(toNum(spans[i]?.L, 0), 0)
-    positions.push(x)
+  if (span.loadType === 'udl') {
+    return [
+      {
+        type: 'udl',
+        w: span.w ?? 20,
+        P: 50,
+        a: num(span.length, 5) / 2,
+        start: 0,
+        end: num(span.length, 5),
+        w1: 0,
+        w2: 20,
+        M: 20,
+        sense: 'clockwise',
+      },
+    ]
   }
 
-  return positions
-}
-
-function integrateSpanLoad(span) {
-  const L = Math.max(toNum(span.L, 1), 0.001)
-  const w = Math.max(toNum(span.udl, 0), 0)
-  const P = Math.max(toNum(span.pointLoad, 0), 0)
-  const a = clamp(toNum(span.pointPosition, L / 2), 0, L)
-  const b = L - a
-
-  const RA0 = (w * L) / 2 + (P * b) / L
-  const totalLoad = w * L + P
-  const loadMomentAboutLeft = w * L * (L / 2) + P * a
-
-  const m0 = (x) => {
-    const udlMoment = RA0 * x - (w * x * x) / 2
-    const pointMoment = x >= a ? P * (x - a) : 0
-    return udlMoment - pointMoment
+  if (span.loadType === 'point') {
+    return [
+      {
+        type: 'point',
+        w: 20,
+        P: span.P ?? 50,
+        a: span.a ?? num(span.length, 5) / 2,
+        start: 0,
+        end: num(span.length, 5),
+        w1: 0,
+        w2: 20,
+        M: 20,
+        sense: 'clockwise',
+      },
+    ]
   }
 
+  return []
+}
+
+function clampWithinSpan(value, L, fallback = 0) {
+  const n = num(value, fallback)
+  return Math.min(Math.max(n, 0), L)
+}
+
+function getLoadInterval(load, L) {
+  let start = clampWithinSpan(load.start, L, 0)
+  let end = clampWithinSpan(load.end, L, L)
+
+  if (end < start) {
+    const temp = start
+    start = end
+    end = temp
+  }
+
+  if (Math.abs(end - start) < 0.0001) end = Math.min(start + 0.0001, L)
+
+  return { start, end, length: end - start }
+}
+
+function loadLabel(load, L, index = 0) {
+  if (load.type === 'udl') {
+    return `Load ${index + 1}: Full UDL w = ${fmt(load.w)} kN/m`
+  }
+
+  if (load.type === 'point') {
+    return `Load ${index + 1}: Point load P = ${fmt(load.P)} kN at a = ${fmt(clampWithinSpan(load.a, L, L / 2))} m`
+  }
+
+  if (load.type === 'partialUdl') {
+    const { start, end } = getLoadInterval(load, L)
+    return `Load ${index + 1}: Partial UDL w = ${fmt(load.w)} kN/m from ${fmt(start)} m to ${fmt(end)} m`
+  }
+
+  if (load.type === 'uvl') {
+    const { start, end } = getLoadInterval(load, L)
+    return `Load ${index + 1}: UVL/Trapezoidal load from w1 = ${fmt(load.w1)} to w2 = ${fmt(load.w2)} kN/m between ${fmt(start)} m and ${fmt(end)} m`
+  }
+
+  if (load.type === 'moment') {
+    return `Load ${index + 1}: Applied moment = ${fmt(load.M)} kNm at a = ${fmt(clampWithinSpan(load.a, L, L / 2))} m (${load.sense === 'anticlockwise' ? 'anticlockwise' : 'clockwise'})`
+  }
+
+  return `Load ${index + 1}: No load`
+}
+
+function getLoadStats(span) {
+  const L = num(span.length, 1)
+  const loads = normalizeLoads(span)
+
+  return loads.reduce(
+    (sum, load) => {
+      if (load.type === 'udl') {
+        const w = num(load.w)
+        const W = w * L
+        return {
+          totalLoad: sum.totalLoad + W,
+          momentAboutLeft: sum.momentAboutLeft + W * (L / 2),
+          coupleMoment: sum.coupleMoment,
+        }
+      }
+
+      if (load.type === 'point') {
+        const P = num(load.P)
+        const a = clampWithinSpan(load.a, L, L / 2)
+        return {
+          totalLoad: sum.totalLoad + P,
+          momentAboutLeft: sum.momentAboutLeft + P * a,
+          coupleMoment: sum.coupleMoment,
+        }
+      }
+
+      if (load.type === 'partialUdl') {
+        const w = num(load.w)
+        const { start, end, length } = getLoadInterval(load, L)
+        const W = w * length
+        const xbar = (start + end) / 2
+        return {
+          totalLoad: sum.totalLoad + W,
+          momentAboutLeft: sum.momentAboutLeft + W * xbar,
+          coupleMoment: sum.coupleMoment,
+        }
+      }
+
+      if (load.type === 'uvl') {
+        const { start, length } = getLoadInterval(load, L)
+        const w1 = num(load.w1)
+        const w2 = num(load.w2)
+        const W = ((w1 + w2) / 2) * length
+        const momentLocal = length * length * (w1 / 2 + (w2 - w1) / 3)
+        return {
+          totalLoad: sum.totalLoad + W,
+          momentAboutLeft: sum.momentAboutLeft + start * W + momentLocal,
+          coupleMoment: sum.coupleMoment,
+        }
+      }
+
+      if (load.type === 'moment') {
+        const sign = load.sense === 'anticlockwise' ? -1 : 1
+        const M = sign * num(load.M)
+        return {
+          totalLoad: sum.totalLoad,
+          momentAboutLeft: sum.momentAboutLeft,
+          coupleMoment: sum.coupleMoment + M,
+        }
+      }
+
+      return sum
+    },
+    { totalLoad: 0, momentAboutLeft: 0, coupleMoment: 0 }
+  )
+}
+
+function simpleReactions(span) {
+  const L = num(span.length, 1)
+  const { totalLoad, momentAboutLeft, coupleMoment } = getLoadStats(span)
+  const RB = (momentAboutLeft + coupleMoment) / L
+  const RA = totalLoad - RB
+  return { RA, RB, totalLoad, momentAboutLeft, coupleMoment }
+}
+
+function loadMomentContribution(load, x, L) {
+  if (load.type === 'udl') {
+    const w = num(load.w)
+    return (w * x * x) / 2
+  }
+
+  if (load.type === 'point') {
+    const P = num(load.P)
+    const a = clampWithinSpan(load.a, L, L / 2)
+    return x >= a ? P * (x - a) : 0
+  }
+
+  if (load.type === 'partialUdl') {
+    const w = num(load.w)
+    const { start, end, length } = getLoadInterval(load, L)
+
+    if (x <= start) return 0
+
+    if (x < end) {
+      const t = x - start
+      return (w * t * t) / 2
+    }
+
+    return w * length * (x - (start + end) / 2)
+  }
+
+  if (load.type === 'uvl') {
+    const { start, end, length } = getLoadInterval(load, L)
+    const w1 = num(load.w1)
+    const w2 = num(load.w2)
+    const k = (w2 - w1) / length
+
+    if (x <= start) return 0
+
+    if (x < end) {
+      const t = x - start
+      return (w1 * t * t) / 2 + (k * t * t * t) / 6
+    }
+
+    const W = ((w1 + w2) / 2) * length
+    const momentLocal = length * length * (w1 / 2 + (w2 - w1) / 3)
+    const xbar = W === 0 ? start + length / 2 : start + momentLocal / W
+    return W * (x - xbar)
+  }
+
+  if (load.type === 'moment') {
+    const a = clampWithinSpan(load.a, L, L / 2)
+    const sign = load.sense === 'anticlockwise' ? -1 : 1
+    return x >= a ? sign * num(load.M) : 0
+  }
+
+  return 0
+}
+
+function simpleMomentAt(span, x) {
+  const L = num(span.length, 1)
+  const loads = normalizeLoads(span)
+  const { RA } = simpleReactions(span)
+
+  const loadMoment = loads.reduce((sum, load) => {
+    return sum + loadMomentContribution(load, x, L)
+  }, 0)
+
+  return RA * x - loadMoment
+}
+
+function actualMomentAt(span, supportMomentLeft, supportMomentRight, x) {
+  const L = num(span.length, 1)
+  return supportMomentLeft * (1 - x / L) + supportMomentRight * (x / L) + simpleMomentAt(span, x)
+}
+
+function loadShearLeft(span, x) {
+  const L = num(span.length, 1)
+  const loads = normalizeLoads(span)
+
+  return loads.reduce((sum, load) => {
+    if (load.type === 'udl') {
+      return sum + num(load.w) * x
+    }
+
+    if (load.type === 'point') {
+      const a = clampWithinSpan(load.a, L, L / 2)
+      return x >= a ? sum + num(load.P) : sum
+    }
+
+    if (load.type === 'partialUdl') {
+      const { start, end } = getLoadInterval(load, L)
+      const w = num(load.w)
+      if (x <= start) return sum
+      if (x < end) return sum + w * (x - start)
+      return sum + w * (end - start)
+    }
+
+    if (load.type === 'uvl') {
+      const { start, end, length } = getLoadInterval(load, L)
+      const w1 = num(load.w1)
+      const w2 = num(load.w2)
+      const k = (w2 - w1) / length
+
+      if (x <= start) return sum
+      if (x < end) {
+        const t = x - start
+        return sum + w1 * t + (k * t * t) / 2
+      }
+      return sum + ((w1 + w2) / 2) * length
+    }
+
+    return sum
+  }, 0)
+}
+
+function actualShearAt(span, RA, x) {
+  return RA - loadShearLeft(span, x)
+}
+
+function integrateFreeBMD(span) {
+  const L = num(span.length, 1)
+  const steps = 360
   let area = 0
-  let ix = 0
-  let iLminusX = 0
-  const n = 240
-  const h = L / n
+  let firstMoment = 0
 
-  for (let i = 0; i <= n; i += 1) {
-    const x = i * h
-    const coeff = i === 0 || i === n ? 1 : i % 2 === 0 ? 2 : 4
-    const m = m0(x)
-
-    area += coeff * m
-    ix += coeff * m * x
-    iLminusX += coeff * m * (L - x)
+  for (let i = 0; i < steps; i++) {
+    const x1 = (L * i) / steps
+    const x2 = (L * (i + 1)) / steps
+    const xm = (x1 + x2) / 2
+    const dx = x2 - x1
+    const m = simpleMomentAt(span, xm)
+    area += m * dx
+    firstMoment += m * xm * dx
   }
 
-  area *= h / 3
-  ix *= h / 3
-  iLminusX *= h / 3
+  const centroid = Math.abs(area) > 1e-9 ? firstMoment / area : L / 2
 
   return {
-    L,
-    w,
-    P,
-    a,
-    b,
-    totalLoad,
-    loadMomentAboutLeft,
-    RA0,
     area,
-    ix,
-    iLminusX,
-    m0,
+    centroid,
+    centroidFromRight: L - centroid,
   }
 }
 
-function gaussianSolve(A, b) {
+function solveLinearSystem(A, b) {
   const n = A.length
-  const M = A.map((row, i) => [...row, b[i]])
+  const M = A.map((row, i) => [...row.map(Number), Number(b[i])])
 
-  for (let k = 0; k < n; k += 1) {
-    let pivot = k
-
-    for (let i = k + 1; i < n; i += 1) {
-      if (Math.abs(M[i][k]) > Math.abs(M[pivot][k])) {
-        pivot = i
-      }
+  for (let col = 0; col < n; col++) {
+    let pivot = col
+    for (let r = col + 1; r < n; r++) {
+      if (Math.abs(M[r][col]) > Math.abs(M[pivot][col])) pivot = r
     }
 
-    if (Math.abs(M[pivot][k]) < 1e-12) {
-      throw new Error('Equations are unstable. Check end conditions, span lengths and EI values.')
+    if (Math.abs(M[pivot][col]) < 1e-12) {
+      return Array(n).fill(0)
     }
 
-    if (pivot !== k) {
-      const temp = M[k]
-      M[k] = M[pivot]
-      M[pivot] = temp
+    if (pivot !== col) {
+      const temp = M[pivot]
+      M[pivot] = M[col]
+      M[col] = temp
     }
 
-    const div = M[k][k]
+    const divisor = M[col][col]
+    for (let c = col; c <= n; c++) M[col][c] /= divisor
 
-    for (let j = k; j <= n; j += 1) {
-      M[k][j] /= div
-    }
-
-    for (let i = 0; i < n; i += 1) {
-      if (i === k) continue
-
-      const factor = M[i][k]
-
-      for (let j = k; j <= n; j += 1) {
-        M[i][j] -= factor * M[k][j]
-      }
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue
+      const factor = M[r][col]
+      for (let c = col; c <= n; c++) M[r][c] -= factor * M[col][c]
     }
   }
 
   return M.map((row) => row[n])
 }
 
-function buildEquationText(row, rhs, spanCount) {
-  const parts = []
+function createStations(span, supportMomentLeft, supportMomentRight, RA) {
+  const L = num(span.length, 1)
+  const stations = []
 
-  for (let i = 0; i <= spanCount; i += 1) {
-    const c = row[i]
-    if (Math.abs(c) < 1e-10) continue
-    parts.push(`${fmt(c, 6)}M${jointName(i)}`)
+  for (let i = 0; i <= 120; i++) stations.push((L * i) / 120)
+
+  normalizeLoads(span).forEach((load) => {
+    if (load.type === 'point' || load.type === 'moment') {
+      const a = clampWithinSpan(load.a, L, L / 2)
+      if (a > 0 && a < L) stations.push(a)
+    }
+
+    if (load.type === 'partialUdl' || load.type === 'uvl') {
+      const { start, end } = getLoadInterval(load, L)
+      if (start > 0 && start < L) stations.push(start)
+      if (end > 0 && end < L) stations.push(end)
+    }
+  })
+
+  for (let i = 0; i <= 120; i++) {
+    const x = (L * i) / 120
+    const v1 = actualShearAt(span, RA, x)
+    const v2 = actualShearAt(span, RA, Math.min(L, x + L / 120))
+    if (v1 === 0 || v1 * v2 < 0) stations.push(x)
   }
 
-  return `${parts.join(' + ') || '0'} = ${fmt(rhs, 6)}`
+  const unique = [...new Set(stations.map((x) => Number(x.toFixed(5))))].sort((a, b) => a - b)
+
+  return unique.map((x) => ({
+    x,
+    shear: actualShearAt(span, RA, x),
+    moment: actualMomentAt(span, supportMomentLeft, supportMomentRight, x),
+  }))
 }
 
-function solveThreeMoment(form) {
-  const spanCount = clamp(toNum(form.spanCount, 2), 1, 4)
-  const spans = form.spans.slice(0, spanCount).map((span) => ({
-    L: Math.max(toNum(span.L, 1), 0.001),
-    EI: Math.max(toNum(span.EI, 1), 0.001),
-    udl: Math.max(toNum(span.udl, 0), 0),
-    pointLoad: Math.max(toNum(span.pointLoad, 0), 0),
-    pointPosition: clamp(toNum(span.pointPosition, toNum(span.L, 1) / 2), 0, Math.max(toNum(span.L, 1), 0.001)),
-  }))
+function runThreeMoment(spans) {
+  const totalSpans = spans.length
+  const totalJoints = totalSpans + 1
+  const freeBmd = spans.map((span) => integrateFreeBMD(span))
+  const knownMoments = Array(totalJoints).fill(null)
+  knownMoments[0] = 0
+  knownMoments[totalJoints - 1] = 0
 
-  const settlements = Array.from({ length: spanCount + 1 }, (_, i) => toNum(form.settlements[i], 0) / 1000)
-  const loadIntegrals = spans.map(integrateSpanLoad)
-  const unknownCount = spanCount + 1
-  const A = Array.from({ length: unknownCount }, () => Array(unknownCount).fill(0))
-  const B = Array(unknownCount).fill(0)
-  const equationRows = []
+  const unknownJoints = Array.from({ length: Math.max(totalJoints - 2, 0) }, (_, i) => i + 1)
+  const equations = []
+  const A = []
+  const b = []
 
-  const leftSpan = spans[0]
-  const leftLoad = loadIntegrals[0]
-  const chordLeft = (settlements[1] - settlements[0]) / leftSpan.L
+  for (let eqIndex = 0; eqIndex < totalSpans - 1; eqIndex++) {
+    const leftJoint = eqIndex
+    const midJoint = eqIndex + 1
+    const rightJoint = eqIndex + 2
 
-  if (form.leftEnd === 'fixed') {
-    A[0][0] = leftSpan.L / (3 * leftSpan.EI)
-    A[0][1] = leftSpan.L / (6 * leftSpan.EI)
-    B[0] = chordLeft - leftLoad.iLminusX / (leftSpan.L * leftSpan.EI)
+    const spanLeft = spans[eqIndex]
+    const spanRight = spans[eqIndex + 1]
 
-    equationRows.push({
-      label: `Fixed end condition at ${jointName(0)}`,
-      equation: buildEquationText(A[0], B[0], spanCount),
-      note: `Rotation at ${jointName(0)} is zero.`,
+    const L1 = num(spanLeft.length, 1)
+    const L2 = num(spanRight.length, 1)
+    const EI1 = num(spanLeft.EI, 1)
+    const EI2 = num(spanRight.EI, 1)
+
+    const fb1 = freeBmd[eqIndex]
+    const fb2 = freeBmd[eqIndex + 1]
+
+    const cLeft = L1 / EI1
+    const cMid = 2 * (L1 / EI1 + L2 / EI2)
+    const cRight = L2 / EI2
+
+    const rhs = -6 * ((fb1.area * fb1.centroid) / (L1 * EI1) + (fb2.area * fb2.centroidFromRight) / (L2 * EI2))
+
+    const row = Array(unknownJoints.length).fill(0)
+    let adjustedRhs = rhs
+
+    ;[
+      { joint: leftJoint, coefficient: cLeft },
+      { joint: midJoint, coefficient: cMid },
+      { joint: rightJoint, coefficient: cRight },
+    ].forEach((item) => {
+      const unknownIndex = unknownJoints.indexOf(item.joint)
+      if (unknownIndex >= 0) {
+        row[unknownIndex] += item.coefficient
+      } else {
+        adjustedRhs -= item.coefficient * (knownMoments[item.joint] || 0)
+      }
     })
-  } else {
-    A[0][0] = 1
-    B[0] = 0
 
-    equationRows.push({
-      label: `Pin/roller end condition at ${jointName(0)}`,
-      equation: buildEquationText(A[0], B[0], spanCount),
-      note: `Moment at pin/roller support is zero.`,
+    equations.push({
+      equationNo: eqIndex + 1,
+      joints: `${jointName(leftJoint)}-${jointName(midJoint)}-${jointName(rightJoint)}`,
+      leftJoint: jointName(leftJoint),
+      midJoint: jointName(midJoint),
+      rightJoint: jointName(rightJoint),
+      L1,
+      L2,
+      EI1,
+      EI2,
+      A1: fb1.area,
+      xbar1: fb1.centroid,
+      A2: fb2.area,
+      xbar2Right: fb2.centroidFromRight,
+      cLeft,
+      cMid,
+      cRight,
+      rhs,
+      adjustedRhs,
+      coefficients: row,
     })
+
+    A.push(row)
+    b.push(adjustedRhs)
   }
 
-  for (let j = 1; j < spanCount; j += 1) {
-    const rowIndex = j
-    const left = spans[j - 1]
-    const right = spans[j]
-    const leftLoad = loadIntegrals[j - 1]
-    const rightLoad = loadIntegrals[j]
+  const unknownValues = unknownJoints.length ? solveLinearSystem(A, b) : []
+  const supportMoments = Array(totalJoints).fill(0)
+  unknownJoints.forEach((joint, index) => {
+    supportMoments[joint] = unknownValues[index] || 0
+  })
 
-    const chord1 = (settlements[j] - settlements[j - 1]) / left.L
-    const chord2 = (settlements[j + 1] - settlements[j]) / right.L
+  const spanAnalysis = spans.map((span, i) => {
+    const L = num(span.length, 1)
+    const leftMoment = supportMoments[i]
+    const rightMoment = supportMoments[i + 1]
+    const { totalLoad, momentAboutLeft, coupleMoment } = getLoadStats(span)
 
-    A[rowIndex][j - 1] = left.L / (6 * left.EI)
-    A[rowIndex][j] = left.L / (3 * left.EI) + right.L / (3 * right.EI)
-    A[rowIndex][j + 1] = right.L / (6 * right.EI)
+    const RB = (momentAboutLeft + coupleMoment + leftMoment - rightMoment) / L
+    const RA = totalLoad - RB
+    const stations = createStations(span, leftMoment, rightMoment, RA)
 
-    B[rowIndex] =
-      chord2 -
-      chord1 -
-      leftLoad.ix / (left.L * left.EI) -
-      rightLoad.iLminusX / (right.L * right.EI)
+    const maxShear = stations.reduce((max, item) => {
+      return Math.abs(item.shear) > Math.abs(max.shear) ? item : max
+    }, stations[0])
 
-    equationRows.push({
-      label: `Three moment equation at joint ${jointName(j)}`,
-      equation: buildEquationText(A[rowIndex], B[rowIndex], spanCount),
-      note: `Slope compatibility between span ${jointName(j - 1)}${jointName(j)} and ${jointName(j)}${jointName(j + 1)}.`,
-    })
-  }
-
-  const last = spanCount
-  const rightSpan = spans[spanCount - 1]
-  const rightLoad = loadIntegrals[spanCount - 1]
-  const chordRight = (settlements[spanCount] - settlements[spanCount - 1]) / rightSpan.L
-
-  if (form.rightEnd === 'fixed') {
-    A[last][last - 1] = rightSpan.L / (6 * rightSpan.EI)
-    A[last][last] = rightSpan.L / (3 * rightSpan.EI)
-    B[last] = -chordRight - rightLoad.ix / (rightSpan.L * rightSpan.EI)
-
-    equationRows.push({
-      label: `Fixed end condition at ${jointName(last)}`,
-      equation: buildEquationText(A[last], B[last], spanCount),
-      note: `Rotation at ${jointName(last)} is zero.`,
-    })
-  } else {
-    A[last][last] = 1
-    B[last] = 0
-
-    equationRows.push({
-      label: `Pin/roller end condition at ${jointName(last)}`,
-      equation: buildEquationText(A[last], B[last], spanCount),
-      note: `Moment at pin/roller support is zero.`,
-    })
-  }
-
-  const moments = gaussianSolve(A, B)
-
-  const positions = getJointPositions(spans, spanCount)
-  const totalLength = positions[positions.length - 1]
-
-  const spanResults = spans.map((span, i) => {
-    const load = loadIntegrals[i]
-    const ML = moments[i]
-    const MR = moments[i + 1]
-
-    const rightReaction = (load.loadMomentAboutLeft + ML - MR) / span.L
-    const leftReaction = load.totalLoad - rightReaction
+    const maxMoment = stations.reduce((max, item) => {
+      return Math.abs(item.moment) > Math.abs(max.moment) ? item : max
+    }, stations[0])
 
     return {
       span: `${jointName(i)}${jointName(i + 1)}`,
-      index: i,
-      L: span.L,
-      EI: span.EI,
-      w: span.udl,
-      P: span.pointLoad,
-      a: span.pointPosition,
-      ML,
-      MR,
-      leftReaction,
-      rightReaction,
-      totalLoad: load.totalLoad,
+      leftJoint: jointName(i),
+      rightJoint: jointName(i + 1),
+      leftMoment,
+      rightMoment,
+      RA,
+      RB,
+      totalLoad,
+      stations,
+      maxShear,
+      maxMoment,
+      freeArea: freeBmd[i].area,
+      freeCentroid: freeBmd[i].centroid,
     }
   })
 
-  const supportReactions = Array.from({ length: spanCount + 1 }, (_, i) => ({
-    joint: jointName(i),
-    x: positions[i],
-    moment: moments[i],
-    vertical: 0,
-    settlementMm: toNum(form.settlements[i], 0),
-    type: i === 0 ? form.leftEnd : i === spanCount ? form.rightEnd : 'continuous',
-  }))
+  const supportReactions = Array.from({ length: totalJoints }, (_, j) => {
+    let verticalReaction = 0
+    if (j > 0) verticalReaction += spanAnalysis[j - 1].RB
+    if (j < totalSpans) verticalReaction += spanAnalysis[j].RA
 
-  spanResults.forEach((span, i) => {
-    supportReactions[i].vertical += span.leftReaction
-    supportReactions[i + 1].vertical += span.rightReaction
-  })
-
-  const diagramValues = []
-
-  spanResults.forEach((span, i) => {
-    const startX = positions[i]
-    const samples = 140
-
-    for (let s = 0; s <= samples; s += 1) {
-      const x = (span.L * s) / samples
-      const shear = span.leftReaction - span.w * x - (x >= span.a ? span.P : 0)
-      const loadMoment = (span.w * x * x) / 2 + (x >= span.a ? span.P * (x - span.a) : 0)
-      const moment = span.ML + span.leftReaction * x - loadMoment
-
-      diagramValues.push({
-        x: startX + x,
-        localX: x,
-        spanIndex: i,
-        shear,
-        moment,
-      })
+    return {
+      joint: jointName(j),
+      verticalReaction,
+      supportMoment: supportMoments[j],
     }
   })
 
-  const maxSF = diagramValues.reduce((best, item) =>
-    Math.abs(item.shear) > Math.abs(best.shear) ? item : best
-  )
+  const stepSolution = []
 
-  const maxBM = diagramValues.reduce((best, item) =>
-    Math.abs(item.moment) > Math.abs(best.moment) ? item : best
-  )
+  stepSolution.push({
+    title: 'Step 1: Given data',
+    lines: spans.map((span, index) => {
+      const L = num(span.length, 1)
+      const loads = normalizeLoads(span)
+      const loadText = loads.length ? loads.map((load, loadIndex) => loadLabel(load, L, loadIndex)).join('; ') : 'No external load'
+      return `Span ${jointName(index)}${jointName(index + 1)}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, ${loadText}`
+    }),
+  })
 
-  const momentRows = moments.map((moment, i) => ({
-    joint: jointName(i),
-    x: positions[i],
-    moment,
-    settlementMm: toNum(form.settlements[i], 0),
-  }))
+  stepSolution.push({
+    title: 'Step 2: Area and centroid of free bending moment diagram',
+    lines: spans.map((span, index) => {
+      const data = freeBmd[index]
+      return `Span ${jointName(index)}${jointName(index + 1)}: A = ${fmt(data.area)} kNm², x̄ from left = ${fmt(data.centroid)} m, x̄ from right = ${fmt(data.centroidFromRight)} m`
+    }),
+  })
 
-  const summary = [
-    { label: 'Number of Spans', value: `${spanCount}` },
-    { label: 'Total Length', value: `${fmt(totalLength, 3)} m` },
-    { label: 'Max |SF|', value: `${fmt(maxSF.shear, 3)} kN` },
-    { label: 'Max |BM|', value: `${fmt(maxBM.moment, 3)} kN·m` },
-    { label: 'Max BM Location', value: `${fmt(maxBM.x, 3)} m` },
-    { label: 'Method', value: 'Three Moment Theorem' },
-  ]
+  stepSolution.push({
+    title: 'Step 3: Three Moment equations',
+    lines: equations.map((eq) => {
+      return `${eq.joints}: (${fmt(eq.cLeft)})M${eq.leftJoint} + (${fmt(eq.cMid)})M${eq.midJoint} + (${fmt(eq.cRight)})M${eq.rightJoint} = ${fmt(eq.rhs)}`
+    }),
+  })
 
-  const formulas = [
-    'Clapeyron’s three moment theorem is used for continuous beams.',
-    'For an internal support: M₁L₁/6EI₁ + M₂(L₁/3EI₁ + L₂/3EI₂) + M₃L₂/6EI₂ = RHS',
-    'RHS includes load-area terms from the simply supported bending moment diagram.',
-    'For span load term: ∫M₀x dx and ∫M₀(L-x) dx are used.',
-    'Pin or roller end condition: end moment = 0.',
-    'Fixed end condition: end rotation = 0.',
-    'Support settlement is included through chord rotation terms.',
-    'Final reactions are calculated using final support moments and span equilibrium.',
-  ]
+  stepSolution.push({
+    title: 'Step 4: Solved support moments',
+    lines: supportMoments.map((moment, index) => {
+      return `M${jointName(index)} = ${fmt(moment)} kNm`
+    }),
+  })
 
-  const steps = [
-    `Number of spans selected = ${spanCount}.`,
-    `Joint names are ${Array.from({ length: spanCount + 1 }, (_, i) => jointName(i)).join(', ')}.`,
-    `For each span, load-area terms are calculated from simply supported bending moment diagram.`,
-    `End conditions are applied: left end = ${form.leftEnd}, right end = ${form.rightEnd}.`,
-    `Three moment compatibility equations are formed for internal supports.`,
-    `The simultaneous equation system [A]{M} = {B} is solved for support moments.`,
-    `Support moments obtained: ${momentRows.map((m) => `M${m.joint} = ${fmt(m.moment, 3)} kN·m`).join(', ')}.`,
-    `Span reactions are calculated using equilibrium of each span.`,
-    `SFD and BMD are generated using final reactions and support moments.`,
-    `Maximum bending moment = ${fmt(maxBM.moment, 3)} kN·m at x = ${fmt(maxBM.x, 3)} m.`,
-  ]
+  stepSolution.push({
+    title: 'Step 5: Support reactions',
+    lines: supportReactions.map((row) => {
+      return `Joint ${row.joint}: Vertical reaction = ${fmt(row.verticalReaction)} kN, support moment = ${fmt(row.supportMoment)} kNm`
+    }),
+  })
 
-  const finalAnswer = `Using Clapeyron’s Three Moment Theorem, the support moments are ${momentRows
-    .map((m) => `M${m.joint} = ${fmt(m.moment, 3)} kN·m`)
-    .join(', ')}. Maximum bending moment is ${fmt(maxBM.moment, 3)} kN·m at x = ${fmt(maxBM.x, 3)} m and maximum shear force is ${fmt(maxSF.shear, 3)} kN. Support reactions, equations, SFD and BMD are shown in the result tables.`
+  stepSolution.push({
+    title: 'Step 6: Maximum shear force and bending moment',
+    lines: spanAnalysis.map((span) => {
+      return `${span.span}: Max shear = ${fmt(span.maxShear.shear)} kN at x = ${fmt(span.maxShear.x)} m, Max BM = ${fmt(span.maxMoment.moment)} kNm at x = ${fmt(span.maxMoment.x)} m`
+    }),
+  })
 
   return {
-    spanCount,
-    spans,
-    settlements,
-    positions,
-    totalLength,
-    loadIntegrals,
-    A,
-    B,
-    moments,
-    equationRows,
-    momentRows,
-    spanResults,
+    freeBmd,
+    equations,
+    supportMoments,
     supportReactions,
-    diagramValues,
-    maxSF,
-    maxBM,
-    summary,
-    formulas,
-    steps,
-    finalAnswer,
+    spanAnalysis,
+    stepSolution,
   }
-}
-
-function solveSafely(form) {
-  try {
-    return solveThreeMoment(form)
-  } catch (error) {
-    return {
-      error: error.message || 'Unable to solve.',
-      summary: [
-        { label: 'Status', value: 'Check Input' },
-        { label: 'Issue', value: error.message || 'Invalid model' },
-      ],
-      formulas: ['Check span lengths, EI values, end conditions and loading.'],
-      steps: ['Correct the input and try again.'],
-      finalAnswer: 'Unable to solve this beam with the current input.',
-      equationRows: [],
-      momentRows: [],
-      spanResults: [],
-      supportReactions: [],
-      diagramValues: [],
-      totalLength: 1,
-      spanCount: 1,
-      positions: [0, 1],
-      spans: [],
-    }
-  }
-}
-
-function buildPlainReport(result, form) {
-  const moments = result.momentRows
-    .map((row) => `M${row.joint} = ${fmt(row.moment, 3)} kN·m at x = ${fmt(row.x, 3)} m`)
-    .join('\n')
-
-  const equations = result.equationRows
-    .map((row, i) => `${i + 1}. ${row.label}\n${row.equation}\n${row.note}`)
-    .join('\n\n')
-
-  const reactions = result.supportReactions
-    .map(
-      (row) =>
-        `${row.joint}: V = ${fmt(row.vertical, 3)} kN, M = ${fmt(row.moment, 3)} kN·m, settlement = ${fmt(row.settlementMm, 3)} mm`
-    )
-    .join('\n')
-
-  return `
-${form.reportTitle || 'Three Moment Theorem Report'}
-Prepared By: ${form.preparedBy || '-'}
-
-RESULT SUMMARY
-${result.summary.map((item) => `${item.label}: ${item.value}`).join('\n')}
-
-THREE MOMENT EQUATIONS
-${equations}
-
-SUPPORT MOMENTS
-${moments}
-
-SUPPORT REACTIONS
-${reactions}
-
-FORMULAS USED
-${result.formulas.map((item, i) => `${i + 1}. ${item}`).join('\n')}
-
-STEP-BY-STEP SOLUTION
-${result.steps.map((item, i) => `${i + 1}. ${item}`).join('\n')}
-
-FINAL ANSWER
-${result.finalAnswer}
-`.trim()
-}
-
-function copyToClipboard(text, message) {
-  if (typeof window === 'undefined') return
-
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text)
-    alert(message)
-    return
-  }
-
-  const textarea = document.createElement('textarea')
-  textarea.value = text
-  textarea.style.position = 'fixed'
-  textarea.style.left = '-9999px'
-  document.body.appendChild(textarea)
-  textarea.focus()
-  textarea.select()
-  document.execCommand('copy')
-  document.body.removeChild(textarea)
-  alert(message)
-}
-
-function buildReportHtml(result, form) {
-  const summaryRows = result.summary
-    .map(
-      (item) => `
-        <tr>
-          <td>${cleanHtml(item.label)}</td>
-          <td><strong>${cleanHtml(item.value)}</strong></td>
-        </tr>
-      `
-    )
-    .join('')
-
-  const momentRows = result.momentRows
-    .map(
-      (row) => `
-        <tr>
-          <td>${cleanHtml(row.joint)}</td>
-          <td>${fmt(row.x, 3)} m</td>
-          <td>${fmt(row.moment, 3)} kN·m</td>
-          <td>${fmt(row.settlementMm, 3)} mm</td>
-        </tr>
-      `
-    )
-    .join('')
-
-  const reactionRows = result.supportReactions
-    .map(
-      (row) => `
-        <tr>
-          <td>${cleanHtml(row.joint)}</td>
-          <td>${fmt(row.x, 3)} m</td>
-          <td>${cleanHtml(row.type)}</td>
-          <td>${fmt(row.vertical, 3)} kN</td>
-          <td>${fmt(row.moment, 3)} kN·m</td>
-        </tr>
-      `
-    )
-    .join('')
-
-  const formulas = result.formulas.map((item) => `<li>${cleanHtml(item)}</li>`).join('')
-  const steps = result.steps.map((item, i) => `<li><strong>Step ${i + 1}:</strong> ${cleanHtml(item)}</li>`).join('')
-
-  return `
-<!doctype html>
-<html>
-<head>
-  <title>${cleanHtml(form.reportTitle || 'Three Moment Theorem Report')}</title>
-  <meta charset="utf-8" />
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 28px; color: #111827; background: #fff; }
-    .page { max-width: 980px; margin: 0 auto; }
-    .header { border-bottom: 4px solid #f97316; padding-bottom: 16px; margin-bottom: 24px; }
-    h1 { margin: 0; color: #0f172a; font-size: 30px; }
-    .sub { margin-top: 8px; color: #475569; font-size: 14px; line-height: 1.6; }
-    h2 { margin-top: 28px; border-left: 5px solid #f97316; padding-left: 10px; color: #0f172a; font-size: 20px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
-    td, th { padding: 10px; border: 1px solid #cbd5e1; text-align: left; }
-    th { background: #0f172a; color: white; }
-    li { margin-bottom: 8px; line-height: 1.6; }
-    .answer { background: #fff7ed; border: 1px solid #fdba74; border-radius: 10px; padding: 14px; line-height: 1.7; font-weight: 600; }
-    .footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #cbd5e1; color: #64748b; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <div class="header">
-      <h1>${cleanHtml(form.reportTitle || 'Three Moment Theorem Report')}</h1>
-      <div class="sub">
-        Prepared By: ${cleanHtml(form.preparedBy || '-')}<br/>
-        Method: Clapeyron’s Three Moment Theorem
-      </div>
-    </div>
-
-    <h2>Result Summary</h2>
-    <table><tbody>${summaryRows}</tbody></table>
-
-    <h2>Support Moments</h2>
-    <table>
-      <thead><tr><th>Joint</th><th>x</th><th>Moment</th><th>Settlement</th></tr></thead>
-      <tbody>${momentRows}</tbody>
-    </table>
-
-    <h2>Support Reactions</h2>
-    <table>
-      <thead><tr><th>Joint</th><th>x</th><th>Type</th><th>Vertical Reaction</th><th>Moment</th></tr></thead>
-      <tbody>${reactionRows}</tbody>
-    </table>
-
-    <h2>Formulas Used</h2>
-    <ol>${formulas}</ol>
-
-    <h2>Step-by-Step Solution</h2>
-    <ol>${steps}</ol>
-
-    <h2>Final Answer</h2>
-    <div class="answer">${cleanHtml(result.finalAnswer)}</div>
-
-    <div class="footer">Generated using CivilCalc Pro Three Moment Theorem Calculator.</div>
-  </div>
-</body>
-</html>
-`
-}
-
-function printReport(result, form) {
-  if (typeof window === 'undefined') return
-
-  const reportWindow = window.open('', '_blank', 'width=1000,height=800')
-
-  if (!reportWindow) {
-    alert('Popup blocked. Please allow popups for this site and try again.')
-    return
-  }
-
-  reportWindow.document.open()
-  reportWindow.document.write(buildReportHtml(result, form))
-  reportWindow.document.close()
-
-  setTimeout(() => {
-    reportWindow.focus()
-    reportWindow.print()
-  }, 500)
-}
-
-function NumberField({ label, value, onChange, suffix, helper, min = 0, step = 'any' }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
-
-      <div className="flex overflow-hidden rounded-xl border border-slate-700 bg-slate-950">
-        <input
-          type="number"
-          min={min}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-transparent px-4 py-3 text-white outline-none placeholder:text-slate-500"
-        />
-
-        {suffix && (
-          <span className="flex items-center border-l border-slate-700 px-4 text-sm font-bold text-orange-300">
-            {suffix}
-          </span>
-        )}
-      </div>
-
-      {helper && <p className="mt-2 text-xs leading-5 text-slate-500">{helper}</p>}
-    </label>
-  )
-}
-
-function TextField({ label, value, onChange, placeholder, helper }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
-
-      <input
-        type="text"
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none placeholder:text-slate-500"
-      />
-
-      {helper && <p className="mt-2 text-xs leading-5 text-slate-500">{helper}</p>}
-    </label>
-  )
-}
-
-function SelectField({ label, value, onChange, children, helper }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
-
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none"
-      >
-        {children}
-      </select>
-
-      {helper && <p className="mt-2 text-xs leading-5 text-slate-500">{helper}</p>}
-    </label>
-  )
-}
-
-function SpanEditor({ span, index, onChange }) {
-  const update = (key, value) => onChange(index, key, value)
-
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-      <p className="mb-4 font-black text-orange-300">
-        Span {index + 1}: {jointName(index)}{jointName(index + 1)}
-      </p>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <NumberField label="Span Length L" value={span.L} onChange={(v) => update('L', v)} suffix="m" min="0.1" />
-        <NumberField label="EI Factor" value={span.EI} onChange={(v) => update('EI', v)} suffix="EI" helper="Use 1 if EI is same." min="0.001" />
-        <NumberField label="UDL w" value={span.udl} onChange={(v) => update('udl', v)} suffix="kN/m" min="0" />
-        <NumberField label="Point Load P" value={span.pointLoad} onChange={(v) => update('pointLoad', v)} suffix="kN" min="0" />
-        <NumberField label="Point Load Position a" value={span.pointPosition} onChange={(v) => update('pointPosition', v)} suffix="m" helper={`Distance from joint ${jointName(index)}.`} min="0" />
-      </div>
-    </div>
-  )
-}
-
-function BeamDiagram({ result, form }) {
-  const x0 = 70
-  const x1 = 570
-  const y = 130
-  const L = result.totalLength || 1
-  const mapX = (x) => x0 + (x / L) * (x1 - x0)
-
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="text-lg font-black text-white">Continuous Beam Diagram</h3>
-          <p className="mt-1 text-xs leading-5 text-slate-400">
-            Beam, supports, loads and settlements used in three moment theorem.
-          </p>
-        </div>
-
-        <span className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-3 py-2 text-xs font-bold text-orange-200">
-          Total L = {fmt(result.totalLength, 3)} m
-        </span>
-      </div>
-
-      <svg viewBox="0 0 640 300" className="h-auto w-full">
-        <line x1={x0} y1={y} x2={x1} y2={y} stroke="#cbd5e1" strokeWidth="7" strokeLinecap="round" />
-
-        {result.positions.map((x, i) => {
-          const sx = mapX(x)
-          const isLeft = i === 0
-          const isRight = i === result.spanCount
-          const endType = isLeft ? form.leftEnd : isRight ? form.rightEnd : 'continuous'
-
-          if (endType === 'fixed') {
-            return (
-              <g key={i}>
-                <rect x={sx - 28} y={y - 58} width="24" height="116" fill="#38bdf8" opacity="0.9" />
-                {[-45, -25, -5, 15, 35, 55].map((dy) => (
-                  <line key={dy} x1={sx - 40} y1={y + dy + 12} x2={sx - 4} y2={y + dy - 12} stroke="#0f172a" strokeWidth="2" />
-                ))}
-                <text x={sx - 8} y={y + 82} fill="#e2e8f0" fontSize="12" fontWeight="900">
-                  {jointName(i)}
-                </text>
-              </g>
-            )
-          }
-
-          return (
-            <g key={i}>
-              <polygon points={`${sx - 18},${y + 35} ${sx + 18},${y + 35} ${sx},${y + 6}`} fill="#38bdf8" />
-              <line x1={sx - 30} y1={y + 38} x2={sx + 30} y2={y + 38} stroke="#38bdf8" strokeWidth="3" />
-              <text x={sx - 8} y={y + 66} fill="#e2e8f0" fontSize="12" fontWeight="900">
-                {jointName(i)}
-              </text>
-            </g>
-          )
-        })}
-
-        {result.spans.map((span, i) => {
-          const start = result.positions[i]
-          const end = result.positions[i + 1]
-          const sx = mapX(start)
-          const ex = mapX(end)
-          const items = []
-
-          if (span.udl > 0) {
-            const positions = Array.from({ length: 7 }, (_, k) => sx + ((ex - sx) * k) / 6)
-
-            items.push(
-              <g key="udl">
-                <line x1={sx} y1="48" x2={ex} y2="48" stroke="#f97316" strokeWidth="3" />
-                {positions.map((px) => (
-                  <g key={px}>
-                    <line x1={px} y1="50" x2={px} y2={y - 8} stroke="#f97316" strokeWidth="2.5" />
-                    <polygon points={`${px - 6},${y - 18} ${px + 6},${y - 18} ${px},${y - 6}`} fill="#f97316" />
-                  </g>
-                ))}
-                <text x={sx + 6} y="38" fill="#fed7aa" fontSize="13" fontWeight="900">
-                  w={fmt(span.udl, 1)}
-                </text>
-              </g>
-            )
-          }
-
-          if (span.pointLoad > 0) {
-            const px = mapX(start + clamp(span.pointPosition, 0, span.L))
-
-            items.push(
-              <g key="point">
-                <line x1={px} y1="42" x2={px} y2={y - 8} stroke="#f97316" strokeWidth="4" />
-                <polygon points={`${px - 9},${y - 18} ${px + 9},${y - 18} ${px},${y - 4}`} fill="#f97316" />
-                <text x={px - 28} y="30" fill="#fed7aa" fontSize="13" fontWeight="900">
-                  P={fmt(span.pointLoad, 1)}
-                </text>
-              </g>
-            )
-          }
-
-          items.push(
-            <text key="spanLabel" x={(sx + ex) / 2 - 18} y={y + 105} fill="#f97316" fontSize="13" fontWeight="900">
-              {jointName(i)}{jointName(i + 1)}
-            </text>
-          )
-
-          return <g key={i}>{items}</g>
-        })}
-
-        <line x1={x0} y1={y + 120} x2={x1} y2={y + 120} stroke="#64748b" strokeWidth="2" />
-        <text x={(x0 + x1) / 2 - 50} y={y + 148} fill="#f97316" fontSize="14" fontWeight="900">
-          Three Moment Theorem Beam
-        </text>
-      </svg>
-    </div>
-  )
-}
-
-function CurveDiagram({ result, type }) {
-  const x0 = 70
-  const x1 = 570
-  const yBase = 115
-  const amp = 65
-  const L = result.totalLength || 1
-  const mapX = (x) => x0 + (x / L) * (x1 - x0)
-
-  const meta =
-    type === 'sfd'
-      ? {
-          title: 'Shear Force Diagram',
-          color: '#f97316',
-          note: 'Final SFD from support reactions.',
-          unit: 'kN',
-          digits: 3,
-          key: 'shear',
-          label: 'SF',
-        }
-      : {
-          title: 'Bending Moment Diagram',
-          color: '#38bdf8',
-          note: 'Final BMD from support moments and reactions.',
-          unit: 'kN·m',
-          digits: 3,
-          key: 'moment',
-          label: 'BM',
-        }
-
-  const values = result.diagramValues || []
-  const getValue = (item) => item[meta.key]
-  const rawMaxAbs = Math.max(...values.map((item) => Math.abs(getValue(item))), 0)
-  const maxAbs = rawMaxAbs > 1e-12 ? rawMaxAbs : 1
-
-  const points = values
-    .map((item) => {
-      const value = getValue(item)
-      const y = type === 'sfd' ? yBase - (value / maxAbs) * amp : yBase + (value / maxAbs) * amp
-      return `${mapX(item.x)},${y}`
-    })
-    .join(' ')
-
-  const maxPoint = values.reduce((best, item) => (getValue(item) > getValue(best) ? item : best), values[0])
-  const minPoint = values.reduce((best, item) => (getValue(item) < getValue(best) ? item : best), values[0])
-  const absPoint = values.reduce((best, item) => (Math.abs(getValue(item)) > Math.abs(getValue(best)) ? item : best), values[0])
-
-  const pointY = (item) => {
-    const value = getValue(item)
-    return type === 'sfd' ? yBase - (value / maxAbs) * amp : yBase + (value / maxAbs) * amp
-  }
-
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="text-lg font-black text-white">{meta.title}</h3>
-          <p className="mt-1 text-xs leading-5 text-slate-400">{meta.note}</p>
-        </div>
-
-        <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-3 py-2 text-xs font-bold text-orange-200">
-          Max |{meta.label}| = {fmt(getValue(absPoint), meta.digits)} {meta.unit}
-        </div>
-      </div>
-
-      <svg viewBox="0 0 640 280" className="h-auto w-full">
-        <line x1={x0} y1={yBase} x2={x1} y2={yBase} stroke="#64748b" strokeWidth="2" strokeDasharray="6 6" />
-        <line x1={x0} y1="30" x2={x0} y2="190" stroke="#334155" strokeWidth="2" />
-        <line x1={x1} y1="30" x2={x1} y2="190" stroke="#334155" strokeWidth="2" />
-
-        <polyline points={points} fill="none" stroke={meta.color} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
-
-        <circle cx={mapX(maxPoint.x)} cy={pointY(maxPoint)} r="4" fill="#22c55e" stroke="#020617" strokeWidth="2" />
-        <circle cx={mapX(minPoint.x)} cy={pointY(minPoint)} r="4" fill="#f97316" stroke="#020617" strokeWidth="2" />
-
-        <text x="18" y="238" fill="#94a3b8" fontSize="13">
-          Max {meta.label} = {fmt(getValue(maxPoint), meta.digits)} {meta.unit} at x = {fmt(maxPoint.x, 3)} m
-        </text>
-
-        <text x="18" y="258" fill="#94a3b8" fontSize="13">
-          Min {meta.label} = {fmt(getValue(minPoint), meta.digits)} {meta.unit} at x = {fmt(minPoint.x, 3)} m
-        </text>
-
-        <text x="360" y="238" fill="#facc15" fontSize="13" fontWeight="900">
-          Max absolute:
-        </text>
-
-        <text x="360" y="258" fill="#facc15" fontSize="13" fontWeight="900">
-          x = {fmt(absPoint.x, 3)} m, {meta.label} = {fmt(getValue(absPoint), meta.digits)} {meta.unit}
-        </text>
-      </svg>
-    </div>
-  )
-}
-
-function ActionButtons({ result, form }) {
-  const plainReport = buildPlainReport(result, form)
-
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-black text-white">Export & Share</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            Copy final answer, copy full solution, or print/save the report as PDF.
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <button
-            type="button"
-            onClick={() => copyToClipboard(result.finalAnswer, 'Final answer copied.')}
-            className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm font-black text-sky-200 hover:bg-sky-500/20"
-          >
-            Copy Answer
-          </button>
-
-          <button
-            type="button"
-            onClick={() => copyToClipboard(plainReport, 'Full solution copied.')}
-            className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm font-black text-orange-200 hover:bg-orange-500/20"
-          >
-            Copy Solution
-          </button>
-
-          <button
-            type="button"
-            onClick={() => printReport(result, form)}
-            className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-white hover:bg-orange-600"
-          >
-            Print / Save PDF
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function EquationTable({ result }) {
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-      <h2 className="text-2xl font-black text-white">Three Moment Equations</h2>
-
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-800">
-        <table className="w-full min-w-[850px] border-collapse text-left">
-          <thead className="bg-slate-950">
-            <tr>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Condition</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Equation</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Note</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {result.equationRows.map((row, index) => (
-              <tr key={index} className="bg-slate-900/50">
-                <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-orange-300">{row.label}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{row.equation}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-400">{row.note}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function MomentTable({ result }) {
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-      <h2 className="text-2xl font-black text-white">Solved Support Moments</h2>
-
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-800">
-        <table className="w-full min-w-[720px] border-collapse text-left">
-          <thead className="bg-slate-950">
-            <tr>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Joint</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">x</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Support Moment</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Settlement</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {result.momentRows.map((row) => (
-              <tr key={row.joint} className="bg-slate-900/50">
-                <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-orange-300">M{row.joint}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.x, 3)} m</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.moment, 3)} kN·m</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.settlementMm, 3)} mm</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function ReactionTable({ result }) {
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-      <h2 className="text-2xl font-black text-white">Support Reactions</h2>
-
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-800">
-        <table className="w-full min-w-[780px] border-collapse text-left">
-          <thead className="bg-slate-950">
-            <tr>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Joint</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">x</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Type</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Vertical Reaction</th>
-              <th className="border-b border-slate-800 px-4 py-3 text-sm text-white">Moment</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {result.supportReactions.map((row) => (
-              <tr key={row.joint} className="bg-slate-900/50">
-                <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-orange-300">{row.joint}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.x, 3)} m</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{row.type}</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.vertical, 3)} kN</td>
-                <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.moment, 3)} kN·m</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function FormulaAndSteps({ result }) {
-  return (
-    <>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-          <h2 className="text-2xl font-black text-white">Formula Used</h2>
-
-          <div className="mt-5 space-y-3">
-            {result.formulas.map((formula) => (
-              <div key={formula} className="rounded-xl border border-orange-500/20 bg-orange-500/10 px-4 py-3 text-sm font-bold text-orange-200">
-                {formula}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-          <h2 className="text-2xl font-black text-white">Exam-Style Final Answer</h2>
-
-          <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-5 leading-8 text-slate-200">
-            {result.finalAnswer}
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-        <h2 className="text-2xl font-black text-white">Step-by-Step Solution</h2>
-
-        <div className="mt-6 space-y-4">
-          {result.steps.map((step, index) => (
-            <div key={step} className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-black text-white">
-                {index + 1}
-              </div>
-              <p className="leading-8 text-slate-300">{step}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  )
 }
 
 export default function ThreeMomentTheoremPage() {
-  const defaults = getDefaults(2)
+  const inputDiagramRef = useRef(null)
+  const outputDiagramRef = useRef(null)
 
-  const [form, setForm] = useState({
-    reportTitle: 'Three Moment Theorem Analysis',
-    preparedBy: '',
-    ...defaults,
-  })
+  const [spans, setSpans] = useState([
+    createInitialSpan(6),
+    {
+      length: 5,
+      EI: 1,
+      loads: [
+        {
+          ...createDefaultLoad(5),
+          type: 'point',
+          P: 60,
+          a: 2.5,
+        },
+      ],
+    },
+  ])
 
-  const result = useMemo(() => solveSafely(form), [form])
+  const result = useMemo(() => runThreeMoment(spans), [spans])
 
-  const updateForm = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }))
+  const updateSpan = (spanIndex, key, value) => {
+    setSpans((prev) =>
+      prev.map((span, i) =>
+        i === spanIndex
+          ? {
+              ...span,
+              [key]: value,
+            }
+          : span
+      )
+    )
   }
 
-  const updateSpanCount = (value) => {
-    const spanCount = Number(value)
-    setForm((prev) => ({
-      ...prev,
-      spanCount,
-    }))
+  const updateLoad = (spanIndex, loadIndex, key, value) => {
+    setSpans((prev) =>
+      prev.map((span, i) => {
+        if (i !== spanIndex) return span
+
+        const loads = normalizeLoads(span).map((load, j) =>
+          j === loadIndex
+            ? {
+                ...load,
+                [key]: value,
+              }
+            : load
+        )
+
+        return {
+          ...span,
+          loads,
+        }
+      })
+    )
   }
 
-  const updateSpan = (index, key, value) => {
-    setForm((prev) => ({
-      ...prev,
-      spans: prev.spans.map((span, i) => (i === index ? { ...span, [key]: value } : span)),
-    }))
+  const addLoadToSpan = (spanIndex) => {
+    setSpans((prev) =>
+      prev.map((span, i) => {
+        if (i !== spanIndex) return span
+        return {
+          ...span,
+          loads: [...normalizeLoads(span), createDefaultLoad(num(span.length, 5))],
+        }
+      })
+    )
   }
 
-  const updateSettlement = (index, value) => {
-    setForm((prev) => ({
-      ...prev,
-      settlements: prev.settlements.map((item, i) => (i === index ? value : item)),
-    }))
+  const removeLoadFromSpan = (spanIndex, loadIndex) => {
+    setSpans((prev) =>
+      prev.map((span, i) => {
+        if (i !== spanIndex) return span
+        return {
+          ...span,
+          loads: normalizeLoads(span).filter((_, j) => j !== loadIndex),
+        }
+      })
+    )
+  }
+
+  const addSpan = () => {
+    setSpans((prev) => [...prev, createInitialSpan(5)])
+  }
+
+  const removeSpan = (spanIndex) => {
+    if (spans.length <= 2) return
+    setSpans((prev) => prev.filter((_, i) => i !== spanIndex))
   }
 
   const resetExample = () => {
-    const defaults = getDefaults(2)
+    setSpans([
+      createInitialSpan(6),
+      {
+        length: 5,
+        EI: 1,
+        loads: [
+          {
+            ...createDefaultLoad(5),
+            type: 'point',
+            P: 60,
+            a: 2.5,
+          },
+        ],
+      },
+    ])
+  }
 
-    setForm({
-      reportTitle: 'Three Moment Theorem Analysis',
-      preparedBy: '',
-      ...defaults,
-    })
+  const downloadPDF = async () => {
+    try {
+      const { default: jsPDF } = await import('jspdf')
+      const autoTableModule = await import('jspdf-autotable')
+      const html2canvasModule = await import('html2canvas')
+      const autoTable = autoTableModule.default || autoTableModule.autoTable
+      const html2canvas = html2canvasModule.default
+
+      const doc = new jsPDF('p', 'mm', 'a4')
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const pageHeight = doc.internal.pageSize.getHeight()
+      let y = 15
+
+      const addSectionTitle = (title) => {
+        if (y > 260) {
+          doc.addPage()
+          y = 15
+        }
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(13)
+        doc.text(title, 14, y)
+        y += 6
+      }
+
+      const addCapturedElement = async (element, title) => {
+        if (!element) return
+        if (y > 220) {
+          doc.addPage()
+          y = 15
+        }
+        addSectionTitle(title)
+
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          backgroundColor: '#020617',
+          useCORS: true,
+        })
+        const imgData = canvas.toDataURL('image/png')
+        const imgWidth = pageWidth - 28
+        const imgHeight = Math.min((canvas.height * imgWidth) / canvas.width, 165)
+
+        if (y + imgHeight > pageHeight - 18) {
+          doc.addPage()
+          y = 15
+          addSectionTitle(title)
+        }
+
+        doc.addImage(imgData, 'PNG', 14, y, imgWidth, imgHeight)
+        y += imgHeight + 8
+      }
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(18)
+      doc.text('Three Moment Theorem Report', pageWidth / 2, y, { align: 'center' })
+      y += 7
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.text('Generated by CivilCalc Pro', pageWidth / 2, y, { align: 'center' })
+      y += 8
+
+      await addCapturedElement(inputDiagramRef.current, '1. Input beam diagram')
+
+      addSectionTitle('2. Step-by-step solution')
+      result.stepSolution.forEach((step) => {
+        if (y > 250) {
+          doc.addPage()
+          y = 15
+        }
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(10.5)
+        doc.text(step.title, 14, y)
+        y += 5
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8.2)
+
+        step.lines.forEach((line, index) => {
+          const text = `${index + 1}. ${line}`
+          const splitText = doc.splitTextToSize(text, pageWidth - 28)
+          if (y + splitText.length * 4 > 282) {
+            doc.addPage()
+            y = 15
+          }
+          doc.text(splitText, 14, y)
+          y += splitText.length * 4 + 1
+        })
+        y += 3
+      })
+
+      if (y > 220) {
+        doc.addPage()
+        y = 15
+      }
+
+      addSectionTitle('3. Final answer')
+      autoTable(doc, {
+        startY: y,
+        head: [['Joint', 'Support moment', 'Vertical reaction']],
+        body: result.supportReactions.map((row) => [
+          row.joint,
+          `${fmt(row.supportMoment)} kNm`,
+          `${fmt(row.verticalReaction)} kN`,
+        ]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [255, 122, 0], textColor: [0, 0, 0] },
+      })
+      y = doc.lastAutoTable.finalY + 7
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Span', 'Left moment', 'Right moment', 'RA', 'RB', 'Max SF', 'Max BM']],
+        body: result.spanAnalysis.map((span) => [
+          span.span,
+          `${fmt(span.leftMoment)} kNm`,
+          `${fmt(span.rightMoment)} kNm`,
+          `${fmt(span.RA)} kN`,
+          `${fmt(span.RB)} kN`,
+          `${fmt(span.maxShear.shear)} kN`,
+          `${fmt(span.maxMoment.moment)} kNm`,
+        ]),
+        styles: { fontSize: 7.5 },
+        headStyles: { fillColor: [255, 122, 0], textColor: [0, 0, 0] },
+      })
+      y = doc.lastAutoTable.finalY + 8
+
+      await addCapturedElement(outputDiagramRef.current, '4. SFD / BMD diagrams')
+
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.text(
+          `CivilCalc Pro | Three Moment Theorem | Page ${i} of ${pageCount}`,
+          pageWidth / 2,
+          290,
+          { align: 'center' }
+        )
+      }
+
+      doc.save('three-moment-theorem-solution.pdf')
+    } catch (error) {
+      console.error(error)
+      alert('PDF generate nahi ho paya. Please html2canvas, jspdf and jspdf-autotable install check karo.')
+    }
   }
 
   return (
-    <main className="min-h-screen bg-[#050B1F] px-4 py-8 text-white md:px-8">
-      <section className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 md:p-8">
-          <p className="mb-3 text-sm font-extrabold uppercase tracking-widest text-orange-400">
-            Structural Analysis Continuous Beam Solver
-          </p>
-
-          <h1 className="text-3xl font-black leading-tight md:text-5xl">
-            Three Moment Theorem Calculator
-          </h1>
-
-          <p className="mt-4 max-w-4xl text-base leading-8 text-slate-300 md:text-lg">
-            Solve continuous beams using Clapeyron’s Three Moment Theorem with support moments,
-            support reactions, settlement effect, SFD, BMD, equations and exam-style solution.
-          </p>
-        </div>
-
-        <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {topicCards.map((topic) => (
-            <div key={topic} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-              <p className="text-sm font-bold text-slate-200">{topic}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-[430px_1fr]">
-          <aside className="space-y-6">
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">Problem Setup</h2>
-
-              <div className="mt-6 space-y-5">
-                <TextField
-                  label="Question / Report Title"
-                  value={form.reportTitle}
-                  onChange={(value) => updateForm('reportTitle', value)}
-                  placeholder="Example: Continuous Beam by Three Moment Theorem"
-                />
-
-                <TextField
-                  label="Prepared By"
-                  value={form.preparedBy}
-                  onChange={(value) => updateForm('preparedBy', value)}
-                  placeholder="Your name"
-                />
-
-                <SelectField
-                  label="Number of Spans"
-                  value={form.spanCount}
-                  onChange={updateSpanCount}
-                  helper="Supports/joints will be span count + 1."
-                >
-                  <option value={1}>1 Span</option>
-                  <option value={2}>2 Spans</option>
-                  <option value={3}>3 Spans</option>
-                  <option value={4}>4 Spans</option>
-                </SelectField>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <SelectField label="Left End Condition" value={form.leftEnd} onChange={(value) => updateForm('leftEnd', value)}>
-                    <option value="pin">Pin / Roller</option>
-                    <option value="fixed">Fixed</option>
-                  </SelectField>
-
-                  <SelectField label="Right End Condition" value={form.rightEnd} onChange={(value) => updateForm('rightEnd', value)}>
-                    <option value="pin">Pin / Roller</option>
-                    <option value="fixed">Fixed</option>
-                  </SelectField>
-                </div>
+    <div className="min-h-screen bg-[#050B1F] text-white p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="rounded-3xl border border-orange-500/20 bg-gradient-to-br from-slate-900 via-slate-950 to-black p-6 shadow-2xl shadow-orange-500/10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-orange-300 text-sm mb-4">
+                <Calculator size={16} />
+                Structural Analysis Tool
               </div>
 
+              <h1 className="text-3xl md:text-5xl font-black tracking-tight">
+                Three Moment Theorem
+              </h1>
+
+              <p className="text-slate-400 mt-3 max-w-3xl">
+                Continuous beam ko Clapeyron Three Moment Theorem se solve karo — multiple spans, multiple loads, support moments, reactions, SFD/BMD aur PDF report ke saath.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
-                type="button"
-                onClick={resetExample}
-                className="mt-6 w-full rounded-xl border border-slate-700 px-5 py-3 font-bold text-slate-200 transition hover:border-orange-400 hover:text-orange-300"
+                onClick={downloadPDF}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-bold text-black hover:bg-orange-400"
               >
+                <Download size={18} />
+                Download PDF
+              </button>
+
+              <button
+                onClick={resetExample}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 hover:bg-slate-800"
+              >
+                <RotateCcw size={18} />
                 Reset Example
               </button>
             </div>
+          </div>
+        </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">Span & Load Setup</h2>
+        <div ref={inputDiagramRef}>
+          <BeamInputDiagram spans={spans} />
+        </div>
 
-              <div className="mt-6 space-y-5">
-                {form.spans.slice(0, form.spanCount).map((span, index) => (
-                  <SpanEditor key={index} span={span} index={index} onChange={updateSpan} />
-                ))}
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+                <div>
+                  <h2 className="text-xl font-bold">Span and Load Input</h2>
+                  <p className="text-slate-400 text-sm">
+                    Har span ke length, EI aur multiple load combination enter karo.
+                  </p>
+                </div>
+
+                <button
+                  onClick={addSpan}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 font-semibold text-black hover:bg-orange-400"
+                >
+                  <Plus size={18} />
+                  Add Span
+                </button>
               </div>
-            </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">Support Settlement</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
-                Positive settlement means downward settlement. Keep 0 if settlement is not given.
-              </p>
+              <div className="space-y-4">
+                {spans.map((span, spanIndex) => (
+                  <div key={spanIndex} className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <h3 className="font-bold text-orange-300">
+                        Span {jointName(spanIndex)}{jointName(spanIndex + 1)}
+                      </h3>
 
-              <div className="mt-6 space-y-4">
-                {Array.from({ length: Number(form.spanCount) + 1 }).map((_, index) => (
-                  <NumberField
-                    key={index}
-                    label={`Settlement at Support ${jointName(index)}`}
-                    value={form.settlements[index]}
-                    onChange={(value) => updateSettlement(index, value)}
-                    suffix="mm"
-                    min="-999"
-                  />
-                ))}
-              </div>
-            </div>
+                      <button
+                        onClick={() => removeSpan(spanIndex)}
+                        disabled={spans.length <= 2}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-500/30 px-3 py-2 text-red-300 disabled:opacity-40"
+                      >
+                        <Trash2 size={16} />
+                        Delete Span
+                      </button>
+                    </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-xl font-black text-white">What This Tool Covers</h2>
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <Field
+                        label="Length L (m)"
+                        value={span.length}
+                        onChange={(value) => updateSpan(spanIndex, 'length', value)}
+                      />
 
-              <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-                <li>✓ Two, three and four span continuous beam</li>
-                <li>✓ Pin and fixed end conditions</li>
-                <li>✓ Different span lengths</li>
-                <li>✓ Different EI factors</li>
-                <li>✓ UDL and point load per span</li>
-                <li>✓ Support settlement effect</li>
-                <li>✓ Three moment equations</li>
-                <li>✓ Support moments and reactions</li>
-                <li>✓ SFD and BMD</li>
-                <li>✓ Copy / Print / Save PDF</li>
-              </ul>
-            </div>
-          </aside>
+                      <Field
+                        label="Relative EI"
+                        value={span.EI}
+                        onChange={(value) => updateSpan(spanIndex, 'EI', value)}
+                      />
+                    </div>
 
-          <section className="space-y-6">
-            {result.error && (
-              <div className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6">
-                <h2 className="text-2xl font-black text-red-200">Input Error</h2>
-                <p className="mt-3 leading-7 text-red-100">{result.error}</p>
-              </div>
-            )}
+                    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <div>
+                          <h4 className="font-bold">Loads on this span</h4>
+                          <p className="text-xs text-slate-400">
+                            Full UDL, point load, partial UDL, UVL/trapezoidal aur applied moment add kar sakte ho.
+                          </p>
+                        </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">Result Summary</h2>
+                        <button
+                          onClick={() => addLoadToSpan(spanIndex)}
+                          className="rounded-xl bg-orange-500 px-3 py-2 text-sm font-bold text-black hover:bg-orange-400"
+                        >
+                          + Add Load
+                        </button>
+                      </div>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {result.summary.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                    <p className="text-sm text-slate-400">{item.label}</p>
-                    <p className="mt-2 text-xl font-black text-orange-300">{item.value}</p>
+                      <div className="space-y-3">
+                        {normalizeLoads(span).length === 0 ? (
+                          <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">
+                            No load added. Add Load button se load add karo.
+                          </div>
+                        ) : (
+                          normalizeLoads(span).map((load, loadIndex) => (
+                            <LoadInputCard
+                              key={loadIndex}
+                              load={load}
+                              spanLength={num(span.length, 1)}
+                              loadIndex={loadIndex}
+                              onChange={(key, value) => updateLoad(spanIndex, loadIndex, key, value)}
+                              onDelete={() => removeLoadFromSpan(spanIndex, loadIndex)}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
+          </div>
 
-            <ActionButtons result={result} form={form} />
-            <BeamDiagram result={result} form={form} />
-            <EquationTable result={result} />
-            <MomentTable result={result} />
-            <ReactionTable result={result} />
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5 sticky top-4">
+              <h2 className="text-xl font-bold text-orange-300 flex items-center gap-2">
+                <Sigma size={20} /> Solver Summary
+              </h2>
 
-            <div className="grid gap-6 xl:grid-cols-2">
-              <CurveDiagram result={result} type="sfd" />
-              <CurveDiagram result={result} type="bmd" />
+              <div className="mt-5 space-y-3 text-sm">
+                <SummaryRow label="Total spans" value={spans.length} />
+                <SummaryRow label="Total joints" value={spans.length + 1} />
+                <SummaryRow label="Unknown moments" value={Math.max(spans.length - 1, 0)} />
+                <SummaryRow label="Method" value="Clapeyron" />
+              </div>
+
+              <div className="mt-5 rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
+                End supports A and last joint are treated as simple supports with zero end moment. Internal supports are continuous.
+              </div>
             </div>
-
-            <FormulaAndSteps result={result} />
-          </section>
+          </div>
         </div>
-      </section>
-    </main>
+
+        <ResultSection title="Step-by-step Solution" icon={<BookOpen size={20} />}>
+          <div className="space-y-5">
+            {result.stepSolution.map((step, index) => (
+              <div key={index} className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+                <h3 className="text-lg font-bold text-orange-300 mb-3">{step.title}</h3>
+                <div className="space-y-2">
+                  {step.lines.map((line, i) => (
+                    <p key={i} className="text-sm leading-6 text-slate-300">
+                      {i + 1}. {line}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ResultSection>
+
+        <ResultSection title="Three Moment Equations" icon={<FileText size={20} />}>
+          <Table
+            headers={['Equation', 'Joints', 'A1', 'x̄1', 'A2', 'x̄2 from right', 'RHS']}
+            rows={result.equations.map((eq) => [
+              eq.equationNo,
+              eq.joints,
+              fmt(eq.A1),
+              fmt(eq.xbar1),
+              fmt(eq.A2),
+              fmt(eq.xbar2Right),
+              fmt(eq.rhs),
+            ])}
+          />
+        </ResultSection>
+
+        <ResultSection title="Final Support Moments and Reactions" icon={<Calculator size={20} />}>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {result.supportReactions.map((row) => (
+              <InfoCard
+                key={row.joint}
+                title={`Joint ${row.joint}`}
+                rows={[
+                  ['Support moment', `${fmt(row.supportMoment)} kNm`],
+                  ['Vertical reaction', `${fmt(row.verticalReaction)} kN`],
+                ]}
+              />
+            ))}
+          </div>
+        </ResultSection>
+
+        <div ref={outputDiagramRef}>
+          <ResultSection title="SFD / BMD Diagrams" icon={<Activity size={20} />}>
+            <div className="grid lg:grid-cols-2 gap-5">
+              {result.spanAnalysis.map((span) => (
+                <div key={span.span} className="rounded-2xl border border-slate-800 bg-slate-950 p-5 space-y-5">
+                  <h3 className="text-lg font-bold text-orange-300">Span {span.span}</h3>
+
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <MiniStat label={`Reaction at ${span.leftJoint}`} value={`${fmt(span.RA)} kN`} />
+                    <MiniStat label={`Reaction at ${span.rightJoint}`} value={`${fmt(span.RB)} kN`} />
+                    <MiniStat label="Max shear" value={`${fmt(span.maxShear.shear)} kN at ${fmt(span.maxShear.x)} m`} />
+                    <MiniStat label="Max BM" value={`${fmt(span.maxMoment.moment)} kNm at ${fmt(span.maxMoment.x)} m`} />
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-slate-400 mb-2">SFD</p>
+                    <MiniDiagram points={span.stations} valueKey="shear" />
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-slate-400 mb-2">BMD</p>
+                    <MiniDiagram points={span.stations} valueKey="moment" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ResultSection>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LoadInputCard({ load, spanLength, loadIndex, onChange, onDelete }) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+      <div className="grid md:grid-cols-4 gap-4">
+        <div>
+          <label className="text-sm text-slate-400">Load Type</label>
+          <select
+            value={load.type}
+            onChange={(e) => onChange('type', e.target.value)}
+            className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
+          >
+            <option value="udl">Full UDL</option>
+            <option value="point">Point Load</option>
+            <option value="partialUdl">Partial UDL</option>
+            <option value="uvl">UVL / Trapezoidal</option>
+            <option value="moment">Applied Moment</option>
+          </select>
+        </div>
+
+        {load.type === 'udl' && (
+          <Field label="UDL w (kN/m)" value={load.w} onChange={(value) => onChange('w', value)} />
+        )}
+
+        {load.type === 'point' && (
+          <>
+            <Field label="Point load P (kN)" value={load.P} onChange={(value) => onChange('P', value)} />
+            <Field label={`Distance a (0-${fmt(spanLength)} m)`} value={load.a} onChange={(value) => onChange('a', value)} />
+          </>
+        )}
+
+        {load.type === 'partialUdl' && (
+          <>
+            <Field label="UDL w (kN/m)" value={load.w} onChange={(value) => onChange('w', value)} />
+            <Field label="Start x (m)" value={load.start} onChange={(value) => onChange('start', value)} />
+            <Field label="End x (m)" value={load.end} onChange={(value) => onChange('end', value)} />
+          </>
+        )}
+
+        {load.type === 'uvl' && (
+          <>
+            <Field label="w1 (kN/m)" value={load.w1} onChange={(value) => onChange('w1', value)} />
+            <Field label="w2 (kN/m)" value={load.w2} onChange={(value) => onChange('w2', value)} />
+            <Field label="Start x (m)" value={load.start} onChange={(value) => onChange('start', value)} />
+            <Field label="End x (m)" value={load.end} onChange={(value) => onChange('end', value)} />
+          </>
+        )}
+
+        {load.type === 'moment' && (
+          <>
+            <Field label="Moment M (kNm)" value={load.M} onChange={(value) => onChange('M', value)} />
+            <Field label={`Distance a (0-${fmt(spanLength)} m)`} value={load.a} onChange={(value) => onChange('a', value)} />
+            <div>
+              <label className="text-sm text-slate-400">Sense</label>
+              <select
+                value={load.sense || 'clockwise'}
+                onChange={(e) => onChange('sense', e.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
+              >
+                <option value="clockwise">Clockwise</option>
+                <option value="anticlockwise">Anticlockwise</option>
+              </select>
+            </div>
+          </>
+        )}
+
+        <div className="flex items-end">
+          <button
+            onClick={onDelete}
+            className="w-full rounded-xl border border-red-500/30 px-3 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/10"
+          >
+            Delete Load {loadIndex + 1}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BeamInputDiagram({ spans }) {
+  const width = 900
+  const height = 350
+  const padding = 70
+  const beamY = 150
+  const supportY = 188
+  const loadTopY = 52
+  const dimY = 250
+
+  const lengths = spans.map((span) => Math.max(num(span.length, 1), 0.1))
+  const totalLength = lengths.reduce((sum, length) => sum + length, 0) || 1
+  const beamWidth = width - padding * 2
+  const jointXs = [padding]
+
+  lengths.reduce((sum, length) => {
+    const next = sum + length
+    jointXs.push(padding + (next / totalLength) * beamWidth)
+    return next
+  }, 0)
+
+  const renderSupport = (x, index) => {
+    const isEnd = index === 0 || index === jointXs.length - 1
+    const label = isEnd ? (index === 0 ? 'Pin' : 'Roller') : 'Continuous'
+
+    return (
+      <g key={`support-${index}`}>
+        <path
+          d={`M ${x} ${beamY + 8} L ${x - 24} ${supportY} L ${x + 24} ${supportY} Z`}
+          fill="#0f172a"
+          stroke="#f97316"
+          strokeWidth="2"
+        />
+        {!isEnd || label === 'Roller' ? (
+          <>
+            <circle cx={x - 12} cy={supportY + 8} r="4" fill="#94a3b8" />
+            <circle cx={x + 12} cy={supportY + 8} r="4" fill="#94a3b8" />
+            <line x1={x - 32} y1={supportY + 14} x2={x + 32} y2={supportY + 14} stroke="#64748b" strokeWidth="2" />
+          </>
+        ) : (
+          <line x1={x - 32} y1={supportY + 8} x2={x + 32} y2={supportY + 8} stroke="#64748b" strokeWidth="2" />
+        )}
+        <text x={x} y={supportY + 34} textAnchor="middle" fontSize="12" fill="#cbd5e1">
+          {label}
+        </text>
+      </g>
+    )
+  }
+
+  const renderLoads = (span, index) => {
+    const x1 = jointXs[index]
+    const x2 = jointXs[index + 1]
+    const spanWidth = x2 - x1
+    const midX = (x1 + x2) / 2
+    const L = num(span.length, 1)
+    const loads = normalizeLoads(span)
+
+    if (!loads.length) {
+      return (
+        <text key={`empty-${index}`} x={midX} y={beamY - 30} textAnchor="middle" fontSize="12" fill="#64748b">
+          No Load
+        </text>
+      )
+    }
+
+    return (
+      <g key={`loads-${index}`}>
+        {loads.map((load, loadIndex) => {
+          const yTop = loadTopY + loadIndex * 27
+
+          if (load.type === 'udl' || load.type === 'partialUdl' || load.type === 'uvl') {
+            let startX = x1 + 12
+            let endX = x2 - 12
+            let label = ''
+
+            if (load.type === 'udl') {
+              label = `${fmt(load.w)} kN/m`
+            } else {
+              const { start, end } = getLoadInterval(load, L)
+              startX = x1 + (start / L) * spanWidth
+              endX = x1 + (end / L) * spanWidth
+              label = load.type === 'partialUdl' ? `${fmt(load.w)} kN/m` : `${fmt(load.w1)}→${fmt(load.w2)} kN/m`
+            }
+
+            const arrowCount = Math.max(3, Math.min(8, Math.floor((endX - startX) / 40)))
+
+            return (
+              <g key={`load-${index}-${loadIndex}`}>
+                <line x1={startX} y1={yTop} x2={endX} y2={yTop} stroke="#fb923c" strokeWidth="3" />
+                {Array.from({ length: arrowCount }).map((_, arrowIndex) => {
+                  const x = startX + (arrowIndex * (endX - startX)) / Math.max(arrowCount - 1, 1)
+                  return (
+                    <line
+                      key={arrowIndex}
+                      x1={x}
+                      y1={yTop}
+                      x2={x}
+                      y2={beamY - 10}
+                      stroke="#fb923c"
+                      strokeWidth="2.5"
+                      markerEnd="url(#arrowHead)"
+                    />
+                  )
+                })}
+                <text x={(startX + endX) / 2} y={yTop - 7} textAnchor="middle" fontSize="11" fontWeight="700" fill="#fed7aa">
+                  L{loadIndex + 1}: {label}
+                </text>
+              </g>
+            )
+          }
+
+          if (load.type === 'point' || load.type === 'moment') {
+            const a = clampWithinSpan(load.a, L, L / 2)
+            const px = x1 + (a / L) * spanWidth
+
+            if (load.type === 'point') {
+              return (
+                <g key={`load-${index}-${loadIndex}`}>
+                  <line x1={px} y1={yTop} x2={px} y2={beamY - 10} stroke="#fb923c" strokeWidth="4" markerEnd="url(#arrowHead)" />
+                  <text x={px} y={yTop - 8} textAnchor="middle" fontSize="11" fontWeight="700" fill="#fed7aa">
+                    P{loadIndex + 1} = {fmt(load.P)} kN
+                  </text>
+                </g>
+              )
+            }
+
+            return (
+              <g key={`load-${index}-${loadIndex}`}>
+                <path
+                  d={`M ${px - 18} ${beamY - 18} C ${px - 30} ${beamY - 48}, ${px + 30} ${beamY - 48}, ${px + 18} ${beamY - 18}`}
+                  fill="none"
+                  stroke="#fb923c"
+                  strokeWidth="3"
+                  markerEnd="url(#arrowHead)"
+                />
+                <text x={px} y={beamY - 58} textAnchor="middle" fontSize="11" fontWeight="700" fill="#fed7aa">
+                  M{loadIndex + 1} = {fmt(load.M)} kNm
+                </text>
+              </g>
+            )
+          }
+
+          return null
+        })}
+      </g>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl border border-orange-500/20 bg-slate-900/70 p-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+        <div>
+          <h2 className="text-xl font-bold">Input Beam Diagram</h2>
+          <p className="text-sm text-slate-400">Live visual layout with spans, supports, multiple loads, length and EI.</p>
+        </div>
+        <div className="rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm text-orange-300">
+          Auto updates with input
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-[#020617] p-3">
+        <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[850px] w-full h-auto">
+          <defs>
+            <marker id="arrowHead" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+              <path d="M 0 0 L 8 4 L 0 8 Z" fill="#fb923c" />
+            </marker>
+          </defs>
+
+          <line x1={padding} y1={beamY} x2={width - padding} y2={beamY} stroke="#e2e8f0" strokeWidth="8" strokeLinecap="round" />
+
+          {spans.map((span, index) => renderLoads(span, index))}
+
+          {jointXs.map((x, index) => (
+            <g key={`joint-${index}`}>
+              <circle cx={x} cy={beamY} r="8" fill="#f97316" stroke="#fed7aa" strokeWidth="2" />
+              <text x={x} y={beamY - 18} textAnchor="middle" fontSize="14" fontWeight="800" fill="#ffffff">
+                {jointName(index)}
+              </text>
+            </g>
+          ))}
+
+          {jointXs.map((x, index) => renderSupport(x, index))}
+
+          {spans.map((span, index) => {
+            const x1 = jointXs[index]
+            const x2 = jointXs[index + 1]
+            const midX = (x1 + x2) / 2
+            return (
+              <g key={`dim-${index}`}>
+                <line x1={x1} y1={dimY} x2={x2} y2={dimY} stroke="#64748b" strokeWidth="2" />
+                <line x1={x1} y1={dimY - 8} x2={x1} y2={dimY + 8} stroke="#64748b" strokeWidth="2" />
+                <line x1={x2} y1={dimY - 8} x2={x2} y2={dimY + 8} stroke="#64748b" strokeWidth="2" />
+                <text x={midX} y={dimY + 22} textAnchor="middle" fontSize="13" fill="#cbd5e1">
+                  Span {jointName(index)}{jointName(index + 1)} = {fmt(span.length)} m
+                </text>
+                <text x={midX} y={dimY + 42} textAnchor="middle" fontSize="12" fill="#94a3b8">
+                  Relative EI = {fmt(span.EI)}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange, step = 'any' }) {
+  return (
+    <div>
+      <label className="text-sm text-slate-400">{label}</label>
+      <input
+        type="number"
+        step={step}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
+      />
+    </div>
+  )
+}
+
+function SummaryRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3">
+      <span className="text-slate-400">{label}</span>
+      <span className="font-bold text-white">{value}</span>
+    </div>
+  )
+}
+
+function ResultSection({ title, icon, children }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+      <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-white">
+        {icon ? <span className="text-orange-300">{icon}</span> : null}
+        {title}
+      </h2>
+      {children}
+    </div>
+  )
+}
+
+function Table({ headers, rows }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-800 text-slate-400">
+            {headers.map((header) => (
+              <th key={header} className="p-3 text-left whitespace-nowrap">
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-slate-800/60">
+              {row.map((cell, j) => (
+                <td key={j} className={`p-3 whitespace-nowrap ${j === 0 ? 'font-semibold text-orange-300' : ''}`}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function InfoCard({ title, rows }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+      <h3 className="text-lg font-bold text-orange-300 mb-4">{title}</h3>
+      <div className="space-y-3">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between gap-3">
+            <span className="text-slate-400 text-sm">{label}</span>
+            <span className="font-bold text-right">{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="text-lg font-black mt-1">{value}</p>
+    </div>
+  )
+}
+
+function MiniDiagram({ points, valueKey }) {
+  if (!points || points.length < 2) {
+    return <div className="h-40 rounded-xl border border-slate-800 bg-slate-900" />
+  }
+
+  const width = 700
+  const height = 170
+  const padding = 18
+  const xValues = points.map((p) => p.x)
+  const yValues = points.map((p) => p[valueKey])
+  const minX = Math.min(...xValues)
+  const maxX = Math.max(...xValues)
+  const minY = Math.min(...yValues, 0)
+  const maxY = Math.max(...yValues, 0)
+  const xRange = maxX - minX || 1
+  const yRange = maxY - minY || 1
+  const mapX = (x) => padding + ((x - minX) / xRange) * (width - padding * 2)
+  const mapY = (y) => height - padding - ((y - minY) / yRange) * (height - padding * 2)
+  const polyline = points.map((p) => `${mapX(p.x)},${mapY(p[valueKey])}`).join(' ')
+  const zeroY = mapY(0)
+
+  return (
+    <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-44">
+        <line x1={padding} x2={width - padding} y1={zeroY} y2={zeroY} className="stroke-slate-600" strokeWidth="1" />
+        <polyline points={polyline} fill="none" className="stroke-orange-400" strokeWidth="3" />
+        <circle cx={mapX(points[0].x)} cy={mapY(points[0][valueKey])} r="4" className="fill-orange-300" />
+        <circle cx={mapX(points[points.length - 1].x)} cy={mapY(points[points.length - 1][valueKey])} r="4" className="fill-orange-300" />
+      </svg>
+    </div>
   )
 }
