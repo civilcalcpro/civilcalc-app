@@ -26,6 +26,42 @@ const num = (v, fallback = 0) => {
 
 const jointName = (i) => String.fromCharCode(65 + i)
 
+const isSimpleSupport = (type) => type === 'pin' || type === 'roller'
+
+const supportLabel = (type) => {
+  if (type === 'pin') return 'Pinned Support'
+  if (type === 'roller') return 'Roller Support'
+  if (type === 'fixed') return 'Fixed Support'
+  return 'Continuous Support'
+}
+
+const createDefaultSupport = (index, totalJoints) => {
+  if (index === 0) return 'pin'
+  if (index === totalJoints - 1) return 'roller'
+  return 'continuous'
+}
+
+const getEffectiveEI = (span) => {
+  const mode = span.eiMode || 'relative'
+  if (mode === 'separate') {
+    const E = num(span.E, 1)
+    const I = num(span.I, 1)
+    const EI = E * I
+    return Math.abs(EI) > 1e-12 ? EI : 1
+  }
+  if (mode === 'ei') return num(span.EI, 1) || 1
+  return num(span.relativeEI ?? span.EI, 1) || 1
+}
+
+const eiDisplay = (span) => {
+  const mode = span.eiMode || 'relative'
+  if (mode === 'separate') {
+    return `E = ${fmt(span.E)}, I = ${fmt(span.I)}, EI = ${fmt(getEffectiveEI(span))}`
+  }
+  if (mode === 'ei') return `EI = ${fmt(getEffectiveEI(span))}`
+  return `Relative EI = ${fmt(getEffectiveEI(span))}`
+}
+
 const createDefaultLoad = (length = 5) => ({
   type: 'udl',
   w: 20,
@@ -41,7 +77,11 @@ const createDefaultLoad = (length = 5) => ({
 
 const createInitialSpan = (length = 5) => ({
   length,
+  eiMode: 'relative',
+  relativeEI: 1,
   EI: 1,
+  E: 25000000,
+  I: 0.0004,
   loads: [createDefaultLoad(length)],
 })
 
@@ -379,6 +419,28 @@ function solveLinearSystem(A, b) {
   return M.map((row) => row[n])
 }
 
+
+function solveMomentSystem(A, b, unknownCount) {
+  if (!unknownCount) return []
+  if (A.length === unknownCount) return solveLinearSystem(A, b)
+  if (A.length > unknownCount) {
+    const normalA = Array.from({ length: unknownCount }, () => Array(unknownCount).fill(0))
+    const normalB = Array(unknownCount).fill(0)
+
+    for (let r = 0; r < A.length; r++) {
+      for (let i = 0; i < unknownCount; i++) {
+        normalB[i] += (A[r][i] || 0) * b[r]
+        for (let j = 0; j < unknownCount; j++) {
+          normalA[i][j] += (A[r][i] || 0) * (A[r][j] || 0)
+        }
+      }
+    }
+
+    return solveLinearSystem(normalA, normalB)
+  }
+  return Array(unknownCount).fill(0)
+}
+
 function createStations(span, supportMomentLeft, supportMomentRight, RA) {
   const L = num(span.length, 1)
   const stations = []
@@ -414,15 +476,20 @@ function createStations(span, supportMomentLeft, supportMomentRight, RA) {
   }))
 }
 
-function runThreeMoment(spans) {
+function runThreeMoment(spans, supports) {
   const totalSpans = spans.length
   const totalJoints = totalSpans + 1
+  const jointSupports = Array.from({ length: totalJoints }, (_, index) => supports?.[index] || createDefaultSupport(index, totalJoints))
   const freeBmd = spans.map((span) => integrateFreeBMD(span))
   const knownMoments = Array(totalJoints).fill(null)
-  knownMoments[0] = 0
-  knownMoments[totalJoints - 1] = 0
+  jointSupports.forEach((type, index) => {
+    if (isSimpleSupport(type)) knownMoments[index] = 0
+    if ((index === 0 || index === totalJoints - 1) && type !== 'fixed') knownMoments[index] = 0
+  })
 
-  const unknownJoints = Array.from({ length: Math.max(totalJoints - 2, 0) }, (_, i) => i + 1)
+  const unknownJoints = Array.from({ length: totalJoints }, (_, i) => i).filter(
+    (joint) => knownMoments[joint] === null
+  )
   const equations = []
   const A = []
   const b = []
@@ -437,8 +504,8 @@ function runThreeMoment(spans) {
 
     const L1 = num(spanLeft.length, 1)
     const L2 = num(spanRight.length, 1)
-    const EI1 = num(spanLeft.EI, 1)
-    const EI2 = num(spanRight.EI, 1)
+    const EI1 = getEffectiveEI(spanLeft)
+    const EI2 = getEffectiveEI(spanRight)
 
     const fb1 = freeBmd[eqIndex]
     const fb2 = freeBmd[eqIndex + 1]
@@ -491,8 +558,97 @@ function runThreeMoment(spans) {
     b.push(adjustedRhs)
   }
 
-  const unknownValues = unknownJoints.length ? solveLinearSystem(A, b) : []
-  const supportMoments = Array(totalJoints).fill(0)
+  if (jointSupports[0] === 'fixed' && totalSpans >= 1) {
+    const span = spans[0]
+    const L = num(span.length, 1)
+    const EI = getEffectiveEI(span)
+    const fb = freeBmd[0]
+    const row = Array(unknownJoints.length).fill(0)
+    const cLeft = (L * L) / (3 * EI)
+    const cRight = (L * L) / (6 * EI)
+    const rhs = -(fb.area * fb.centroidFromRight) / EI
+    let adjustedRhs = rhs
+    ;[
+      { joint: 0, coefficient: cLeft },
+      { joint: 1, coefficient: cRight },
+    ].forEach((item) => {
+      const unknownIndex = unknownJoints.indexOf(item.joint)
+      if (unknownIndex >= 0) row[unknownIndex] += item.coefficient
+      else adjustedRhs -= item.coefficient * (knownMoments[item.joint] || 0)
+    })
+    equations.push({
+      equationNo: equations.length + 1,
+      joints: `Fixed end ${jointName(0)}`,
+      leftJoint: jointName(0),
+      midJoint: jointName(0),
+      rightJoint: jointName(1),
+      L1: L,
+      L2: 0,
+      EI1: EI,
+      EI2: 0,
+      A1: fb.area,
+      xbar1: fb.centroid,
+      A2: 0,
+      xbar2Right: 0,
+      cLeft,
+      cMid: cLeft,
+      cRight,
+      rhs,
+      adjustedRhs,
+      coefficients: row,
+      type: 'fixed-left',
+    })
+    A.push(row)
+    b.push(adjustedRhs)
+  }
+
+  if (jointSupports[totalJoints - 1] === 'fixed' && totalSpans >= 1) {
+    const spanIndex = totalSpans - 1
+    const span = spans[spanIndex]
+    const L = num(span.length, 1)
+    const EI = getEffectiveEI(span)
+    const fb = freeBmd[spanIndex]
+    const row = Array(unknownJoints.length).fill(0)
+    const cLeft = (L * L) / (6 * EI)
+    const cRight = (L * L) / (3 * EI)
+    const rhs = -(fb.area * fb.centroid) / EI
+    let adjustedRhs = rhs
+    ;[
+      { joint: totalJoints - 2, coefficient: cLeft },
+      { joint: totalJoints - 1, coefficient: cRight },
+    ].forEach((item) => {
+      const unknownIndex = unknownJoints.indexOf(item.joint)
+      if (unknownIndex >= 0) row[unknownIndex] += item.coefficient
+      else adjustedRhs -= item.coefficient * (knownMoments[item.joint] || 0)
+    })
+    equations.push({
+      equationNo: equations.length + 1,
+      joints: `Fixed end ${jointName(totalJoints - 1)}`,
+      leftJoint: jointName(totalJoints - 2),
+      midJoint: jointName(totalJoints - 1),
+      rightJoint: jointName(totalJoints - 1),
+      L1: L,
+      L2: 0,
+      EI1: EI,
+      EI2: 0,
+      A1: fb.area,
+      xbar1: fb.centroid,
+      A2: 0,
+      xbar2Right: 0,
+      cLeft,
+      cMid: cRight,
+      cRight,
+      rhs,
+      adjustedRhs,
+      coefficients: row,
+      type: 'fixed-right',
+    })
+    A.push(row)
+    b.push(adjustedRhs)
+  }
+
+  const unknownValues = solveMomentSystem(A, b, unknownJoints.length)
+  const supportMoments = knownMoments.map((moment) => (moment === null ? 0 : moment))
   unknownJoints.forEach((joint, index) => {
     supportMoments[joint] = unknownValues[index] || 0
   })
@@ -539,6 +695,7 @@ function runThreeMoment(spans) {
 
     return {
       joint: jointName(j),
+      type: jointSupports[j],
       verticalReaction,
       supportMoment: supportMoments[j],
     }
@@ -547,17 +704,20 @@ function runThreeMoment(spans) {
   const stepSolution = []
 
   stepSolution.push({
-    title: 'Step 1: Given data',
-    lines: spans.map((span, index) => {
-      const L = num(span.length, 1)
-      const loads = normalizeLoads(span)
-      const loadText = loads.length ? loads.map((load, loadIndex) => loadLabel(load, L, loadIndex)).join('; ') : 'No external load'
-      return `Span ${jointName(index)}${jointName(index + 1)}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, ${loadText}`
-    }),
+    title: 'Step 1: Given data and support condition',
+    lines: [
+      ...jointSupports.map((type, index) => `Joint ${jointName(index)}: ${supportLabel(type)}${isSimpleSupport(type) || ((index === 0 || index === totalJoints - 1) && type !== 'fixed') ? ' => support moment is taken as zero' : ' => support moment is solved from compatibility'}`),
+      ...spans.map((span, index) => {
+        const L = num(span.length, 1)
+        const loads = normalizeLoads(span)
+        const loadText = loads.length ? loads.map((load, loadIndex) => loadLabel(load, L, loadIndex)).join('; ') : 'No external load'
+        return `Span ${jointName(index)}${jointName(index + 1)}: L = ${fmt(span.length)} m, ${eiDisplay(span)}, ${loadText}`
+      }),
+    ],
   })
 
   stepSolution.push({
-    title: 'Step 2: Area and centroid of free bending moment diagram',
+    title: 'Step 2: Free BMD area A and centroid x-bar',
     lines: spans.map((span, index) => {
       const data = freeBmd[index]
       return `Span ${jointName(index)}${jointName(index + 1)}: A = ${fmt(data.area)} kNm², x̄ from left = ${fmt(data.centroid)} m, x̄ from right = ${fmt(data.centroidFromRight)} m`
@@ -567,12 +727,14 @@ function runThreeMoment(spans) {
   stepSolution.push({
     title: 'Step 3: Three Moment equations',
     lines: equations.map((eq) => {
+      if (eq.type === 'fixed-left') return `Fixed support at ${eq.leftJoint}: slope = 0, (${fmt(eq.cLeft)})M${eq.leftJoint} + (${fmt(eq.cRight)})M${eq.rightJoint} = ${fmt(eq.rhs)}`
+      if (eq.type === 'fixed-right') return `Fixed support at ${eq.midJoint}: slope = 0, (${fmt(eq.cLeft)})M${eq.leftJoint} + (${fmt(eq.cRight)})M${eq.midJoint} = ${fmt(eq.rhs)}`
       return `${eq.joints}: (${fmt(eq.cLeft)})M${eq.leftJoint} + (${fmt(eq.cMid)})M${eq.midJoint} + (${fmt(eq.cRight)})M${eq.rightJoint} = ${fmt(eq.rhs)}`
     }),
   })
 
   stepSolution.push({
-    title: 'Step 4: Solved support moments',
+    title: 'Step 4: Solved support moments / अंतिम support moments',
     lines: supportMoments.map((moment, index) => {
       return `M${jointName(index)} = ${fmt(moment)} kNm`
     }),
@@ -581,7 +743,7 @@ function runThreeMoment(spans) {
   stepSolution.push({
     title: 'Step 5: Support reactions',
     lines: supportReactions.map((row) => {
-      return `Joint ${row.joint}: Vertical reaction = ${fmt(row.verticalReaction)} kN, support moment = ${fmt(row.supportMoment)} kNm`
+      return `Joint ${row.joint} (${supportLabel(row.type)}): Vertical reaction = ${fmt(row.verticalReaction)} kN, support moment = ${fmt(row.supportMoment)} kNm`
     }),
   })
 
@@ -610,7 +772,11 @@ export default function ThreeMomentTheoremPage() {
     createInitialSpan(6),
     {
       length: 5,
+      eiMode: 'relative',
+      relativeEI: 1,
       EI: 1,
+      E: 25000000,
+      I: 0.0004,
       loads: [
         {
           ...createDefaultLoad(5),
@@ -621,8 +787,9 @@ export default function ThreeMomentTheoremPage() {
       ],
     },
   ])
+  const [supports, setSupports] = useState(['pin', 'continuous', 'roller'])
 
-  const result = useMemo(() => runThreeMoment(spans), [spans])
+  const result = useMemo(() => runThreeMoment(spans, supports), [spans, supports])
 
   const updateSpan = (spanIndex, key, value) => {
     setSpans((prev) =>
@@ -635,6 +802,11 @@ export default function ThreeMomentTheoremPage() {
           : span
       )
     )
+  }
+
+
+  const updateSupport = (jointIndex, value) => {
+    setSupports((prev) => prev.map((support, i) => (i === jointIndex ? value : support)))
   }
 
   const updateLoad = (spanIndex, loadIndex, key, value) => {
@@ -685,11 +857,22 @@ export default function ThreeMomentTheoremPage() {
 
   const addSpan = () => {
     setSpans((prev) => [...prev, createInitialSpan(5)])
+    setSupports((prev) => {
+      const updated = [...prev]
+      if (updated.length > 0 && updated[updated.length - 1] !== 'fixed') updated[updated.length - 1] = 'continuous'
+      return [...updated, 'roller']
+    })
   }
 
   const removeSpan = (spanIndex) => {
     if (spans.length <= 2) return
     setSpans((prev) => prev.filter((_, i) => i !== spanIndex))
+    setSupports((prev) => {
+      const next = prev.filter((_, i) => i !== spanIndex + 1)
+      if (next.length) next[0] = next[0] || 'pin'
+      if (next.length) next[next.length - 1] = next[next.length - 1] || 'roller'
+      return next
+    })
   }
 
   const resetExample = () => {
@@ -697,7 +880,11 @@ export default function ThreeMomentTheoremPage() {
       createInitialSpan(6),
       {
         length: 5,
+        eiMode: 'relative',
+        relativeEI: 1,
         EI: 1,
+        E: 25000000,
+        I: 0.0004,
         loads: [
           {
             ...createDefaultLoad(5),
@@ -708,6 +895,7 @@ export default function ThreeMomentTheoremPage() {
         ],
       },
     ])
+    setSupports(['pin', 'continuous', 'roller'])
   }
 
   const downloadPDF = async () => {
@@ -806,9 +994,10 @@ export default function ThreeMomentTheoremPage() {
       addSectionTitle('3. Final answer')
       autoTable(doc, {
         startY: y,
-        head: [['Joint', 'Support moment', 'Vertical reaction']],
+        head: [['Joint', 'Support type', 'Support moment', 'Vertical reaction']],
         body: result.supportReactions.map((row) => [
           row.joint,
+          supportLabel(row.type),
           `${fmt(row.supportMoment)} kNm`,
           `${fmt(row.verticalReaction)} kN`,
         ]),
@@ -864,7 +1053,7 @@ export default function ThreeMomentTheoremPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-orange-300 text-sm mb-4">
                 <Calculator size={16} />
-                Structural Analysis Tool
+                Structural Analysis Tool · Enhanced V2
               </div>
 
               <h1 className="text-3xl md:text-5xl font-black tracking-tight">
@@ -897,7 +1086,7 @@ export default function ThreeMomentTheoremPage() {
         </div>
 
         <div ref={inputDiagramRef}>
-          <BeamInputDiagram spans={spans} />
+          <BeamInputDiagram spans={spans} supports={supports} />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -905,7 +1094,7 @@ export default function ThreeMomentTheoremPage() {
             <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
                 <div>
-                  <h2 className="text-xl font-bold">Span and Load Input</h2>
+                  <h2 className="text-xl font-bold">Span, Support, EI and Load Input</h2>
                   <p className="text-slate-400 text-sm">
                     Har span ke length, EI aur multiple load combination enter karo.
                   </p>
@@ -918,6 +1107,30 @@ export default function ThreeMomentTheoremPage() {
                   <Plus size={18} />
                   Add Span
                 </button>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4 mb-4">
+                <h3 className="font-bold text-orange-300 mb-2">Support / Joint Type</h3>
+                <p className="text-xs text-slate-400 mb-4">
+                  Pin/Roller support moment zero hoga. Continuous joint ka moment theorem se solve hoga. End fixed support ke liye zero-slope equation add hogi.
+                </p>
+                <div className="grid md:grid-cols-4 gap-4">
+                  {supports.map((support, jointIndex) => (
+                    <div key={jointIndex}>
+                      <label className="text-sm text-slate-400">Joint {jointName(jointIndex)}</label>
+                      <select
+                        value={support}
+                        onChange={(e) => updateSupport(jointIndex, e.target.value)}
+                        className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
+                      >
+                        <option value="pin">Pinned Support</option>
+                        <option value="roller">Roller Support</option>
+                        <option value="continuous">Continuous Support</option>
+                        <option value="fixed">Fixed Support</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -945,11 +1158,49 @@ export default function ThreeMomentTheoremPage() {
                         onChange={(value) => updateSpan(spanIndex, 'length', value)}
                       />
 
-                      <Field
-                        label="Relative EI"
-                        value={span.EI}
-                        onChange={(value) => updateSpan(spanIndex, 'EI', value)}
-                      />
+                      <div>
+                        <label className="text-sm text-slate-400">EI Input Type</label>
+                        <select
+                          value={span.eiMode || 'relative'}
+                          onChange={(e) => updateSpan(spanIndex, 'eiMode', e.target.value)}
+                          className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
+                        >
+                          <option value="relative">Relative EI</option>
+                          <option value="ei">Direct EI value</option>
+                          <option value="separate">E and I separately</option>
+                        </select>
+                      </div>
+
+                      {(span.eiMode || 'relative') === 'relative' && (
+                        <Field
+                          label="Relative EI"
+                          value={span.relativeEI ?? span.EI}
+                          onChange={(value) => updateSpan(spanIndex, 'relativeEI', value)}
+                        />
+                      )}
+
+                      {(span.eiMode || 'relative') === 'ei' && (
+                        <Field
+                          label="EI value"
+                          value={span.EI}
+                          onChange={(value) => updateSpan(spanIndex, 'EI', value)}
+                        />
+                      )}
+
+                      {(span.eiMode || 'relative') === 'separate' && (
+                        <>
+                          <Field
+                            label="Modulus E"
+                            value={span.E}
+                            onChange={(value) => updateSpan(spanIndex, 'E', value)}
+                          />
+                          <Field
+                            label="Moment of inertia I"
+                            value={span.I}
+                            onChange={(value) => updateSpan(spanIndex, 'I', value)}
+                          />
+                        </>
+                      )}
                     </div>
 
                     <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
@@ -1003,12 +1254,12 @@ export default function ThreeMomentTheoremPage() {
               <div className="mt-5 space-y-3 text-sm">
                 <SummaryRow label="Total spans" value={spans.length} />
                 <SummaryRow label="Total joints" value={spans.length + 1} />
-                <SummaryRow label="Unknown moments" value={Math.max(spans.length - 1, 0)} />
+                <SummaryRow label="Unknown moments" value={result.supportMoments.filter((m, i) => !isSimpleSupport(supports[i]) && !((i === 0 || i === supports.length - 1) && supports[i] !== 'fixed')).length} />
                 <SummaryRow label="Method" value="Clapeyron" />
               </div>
 
               <div className="mt-5 rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
-                End supports A and last joint are treated as simple supports with zero end moment. Internal supports are continuous.
+                Pinned/Roller supports are treated as zero-moment supports. Continuous supports are solved from compatibility. Fixed end supports are solved with zero-slope boundary equations.
               </div>
             </div>
           </div>
@@ -1053,6 +1304,7 @@ export default function ThreeMomentTheoremPage() {
                 key={row.joint}
                 title={`Joint ${row.joint}`}
                 rows={[
+                  ['Support type', supportLabel(row.type)],
                   ['Support moment', `${fmt(row.supportMoment)} kNm`],
                   ['Vertical reaction', `${fmt(row.verticalReaction)} kN`],
                 ]}
@@ -1172,7 +1424,7 @@ function LoadInputCard({ load, spanLength, loadIndex, onChange, onDelete }) {
   )
 }
 
-function BeamInputDiagram({ spans }) {
+function BeamInputDiagram({ spans, supports }) {
   const width = 900
   const height = 350
   const padding = 70
@@ -1193,8 +1445,22 @@ function BeamInputDiagram({ spans }) {
   }, 0)
 
   const renderSupport = (x, index) => {
-    const isEnd = index === 0 || index === jointXs.length - 1
-    const label = isEnd ? (index === 0 ? 'Pin' : 'Roller') : 'Continuous'
+    const type = supports?.[index] || createDefaultSupport(index, jointXs.length)
+    const label = supportLabel(type).replace(' Support', '')
+
+    if (type === 'fixed') {
+      return (
+        <g key={`support-${index}`}>
+          <rect x={x - 8} y={beamY - 40} width="16" height="82" rx="2" fill="#334155" stroke="#64748b" strokeWidth="2" />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <line key={i} x1={x - 18} y1={beamY - 34 + i * 16} x2={x - 8} y2={beamY - 44 + i * 16} stroke="#64748b" strokeWidth="2" />
+          ))}
+          <text x={x} y={supportY + 34} textAnchor="middle" fontSize="12" fill="#cbd5e1">Fixed</text>
+        </g>
+      )
+    }
+
+    const showRollers = type === 'roller' || type === 'continuous'
 
     return (
       <g key={`support-${index}`}>
@@ -1204,7 +1470,7 @@ function BeamInputDiagram({ spans }) {
           stroke="#f97316"
           strokeWidth="2"
         />
-        {!isEnd || label === 'Roller' ? (
+        {showRollers ? (
           <>
             <circle cx={x - 12} cy={supportY + 8} r="4" fill="#94a3b8" />
             <circle cx={x + 12} cy={supportY + 8} r="4" fill="#94a3b8" />
@@ -1367,7 +1633,7 @@ function BeamInputDiagram({ spans }) {
                   Span {jointName(index)}{jointName(index + 1)} = {fmt(span.length)} m
                 </text>
                 <text x={midX} y={dimY + 42} textAnchor="middle" fontSize="12" fill="#94a3b8">
-                  Relative EI = {fmt(span.EI)}
+                  {eiDisplay(span)}
                 </text>
               </g>
             )
