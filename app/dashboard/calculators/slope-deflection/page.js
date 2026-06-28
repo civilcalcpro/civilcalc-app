@@ -1242,7 +1242,8 @@ function CurveDiagram({ result, type }) {
   return item.deflectionMm
 }
   const values = result.values || []
-  const maxAbs = Math.max(...values.map((item) => Math.abs(getValue(item))), 1)
+ const rawMaxAbs = Math.max(...values.map((item) => Math.abs(getValue(item))))
+const maxAbs = rawMaxAbs > 1e-12 ? rawMaxAbs : 1
 
   const points = values
     .map((item) => {
