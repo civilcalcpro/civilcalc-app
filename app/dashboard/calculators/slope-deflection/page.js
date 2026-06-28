@@ -1234,13 +1234,13 @@ function CurveDiagram({ result, type }) {
   const L = result.L || 1
   const mapX = (x) => x0 + (x / L) * (x1 - x0)
 
-  const getValue = (item) => {
-    if (type === 'sfd') return item.shear
-    if (type === 'bmd') return item.moment
-    if (type === 'slope') return item.slope
-    return item.deflectionMm
-  }
-
+ const getValue = (item) => {
+  if (type === 'sfd') return item.shear
+  if (type === 'bmd') return item.moment
+  if (type === 'mei') return item.curvature
+  if (type === 'slope') return item.slope
+  return item.deflectionMm
+}
   const values = result.values || []
   const maxAbs = Math.max(...values.map((item) => Math.abs(getValue(item))), 1)
 
@@ -1248,7 +1248,7 @@ function CurveDiagram({ result, type }) {
     .map((item) => {
       const value = getValue(item)
       const y =
-        type === 'bmd' || type === 'deflection'
+       type === 'bmd' || type === 'mei' || type === 'deflection'
           ? yBase + (value / maxAbs) * amp
           : yBase - (value / maxAbs) * amp
 
@@ -1257,11 +1257,12 @@ function CurveDiagram({ result, type }) {
     .join(' ')
 
   const meta = {
-    sfd: ['Shear Force Diagram', '#f97316', 'SF values along beam.'],
-    bmd: ['Bending Moment Diagram', '#38bdf8', 'BM values used for M/EI calculation.'],
-    slope: ['Slope Curve', '#a78bfa', 'Slope curve obtained by integrating M/EI once.'],
-    deflection: ['Deflection / Elastic Curve', '#22c55e', 'Deflection curve obtained by integrating M/EI twice.'],
-  }[type]
+  sfd: ['Shear Force Diagram', '#f97316', 'SF values along beam.'],
+  bmd: ['Bending Moment Diagram', '#38bdf8', 'BM values used for M/EI calculation.'],
+  mei: ['M/EI Diagram', '#eab308', 'M/EI diagram represents curvature of the beam.'],
+  slope: ['Slope Curve', '#a78bfa', 'Slope curve obtained by integrating M/EI once.'],
+  deflection: ['Deflection / Elastic Curve', '#22c55e', 'Deflection curve obtained by integrating M/EI twice.'],
+}[type]
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
@@ -1323,16 +1324,23 @@ function KeyValuesTable({ result }) {
           </thead>
 
           <tbody>
-            {rows.map((row) => (
-              <tr key={`${row.point}-${row.x}`} className="bg-slate-900/50">
+            {rows.map((row) => {
+  const isSelected = Math.abs(row.x - result.sectionX) < 0.000001
+
+  return (
+    <tr
+      key={`${row.point}-${row.x}`}
+      className={isSelected ? 'bg-sky-500/10' : 'bg-slate-900/50'}
+    >
                 <td className="border-b border-slate-800 px-4 py-3 text-sm font-bold text-slate-200">{row.point}</td>
                 <td className="border-b border-slate-800 px-4 py-3 text-sm text-orange-300">{fmt(row.x, 3)} m</td>
                 <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.shear, 3)} kN</td>
                 <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.moment, 3)} kN·m</td>
                 <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.slope, 6)} rad</td>
                 <td className="border-b border-slate-800 px-4 py-3 text-sm text-slate-300">{fmt(row.deflectionMm, 4)} mm</td>
-              </tr>
-            ))}
+                 </tr>
+  )
+})}
           </tbody>
         </table>
       </div>
@@ -1422,7 +1430,69 @@ function ActionButtons({ result, form }) {
     </div>
   )
 }
+function MethodExplanationPanel() {
+  const steps = [
+    {
+      title: '1. Load Diagram',
+      text: 'All point loads, UDL, UVL/trapezoidal loads and moment loads are placed on the beam.',
+    },
+    {
+      title: '2. Support Reactions',
+      text: 'Reactions are calculated using equilibrium equations ΣV = 0 and ΣM = 0.',
+    },
+    {
+      title: '3. SFD and BMD',
+      text: 'Shear force and bending moment values are generated along the beam length.',
+    },
+    {
+      title: '4. M/EI Diagram',
+      text: 'Bending moment values are divided by EI to obtain curvature of the beam.',
+    },
+    {
+      title: '5. Slope Curve',
+      text: 'Slope is obtained by integrating the M/EI diagram once.',
+    },
+    {
+      title: '6. Deflection Curve',
+      text: 'Deflection is obtained by integrating the slope curve once more.',
+    },
+  ]
 
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-white">Method Used</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            This follows the same concept used in moment area method and conjugate beam method.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm leading-6 text-sky-100">
+          Negative deflection means downward deflection.
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {steps.map((item) => (
+          <div
+            key={item.title}
+            className="rounded-2xl border border-slate-800 bg-slate-950 p-4"
+          >
+            <p className="font-black text-orange-300">{item.title}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{item.text}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm leading-7 text-slate-300">
+        Moment area method relation: change in slope equals area of the M/EI diagram,
+        and deflection is obtained from the first moment of that M/EI area. This tool
+        uses numerical integration so combined loading cases can also be solved.
+      </div>
+    </div>
+  )
+}
 function FormulaLibrary() {
   const formulas = [
     ['Moment-curvature relation', 'EI × d²y/dx² = M(x)'],
@@ -1723,20 +1793,22 @@ export default function SlopeDeflectionPage() {
               </div>
             </div>
 
-            <ActionButtons result={result} form={form} />
+          <ActionButtons result={result} form={form} />
 
-            <BeamSketch result={result} />
+<MethodExplanationPanel />
 
-            <div className="grid gap-6 xl:grid-cols-2">
-              <CurveDiagram result={result} type="sfd" />
-              <CurveDiagram result={result} type="bmd" />
-            </div>
+<BeamSketch result={result} />
+           <div className="grid gap-6 xl:grid-cols-2">
+  <CurveDiagram result={result} type="sfd" />
+  <CurveDiagram result={result} type="bmd" />
+</div>
 
-            <div className="grid gap-6 xl:grid-cols-2">
-              <CurveDiagram result={result} type="slope" />
-              <CurveDiagram result={result} type="deflection" />
-            </div>
+<div className="grid gap-6 xl:grid-cols-2">
+  <CurveDiagram result={result} type="mei" />
+  <CurveDiagram result={result} type="slope" />
+</div>
 
+<CurveDiagram result={result} type="deflection" />
             <KeyValuesTable result={result} />
 
             <LoadSummaryTable result={result} />
