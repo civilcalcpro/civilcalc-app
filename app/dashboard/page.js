@@ -83,6 +83,13 @@ const quickTools = [
   desc: 'Fixed end moments, distribution factors, final moments, SFD and BMD',
 },
   {
+  name: 'Three Moment Theorem',
+  icon: Ruler,
+  href: '/dashboard/calculators/three-moment-theorem',
+  color: 'orange',
+  desc: 'Continuous beam support moments, reactions, SFD and BMD solver',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
