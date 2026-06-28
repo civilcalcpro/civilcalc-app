@@ -41,6 +41,13 @@ import {
 
 const quickTools = [
   {
+  name: 'Structural Analysis Hub',
+  icon: Ruler,
+  href: '/dashboard/calculators/structural-analysis-hub',
+  color: 'orange',
+  desc: 'Complete structural tools guide for beams, truss, frames, arches, cables and ILD',
+},
+  {
   name: 'Structural Analysis',
   icon: Ruler,
   href: '/dashboard/calculators/structural-analysis',
