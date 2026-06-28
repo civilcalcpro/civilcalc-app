@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Calculator, Plus, Trash2, RotateCcw, Activity } from 'lucide-react'
 
 const fmt = (v, d = 3) => {
@@ -15,7 +15,7 @@ const num = (v, fallback = 0) => {
 }
 
 const jointName = (i) => String.fromCharCode(65 + i)
-
+const isSimpleSupport = (type) => type === 'pin' || type === 'roller'
 const createInitialSpan = (length = 5) => ({
   length,
   EI: 1,
@@ -83,7 +83,7 @@ function loadSummary(span) {
 
 function isActualPinEnd(jointIndex, totalSpans, joints) {
   const isEndJoint = jointIndex === 0 || jointIndex === totalSpans
-  return isEndJoint && joints[jointIndex] === 'pin'
+  return isEndJoint && isSimpleSupport(joints[jointIndex])
 }
 
 function shearAt(span, RA, x) {
@@ -212,7 +212,85 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
         label: `${jointName(jointIndex)}${jointName(farJoint)}`,
       })
     }
+const stepSolution = []
 
+stepSolution.push({
+  title: 'Step 1: Given Data',
+  lines: spans.map((span, index) => {
+    const spanName = `${jointName(index)}${jointName(index + 1)}`
+    if (span.loadType === 'udl') {
+      return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, UDL w = ${fmt(span.w)} kN/m`
+    }
+    if (span.loadType === 'point') {
+      return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, Point Load P = ${fmt(span.P)} kN at a = ${fmt(span.a)} m from left support`
+    }
+    return `${spanName}: L = ${fmt(span.length)} m, EI = ${fmt(span.EI)}, No external load`
+  }),
+})
+
+stepSolution.push({
+  title: 'Step 2: Fixed End Moments',
+  lines: femTable.map((row) => {
+    return `${row.span}: FEM Left = ${fmt(row.FEMLeft)} kNm, FEM Right = ${fmt(row.FEMRight)} kNm`
+  }),
+})
+
+stepSolution.push({
+  title: 'Step 3: Distribution Factors',
+  lines: Array.from({ length: totalSpans + 1 }, (_, j) => {
+    if (joints[j] === 'fixed') {
+      return `Joint ${jointName(j)} is fixed, so distribution is not required at this joint.`
+    }
+
+    const connected = getConnectedEnds(j)
+
+    if (!connected.length) {
+      return `Joint ${jointName(j)} has no connected member.`
+    }
+
+    const totalStiffness = connected.reduce((sum, item) => sum + item.stiffness, 0)
+
+    const dfText = connected
+      .map((item) => {
+        const df = totalStiffness > 0 ? item.stiffness / totalStiffness : 0
+        return `${item.member || item.label}: K = ${fmt(item.stiffness)}, DF = ${fmt(df)}`
+      })
+      .join('; ')
+
+    return `At Joint ${jointName(j)}: ${dfText}`
+  }),
+})
+
+stepSolution.push({
+  title: 'Step 4: Moment Distribution and Carry Over',
+  lines:
+    distributionRows.length > 0
+      ? distributionRows.slice(0, 25).map((row) => {
+          return `Iteration ${row.iteration}, Joint ${row.joint}, Member ${row.member}: Unbalanced Moment = ${fmt(row.unbalancedMoment)} kNm, DF = ${fmt(row.distributionFactor)}, Distributed Moment = ${fmt(row.distributedMoment)} kNm, Carry Over to ${row.carryTo} = ${fmt(row.carryOverMoment)} kNm`
+        })
+      : ['No moment distribution is required because all joints are already balanced.'],
+})
+
+stepSolution.push({
+  title: 'Step 5: Final Member End Moments',
+  lines: finalMoments.map((row) => {
+    return `${row.span}: Moment at ${row.leftJoint} = ${fmt(row.leftMoment)} kNm, Moment at ${row.rightJoint} = ${fmt(row.rightMoment)} kNm`
+  }),
+})
+
+stepSolution.push({
+  title: 'Step 6: Support Reactions',
+  lines: supportReactions.map((row) => {
+    return `Joint ${row.joint}: Vertical Reaction = ${fmt(row.verticalReaction)} kN, Moment Reaction = ${fmt(row.momentReaction)} kNm`
+  }),
+})
+
+stepSolution.push({
+  title: 'Step 7: Maximum Shear Force and Bending Moment',
+  lines: spanAnalysis.map((span) => {
+    return `${span.span}: Max Shear = ${fmt(span.maxShear.shear)} kN at x = ${fmt(span.maxShear.x)} m, Max BM = ${fmt(span.maxMoment.moment)} kNm at x = ${fmt(span.maxMoment.x)} m`
+  }),
+})
     return connected
   }
 
@@ -338,17 +416,20 @@ function runMomentDistribution(spans, joints, maxIterations = 20, tolerance = 0.
     }
   })
 
-  return {
-    femTable,
-    distributionRows,
-    finalMoments,
-    jointBalance,
-    spanAnalysis,
-    supportReactions,
-  }
+ return {
+  femTable,
+  distributionRows,
+  finalMoments,
+  jointBalance,
+  spanAnalysis,
+  supportReactions,
+  stepSolution,
+}
 }
 
 export default function MomentDistributionPage() {
+  const inputDiagramRef = useRef(null)
+const outputDiagramRef = useRef(null)
   const [spans, setSpans] = useState([
     createInitialSpan(6),
     {
@@ -361,7 +442,7 @@ export default function MomentDistributionPage() {
     },
   ])
 
-  const [joints, setJoints] = useState(['pin', 'continuous', 'pin'])
+ const [joints, setJoints] = useState(['pin', 'continuous', 'roller'])
   const [maxIterations, setMaxIterations] = useState(30)
   const [tolerance, setTolerance] = useState(0.001)
 
@@ -392,7 +473,7 @@ export default function MomentDistributionPage() {
     setJoints((prev) => {
       const updated = [...prev]
       if (updated.length > 0) updated[updated.length - 1] = 'continuous'
-      return [...updated, 'pin']
+      return [...updated, 'roller']
     })
   }
 
@@ -427,11 +508,220 @@ export default function MomentDistributionPage() {
         a: 2.5,
       },
     ])
-    setJoints(['pin', 'continuous', 'pin'])
+    setJoints(['pin', 'continuous', 'roller'])
     setMaxIterations(30)
     setTolerance(0.001)
   }
+const downloadPDF = async () => {
+  try {
+    const { default: jsPDF } = await import('jspdf')
+    const autoTableModule = await import('jspdf-autotable')
+    const html2canvasModule = await import('html2canvas')
 
+    const autoTable = autoTableModule.default || autoTableModule.autoTable
+    const html2canvas = html2canvasModule.default
+
+    const doc = new jsPDF('p', 'mm', 'a4')
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+
+    let y = 15
+
+    const addTitle = (title, subtitle = '') => {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(18)
+      doc.text(title, pageWidth / 2, y, { align: 'center' })
+
+      y += 7
+
+      if (subtitle) {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.text(subtitle, pageWidth / 2, y, { align: 'center' })
+        y += 7
+      }
+    }
+
+    const addSectionTitle = (title) => {
+      if (y > 260) {
+        doc.addPage()
+        y = 15
+      }
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(13)
+      doc.text(title, 14, y)
+      y += 6
+    }
+
+    const addCapturedElement = async (element, title) => {
+      if (!element) return
+
+      if (y > 225) {
+        doc.addPage()
+        y = 15
+      }
+
+      addSectionTitle(title)
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: '#020617',
+        useCORS: true,
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const imgWidth = pageWidth - 28
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+      if (y + imgHeight > pageHeight - 18) {
+        doc.addPage()
+        y = 15
+        addSectionTitle(title)
+      }
+
+      doc.addImage(
+        imgData,
+        'PNG',
+        14,
+        y,
+        imgWidth,
+        Math.min(imgHeight, 170)
+      )
+
+      y += Math.min(imgHeight, 170) + 8
+    }
+
+    addTitle(
+      'Moment Distribution Method Report',
+      'Generated by CivilCalc Pro'
+    )
+
+    await addCapturedElement(inputDiagramRef.current, '1. Input Beam Diagram')
+
+    addSectionTitle('2. Step-by-step Solution')
+
+    result.stepSolution.forEach((step) => {
+      if (y > 250) {
+        doc.addPage()
+        y = 15
+      }
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.text(step.title, 14, y)
+      y += 5
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+
+      step.lines.forEach((line, index) => {
+        const text = `${index + 1}. ${line}`
+        const splitText = doc.splitTextToSize(text, pageWidth - 28)
+
+        if (y + splitText.length * 4 > 280) {
+          doc.addPage()
+          y = 15
+        }
+
+        doc.text(splitText, 14, y)
+        y += splitText.length * 4 + 1
+      })
+
+      y += 4
+    })
+
+    if (y > 220) {
+      doc.addPage()
+      y = 15
+    }
+
+    addSectionTitle('3. Final Answer')
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Span', 'Left End Moment', 'Right End Moment']],
+      body: result.finalMoments.map((row) => [
+        row.span,
+        `${fmt(row.leftMoment)} kNm`,
+        `${fmt(row.rightMoment)} kNm`,
+      ]),
+      styles: {
+        fontSize: 8,
+      },
+      headStyles: {
+        fillColor: [255, 122, 0],
+        textColor: [0, 0, 0],
+      },
+    })
+
+    y = doc.lastAutoTable.finalY + 7
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Joint', 'Support Type', 'Vertical Reaction', 'Moment Reaction']],
+      body: result.supportReactions.map((row) => [
+        row.joint,
+        supportLabel(row.type),
+        `${fmt(row.verticalReaction)} kN`,
+        `${fmt(row.momentReaction)} kNm`,
+      ]),
+      styles: {
+        fontSize: 8,
+      },
+      headStyles: {
+        fillColor: [255, 122, 0],
+        textColor: [0, 0, 0],
+      },
+    })
+
+    y = doc.lastAutoTable.finalY + 7
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Span', 'Max Shear', 'Location', 'Max BM', 'Location']],
+      body: result.spanAnalysis.map((span) => [
+        span.span,
+        `${fmt(span.maxShear.shear)} kN`,
+        `${fmt(span.maxShear.x)} m`,
+        `${fmt(span.maxMoment.moment)} kNm`,
+        `${fmt(span.maxMoment.x)} m`,
+      ]),
+      styles: {
+        fontSize: 8,
+      },
+      headStyles: {
+        fillColor: [255, 122, 0],
+        textColor: [0, 0, 0],
+      },
+    })
+
+    y = doc.lastAutoTable.finalY + 8
+
+    await addCapturedElement(outputDiagramRef.current, '4. SFD / BMD Diagrams')
+
+    const pageCount = doc.internal.getNumberOfPages()
+
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.text(
+        `CivilCalc Pro | Moment Distribution Method | Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        290,
+        { align: 'center' }
+      )
+    }
+
+    doc.save('moment-distribution-solution.pdf')
+  } catch (error) {
+    console.error(error)
+    alert(
+      'PDF generate nahi ho paya. Please jspdf, jspdf-autotable aur html2canvas install check karo.'
+    )
+  }
+}
   return (
     <div className="min-h-screen bg-[#050B1F] text-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -452,7 +742,13 @@ export default function MomentDistributionPage() {
                 final end moment, support reaction, SFD aur BMD automatic solve karo.
               </p>
             </div>
-
+<button
+  onClick={downloadPDF}
+  className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-bold text-black hover:bg-orange-400"
+>
+  <Download size={18} />
+  Download PDF
+</button>
             <button
               onClick={resetExample}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200 hover:bg-slate-800"
@@ -462,7 +758,11 @@ export default function MomentDistributionPage() {
             </button>
           </div>
         </div>
-
+<div ref={inputDiagramRef}>
+ <div ref={inputDiagramRef}>
+  <BeamInputDiagram spans={spans} joints={joints} />
+</div>
+</div>
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
@@ -581,9 +881,10 @@ export default function MomentDistributionPage() {
                       onChange={(e) => updateJoint(index, e.target.value)}
                       className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-white outline-none focus:border-orange-500"
                     >
-                      <option value="pin">Pin / Roller Support</option>
-                      <option value="continuous">Continuous Joint</option>
-                      <option value="fixed">Fixed Support</option>
+                     <option value="pin">Pin Support</option>
+<option value="roller">Roller Support</option>
+<option value="continuous">Continuous Joint</option>
+<option value="fixed">Fixed Support</option>
                     </select>
                   </div>
                 ))}
@@ -621,7 +922,28 @@ export default function MomentDistributionPage() {
             </div>
           </div>
         </div>
+<ResultSection title="Step-by-step Solution">
+  <div className="space-y-5">
+    {result.stepSolution.map((step, index) => (
+      <div
+        key={index}
+        className="rounded-2xl border border-slate-800 bg-slate-950 p-5"
+      >
+        <h3 className="text-lg font-bold text-orange-300 mb-3">
+          {step.title}
+        </h3>
 
+        <div className="space-y-2">
+          {step.lines.map((line, i) => (
+            <p key={i} className="text-sm leading-6 text-slate-300">
+              {i + 1}. {line}
+            </p>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</ResultSection>
         <ResultSection title="1. Fixed End Moments">
           <Table
             headers={['Span', 'FEM Left', 'FEM Right']}
@@ -708,8 +1030,9 @@ export default function MomentDistributionPage() {
           </div>
         </ResultSection>
 
-        <ResultSection title="5. Span-wise SFD / BMD Summary">
-          <div className="grid lg:grid-cols-2 gap-5">
+      <div ref={outputDiagramRef}>
+  <ResultSection title="SFD / BMD Diagrams">
+    <div className="grid lg:grid-cols-2 gap-5">
             {result.spanAnalysis.map((span, i) => (
               <div
                 key={i}
@@ -919,9 +1242,443 @@ function MiniDiagram({ points, valueKey }) {
     </div>
   )
 }
+function BeamInputDiagram({ spans, joints }) {
+  const width = 900
+  const height = 280
+  const padding = 70
+  const beamY = 130
+  const supportY = 165
+  const loadTopY = 42
+  const dimY = 215
 
+  const lengths = spans.map((span) => Math.max(num(span.length, 1), 0.1))
+  const totalLength = lengths.reduce((sum, length) => sum + length, 0) || 1
+  const beamWidth = width - padding * 2
+
+  const jointXs = [padding]
+
+  lengths.reduce((sum, length) => {
+    const next = sum + length
+    jointXs.push(padding + (next / totalLength) * beamWidth)
+    return next
+  }, 0)
+
+  const renderSupport = (type, x, index) => {
+    if (type === 'fixed') {
+      return (
+        <g key={`support-${index}`}>
+          <rect
+            x={x - 8}
+            y={beamY - 38}
+            width="16"
+            height="76"
+            rx="2"
+            fill="#334155"
+            stroke="#64748b"
+            strokeWidth="2"
+          />
+
+          {[0, 1, 2, 3, 4].map((i) => (
+            <line
+              key={i}
+              x1={x - 18}
+              y1={beamY - 32 + i * 16}
+              x2={x - 8}
+              y2={beamY - 42 + i * 16}
+              stroke="#64748b"
+              strokeWidth="2"
+            />
+          ))}
+
+          <text
+            x={x}
+            y={supportY + 34}
+            textAnchor="middle"
+            fontSize="12"
+            fill="#cbd5e1"
+          >
+            Fixed
+          </text>
+        </g>
+      )
+    }
+
+    if (type === 'continuous') {
+      return (
+        <g key={`support-${index}`}>
+          <path
+            d={`M ${x} ${beamY + 8} L ${x - 24} ${supportY} L ${x + 24} ${supportY} Z`}
+            fill="#0f172a"
+            stroke="#f97316"
+            strokeWidth="2"
+          />
+
+          <circle cx={x - 12} cy={supportY + 8} r="4" fill="#94a3b8" />
+          <circle cx={x + 12} cy={supportY + 8} r="4" fill="#94a3b8" />
+
+          <line
+            x1={x - 32}
+            y1={supportY + 14}
+            x2={x + 32}
+            y2={supportY + 14}
+            stroke="#64748b"
+            strokeWidth="2"
+          />
+
+          <text
+            x={x}
+            y={supportY + 34}
+            textAnchor="middle"
+            fontSize="12"
+            fill="#cbd5e1"
+          >
+            Continuous
+          </text>
+        </g>
+      )
+    }
+
+    return (
+      <g key={`support-${index}`}>
+        <path
+          d={`M ${x} ${beamY + 8} L ${x - 24} ${supportY} L ${x + 24} ${supportY} Z`}
+          fill="#0f172a"
+          stroke="#f97316"
+          strokeWidth="2"
+        />
+
+        <line
+          x1={x - 32}
+          y1={supportY + 8}
+          x2={x + 32}
+          y2={supportY + 8}
+          stroke="#64748b"
+          strokeWidth="2"
+        />
+
+        <text
+          x={x}
+          y={supportY + 34}
+          textAnchor="middle"
+          fontSize="12"
+          fill="#cbd5e1"
+        >
+          Pin/Roller
+        </text>
+      </g>
+    )
+  }
+
+  const renderSpanLoad = (span, index) => {
+    const x1 = jointXs[index]
+    const x2 = jointXs[index + 1]
+    const spanWidth = x2 - x1
+    const midX = (x1 + x2) / 2
+    const L = num(span.length, 1)
+
+    if (span.loadType === 'udl') {
+      const arrowCount = Math.max(4, Math.min(10, Math.floor(spanWidth / 45)))
+
+      return (
+        <g key={`load-${index}`}>
+          <line
+            x1={x1 + 12}
+            y1={loadTopY}
+            x2={x2 - 12}
+            y2={loadTopY}
+            stroke="#fb923c"
+            strokeWidth="3"
+          />
+
+          {Array.from({ length: arrowCount }).map((_, i) => {
+            const x =
+              x1 + 18 + (i * (spanWidth - 36)) / Math.max(arrowCount - 1, 1)
+
+            return (
+              <line
+                key={i}
+                x1={x}
+                y1={loadTopY}
+                x2={x}
+                y2={beamY - 10}
+                stroke="#fb923c"
+                strokeWidth="2.5"
+                markerEnd="url(#arrowHead)"
+              />
+            )
+          })}
+
+          <text
+            x={midX}
+            y={loadTopY - 10}
+            textAnchor="middle"
+            fontSize="13"
+            fontWeight="700"
+            fill="#fed7aa"
+          >
+            UDL w = {fmt(span.w)} kN/m
+          </text>
+        </g>
+      )
+    }
+
+    if (span.loadType === 'point') {
+      let a = num(span.a, L / 2)
+      if (a <= 0 || a >= L) a = L / 2
+
+      const px = x1 + (a / L) * spanWidth
+
+      return (
+        <g key={`load-${index}`}>
+          <line
+            x1={px}
+            y1={loadTopY}
+            x2={px}
+            y2={beamY - 10}
+            stroke="#fb923c"
+            strokeWidth="4"
+            markerEnd="url(#arrowHead)"
+          />
+
+          <text
+            x={px}
+            y={loadTopY - 10}
+            textAnchor="middle"
+            fontSize="13"
+            fontWeight="700"
+            fill="#fed7aa"
+          >
+            P = {fmt(span.P)} kN
+          </text>
+
+          <text
+            x={px}
+            y={beamY - 22}
+            textAnchor="middle"
+            fontSize="11"
+            fill="#cbd5e1"
+          >
+            a = {fmt(a)} m
+          </text>
+        </g>
+      )
+    }
+
+    return (
+      <text
+        key={`load-${index}`}
+        x={midX}
+        y={beamY - 30}
+        textAnchor="middle"
+        fontSize="12"
+        fill="#64748b"
+      >
+        No Load
+      </text>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl border border-orange-500/20 bg-slate-900/70 p-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+        <div>
+          <h2 className="text-xl font-bold">Input Beam Diagram</h2>
+          <p className="text-sm text-slate-400">
+            Span, support, load, length aur EI ka live visual layout.
+          </p>
+        </div>
+
+        <div className="rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm text-orange-300">
+          Auto updates with input
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-[#020617] p-3">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="min-w-[850px] w-full h-auto"
+        >
+          <defs>
+            <marker
+              id="arrowHead"
+              markerWidth="8"
+              markerHeight="8"
+              refX="4"
+              refY="4"
+              orient="auto"
+            >
+              <path d="M 0 0 L 8 4 L 0 8 Z" fill="#fb923c" />
+            </marker>
+          </defs>
+
+          <line
+            x1={padding}
+            y1={beamY}
+            x2={width - padding}
+            y2={beamY}
+            stroke="#e2e8f0"
+            strokeWidth="8"
+            strokeLinecap="round"
+          />
+
+          {spans.map((span, index) => renderSpanLoad(span, index))}
+
+          {jointXs.map((x, index) => (
+            <g key={`joint-${index}`}>
+              <circle
+                cx={x}
+                cy={beamY}
+                r="8"
+                fill="#f97316"
+                stroke="#fed7aa"
+                strokeWidth="2"
+              />
+
+              <text
+                x={x}
+                y={beamY - 18}
+                textAnchor="middle"
+                fontSize="14"
+                fontWeight="800"
+                fill="#ffffff"
+              >
+                {jointName(index)}
+              </text>
+            </g>
+          ))}
+
+          {joints.map((type, index) => renderSupport(type, jointXs[index], index))}
+
+          {spans.map((span, index) => {
+            const x1 = jointXs[index]
+            const x2 = jointXs[index + 1]
+            const midX = (x1 + x2) / 2
+if (type === 'pin') {
+  return (
+    <g key={`support-${index}`}>
+      <path
+        d={`M ${x} ${beamY + 8} L ${x - 24} ${supportY} L ${x + 24} ${supportY} Z`}
+        fill="#0f172a"
+        stroke="#f97316"
+        strokeWidth="2"
+      />
+
+      <line
+        x1={x - 32}
+        y1={supportY + 8}
+        x2={x + 32}
+        y2={supportY + 8}
+        stroke="#64748b"
+        strokeWidth="2"
+      />
+
+      <text
+        x={x}
+        y={supportY + 34}
+        textAnchor="middle"
+        fontSize="12"
+        fill="#cbd5e1"
+      >
+        Pin
+      </text>
+    </g>
+  )
+}
+
+if (type === 'roller') {
+  return (
+    <g key={`support-${index}`}>
+      <path
+        d={`M ${x} ${beamY + 8} L ${x - 24} ${supportY} L ${x + 24} ${supportY} Z`}
+        fill="#0f172a"
+        stroke="#f97316"
+        strokeWidth="2"
+      />
+
+      <circle cx={x - 12} cy={supportY + 8} r="4" fill="#94a3b8" />
+      <circle cx={x + 12} cy={supportY + 8} r="4" fill="#94a3b8" />
+
+      <line
+        x1={x - 32}
+        y1={supportY + 14}
+        x2={x + 32}
+        y2={supportY + 14}
+        stroke="#64748b"
+        strokeWidth="2"
+      />
+
+      <text
+        x={x}
+        y={supportY + 34}
+        textAnchor="middle"
+        fontSize="12"
+        fill="#cbd5e1"
+      >
+        Roller
+      </text>
+    </g>
+  )
+}
+            return (
+              <g key={`span-label-${index}`}>
+                <line
+                  x1={x1}
+                  y1={dimY}
+                  x2={x2}
+                  y2={dimY}
+                  stroke="#64748b"
+                  strokeWidth="2"
+                />
+
+                <line
+                  x1={x1}
+                  y1={dimY - 8}
+                  x2={x1}
+                  y2={dimY + 8}
+                  stroke="#64748b"
+                  strokeWidth="2"
+                />
+
+                <line
+                  x1={x2}
+                  y1={dimY - 8}
+                  x2={x2}
+                  y2={dimY + 8}
+                  stroke="#64748b"
+                  strokeWidth="2"
+                />
+
+                <text
+                  x={midX}
+                  y={dimY + 22}
+                  textAnchor="middle"
+                  fontSize="13"
+                  fill="#cbd5e1"
+                >
+                  Span {jointName(index)}
+                  {jointName(index + 1)} = {fmt(span.length)} m
+                </text>
+
+                <text
+                  x={midX}
+                  y={dimY + 42}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#94a3b8"
+                >
+                  Relative EI = {fmt(span.EI)}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
+    </div>
+  )
+}
 function supportLabel(type) {
-  if (type === 'pin') return 'Pin / Roller'
-  if (type === 'fixed') return 'Fixed'
-  return 'Continuous'
+  if (type === 'pin') return 'Pin Support'
+  if (type === 'roller') return 'Roller Support'
+  if (type === 'fixed') return 'Fixed Support'
+  return 'Continuous Joint'
 }
