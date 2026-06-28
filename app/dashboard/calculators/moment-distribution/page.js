@@ -1044,8 +1044,7 @@ const removeLoadFromSpan = (spanIndex, loadIndex) => {
     )}
   </div>
 </div>
-                    </div>
-                  </div>
+                    
                 ))}
               </div>
             </div>
