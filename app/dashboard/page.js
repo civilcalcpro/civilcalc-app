@@ -76,6 +76,13 @@ const quickTools = [
   desc: 'Force method, fixed beam, propped cantilever and continuous beam solver',
 },
   {
+  name: 'Moment Distribution',
+  icon: Ruler,
+  href: '/dashboard/calculators/moment-distribution',
+  color: 'orange',
+  desc: 'Fixed end moments, distribution factors, final moments, SFD and BMD',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
