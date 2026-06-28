@@ -118,6 +118,13 @@ const quickTools = [
   desc: 'Portal frame reactions, member forces, moments and deflected shape solver',
 },
   {
+  name: 'Structural Formula Library',
+  icon: Ruler,
+  href: '/dashboard/calculators/structural-formula-library',
+  color: 'orange',
+  desc: 'Beam, truss, deflection, moment distribution, arches, cables, ILD and frame formulas',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
