@@ -71,40 +71,6 @@ export default function FormulaLibraryPage() {
           </div>
         </section>
 
-        <section className="mb-7 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400">
-              <Calculator size={22} />
-            </div>
-            <h2 className="font-bold text-white">Formula + Meaning</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Formula ke saath uska purpose, variables aur unit explanation
-              milega.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400">
-              <Ruler size={22} />
-            </div>
-            <h2 className="font-bold text-white">Practical Examples</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Har formula ko site aur exam-style example ke saath explain
-              karenge.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400">
-              <Building2 size={22} />
-            </div>
-            <h2 className="font-bold text-white">Related Tools</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Formula pages ko CivilCalc calculators ke saath connect karenge.
-            </p>
-          </div>
-        </section>
-
         <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {formulaCategories.map((category) => {
             const Icon = iconMap[category.slug] || Calculator
@@ -150,14 +116,14 @@ export default function FormulaLibraryPage() {
                   </p>
 
                   <ul className="space-y-2">
-                    {category.formulas.slice(0, 4).map((formula) => (
-  <li
-    key={formula.name}
-    className="text-sm leading-5 text-slate-300"
-  >
-    • {formula.name}
-  </li>
-))}
+                    {category.formulas.slice(0, 4).map((formulaItem) => (
+                      <li
+                        key={formulaItem.name}
+                        className="text-sm leading-5 text-slate-300"
+                      >
+                        • {formulaItem.name}
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -179,9 +145,9 @@ export default function FormulaLibraryPage() {
             Formula Library is connected with CivilCalc tools
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-            Formula pages will gradually include detailed explanation,
-            variables, units, solved examples, common mistakes and direct links
-            to related CivilCalc calculators.
+            Formula pages include detailed explanation, variables, units,
+            solved examples, common mistakes and direct links to related
+            CivilCalc calculators.
           </p>
         </section>
       </div>
