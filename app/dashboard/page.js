@@ -71,6 +71,13 @@ const quickTools = [
   desc: 'Concrete, brickwork, plaster, tile, paint & excavation cost tools | क्वांटिटी और कॉस्ट',
 },
   {
+  name: 'Steel Tools',
+  icon: Weight,
+  href: '/dashboard/tools/steel',
+  color: 'blue',
+  desc: 'Steel Weight, Lap Length & Development Length | स्टील वेट, लैप और डेवलपमेंट लेंथ',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
