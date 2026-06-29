@@ -20,7 +20,7 @@ const liveTools = [
   {
     title: 'Concrete & Mix Calculator',
     titleHi: 'कंक्रीट और मिक्स कैलकुलेटर',
-    href: '/dashboard/calculators/concrete-mix',
+    href: '/dashboard/calculators/concrete-volume',
     icon: Calculator,
     badge: 'Live',
     desc: 'Calculate concrete quantity, cement, sand, aggregate and total material cost.',
