@@ -1,182 +1,581 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import {
-  ArrowLeft,
-  Briefcase,
-  CheckCircle2,
-  MessageSquareText,
-  BookOpen,
-  Lightbulb,
-  ClipboardCheck,
-} from 'lucide-react'
-import { interviewTopics } from '../interviewData'
-
-export async function generateStaticParams() {
-  return interviewTopics.map((topic) => ({
-    slug: topic.slug,
-  }))
-}
-
-export async function generateMetadata({ params }) {
-  const topic = interviewTopics.find((item) => item.slug === params.slug)
-
-  if (!topic) {
-    return {
-      title: 'Civil Engineering Interview Preparation | CivilCalc Pro',
-    }
-  }
-
-  return {
-    title: `${topic.title} | CivilCalc Pro Knowledge Hub`,
-    description: topic.shortDesc,
-  }
-}
-
-export default function InterviewTopicDetailPage({ params }) {
-  const topic = interviewTopics.find((item) => item.slug === params.slug)
-
-  if (!topic) {
-    notFound()
-  }
-
-  return (
-    <main className="min-h-screen bg-[#020B2D] px-4 py-8 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <section className="mb-8 rounded-3xl border border-[#243250] bg-[#071432] p-6 sm:p-8">
-          <Link
-            href="/dashboard/knowledge-hub/interview-preparation"
-            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-400 hover:text-orange-300"
-          >
-            <ArrowLeft size={16} />
-            Back to Interview Preparation
-          </Link>
-
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm text-orange-300">
-                <Briefcase size={16} />
-                Interview Topic
-              </div>
-
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                {topic.title}
-              </h1>
-
-              <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-400 sm:text-base">
-                {topic.purpose}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5">
-              <p className="text-sm text-slate-300">Level</p>
-              <p className="mt-1 text-xl font-bold text-orange-400">
-                {topic.level}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mb-8 rounded-3xl border border-[#243250] bg-[#071432] p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <ClipboardCheck className="text-orange-400" size={24} />
-            <h2 className="text-2xl font-bold">Skills to Prepare</h2>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {topic.skills.map((skill) => (
-              <div
-                key={skill}
-                className="rounded-xl border border-slate-800 bg-[#081126] p-4 text-slate-200"
-              >
-                <div className="flex gap-3">
-                  <CheckCircle2 className="mt-0.5 shrink-0 text-orange-400" size={18} />
-                  <span>{skill}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-5">
-          {topic.questions.map((item, index) => (
-            <article
-              key={item.q}
-              className="rounded-3xl border border-[#243250] bg-[#071432] p-6"
-            >
-              <div className="mb-4 flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-sm font-bold text-orange-300">
-                  {index + 1}
-                </div>
-
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-300">
-                    Interview Question
-                  </p>
-                  <h2 className="text-xl font-bold leading-8 text-white">
-                    {item.q}
-                  </h2>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-slate-800 bg-[#081126] p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <BookOpen className="text-orange-400" size={18} />
-                  <h3 className="font-semibold text-white">Best Answer</h3>
-                </div>
-
-                <p className="text-sm leading-7 text-slate-300 sm:text-base">
-                  {item.a}
-                </p>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {item.keyPoints.map((point) => (
-                  <span
-                    key={point}
-                    className="rounded-full border border-orange-500/25 bg-orange-500/10 px-3 py-1 text-[11px] font-medium text-orange-300"
-                  >
-                    {point}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </section>
-
-        <section className="mt-8 rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <MessageSquareText className="text-yellow-300" size={24} />
-            <h2 className="text-2xl font-bold">HR Questions to Prepare</h2>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            {topic.hrQuestions.map((question) => (
-              <div
-                key={question}
-                className="rounded-xl border border-yellow-500/20 bg-[#081126] p-4 text-yellow-100"
-              >
-                {question}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-8 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6">
-          <div className="flex gap-3">
-            <Lightbulb className="mt-1 shrink-0 text-orange-300" size={22} />
-            <div>
-              <h2 className="text-xl font-bold text-white">
-                Interview Tip
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-slate-300">
-                Answer ko practical banao. Example: sirf definition mat bolo,
-                site par wo concept kaha use hota hai wo bhi batao. Isse
-                interviewer ko lagega ki tumhe field understanding hai.
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
-  )
-}
+export const buildingComponents = [
+  {
+    slug: 'foundation',
+    title: 'Foundation',
+    level: 'Structural',
+    shortDesc:
+      'Foundation transfers building load safely to the soil below.',
+    tags: ['Footing', 'Soil', 'Load Transfer'],
+    purpose:
+      'Foundation is the lowest structural part of a building. It transfers load from columns, walls and structure safely to the ground.',
+    functions: [
+      'Transfers load safely to soil.',
+      'Prevents excessive settlement.',
+      'Provides stability to the structure.',
+      'Distributes load over larger soil area.',
+      'Protects structure from soil movement effects.',
+    ],
+    types: [
+      'Isolated footing',
+      'Combined footing',
+      'Strip footing',
+      'Raft foundation',
+      'Pile foundation',
+      'Mat foundation',
+    ],
+    materials: [
+      'PCC',
+      'RCC concrete',
+      'Reinforcement steel',
+      'Shuttering material',
+      'Cover blocks',
+      'Binding wire',
+    ],
+    siteChecks: [
+      'Check excavation size and depth.',
+      'Check soil condition at foundation level.',
+      'Check PCC thickness and level.',
+      'Verify footing reinforcement diameter and spacing.',
+      'Check cover blocks.',
+      'Check column starter bar location.',
+      'Check concrete grade before casting.',
+    ],
+    commonMistakes: [
+      'Starting footing without checking soil condition.',
+      'Wrong footing size.',
+      'Insufficient concrete cover.',
+      'Column starter bars not aligned.',
+      'Poor compaction or vibration.',
+      'No curing after casting.',
+    ],
+  },
+  {
+    slug: 'plinth',
+    title: 'Plinth',
+    level: 'Substructure',
+    shortDesc:
+      'Plinth is the portion between ground level and floor level.',
+    tags: ['DPC', 'Ground Level', 'Protection'],
+    purpose:
+      'Plinth raises the building above ground level and protects it from rainwater, dampness and surface water entry.',
+    functions: [
+      'Raises floor level above ground.',
+      'Protects building from dampness.',
+      'Provides base for superstructure walls.',
+      'Helps prevent rainwater entry.',
+      'Supports plinth beam and wall load transfer.',
+    ],
+    types: [
+      'Brick masonry plinth',
+      'RCC plinth beam',
+      'Stone masonry plinth',
+      'Filled plinth with compacted soil',
+    ],
+    materials: [
+      'Brickwork or blockwork',
+      'RCC plinth beam',
+      'DPC material',
+      'Sand filling',
+      'Murrum filling',
+      'PCC layer',
+    ],
+    siteChecks: [
+      'Check plinth level from benchmark.',
+      'Check plinth beam reinforcement.',
+      'Check DPC level.',
+      'Compact filling in layers.',
+      'Check anti-termite treatment if required.',
+      'Check floor base before PCC.',
+    ],
+    commonMistakes: [
+      'No proper compaction in plinth filling.',
+      'Ignoring DPC.',
+      'Wrong plinth level.',
+      'No slope away from building.',
+      'Poor waterproofing at plinth zone.',
+    ],
+  },
+  {
+    slug: 'column',
+    title: 'Column',
+    level: 'Structural',
+    shortDesc:
+      'Column is a vertical RCC member that transfers load from beams and slabs to foundation.',
+    tags: ['RCC', 'Vertical Member', 'Load'],
+    purpose:
+      'Column carries axial load and bending moment from beams/slabs and transfers them to the foundation.',
+    functions: [
+      'Transfers load from slab and beam to foundation.',
+      'Provides vertical support to building.',
+      'Resists axial load and bending.',
+      'Maintains structural stability.',
+      'Supports upper floors.',
+    ],
+    types: [
+      'RCC column',
+      'Steel column',
+      'Short column',
+      'Long column',
+      'Tied column',
+      'Spiral column',
+    ],
+    materials: [
+      'Concrete',
+      'Main reinforcement bars',
+      'Stirrups/ties',
+      'Cover blocks',
+      'Binding wire',
+      'Shuttering material',
+    ],
+    siteChecks: [
+      'Check column location from grid line.',
+      'Verify main bar diameter and number.',
+      'Check stirrup spacing.',
+      'Check lap length.',
+      'Check cover on all sides.',
+      'Check shuttering alignment and verticality.',
+      'Check concrete compaction during casting.',
+    ],
+    commonMistakes: [
+      'Column not in plumb.',
+      'Wrong stirrup spacing.',
+      'Missing cover blocks.',
+      'Improper lap length.',
+      'Concrete poured from excessive height.',
+      'Honeycombing due to poor vibration.',
+    ],
+  },
+  {
+    slug: 'beam',
+    title: 'Beam',
+    level: 'Structural',
+    shortDesc:
+      'Beam is a horizontal RCC member that transfers slab and wall load to columns.',
+    tags: ['RCC', 'Horizontal Member', 'Bending'],
+    purpose:
+      'Beam carries load from slab, wall or other members and transfers it to columns or supports.',
+    functions: [
+      'Transfers slab load to columns.',
+      'Supports walls above openings or slab edges.',
+      'Resists bending moment and shear force.',
+      'Connects columns in structural frame.',
+      'Controls structural deflection.',
+    ],
+    types: [
+      'Simply supported beam',
+      'Continuous beam',
+      'Cantilever beam',
+      'Fixed beam',
+      'Plinth beam',
+      'Tie beam',
+    ],
+    materials: [
+      'Concrete',
+      'Top reinforcement bars',
+      'Bottom reinforcement bars',
+      'Stirrups',
+      'Cover blocks',
+      'Shuttering and props',
+    ],
+    siteChecks: [
+      'Check beam size from drawing.',
+      'Verify bottom and top reinforcement.',
+      'Check stirrup spacing near support and midspan.',
+      'Check beam-column junction reinforcement.',
+      'Check beam bottom level.',
+      'Check shuttering support.',
+      'Check concrete vibration at junctions.',
+    ],
+    commonMistakes: [
+      'Wrong stirrup spacing near supports.',
+      'Missing extra top bars.',
+      'Insufficient cover.',
+      'Beam bottom level error.',
+      'Early removal of props.',
+      'Poor compaction at beam-column joint.',
+    ],
+  },
+  {
+    slug: 'slab',
+    title: 'Slab',
+    level: 'Structural',
+    shortDesc:
+      'Slab is a horizontal plate member used for floors and roofs.',
+    tags: ['RCC', 'Floor', 'Roof'],
+    purpose:
+      'Slab provides flat floor or roof surface and transfers loads to beams, walls or columns.',
+    functions: [
+      'Provides usable floor surface.',
+      'Transfers live and dead load to beams/walls.',
+      'Acts as roof or floor system.',
+      'Provides diaphragm action in building frame.',
+      'Supports floor finishes and partitions.',
+    ],
+    types: [
+      'One-way slab',
+      'Two-way slab',
+      'Flat slab',
+      'Cantilever slab',
+      'Sunken slab',
+      'Ribbed slab',
+    ],
+    materials: [
+      'Concrete',
+      'Main reinforcement',
+      'Distribution reinforcement',
+      'Top extra bars',
+      'Chairs and cover blocks',
+      'Shuttering and props',
+    ],
+    siteChecks: [
+      'Check slab thickness.',
+      'Verify bar spacing.',
+      'Check top extra bars near supports.',
+      'Provide chairs for top reinforcement.',
+      'Check electrical conduits and sleeves.',
+      'Check shuttering level and supports.',
+      'Check curing after casting.',
+    ],
+    commonMistakes: [
+      'Top bars not supported properly.',
+      'Wrong slab thickness.',
+      'Poor shuttering level.',
+      'Electrical conduit disturbance.',
+      'Early prop removal.',
+      'Poor curing causing cracks.',
+    ],
+  },
+  {
+    slug: 'wall',
+    title: 'Wall',
+    level: 'Masonry',
+    shortDesc:
+      'Walls divide spaces, enclose building and may carry load depending on structure type.',
+    tags: ['Brickwork', 'Blockwork', 'Partition'],
+    purpose:
+      'Walls provide enclosure, privacy, protection and sometimes load-bearing support depending on building system.',
+    functions: [
+      'Divides internal spaces.',
+      'Protects building from weather.',
+      'Provides privacy and security.',
+      'Supports finishes like plaster and paint.',
+      'May carry load in load-bearing structures.',
+    ],
+    types: [
+      'Load bearing wall',
+      'Partition wall',
+      'External wall',
+      'Internal wall',
+      'Shear wall',
+      'Retaining wall',
+    ],
+    materials: [
+      'Bricks',
+      'AAC blocks',
+      'Concrete blocks',
+      'Cement mortar',
+      'Chicken mesh at junctions',
+      'Lintel over openings',
+    ],
+    siteChecks: [
+      'Check wall layout and thickness.',
+      'Check line, level and plumb.',
+      'Use correct mortar ratio.',
+      'Maintain joint thickness.',
+      'Check door-window opening size.',
+      'Cure masonry properly.',
+    ],
+    commonMistakes: [
+      'Wall not in plumb.',
+      'Using dry bricks.',
+      'Thick mortar joints.',
+      'No curing.',
+      'Wrong opening size.',
+      'No mesh at RCC-masonry junction before plaster.',
+    ],
+  },
+  {
+    slug: 'staircase',
+    title: 'Staircase',
+    level: 'Structural + Architectural',
+    shortDesc:
+      'Staircase provides vertical movement between floors.',
+    tags: ['Riser', 'Tread', 'Landing'],
+    purpose:
+      'Staircase connects different floors and provides safe vertical circulation in the building.',
+    functions: [
+      'Connects floors vertically.',
+      'Provides safe movement.',
+      'Acts as emergency access route.',
+      'Improves building circulation.',
+      'Can be RCC, steel, wood or precast system.',
+    ],
+    types: [
+      'Dog-legged staircase',
+      'Open-well staircase',
+      'Straight staircase',
+      'Spiral staircase',
+      'Cantilever staircase',
+      'RCC staircase',
+    ],
+    materials: [
+      'RCC concrete',
+      'Reinforcement steel',
+      'Shuttering',
+      'Flooring tiles/stone',
+      'Railing',
+      'Finishing material',
+    ],
+    siteChecks: [
+      'Check riser and tread dimensions.',
+      'Check landing level.',
+      'Verify staircase reinforcement.',
+      'Check waist slab thickness.',
+      'Check shuttering support.',
+      'Check railing fixing provision.',
+    ],
+    commonMistakes: [
+      'Unequal riser height.',
+      'Wrong tread width.',
+      'Poor landing level.',
+      'Insufficient headroom.',
+      'Wrong reinforcement placement.',
+      'Unsafe railing height.',
+    ],
+  },
+  {
+    slug: 'lintel',
+    title: 'Lintel',
+    level: 'Structural Support',
+    shortDesc:
+      'Lintel is a horizontal member provided above doors, windows and openings.',
+    tags: ['Opening', 'Door', 'Window'],
+    purpose:
+      'Lintel supports wall load above openings like doors and windows and transfers it to adjacent masonry.',
+    functions: [
+      'Supports masonry above openings.',
+      'Prevents cracks above doors and windows.',
+      'Transfers load to side supports.',
+      'Provides structural support for openings.',
+      'Helps maintain wall stability.',
+    ],
+    types: [
+      'RCC lintel',
+      'Stone lintel',
+      'Steel lintel',
+      'Brick lintel',
+      'Precast lintel',
+    ],
+    materials: [
+      'Concrete',
+      'Reinforcement steel',
+      'Shuttering',
+      'Cover blocks',
+      'Masonry support',
+    ],
+    siteChecks: [
+      'Check lintel level.',
+      'Check bearing length on both sides.',
+      'Verify reinforcement.',
+      'Check opening size.',
+      'Ensure proper curing.',
+      'Check alignment with door/window frame.',
+    ],
+    commonMistakes: [
+      'Insufficient bearing length.',
+      'Wrong lintel level.',
+      'No proper curing.',
+      'Opening size mismatch.',
+      'Poor reinforcement placement.',
+    ],
+  },
+  {
+    slug: 'chajja',
+    title: 'Chajja / Sunshade',
+    level: 'Architectural + RCC',
+    shortDesc:
+      'Chajja protects doors, windows and walls from rainwater and direct sunlight.',
+    tags: ['Sunshade', 'Rain Protection', 'Cantilever'],
+    purpose:
+      'Chajja is a projection above openings to protect from rainwater and sunlight.',
+    functions: [
+      'Protects windows and doors from rain.',
+      'Reduces direct sunlight.',
+      'Protects external wall finishes.',
+      'Improves elevation appearance.',
+      'Controls water flow on facade.',
+    ],
+    types: [
+      'RCC chajja',
+      'Precast chajja',
+      'Stone chajja',
+      'Metal canopy',
+      'Glass canopy',
+    ],
+    materials: [
+      'RCC concrete',
+      'Reinforcement steel',
+      'Shuttering',
+      'Drip mould',
+      'Waterproofing layer if required',
+    ],
+    siteChecks: [
+      'Check projection length.',
+      'Check slope away from wall.',
+      'Provide drip groove.',
+      'Check reinforcement anchorage.',
+      'Check shuttering support.',
+      'Cure properly after casting.',
+    ],
+    commonMistakes: [
+      'No slope for water drainage.',
+      'No drip groove.',
+      'Insufficient reinforcement anchorage.',
+      'Cracks due to poor curing.',
+      'Water leakage at wall junction.',
+    ],
+  },
+  {
+    slug: 'parapet',
+    title: 'Parapet Wall',
+    level: 'Roof Component',
+    shortDesc:
+      'Parapet wall is a low wall around roof edge for safety and weather protection.',
+    tags: ['Roof', 'Safety', 'Terrace'],
+    purpose:
+      'Parapet wall provides safety at terrace edges and helps protect roof waterproofing edges.',
+    functions: [
+      'Prevents fall from roof edge.',
+      'Protects terrace edge.',
+      'Supports coping and waterproofing termination.',
+      'Improves elevation appearance.',
+      'Helps control rainwater flow.',
+    ],
+    types: [
+      'Brick parapet',
+      'RCC parapet',
+      'Block masonry parapet',
+      'Metal railing parapet',
+      'Glass railing parapet',
+    ],
+    materials: [
+      'Brick/block masonry',
+      'Cement mortar',
+      'RCC coping',
+      'Waterproofing treatment',
+      'Plaster and paint',
+    ],
+    siteChecks: [
+      'Check parapet height.',
+      'Check wall thickness.',
+      'Provide coping on top.',
+      'Check waterproofing termination.',
+      'Check cracks after plaster.',
+      'Check slope near terrace edge.',
+    ],
+    commonMistakes: [
+      'No coping on parapet.',
+      'Water leakage through parapet joint.',
+      'Insufficient height.',
+      'Poor plaster curing.',
+      'No waterproofing upturn.',
+    ],
+  },
+  {
+    slug: 'flooring',
+    title: 'Flooring',
+    level: 'Finishing',
+    shortDesc:
+      'Flooring provides finished usable surface for rooms, corridors and wet areas.',
+    tags: ['Tiles', 'Level', 'Finish'],
+    purpose:
+      'Flooring provides smooth, durable and usable finished surface inside and outside the building.',
+    functions: [
+      'Provides finished walking surface.',
+      'Improves appearance.',
+      'Resists wear and tear.',
+      'Provides slope in wet areas.',
+      'Protects base floor layer.',
+    ],
+    types: [
+      'Vitrified tile flooring',
+      'Ceramic tile flooring',
+      'Marble flooring',
+      'Granite flooring',
+      'IPS flooring',
+      'Wooden flooring',
+    ],
+    materials: [
+      'Tiles or stone',
+      'Tile adhesive or mortar',
+      'Cement sand screed',
+      'Grout',
+      'Spacers',
+      'Skirting material',
+    ],
+    siteChecks: [
+      'Check floor level.',
+      'Check base surface preparation.',
+      'Check slope in bathroom/balcony.',
+      'Check tile alignment.',
+      'Check hollow sound.',
+      'Check grout filling.',
+    ],
+    commonMistakes: [
+      'Uneven flooring.',
+      'Tile lippage.',
+      'Hollow tiles.',
+      'Wrong slope in wet area.',
+      'Poor grout filling.',
+      'No level marking before work.',
+    ],
+  },
+  {
+    slug: 'roof',
+    title: 'Roof',
+    level: 'Building Envelope',
+    shortDesc:
+      'Roof protects the building from rain, sun, wind and weather.',
+    tags: ['Terrace', 'Waterproofing', 'Weather'],
+    purpose:
+      'Roof is the top covering of building that protects interior spaces from weather and provides terrace or service area.',
+    functions: [
+      'Protects building from rain and sun.',
+      'Provides thermal protection.',
+      'Supports waterproofing system.',
+      'Can be used as terrace area.',
+      'Carries service equipment if designed.',
+    ],
+    types: [
+      'RCC flat roof',
+      'Sloped roof',
+      'Metal sheet roof',
+      'Tile roof',
+      'Precast roof',
+      'Green roof',
+    ],
+    materials: [
+      'RCC slab',
+      'Waterproofing membrane/coating',
+      'Screed concrete',
+      'Protective tiles',
+      'Drainage outlets',
+      'Insulation if required',
+    ],
+    siteChecks: [
+      'Check roof slope.',
+      'Check waterproofing treatment.',
+      'Check rainwater outlet location.',
+      'Conduct ponding test.',
+      'Check parapet waterproofing upturn.',
+      'Protect waterproofing layer before finishing.',
+    ],
+    commonMistakes: [
+      'No proper slope.',
+      'Poor drain outlet treatment.',
+      'No ponding test.',
+      'Waterproofing damaged during tile work.',
+      'Cracks causing leakage.',
+    ],
+  },
+]
