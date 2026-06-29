@@ -39,24 +39,24 @@ const categories = [
     href: '/dashboard/knowledge-hub/checklists',
     icon: ClipboardCheck,
   },
-  {
-    title: 'Construction Process',
-    desc: 'Complete building construction process from land planning to finishing work.',
-    href:  '/dashboard/knowledge-hub',
-    icon: Building2,
-  },
-  {
-    title: 'Testing Guide',
-    desc: 'Slump test, cube test, sieve analysis, core test, NDT tests and field quality checks.',
-    href: '/dashboard/knowledge-hub',
-    icon: FlaskConical,
-  },
-  {
-    title: 'Construction Defects Library',
-    desc: 'Honeycombing, cracks, dampness, segregation, efflorescence with causes and solutions.',
-    href: '/dashboard/knowledge-hub',
-    icon: AlertTriangle,
-  },
+ {
+  title: 'Construction Process',
+  desc: 'Complete building construction process from land planning to finishing work.',
+  href: '/dashboard/knowledge-hub/construction-process',
+  icon: Building2,
+},
+{
+  title: 'Testing Guide',
+  desc: 'Slump test, cube test, sieve analysis, core test, NDT tests and field quality checks.',
+  href: '/dashboard/knowledge-hub/testing',
+  icon: FlaskConical,
+},
+{
+  title: 'Construction Defects Library',
+  desc: 'Honeycombing, cracks, dampness, segregation, efflorescence with causes and solutions.',
+  href: '/dashboard/knowledge-hub/defects',
+  icon: AlertTriangle,
+},
   {
     title: 'BOQ Guide',
     desc: 'BOQ basics, item description, quantity takeoff, cost summary and estimation workflow.',
