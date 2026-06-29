@@ -57,36 +57,37 @@ const categories = [
   href: '/dashboard/knowledge-hub/defects',
   icon: AlertTriangle,
 },
-  {
-    title: 'BOQ Guide',
-    desc: 'BOQ basics, item description, quantity takeoff, cost summary and estimation workflow.',
-    href: '/dashboard/knowledge-hub',
-    icon: FileText,
-  },
-  {
-    title: 'Safety Hub',
-    desc: 'PPE, toolbox talk, risk assessment, safety rules and construction site safety guidance.',
-    href: '/dashboard/knowledge-hub',
-    icon: ShieldCheck,
-  },
-  {
-    title: 'Equipment Guide',
-    desc: 'Excavator, transit mixer, vibrator, bar bending machine, total station and site equipment.',
-    href: '/dashboard/knowledge-hub',
-    icon: Wrench,
-  },
-  {
-    title: 'Interview Preparation',
-    desc: 'Civil engineering interview questions, answers, site concepts and practical knowledge.',
-    href: '/dashboard/knowledge-hub',
-    icon: GraduationCap,
-  },
-  {
-    title: 'Building Components Guide',
-    desc: 'Foundation, column, beam, slab, lintel, roof, staircase and other building components.',
-    href: '/dashboard/knowledge-hub',
-    icon: HardHat,
-  },
+{
+  title: 'BOQ Guide',
+  desc: 'BOQ basics, item description, quantity takeoff, cost summary and estimation workflow.',
+  href: '/dashboard/knowledge-hub/boq-guide',
+  icon: FileText,
+},
+{
+  title: 'Safety Hub',
+  desc: 'PPE, toolbox talk, risk assessment, safety rules and construction site safety guidance.',
+  href: '/dashboard/knowledge-hub/safety',
+  icon: ShieldCheck,
+},
+{
+  title: 'Equipment Guide',
+  desc: 'Excavator, transit mixer, vibrator, bar bending machine, total station and site equipment.',
+  href: '/dashboard/knowledge-hub/equipment',
+  icon: Wrench,
+},
+{
+  title: 'Interview Preparation',
+  desc: 'Civil engineering interview questions, answers, site concepts and practical knowledge.',
+  href: '/dashboard/knowledge-hub/interview-preparation',
+  icon: GraduationCap,
+},
+{
+  title: 'Building Components Guide',
+  desc: 'Foundation, column, beam, slab, lintel, roof, staircase and other building components.',
+  href: '/dashboard/knowledge-hub/building-components',
+  icon: HardHat,
+},
+
   {
     title: 'IS Code Summary',
     desc: 'Important IS code summaries explained in simple practical language.',
