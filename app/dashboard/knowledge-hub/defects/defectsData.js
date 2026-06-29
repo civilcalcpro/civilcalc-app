@@ -490,7 +490,7 @@ export const defects = [
   {
     slug: 'uneven-flooring',
     title: 'Uneven Flooring',
-    level: 'Uneven,
+    level: 'Uneven',
     image: '/defects/uneven-flooring.png',
     shortDesc:
       'Floor surface level variation due to poor screed level, tile laying mistake or improper base preparation.',
