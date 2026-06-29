@@ -18,61 +18,61 @@ const hubCategories = [
   {
     title: 'Material Guide',
     desc: 'Cement, steel, sand, aggregate, bricks, concrete and construction materials explained.',
-    href: '/knowledge-hub/materials',
+    href: '/dashboard/knowledge-hub/materials',
     icon: Layers,
   },
   {
     title: 'Formula Library',
     desc: 'RCC, concrete, estimation, steel, soil, surveying and hydraulics formulas.',
-    href: '/knowledge-hub/formulas',
+    href: '/dashboard/knowledge-hub/formulas',
     icon: Calculator,
   },
   {
     title: 'Site Engineer Checklist',
     desc: 'Excavation, PCC, footing, column, beam, slab, plaster and finishing checklists.',
-    href: '/knowledge-hub/checklists',
+    href: '/dashboard/knowledge-hub/checklists',
     icon: ClipboardCheck,
   },
   {
     title: 'Construction Process',
     desc: 'Step-by-step building construction process from land planning to finishing.',
-    href: '/knowledge-hub/construction-process',
+    href: '/dashboard/knowledge-hub/construction-process',
     icon: Building2,
   },
   {
     title: 'Testing Guide',
     desc: 'Slump test, cube test, sieve analysis, core test and other site/lab tests.',
-    href: '/knowledge-hub/testing',
+    href: '/dashboard/knowledge-hub/testing',
     icon: FlaskConical,
   },
   {
     title: 'Construction Defects Library',
     desc: 'Honeycombing, cracks, dampness, segregation and common defects with solutions.',
-    href: '/knowledge-hub/defects',
+    href: '/dashboard/knowledge-hub/defects',
     icon: AlertTriangle,
   },
   {
     title: 'BOQ Guide',
     desc: 'Learn BOQ basics, quantity takeoff, item description and cost summary.',
-    href: '/knowledge-hub/boq-guide',
+    href: '/dashboard/knowledge-hub/boq-guide',
     icon: FileText,
   },
   {
     title: 'Safety Hub',
     desc: 'PPE, toolbox talk, risk assessment and construction site safety basics.',
-    href: '/knowledge-hub/safety',
+    href: '/dashboard/knowledge-hub/safety',
     icon: ShieldCheck,
   },
   {
     title: 'Equipment Guide',
     desc: 'Excavator, transit mixer, vibrator, total station and site equipment usage.',
-    href: '/knowledge-hub/equipment',
+    href: '/dashboard/knowledge-hub/equipment',
     icon: Wrench,
   },
   {
     title: 'Interview Preparation',
     desc: 'Civil engineering interview questions, answers and practical site concepts.',
-    href: '/knowledge-hub/interview-preparation',
+    href: '/dashboard/knowledge-hub/interview-preparation',
     icon: GraduationCap,
   },
 ]
@@ -116,11 +116,11 @@ export default function KnowledgeHubPage() {
               </Link>
 
               <Link
-                href="/knowledge-hub/materials"
-                className="rounded-xl border border-slate-700 px-6 py-3 font-semibold text-slate-200 transition hover:border-orange-500/60 hover:text-orange-300"
-              >
-                Explore Guides
-              </Link>
+  href="/dashboard/knowledge-hub"
+  className="rounded-xl border border-slate-700 px-6 py-3 font-semibold text-slate-200 transition hover:border-orange-500/60 hover:text-orange-300"
+>
+  Login to Explore Full Hub
+</Link>
             </div>
           </div>
 
@@ -147,7 +147,7 @@ export default function KnowledgeHubPage() {
                   </p>
 
                   <p className="mt-5 text-sm font-semibold text-orange-400">
-                    Open Guide →
+                    Login to Continue →
                   </p>
                 </Link>
               )
