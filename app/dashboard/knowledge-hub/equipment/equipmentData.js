@@ -1,185 +1,760 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import {
-  ArrowLeft,
-  ShieldCheck,
-  CheckCircle2,
-  AlertTriangle,
-  HardHat,
-  ClipboardCheck,
-  Wrench,
-  Siren,
-} from 'lucide-react'
-import { safetyTopics } from '../safetyData'
-
-export async function generateStaticParams() {
-  return safetyTopics.map((topic) => ({
-    slug: topic.slug,
-  }))
-}
-
-export async function generateMetadata({ params }) {
-  const topic = safetyTopics.find((item) => item.slug === params.slug)
-
-  if (!topic) {
-    return {
-      title: 'Safety Hub | CivilCalc Pro',
-    }
-  }
-
-  return {
-    title: `${topic.title} | CivilCalc Pro Knowledge Hub`,
-    description: topic.shortDesc,
-  }
-}
-
-function InfoSection({ title, icon: Icon, items }) {
-  return (
-    <section className="rounded-3xl border border-[#243250] bg-[#071432] p-6">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400">
-          <Icon size={22} />
-        </div>
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
-      </div>
-
-      <ul className="space-y-3">
-        {items.map((point) => (
-          <li key={point} className="flex gap-3 text-slate-300">
-            <CheckCircle2 className="mt-0.5 shrink-0 text-orange-400" size={18} />
-            <span>{point}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-export default function SafetyTopicDetailPage({ params }) {
-  const topic = safetyTopics.find((item) => item.slug === params.slug)
-
-  if (!topic) {
-    notFound()
-  }
-
-  return (
-    <main className="min-h-screen bg-[#020B2D] px-4 py-8 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <section className="mb-8 rounded-3xl border border-[#243250] bg-[#071432] p-6 sm:p-8">
-          <Link
-            href="/dashboard/knowledge-hub/safety"
-            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-400 hover:text-orange-300"
-          >
-            <ArrowLeft size={16} />
-            Back to Safety Hub
-          </Link>
-
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm text-orange-300">
-                <ShieldCheck size={16} />
-                Construction Safety Topic
-              </div>
-
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                {topic.title}
-              </h1>
-
-              <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-400 sm:text-base">
-                {topic.purpose}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5">
-              <p className="text-sm text-slate-300">Risk Level</p>
-              <p className="mt-1 text-xl font-bold text-orange-400">
-                {topic.level}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-3xl border border-red-500/20 bg-red-500/10 p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <AlertTriangle className="text-red-300" size={24} />
-              <h2 className="text-2xl font-bold">Possible Hazards</h2>
-            </div>
-
-            <ul className="space-y-3">
-              {topic.hazards.map((hazard) => (
-                <li key={hazard} className="flex gap-3 text-slate-200">
-                  <AlertTriangle className="mt-0.5 shrink-0 text-red-300" size={18} />
-                  <span>{hazard}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <InfoSection
-            title="Required PPE"
-            icon={HardHat}
-            items={topic.requiredPPE}
-          />
-
-          <InfoSection
-            title="Safe Work Practices"
-            icon={ClipboardCheck}
-            items={topic.safePractices}
-          />
-
-          <section className="rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <Wrench className="text-yellow-300" size={24} />
-              <h2 className="text-2xl font-bold">Common Safety Mistakes</h2>
-            </div>
-
-            <ul className="space-y-3">
-              {topic.commonMistakes.map((mistake) => (
-                <li key={mistake} className="flex gap-3 text-yellow-100">
-                  <AlertTriangle className="mt-0.5 shrink-0 text-yellow-300" size={18} />
-                  <span>{mistake}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6 lg:col-span-2">
-            <div className="mb-5 flex items-center gap-3">
-              <Siren className="text-orange-300" size={24} />
-              <h2 className="text-2xl font-bold">Emergency Action</h2>
-            </div>
-
-            <ul className="grid gap-3 md:grid-cols-2">
-              {topic.emergencyAction.map((action) => (
-                <li
-                  key={action}
-                  className="rounded-xl border border-orange-500/20 bg-[#081126] p-4 text-slate-200"
-                >
-                  {action}
-                </li>
-              ))}
-            </ul>
-          </section>
-        </section>
-
-        <section className="mt-8 rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6">
-          <div className="flex gap-3">
-            <AlertTriangle className="mt-1 shrink-0 text-yellow-300" size={22} />
-            <div>
-              <h2 className="text-xl font-bold text-white">
-                Practical Safety Note
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-yellow-100">
-                Site safety rules project condition, local regulation and work
-                method ke hisab se change ho sakte hain. High-risk work ke liye
-                trained supervisor, permit system and proper inspection zaroor
-                follow karo.
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
-  )
-}
+export const equipmentList = [
+  {
+    slug: 'excavator',
+    title: 'Excavator',
+    level: 'Heavy Equipment',
+    shortDesc:
+      'Used for excavation, trenching, earthmoving, demolition and foundation work.',
+    tags: ['Earthwork', 'Excavation', 'Foundation'],
+    purpose:
+      'Excavator is a heavy construction machine used for digging, trenching, loading, demolition and bulk earthwork.',
+    usedFor: [
+      'Foundation excavation',
+      'Basement excavation',
+      'Trench cutting',
+      'Soil loading into dumpers',
+      'Site grading',
+      'Demolition work',
+    ],
+    mainParts: [
+      'Boom',
+      'Arm',
+      'Bucket',
+      'Cabin',
+      'Hydraulic system',
+      'Crawler track or wheels',
+      'Counterweight',
+    ],
+    preUseChecks: [
+      'Check hydraulic oil leakage.',
+      'Check bucket teeth condition.',
+      'Check track or tyre condition.',
+      'Check operator visibility.',
+      'Check warning horn and lights.',
+      'Check swing area is clear.',
+    ],
+    operatingTips: [
+      'Do not operate too close to excavation edge.',
+      'Keep workers away from machine swing radius.',
+      'Use correct bucket size for work.',
+      'Do not overload bucket.',
+      'Keep machine on stable ground.',
+      'Follow signalman instructions where visibility is limited.',
+    ],
+    maintenance: [
+      'Grease moving joints regularly.',
+      'Check hydraulic hoses.',
+      'Clean air filter.',
+      'Check engine oil and coolant.',
+      'Inspect bucket and pins.',
+      'Follow manufacturer service schedule.',
+    ],
+    commonMistakes: [
+      'Working near trench edge without checking soil stability.',
+      'Allowing workers inside swing radius.',
+      'Using damaged bucket teeth.',
+      'Overloading bucket.',
+      'Operating on unstable ground.',
+    ],
+    safety: [
+      'Only trained operator should operate excavator.',
+      'Barricade machine working area.',
+      'Use signalman during congested site work.',
+      'Never allow workers below raised bucket.',
+      'Maintain safe distance from electrical lines.',
+    ],
+  },
+  {
+    slug: 'backhoe-loader',
+    title: 'Backhoe Loader / JCB',
+    level: 'Heavy Equipment',
+    shortDesc:
+      'Multipurpose machine used for excavation, loading, backfilling and site cleaning.',
+    tags: ['JCB', 'Loading', 'Backfilling'],
+    purpose:
+      'Backhoe loader is a versatile machine with front loader bucket and rear backhoe arm used for small to medium construction work.',
+    usedFor: [
+      'Small foundation excavation',
+      'Material loading',
+      'Backfilling',
+      'Site cleaning',
+      'Road shoulder work',
+      'Utility trench excavation',
+    ],
+    mainParts: [
+      'Front loader bucket',
+      'Backhoe arm',
+      'Stabilizer legs',
+      'Cabin',
+      'Hydraulic system',
+      'Tyres',
+      'Engine unit',
+    ],
+    preUseChecks: [
+      'Check tyre pressure.',
+      'Check hydraulic leakage.',
+      'Check stabilizer condition.',
+      'Check loader and backhoe bucket.',
+      'Check brakes and horn.',
+      'Check working lights.',
+    ],
+    operatingTips: [
+      'Use stabilizers before backhoe operation.',
+      'Avoid sudden movement with loaded bucket.',
+      'Keep bucket low while travelling.',
+      'Do not exceed machine capacity.',
+      'Avoid working on steep unstable slope.',
+    ],
+    maintenance: [
+      'Grease pins and joints.',
+      'Check hydraulic oil.',
+      'Inspect tyres.',
+      'Clean radiator and filters.',
+      'Check brake and steering system.',
+    ],
+    commonMistakes: [
+      'Travelling with bucket raised.',
+      'Not using stabilizers while digging.',
+      'Overloading front bucket.',
+      'Working near workers without signal.',
+      'Ignoring hydraulic leakage.',
+    ],
+    safety: [
+      'Keep people away from working radius.',
+      'Use reverse alarm.',
+      'Use seat belt.',
+      'Do not allow unauthorized person in cabin.',
+      'Park with bucket lowered.',
+    ],
+  },
+  {
+    slug: 'concrete-mixer',
+    title: 'Concrete Mixer Machine',
+    level: 'Site Equipment',
+    shortDesc:
+      'Used for mixing cement, sand, aggregate and water to prepare concrete on site.',
+    tags: ['Concrete', 'Mixing', 'RCC'],
+    purpose:
+      'Concrete mixer machine mixes cement, sand, aggregate and water uniformly to produce concrete for site work.',
+    usedFor: [
+      'PCC work',
+      'RCC work',
+      'Small slab casting',
+      'Footing concrete',
+      'Column and beam concrete',
+      'Repair concrete work',
+    ],
+    mainParts: [
+      'Mixing drum',
+      'Hopper',
+      'Motor or engine',
+      'Gear system',
+      'Water tank',
+      'Wheels',
+      'Discharge chute',
+    ],
+    preUseChecks: [
+      'Check drum cleanliness.',
+      'Check motor or engine condition.',
+      'Check belt and gear guard.',
+      'Check electrical connection.',
+      'Check water measuring arrangement.',
+      'Check mixer rotation.',
+    ],
+    operatingTips: [
+      'Use correct mix proportion.',
+      'Do not overload mixer drum.',
+      'Add water gradually.',
+      'Mix for sufficient time.',
+      'Discharge concrete before it starts setting.',
+      'Clean mixer after use.',
+    ],
+    maintenance: [
+      'Clean drum daily.',
+      'Grease moving parts.',
+      'Check belt tension.',
+      'Inspect electrical cable.',
+      'Remove hardened concrete from drum.',
+    ],
+    commonMistakes: [
+      'Adding excess water.',
+      'Overloading drum.',
+      'No fixed measurement of materials.',
+      'Using dirty mixer drum.',
+      'Not mixing for sufficient time.',
+    ],
+    safety: [
+      'Keep hands away from rotating drum.',
+      'Use proper electrical earthing.',
+      'Do not wear loose clothes near rotating parts.',
+      'Use gloves and goggles.',
+      'Keep mixer area clean.',
+    ],
+  },
+  {
+    slug: 'needle-vibrator',
+    title: 'Needle Vibrator',
+    level: 'Concrete Equipment',
+    shortDesc:
+      'Used to compact fresh concrete and remove air voids during RCC casting.',
+    tags: ['Concrete', 'Compaction', 'RCC'],
+    purpose:
+      'Needle vibrator is used to compact fresh concrete properly and reduce honeycombing, voids and poor bonding.',
+    usedFor: [
+      'Column casting',
+      'Beam casting',
+      'Slab casting',
+      'Footing casting',
+      'RCC wall casting',
+      'Dense reinforcement zones',
+    ],
+    mainParts: [
+      'Vibrator needle',
+      'Flexible shaft',
+      'Motor or engine',
+      'Power cable',
+      'Switch',
+      'Protective casing',
+    ],
+    preUseChecks: [
+      'Check vibrator needle condition.',
+      'Check cable insulation.',
+      'Check motor working.',
+      'Check flexible shaft connection.',
+      'Check electrical earthing.',
+      'Check vibrator frequency.',
+    ],
+    operatingTips: [
+      'Insert vibrator vertically into concrete.',
+      'Do not over-vibrate concrete.',
+      'Avoid touching reinforcement continuously.',
+      'Vibrate in layers.',
+      'Keep proper spacing between insertion points.',
+      'Withdraw vibrator slowly.',
+    ],
+    maintenance: [
+      'Clean needle after use.',
+      'Check shaft and bearing.',
+      'Inspect cable damage.',
+      'Store vibrator in dry place.',
+      'Service motor regularly.',
+    ],
+    commonMistakes: [
+      'Over-vibration causing segregation.',
+      'Under-vibration causing honeycombing.',
+      'Using damaged cable.',
+      'Dragging vibrator through concrete.',
+      'Not vibrating beam-column joints properly.',
+    ],
+    safety: [
+      'Use insulated electrical connection.',
+      'Keep cable away from water.',
+      'Wear gloves and gumboots.',
+      'Do not use damaged vibrator.',
+      'Switch off before maintenance.',
+    ],
+  },
+  {
+    slug: 'concrete-pump',
+    title: 'Concrete Pump',
+    level: 'Heavy Equipment',
+    shortDesc:
+      'Used to pump concrete to height or long distance during slab, beam and column casting.',
+    tags: ['Concrete', 'Pumping', 'Casting'],
+    purpose:
+      'Concrete pump transports fresh concrete through pipeline to required location where manual transport is difficult.',
+    usedFor: [
+      'High-rise slab casting',
+      'Large volume concrete pouring',
+      'Raft foundation casting',
+      'Beam and slab casting',
+      'RCC wall casting',
+      'Remote placing area',
+    ],
+    mainParts: [
+      'Pump unit',
+      'Hopper',
+      'Concrete pipeline',
+      'Boom or placing pipe',
+      'Hydraulic system',
+      'Control panel',
+    ],
+    preUseChecks: [
+      'Check pipeline connection.',
+      'Check pump pressure.',
+      'Check hopper grill.',
+      'Check hydraulic system.',
+      'Check boom movement.',
+      'Check emergency stop button.',
+    ],
+    operatingTips: [
+      'Prime pipeline before pumping.',
+      'Use pumpable concrete mix.',
+      'Avoid sudden interruption in supply.',
+      'Do not allow workers near pressurized pipeline.',
+      'Clean pipeline immediately after work.',
+      'Coordinate pump operator and placing team.',
+    ],
+    maintenance: [
+      'Clean hopper and pipeline.',
+      'Check hydraulic oil.',
+      'Inspect pipeline wear.',
+      'Check clamps and seals.',
+      'Service pump as per manufacturer schedule.',
+    ],
+    commonMistakes: [
+      'Poor concrete workability.',
+      'Pipeline not cleaned after use.',
+      'Loose pipe clamps.',
+      'Workers standing near pressurized line.',
+      'No communication during pumping.',
+    ],
+    safety: [
+      'Do not open pipeline under pressure.',
+      'Use proper pipe clamps.',
+      'Keep workers away from pump line.',
+      'Use trained pump operator.',
+      'Stop pumping if blockage occurs.',
+    ],
+  },
+  {
+    slug: 'transit-mixer',
+    title: 'Transit Mixer',
+    level: 'Heavy Equipment',
+    shortDesc:
+      'Used to transport ready mix concrete from batching plant to construction site.',
+    tags: ['RMC', 'Concrete', 'Transport'],
+    purpose:
+      'Transit mixer keeps concrete rotating during transport so it remains workable until discharge at site.',
+    usedFor: [
+      'Ready mix concrete supply',
+      'Large RCC casting',
+      'Slab concrete',
+      'Footing and raft concrete',
+      'Commercial building casting',
+    ],
+    mainParts: [
+      'Rotating drum',
+      'Discharge chute',
+      'Water tank',
+      'Hydraulic drive',
+      'Control lever',
+      'Truck chassis',
+    ],
+    preUseChecks: [
+      'Check drum rotation.',
+      'Check concrete delivery challan.',
+      'Check concrete grade and quantity.',
+      'Check time of batching.',
+      'Check discharge chute condition.',
+      'Check access route to site.',
+    ],
+    operatingTips: [
+      'Verify concrete grade before discharge.',
+      'Check slump before placing.',
+      'Do not add water without approval.',
+      'Discharge concrete within allowed time.',
+      'Keep chute clean.',
+      'Coordinate with pump or placing team.',
+    ],
+    maintenance: [
+      'Wash drum after delivery.',
+      'Clean chute.',
+      'Check hydraulic system.',
+      'Inspect drum blades.',
+      'Service truck regularly.',
+    ],
+    commonMistakes: [
+      'Accepting wrong concrete grade.',
+      'Adding water at site without approval.',
+      'Long waiting time before discharge.',
+      'No slump test.',
+      'Incomplete drum cleaning.',
+    ],
+    safety: [
+      'Guide vehicle while reversing.',
+      'Keep workers away from moving truck.',
+      'Use wheel stopper on slope.',
+      'Do not stand under chute.',
+      'Maintain safe access route.',
+    ],
+  },
+  {
+    slug: 'bar-bending-machine',
+    title: 'Bar Bending Machine',
+    level: 'Steel Equipment',
+    shortDesc:
+      'Used to bend reinforcement bars accurately as per BBS and structural drawings.',
+    tags: ['Steel', 'BBS', 'Rebar'],
+    purpose:
+      'Bar bending machine bends steel reinforcement bars to required angle and shape for RCC work.',
+    usedFor: [
+      'Stirrups bending',
+      'Main bar bending',
+      'Footing reinforcement',
+      'Beam reinforcement',
+      'Column reinforcement',
+      'Slab reinforcement',
+    ],
+    mainParts: [
+      'Bending plate',
+      'Rollers',
+      'Motor',
+      'Pedal or control switch',
+      'Gear box',
+      'Bar stopper',
+    ],
+    preUseChecks: [
+      'Check machine foundation/stability.',
+      'Check roller condition.',
+      'Check electrical cable.',
+      'Check emergency stop.',
+      'Check bending angle setting.',
+      'Check bar size capacity.',
+    ],
+    operatingTips: [
+      'Use correct pin and roller setting.',
+      'Do not bend bar above machine capacity.',
+      'Keep hands away from bending zone.',
+      'Follow BBS dimensions.',
+      'Check first sample before bulk bending.',
+    ],
+    maintenance: [
+      'Grease moving parts.',
+      'Clean steel dust.',
+      'Check motor and gear box.',
+      'Inspect rollers.',
+      'Tighten loose bolts.',
+    ],
+    commonMistakes: [
+      'Wrong bending angle.',
+      'Ignoring bend deduction.',
+      'Bending oversized bar.',
+      'Hands too close to roller.',
+      'No sample checking.',
+    ],
+    safety: [
+      'Only trained worker should operate.',
+      'Keep hands away from rotating/bending parts.',
+      'Use gloves and safety shoes.',
+      'Do not bypass safety guard.',
+      'Switch off before adjustment.',
+    ],
+  },
+  {
+    slug: 'bar-cutting-machine',
+    title: 'Bar Cutting Machine',
+    level: 'Steel Equipment',
+    shortDesc:
+      'Used to cut reinforcement bars to required length for BBS and RCC work.',
+    tags: ['Steel', 'Cutting', 'Rebar'],
+    purpose:
+      'Bar cutting machine cuts steel reinforcement bars accurately and quickly according to cutting length.',
+    usedFor: [
+      'Cutting reinforcement bars',
+      'BBS preparation',
+      'Beam and column steel cutting',
+      'Slab bar cutting',
+      'Stirrup cutting length preparation',
+    ],
+    mainParts: [
+      'Cutting blade',
+      'Motor',
+      'Cutting lever',
+      'Bar support',
+      'Gear system',
+      'Control switch',
+    ],
+    preUseChecks: [
+      'Check cutting blade condition.',
+      'Check bar size capacity.',
+      'Check electrical cable.',
+      'Check machine stability.',
+      'Check emergency stop.',
+      'Check cutting length marking.',
+    ],
+    operatingTips: [
+      'Mark cutting length correctly.',
+      'Support long bars properly.',
+      'Do not cut oversized bars.',
+      'Keep hands away from blade.',
+      'Cut sample piece and verify length.',
+    ],
+    maintenance: [
+      'Clean machine after use.',
+      'Check blade sharpness.',
+      'Grease moving parts.',
+      'Check motor load.',
+      'Tighten loose bolts.',
+    ],
+    commonMistakes: [
+      'Wrong cutting length.',
+      'Cutting bar beyond capacity.',
+      'No support for long bars.',
+      'Using damaged blade.',
+      'No PPE during cutting.',
+    ],
+    safety: [
+      'Wear safety shoes and gloves.',
+      'Use eye protection.',
+      'Keep hands away from blade.',
+      'Do not allow unauthorized worker.',
+      'Switch off before cleaning.',
+    ],
+  },
+  {
+    slug: 'plate-compactor',
+    title: 'Plate Compactor',
+    level: 'Site Equipment',
+    shortDesc:
+      'Used for soil, sand, paver block base and backfill compaction.',
+    tags: ['Compaction', 'Soil', 'Backfill'],
+    purpose:
+      'Plate compactor is used to compact soil, sand, granular material and paver block base in small to medium areas.',
+    usedFor: [
+      'Backfill compaction',
+      'Paver block base compaction',
+      'Trench refilling compaction',
+      'Floor base preparation',
+      'Road shoulder compaction',
+    ],
+    mainParts: [
+      'Compaction plate',
+      'Engine or motor',
+      'Handle',
+      'Vibration unit',
+      'Throttle control',
+      'Belt cover',
+    ],
+    preUseChecks: [
+      'Check fuel or power supply.',
+      'Check plate condition.',
+      'Check belt cover.',
+      'Check handle condition.',
+      'Check working area is clear.',
+      'Check soil moisture condition.',
+    ],
+    operatingTips: [
+      'Compact in layers.',
+      'Maintain optimum moisture content.',
+      'Move compactor slowly and uniformly.',
+      'Overlap passes.',
+      'Do not use on very soft or muddy soil.',
+      'Check compaction quality after work.',
+    ],
+    maintenance: [
+      'Clean plate after use.',
+      'Check engine oil.',
+      'Inspect belt.',
+      'Tighten bolts.',
+      'Service engine regularly.',
+    ],
+    commonMistakes: [
+      'Compacting thick layers at once.',
+      'Compacting dry soil without moisture.',
+      'Moving too fast.',
+      'No overlap between passes.',
+      'Using on unsuitable soil condition.',
+    ],
+    safety: [
+      'Use safety shoes.',
+      'Keep feet away from plate.',
+      'Use ear protection for long duration.',
+      'Do not operate on steep slope carelessly.',
+      'Switch off before inspection.',
+    ],
+  },
+  {
+    slug: 'scaffolding',
+    title: 'Scaffolding System',
+    level: 'Temporary Works',
+    shortDesc:
+      'Temporary platform used for plastering, painting, facade, masonry and height work.',
+    tags: ['Height', 'Platform', 'Safety'],
+    purpose:
+      'Scaffolding provides temporary working platform and access for construction activities at height.',
+    usedFor: [
+      'External plastering',
+      'Painting work',
+      'Masonry work at height',
+      'Facade work',
+      'Repair and maintenance',
+      'Shuttering support in some systems',
+    ],
+    mainParts: [
+      'Standards',
+      'Ledgers',
+      'Transoms',
+      'Base plate',
+      'Working platform',
+      'Guardrail',
+      'Toe board',
+      'Bracing',
+    ],
+    preUseChecks: [
+      'Check base support.',
+      'Check verticality.',
+      'Check bracing.',
+      'Check working platform.',
+      'Check guardrail and toe board.',
+      'Check access ladder.',
+    ],
+    operatingTips: [
+      'Use proper base plate.',
+      'Provide guardrails.',
+      'Do not overload platform.',
+      'Keep platform clean.',
+      'Use safe access ladder.',
+      'Inspect scaffold daily before use.',
+    ],
+    maintenance: [
+      'Check pipes and couplers.',
+      'Remove damaged components.',
+      'Keep platform boards in good condition.',
+      'Check rusting and deformation.',
+      'Store scaffold material properly.',
+    ],
+    commonMistakes: [
+      'No guardrail.',
+      'Unstable base.',
+      'Overloaded platform.',
+      'Missing bracing.',
+      'Workers using incomplete scaffold.',
+    ],
+    safety: [
+      'Do not use incomplete scaffold.',
+      'Use safety harness where required.',
+      'Keep materials away from edge.',
+      'Do not work during heavy wind/rain.',
+      'Inspect after modification.',
+    ],
+  },
+  {
+    slug: 'tower-crane',
+    title: 'Tower Crane',
+    level: 'Heavy Lifting',
+    shortDesc:
+      'Used for vertical and horizontal lifting of heavy materials in high-rise construction.',
+    tags: ['Lifting', 'High-rise', 'Crane'],
+    purpose:
+      'Tower crane is used to lift and move heavy materials like steel, shuttering, concrete buckets and equipment in high-rise projects.',
+    usedFor: [
+      'High-rise material lifting',
+      'Steel reinforcement lifting',
+      'Shuttering material lifting',
+      'Concrete bucket lifting',
+      'Precast element lifting',
+      'Heavy equipment movement',
+    ],
+    mainParts: [
+      'Mast',
+      'Jib',
+      'Counter jib',
+      'Counterweight',
+      'Operator cabin',
+      'Hook block',
+      'Slewing unit',
+      'Trolley',
+    ],
+    preUseChecks: [
+      'Check lifting hook and wire rope.',
+      'Check load limit indicator.',
+      'Check brakes.',
+      'Check communication system.',
+      'Check weather condition.',
+      'Check lifting area barricading.',
+    ],
+    operatingTips: [
+      'Do not exceed safe working load.',
+      'Use trained signalman.',
+      'Do not lift over workers.',
+      'Avoid sudden load swing.',
+      'Stop operation during high wind.',
+      'Use proper lifting gear.',
+    ],
+    maintenance: [
+      'Inspect wire ropes.',
+      'Check brakes and limit switches.',
+      'Lubricate moving parts.',
+      'Check bolts and connections.',
+      'Conduct periodic inspection.',
+    ],
+    commonMistakes: [
+      'Overloading crane.',
+      'No signalman.',
+      'Workers standing under suspended load.',
+      'Using damaged sling.',
+      'Operating in unsafe wind condition.',
+    ],
+    safety: [
+      'Only certified operator should operate.',
+      'Barricade lifting zone.',
+      'Never stand below suspended load.',
+      'Follow lifting plan.',
+      'Stop work in unsafe weather.',
+    ],
+  },
+  {
+    slug: 'total-station',
+    title: 'Total Station',
+    level: 'Survey Equipment',
+    shortDesc:
+      'Used for surveying, layout marking, alignment, levels and coordinate measurement.',
+    tags: ['Survey', 'Layout', 'Alignment'],
+    purpose:
+      'Total station is used for accurate measurement of angles, distances, coordinates and site layout marking.',
+    usedFor: [
+      'Building layout marking',
+      'Grid line setting',
+      'Road alignment',
+      'Level and coordinate checking',
+      'Column center marking',
+      'Survey data collection',
+    ],
+    mainParts: [
+      'Telescope',
+      'EDM unit',
+      'Display panel',
+      'Tripod',
+      'Prism',
+      'Battery',
+      'Data storage',
+    ],
+    preUseChecks: [
+      'Check battery charge.',
+      'Check tripod stability.',
+      'Check instrument calibration.',
+      'Check prism condition.',
+      'Check benchmark/control point.',
+      'Check weather visibility.',
+    ],
+    operatingTips: [
+      'Set tripod firmly.',
+      'Center and level instrument properly.',
+      'Use correct control point.',
+      'Record readings carefully.',
+      'Protect instrument from dust and rain.',
+      'Cross-check important layout points.',
+    ],
+    maintenance: [
+      'Store in protective box.',
+      'Clean lens carefully.',
+      'Charge battery properly.',
+      'Avoid rough handling.',
+      'Calibrate periodically.',
+    ],
+    commonMistakes: [
+      'Instrument not leveled properly.',
+      'Using wrong benchmark.',
+      'Wrong prism height.',
+      'No cross-check of layout.',
+      'Poor record keeping.',
+    ],
+    safety: [
+      'Do not leave instrument unattended.',
+      'Keep tripod away from vehicle movement.',
+      'Protect from rain and dust.',
+      'Use reflective safety jacket during road survey.',
+    ],
+  },
+]
