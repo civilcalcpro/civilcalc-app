@@ -24,6 +24,7 @@ import {
   IndianRupee,
   ArrowLeftRight,
   ClipboardList,
+  BookOpen,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -168,11 +169,11 @@ const quickTools = [
     desc: 'Length, force, pressure & more',
   },
   {
-    name: 'AI Engineering Assistant',
-    icon: Bot,
+    name: 'Civil Engineering Knowledge Hub',
+    icon: BookOpen,
     href: '/dashboard/ai-assistant',
     color: 'purple',
-    desc: 'HEllo engineers ',
+    desc: 'Civil formulas, materials, checklists, IS code summaries and practical site knowledge ',
   },
   {
   name:'BBS Genarator',
