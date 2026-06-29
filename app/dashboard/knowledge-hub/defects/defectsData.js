@@ -3,7 +3,7 @@ export const defects = [
     slug: 'honeycombing',
     title: 'Honeycombing in Concrete',
     level: 'Critical',
-    image: '',
+    image: '/defects/honeycombing.png',
     shortDesc:
       'Voids and cavities in concrete surface due to poor compaction, congested reinforcement or improper concrete placement.',
     tags: ['Concrete', 'RCC', 'Compaction', 'Vibration'],
@@ -40,7 +40,7 @@ export const defects = [
     slug: 'concrete-cracks',
     title: 'Cracks in Concrete',
     level: 'Critical',
-    image: '',
+    image: '/defects/concrete-cracks.png',
     shortDesc:
       'Cracks in RCC members due to shrinkage, settlement, overload, poor curing or structural movement.',
     tags: ['Concrete', 'Cracks', 'RCC', 'Durability'],
@@ -77,7 +77,7 @@ export const defects = [
     slug: 'segregation',
     title: 'Concrete Segregation',
     level: 'High',
-    image: '',
+    image: '/defects/segregation.png',
     shortDesc:
       'Separation of cement paste, sand and aggregate due to poor handling, excess water or improper placing.',
     tags: ['Concrete', 'Mixing', 'Placement', 'Quality'],
@@ -178,7 +178,7 @@ export const defects = [
     slug: 'dampness',
     title: 'Dampness in Walls',
     level: 'High',
-    image: '',
+    image: '/defects/dampness.png',
     shortDesc:
       'Moisture patches on walls due to leakage, capillary rise, poor waterproofing or plumbing defects.',
     tags: ['Wall', 'Moisture', 'Leakage', 'Waterproofing'],
@@ -213,7 +213,7 @@ export const defects = [
     slug: 'plaster-cracks',
     title: 'Plaster Cracks',
     level: 'Medium',
-    image: '',
+    image: '/defects/plaster-cracks.png',
     shortDesc:
       'Cracks in plaster due to shrinkage, poor curing, no chicken mesh, thick plaster or weak mortar.',
     tags: ['Plaster', 'Cracks', 'Finish', 'Wall'],
@@ -351,7 +351,7 @@ export const defects = [
     slug: 'corrosion-of-reinforcement',
     title: 'Corrosion of Reinforcement',
     level: 'Critical',
-    image: '',
+    image: '/defects/corrosion-of-reinforcement.png',
     shortDesc:
       'Rusting of steel reinforcement due to moisture, chloride attack, carbonation or insufficient cover.',
     tags: ['Steel', 'RCC', 'Corrosion', 'Durability'],
@@ -386,7 +386,7 @@ export const defects = [
     slug: 'spalling-of-concrete',
     title: 'Spalling of Concrete',
     level: 'Critical',
-    image: '',
+    image: '/defects/spalling-of-concrete.png',
     shortDesc:
       'Breaking or falling of concrete cover due to corrosion, fire damage, impact or poor concrete quality.',
     tags: ['Concrete', 'RCC', 'Cover', 'Repair'],
@@ -456,7 +456,7 @@ export const defects = [
     slug: 'leakage-from-slab',
     title: 'Leakage from Slab',
     level: 'High',
-    image: '',
+    image: '/defects/leakage-from-slab.png',
     shortDesc:
       'Water leakage through slab due to cracks, poor waterproofing, pipe leakage or terrace slope failure.',
     tags: ['Leakage', 'Slab', 'Waterproofing', 'Crack'],
@@ -490,8 +490,8 @@ export const defects = [
   {
     slug: 'uneven-flooring',
     title: 'Uneven Flooring',
-    level: 'Medium',
-    image: '',
+    level: 'Uneven,
+    image: '/defects/uneven-flooring.png',
     shortDesc:
       'Floor surface level variation due to poor screed level, tile laying mistake or improper base preparation.',
     tags: ['Flooring', 'Level', 'Finishing', 'Tiles'],
