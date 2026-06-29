@@ -171,7 +171,7 @@ const quickTools = [
   {
     name: 'Civil Engineering Knowledge Hub',
     icon: BookOpen,
-    href: '/knowledge-hub',
+   href: '/dashboard/knowledge-hub',
     color: 'purple',
     desc: 'Civil formulas, materials, checklists, IS code summaries and practical site knowledge ',
   },
