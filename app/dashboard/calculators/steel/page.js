@@ -20,7 +20,7 @@ const liveTools = [
     title: 'Steel Weight Calculator',
     titleHi: 'स्टील वेट कैलकुलेटर',
     href: '/dashboard/calculators/steel-weight',
-    icon: weight,
+    icon: Weight,
     badge: 'Live',
     desc: 'Calculate steel bar weight by diameter, length and quantity with rate-based cost estimate.',
     descHi: 'Bar diameter, length और quantity के हिसाब से steel weight और cost निकालने के लिए।',
