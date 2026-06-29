@@ -1,183 +1,169 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 import {
   ArrowLeft,
-  ShieldCheck,
-  CheckCircle2,
-  AlertTriangle,
-  HardHat,
-  ClipboardCheck,
   Wrench,
-  Siren,
+  Truck,
+  Hammer,
+  Settings,
+  ShieldCheck,
+  ClipboardCheck,
 } from 'lucide-react'
-import { safetyTopics } from '../safetyData'
+import { equipmentList } from './equipmentData'
 
-export async function generateStaticParams() {
-  return safetyTopics.map((topic) => ({
-    slug: topic.slug,
-  }))
+export const metadata = {
+  title: 'Equipment Guide | CivilCalc Pro Knowledge Hub',
+  description:
+    'Construction equipment guide covering excavator, JCB, concrete mixer, vibrator, concrete pump, transit mixer, bar bending machine, plate compactor, scaffolding and tower crane.',
 }
 
-export async function generateMetadata({ params }) {
-  const topic = safetyTopics.find((item) => item.slug === params.slug)
-
-  if (!topic) {
-    return {
-      title: 'Safety Hub | CivilCalc Pro',
-    }
-  }
-
-  return {
-    title: `${topic.title} | CivilCalc Pro Knowledge Hub`,
-    description: topic.shortDesc,
-  }
+const levelClass = {
+  'Heavy Equipment': 'border-orange-500/30 bg-orange-500/10 text-orange-200',
+  'Site Equipment': 'border-slate-500/30 bg-slate-500/10 text-slate-200',
+  'Concrete Equipment': 'border-blue-500/30 bg-blue-500/10 text-blue-200',
+  'Steel Equipment': 'border-purple-500/30 bg-purple-500/10 text-purple-200',
+  'Temporary Works': 'border-yellow-500/30 bg-yellow-500/10 text-yellow-100',
+  'Heavy Lifting': 'border-red-500/30 bg-red-500/10 text-red-200',
+  'Survey Equipment': 'border-green-500/30 bg-green-500/10 text-green-200',
 }
 
-function InfoSection({ title, icon: Icon, items }) {
-  return (
-    <section className="rounded-3xl border border-[#243250] bg-[#071432] p-6">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400">
-          <Icon size={22} />
-        </div>
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
-      </div>
-
-      <ul className="space-y-3">
-        {items.map((point) => (
-          <li key={point} className="flex gap-3 text-slate-300">
-            <CheckCircle2 className="mt-0.5 shrink-0 text-orange-400" size={18} />
-            <span>{point}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-export default function SafetyTopicDetailPage({ params }) {
-  const topic = safetyTopics.find((item) => item.slug === params.slug)
-
-  if (!topic) {
-    notFound()
-  }
-
+export default function EquipmentGuidePage() {
   return (
     <main className="min-h-screen bg-[#020B2D] px-4 py-8 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <section className="mb-8 rounded-3xl border border-[#243250] bg-[#071432] p-6 sm:p-8">
           <Link
-            href="/dashboard/knowledge-hub/safety"
+            href="/dashboard/knowledge-hub"
             className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-400 hover:text-orange-300"
           >
             <ArrowLeft size={16} />
-            Back to Safety Hub
+            Back to Knowledge Hub
           </Link>
 
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm text-orange-300">
-                <ShieldCheck size={16} />
-                Construction Safety Topic
+                <Wrench size={16} />
+                Construction Machines & Tools
               </div>
 
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                {topic.title}
+                Equipment Guide
               </h1>
 
               <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-400 sm:text-base">
-                {topic.purpose}
+                Practical construction equipment guide for site engineers,
+                contractors and students. Learn equipment purpose, uses, main
+                parts, pre-use checks, operating tips, maintenance, common
+                mistakes and safety points.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5">
-              <p className="text-sm text-slate-300">Risk Level</p>
-              <p className="mt-1 text-xl font-bold text-orange-400">
-                {topic.level}
+            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 px-5 py-4">
+              <p className="text-sm text-slate-300">Equipment Topics</p>
+              <p className="mt-1 text-3xl font-bold text-orange-400">
+                {equipmentList.length}
               </p>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-3xl border border-red-500/20 bg-red-500/10 p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <AlertTriangle className="text-red-300" size={24} />
-              <h2 className="text-2xl font-bold">Possible Hazards</h2>
-            </div>
+        <section className="mb-7 grid gap-4 md:grid-cols-4">
+          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
+            <Truck className="mb-3 text-orange-400" size={24} />
+            <h2 className="font-bold text-white">Heavy Machines</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Excavator, JCB, crane, pump and transit mixer.
+            </p>
+          </div>
 
-            <ul className="space-y-3">
-              {topic.hazards.map((hazard) => (
-                <li key={hazard} className="flex gap-3 text-slate-200">
-                  <AlertTriangle className="mt-0.5 shrink-0 text-red-300" size={18} />
-                  <span>{hazard}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
+            <Hammer className="mb-3 text-orange-400" size={24} />
+            <h2 className="font-bold text-white">Site Tools</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Concrete mixer, vibrator, compactor and steel machines.
+            </p>
+          </div>
 
-          <InfoSection
-            title="Required PPE"
-            icon={HardHat}
-            items={topic.requiredPPE}
-          />
+          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
+            <ClipboardCheck className="mb-3 text-orange-400" size={24} />
+            <h2 className="font-bold text-white">Pre-use Checks</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Machine start karne se pehle kya check karna hai.
+            </p>
+          </div>
 
-          <InfoSection
-            title="Safe Work Practices"
-            icon={ClipboardCheck}
-            items={topic.safePractices}
-          />
+          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
+            <ShieldCheck className="mb-3 text-orange-400" size={24} />
+            <h2 className="font-bold text-white">Safety Guide</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Machine safety, operator safety and site precautions.
+            </p>
+          </div>
+        </section>
 
-          <section className="rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <Wrench className="text-yellow-300" size={24} />
-              <h2 className="text-2xl font-bold">Common Safety Mistakes</h2>
-            </div>
+        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {equipmentList.map((equipment) => (
+            <Link
+              key={equipment.slug}
+              href={`/dashboard/knowledge-hub/equipment/${equipment.slug}`}
+              className="group rounded-3xl border border-[#243250] bg-[#071432] p-5 transition duration-200 hover:-translate-y-1 hover:border-orange-500/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400">
+                  <Settings size={20} />
+                </div>
 
-            <ul className="space-y-3">
-              {topic.commonMistakes.map((mistake) => (
-                <li key={mistake} className="flex gap-3 text-yellow-100">
-                  <AlertTriangle className="mt-0.5 shrink-0 text-yellow-300" size={18} />
-                  <span>{mistake}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6 lg:col-span-2">
-            <div className="mb-5 flex items-center gap-3">
-              <Siren className="text-orange-300" size={24} />
-              <h2 className="text-2xl font-bold">Emergency Action</h2>
-            </div>
-
-            <ul className="grid gap-3 md:grid-cols-2">
-              {topic.emergencyAction.map((action) => (
-                <li
-                  key={action}
-                  className="rounded-xl border border-orange-500/20 bg-[#081126] p-4 text-slate-200"
+                <div
+                  className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${
+                    levelClass[equipment.level] ||
+                    'border-slate-600 bg-[#081126] text-slate-200'
+                  }`}
                 >
-                  {action}
-                </li>
-              ))}
-            </ul>
-          </section>
+                  {equipment.level}
+                </div>
+              </div>
+
+              <h2 className="text-xl font-bold tracking-tight text-white">
+                {equipment.title}
+              </h2>
+
+              <p className="mt-3 min-h-[68px] text-sm leading-6 text-slate-400">
+                {equipment.shortDesc}
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {equipment.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-orange-500/25 bg-orange-500/10 px-3 py-1 text-[11px] font-medium text-orange-300"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-5 border-t border-slate-800 pt-4">
+                <div className="flex items-center justify-between text-sm font-semibold text-orange-400">
+                  <span>Open Equipment Guide</span>
+                  <span className="transition group-hover:translate-x-1">
+                    →
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
         </section>
 
-        <section className="mt-8 rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6">
-          <div className="flex gap-3">
-            <AlertTriangle className="mt-1 shrink-0 text-yellow-300" size={22} />
-            <div>
-              <h2 className="text-xl font-bold text-white">
-                Practical Safety Note
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-yellow-100">
-                Site safety rules project condition, local regulation and work
-                method ke hisab se change ho sakte hain. High-risk work ke liye
-                trained supervisor, permit system and proper inspection zaroor
-                follow karo.
-              </p>
-            </div>
-          </div>
+        <section className="mt-10 rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6">
+          <h2 className="text-2xl font-bold text-white">
+            Equipment selection directly affects speed, safety and quality
+          </h2>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-yellow-100 sm:text-base">
+            Construction equipment ko work type, site condition, quantity,
+            access space, operator skill aur safety requirement ke hisab se
+            select karna chahiye. Wrong equipment productivity, cost aur safety
+            dono ko affect karta hai.
+          </p>
         </section>
       </div>
     </main>
