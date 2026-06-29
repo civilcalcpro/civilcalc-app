@@ -151,13 +151,13 @@ export default function FormulaLibraryPage() {
 
                   <ul className="space-y-2">
                     {category.formulas.slice(0, 4).map((formula) => (
-                      <li
-                        key={formula}
-                        className="text-sm leading-5 text-slate-300"
-                      >
-                        • {formula}
-                      </li>
-                    ))}
+  <li
+    key={formula.name}
+    className="text-sm leading-5 text-slate-300"
+  >
+    • {formula.name}
+  </li>
+))}
                   </ul>
                 </div>
 
