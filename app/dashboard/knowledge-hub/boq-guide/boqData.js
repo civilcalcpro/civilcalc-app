@@ -1,156 +1,605 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import {
-  ArrowLeft,
-  Building2,
-  CheckCircle2,
-  AlertTriangle,
-  ClipboardCheck,
-  PackageCheck,
-  ShieldCheck,
-} from 'lucide-react'
-import { constructionStages } from '../processData'
-
-export async function generateStaticParams() {
-  return constructionStages.map((stage) => ({
-    slug: stage.slug,
-  }))
-}
-
-export async function generateMetadata({ params }) {
-  const stage = constructionStages.find((item) => item.slug === params.slug)
-
-  if (!stage) {
-    return {
-      title: 'Construction Process | CivilCalc Pro',
-    }
-  }
-
-  return {
-    title: `${stage.title} | CivilCalc Pro Knowledge Hub`,
-    description: stage.shortDesc,
-  }
-}
-
-function InfoSection({ title, icon: Icon, items }) {
-  return (
-    <section className="rounded-3xl border border-[#243250] bg-[#071432] p-6">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400">
-          <Icon size={22} />
-        </div>
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
-      </div>
-
-      <ul className="space-y-3">
-        {items.map((point) => (
-          <li key={point} className="flex gap-3 text-slate-300">
-            <CheckCircle2 className="mt-0.5 shrink-0 text-orange-400" size={18} />
-            <span>{point}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
-export default function ConstructionStageDetailPage({ params }) {
-  const stage = constructionStages.find((item) => item.slug === params.slug)
-
-  if (!stage) {
-    notFound()
-  }
-
-  return (
-    <main className="min-h-screen bg-[#020B2D] px-4 py-8 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <section className="mb-8 rounded-3xl border border-[#243250] bg-[#071432] p-6 sm:p-8">
-          <Link
-            href="/dashboard/knowledge-hub/construction-process"
-            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-400 hover:text-orange-300"
-          >
-            <ArrowLeft size={16} />
-            Back to Construction Process
-          </Link>
-
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm text-orange-300">
-                <Building2 size={16} />
-                Construction Stage
-              </div>
-
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                {stage.title}
-              </h1>
-
-              <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-400 sm:text-base">
-                {stage.purpose}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5">
-              <p className="text-sm text-slate-300">Stage Type</p>
-              <p className="mt-1 text-xl font-bold text-orange-400">
-                {stage.level}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-2">
-          <InfoSection
-            title="Materials / Documents Required"
-            icon={PackageCheck}
-            items={stage.materials}
-          />
-
-          <InfoSection
-            title="Stage Checklist"
-            icon={ClipboardCheck}
-            items={stage.checklist}
-          />
-
-          <InfoSection
-            title="Quality Checks"
-            icon={ShieldCheck}
-            items={stage.qualityChecks}
-          />
-
-          <section className="rounded-3xl border border-red-500/20 bg-red-500/10 p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <AlertTriangle className="text-red-300" size={24} />
-              <h2 className="text-2xl font-bold">Common Mistakes</h2>
-            </div>
-
-            <ul className="space-y-3">
-              {stage.commonMistakes.map((mistake) => (
-                <li key={mistake} className="flex gap-3 text-slate-200">
-                  <AlertTriangle className="mt-0.5 shrink-0 text-red-300" size={18} />
-                  <span>{mistake}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </section>
-
-        <section className="mt-8 rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6">
-          <div className="flex gap-3">
-            <AlertTriangle className="mt-1 shrink-0 text-yellow-300" size={22} />
-            <div>
-              <h2 className="text-xl font-bold text-white">
-                Practical Site Note
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-yellow-100">
-                Construction sequence may change depending on project type,
-                structural system, local authority approval and site conditions.
-                Always follow approved drawings, specifications and engineer
-                instructions.
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
-  )
-}
+export const boqGuideSections = [
+  {
+    slug: 'what-is-boq',
+    title: 'What is BOQ?',
+    level: 'Basic',
+    shortDesc:
+      'Understand BOQ meaning, purpose, structure and why it is important in construction projects.',
+    tags: ['BOQ', 'Estimation', 'Tender', 'Billing'],
+    purpose:
+      'BOQ means Bill of Quantities. It is a detailed document that lists construction items, descriptions, units, quantities, rates and total amounts.',
+    includes: [
+      'Item number',
+      'Item description',
+      'Unit of measurement',
+      'Quantity',
+      'Rate',
+      'Amount',
+      'Remarks or specifications if required',
+    ],
+    steps: [
+      'Read architectural and structural drawings.',
+      'Break construction work into measurable items.',
+      'Write proper item descriptions.',
+      'Select correct unit like m³, m², running meter, kg or Nos.',
+      'Calculate quantity from drawings.',
+      'Apply rate for each item.',
+      'Calculate amount by Quantity × Rate.',
+      'Add GST, wastage, overheads and contractor profit if required.',
+    ],
+    commonMistakes: [
+      'Using wrong unit for item.',
+      'Writing unclear item description.',
+      'Missing hidden items like shuttering, curing or disposal.',
+      'Not matching BOQ with drawings.',
+      'Ignoring wastage and lead/lift charges.',
+    ],
+    proTips: [
+      'BOQ should be clear enough that contractor and client both understand the scope.',
+      'Always keep drawing revision number with BOQ.',
+      'Use standard item names for easy comparison.',
+      'Keep separate sections for RCC, brickwork, plaster, flooring, electrical and plumbing.',
+    ],
+    sampleRows: [
+      {
+        item: 'Excavation for foundation',
+        unit: 'm³',
+        qty: '24.50',
+        rate: '₹250',
+        amount: '₹6,125',
+      },
+      {
+        item: 'PCC 1:4:8 below footing',
+        unit: 'm³',
+        qty: '3.20',
+        rate: '₹5,200',
+        amount: '₹16,640',
+      },
+      {
+        item: 'RCC M20 in footing',
+        unit: 'm³',
+        qty: '5.40',
+        rate: '₹7,500',
+        amount: '₹40,500',
+      },
+    ],
+  },
+  {
+    slug: 'boq-format',
+    title: 'BOQ Format',
+    level: 'Basic',
+    shortDesc:
+      'Learn professional BOQ table format with item number, description, unit, quantity, rate and amount.',
+    tags: ['Format', 'Table', 'Quantity', 'Rate'],
+    purpose:
+      'A proper BOQ format helps organize construction cost in a clean and readable way.',
+    includes: [
+      'Project name',
+      'Client name',
+      'Prepared by',
+      'Date and revision number',
+      'BOQ category',
+      'Item description',
+      'Quantity, rate and amount',
+      'Total summary',
+    ],
+    steps: [
+      'Start with project details.',
+      'Create category-wise BOQ sections.',
+      'Add item number for every BOQ row.',
+      'Write item description with material/specification.',
+      'Select correct unit.',
+      'Enter measured quantity.',
+      'Enter rate and calculate amount.',
+      'Add subtotal and grand total.',
+    ],
+    commonMistakes: [
+      'No project details on BOQ.',
+      'Mixing all items without category.',
+      'Not adding specification in description.',
+      'No revision number.',
+      'No summary at the end.',
+    ],
+    proTips: [
+      'Keep one item per row.',
+      'Use category headings like Earthwork, PCC, RCC, Masonry, Plaster and Finishing.',
+      'Use consistent decimal places.',
+      'Mention assumptions clearly.',
+    ],
+    sampleRows: [
+      {
+        item: 'Brickwork in 230mm wall using cement mortar 1:6',
+        unit: 'm³',
+        qty: '12.80',
+        rate: '₹6,500',
+        amount: '₹83,200',
+      },
+      {
+        item: 'Internal plaster 12mm thick in cement mortar 1:6',
+        unit: 'm²',
+        qty: '186.00',
+        rate: '₹180',
+        amount: '₹33,480',
+      },
+    ],
+  },
+  {
+    slug: 'quantity-takeoff',
+    title: 'Quantity Takeoff',
+    level: 'Intermediate',
+    shortDesc:
+      'Learn how to calculate construction quantities from drawings for BOQ preparation.',
+    tags: ['Quantity', 'Drawing', 'Measurement', 'Takeoff'],
+    purpose:
+      'Quantity takeoff is the process of measuring quantities from drawings for BOQ items.',
+    includes: [
+      'Length measurement',
+      'Area measurement',
+      'Volume measurement',
+      'Number/count measurement',
+      'Weight measurement',
+      'Deduction of openings',
+    ],
+    steps: [
+      'Study architectural and structural drawings.',
+      'Identify all measurable work items.',
+      'Use correct formula based on item type.',
+      'For concrete, use Length × Width × Depth.',
+      'For plaster, use Length × Height and deduct openings if required.',
+      'For steel, calculate bar length and use D²/162.',
+      'For brickwork, calculate wall volume and deduct openings.',
+      'Prepare measurement sheet for checking.',
+    ],
+    commonMistakes: [
+      'Not deducting large openings.',
+      'Double counting same item.',
+      'Using feet and meter together without conversion.',
+      'Ignoring thickness in volume calculation.',
+      'Not checking drawing scale or dimensions.',
+    ],
+    proTips: [
+      'Use separate measurement sheet before final BOQ.',
+      'Keep calculation notes for every quantity.',
+      'Cross-check total built-up area with quantities.',
+      'For complex structures, calculate floor-wise and then combine.',
+    ],
+    sampleRows: [
+      {
+        item: 'Concrete volume',
+        unit: 'm³',
+        qty: 'L × W × D',
+        rate: 'As per grade',
+        amount: 'Qty × Rate',
+      },
+      {
+        item: 'Plaster area',
+        unit: 'm²',
+        qty: 'Length × Height',
+        rate: 'As per thickness',
+        amount: 'Qty × Rate',
+      },
+    ],
+  },
+  {
+    slug: 'rate-analysis',
+    title: 'Rate Analysis',
+    level: 'Intermediate',
+    shortDesc:
+      'Understand how item rates are built using material, labour, machinery, wastage, overhead and profit.',
+    tags: ['Rate', 'Material', 'Labour', 'Profit'],
+    purpose:
+      'Rate analysis helps calculate the actual rate of each BOQ item by considering material, labour, equipment and overhead cost.',
+    includes: [
+      'Material cost',
+      'Labour cost',
+      'Machinery/tools cost',
+      'Transportation cost',
+      'Wastage',
+      'Overheads',
+      'Contractor profit',
+      'Taxes if applicable',
+    ],
+    steps: [
+      'Identify material required for one unit of work.',
+      'Calculate material quantity and cost.',
+      'Add labour requirement and labour cost.',
+      'Add machinery or tool cost if required.',
+      'Add transportation, lead and lift if applicable.',
+      'Add wastage percentage.',
+      'Add overhead and contractor profit.',
+      'Finalize rate per unit.',
+    ],
+    commonMistakes: [
+      'Using market rate without checking actual site condition.',
+      'Ignoring labour productivity.',
+      'Not adding wastage.',
+      'Ignoring transportation cost.',
+      'Using same rate for different locations.',
+    ],
+    proTips: [
+      'Keep rates editable in BOQ software.',
+      'Update rates city-wise or project-wise.',
+      'Separate material rate and labour rate when possible.',
+      'Use rate analysis for negotiation and tender comparison.',
+    ],
+    sampleRows: [
+      {
+        item: 'RCC M20 concrete',
+        unit: 'm³',
+        qty: '1.00',
+        rate: 'Material + Labour + Machinery',
+        amount: 'Final rate/m³',
+      },
+      {
+        item: 'Brickwork 230mm',
+        unit: 'm³',
+        qty: '1.00',
+        rate: 'Bricks + Mortar + Labour',
+        amount: 'Final rate/m³',
+      },
+    ],
+  },
+  {
+    slug: 'material-breakdown',
+    title: 'Material Breakdown',
+    level: 'Intermediate',
+    shortDesc:
+      'Learn how BOQ connects with cement, sand, aggregate, steel, bricks and finishing material requirement.',
+    tags: ['Material', 'Cement', 'Steel', 'Bricks'],
+    purpose:
+      'Material breakdown converts BOQ quantities into actual material requirement for purchase and site planning.',
+    includes: [
+      'Cement bags',
+      'Sand quantity',
+      'Aggregate quantity',
+      'Steel weight',
+      'Bricks or blocks',
+      'Tiles and finishing material',
+      'Paint and putty quantity',
+    ],
+    steps: [
+      'Calculate BOQ quantity for every item.',
+      'Apply material coefficient for each item.',
+      'For concrete, calculate cement, sand and aggregate.',
+      'For RCC, add steel quantity based on steel ratio or BBS.',
+      'For brickwork, calculate bricks and mortar.',
+      'For plaster, calculate cement and sand.',
+      'Add wastage percentage.',
+      'Prepare purchase planning summary.',
+    ],
+    commonMistakes: [
+      'BOQ amount calculated but material quantity not checked.',
+      'No wastage added in material planning.',
+      'Steel estimated without BBS or ratio.',
+      'Ignoring site stock balance.',
+      'Ordering all material at once without schedule.',
+    ],
+    proTips: [
+      'Material summary should be connected with BOQ items.',
+      'Use project-wise stock tracking if possible.',
+      'Compare theoretical quantity with actual consumption.',
+      'Use BBS for accurate steel quantity.',
+    ],
+    sampleRows: [
+      {
+        item: 'RCC concrete',
+        unit: 'm³',
+        qty: '10.00',
+        rate: 'M20',
+        amount: 'Cement + Sand + Aggregate + Steel',
+      },
+      {
+        item: 'Brickwork',
+        unit: 'm³',
+        qty: '15.00',
+        rate: '1:6 mortar',
+        amount: 'Bricks + Cement + Sand',
+      },
+    ],
+  },
+  {
+    slug: 'gst-wastage-overheads',
+    title: 'GST, Wastage & Overheads',
+    level: 'Intermediate',
+    shortDesc:
+      'Understand how GST, wastage, overheads and profit affect final construction cost.',
+    tags: ['GST', 'Wastage', 'Overhead', 'Profit'],
+    purpose:
+      'Final BOQ cost should include direct cost and additional factors like GST, wastage, overheads and contractor profit if applicable.',
+    includes: [
+      'Basic item amount',
+      'Material wastage',
+      'Labour wastage or inefficiency',
+      'Site overheads',
+      'Contractor profit',
+      'GST/tax',
+      'Contingency',
+    ],
+    steps: [
+      'Calculate subtotal of all BOQ items.',
+      'Add wastage percentage where applicable.',
+      'Add overhead cost if required.',
+      'Add contractor profit percentage.',
+      'Add GST/taxes based on project condition.',
+      'Prepare final grand total.',
+      'Mention what is included and excluded.',
+    ],
+    commonMistakes: [
+      'Showing only direct cost as final cost.',
+      'Not mentioning GST included or excluded.',
+      'No contingency for small changes.',
+      'No clarity about material wastage.',
+      'No separate labour and material terms.',
+    ],
+    proTips: [
+      'Always mention whether GST is included.',
+      'Use contingency for early-stage estimates.',
+      'Keep wastage separate for better transparency.',
+      'Mention exclusions clearly in quotation.',
+    ],
+    sampleRows: [
+      {
+        item: 'Subtotal',
+        unit: '-',
+        qty: '-',
+        rate: '-',
+        amount: '₹10,00,000',
+      },
+      {
+        item: 'Wastage 5%',
+        unit: '-',
+        qty: '-',
+        rate: '5%',
+        amount: '₹50,000',
+      },
+      {
+        item: 'GST 18%',
+        unit: '-',
+        qty: '-',
+        rate: '18%',
+        amount: '₹1,89,000',
+      },
+    ],
+  },
+  {
+    slug: 'rcc-boq',
+    title: 'RCC BOQ Guide',
+    level: 'Advanced',
+    shortDesc:
+      'Prepare RCC BOQ for footing, column, beam, slab, concrete, steel and shuttering.',
+    tags: ['RCC', 'Concrete', 'Steel', 'Shuttering'],
+    purpose:
+      'RCC BOQ includes concrete quantity, reinforcement steel quantity, shuttering area and related work items.',
+    includes: [
+      'PCC below footing',
+      'RCC concrete in footing',
+      'RCC column concrete',
+      'RCC beam concrete',
+      'RCC slab concrete',
+      'Reinforcement steel',
+      'Shuttering/formwork',
+      'Curing and finishing',
+    ],
+    steps: [
+      'Calculate concrete volume for each RCC member.',
+      'Calculate steel quantity using BBS or approximate steel ratio.',
+      'Calculate shuttering contact area.',
+      'Separate item by concrete grade if required.',
+      'Check cover, lap and development length in steel estimate.',
+      'Apply rate for concrete, steel and shuttering separately.',
+      'Prepare member-wise RCC summary.',
+    ],
+    commonMistakes: [
+      'Combining concrete and steel without clarity.',
+      'Missing shuttering area.',
+      'Not separating grade M20/M25/M30.',
+      'Ignoring steel lap and wastage.',
+      'Using same steel ratio for all members.',
+    ],
+    proTips: [
+      'Use BBS for final steel quantity.',
+      'Separate footing, column, beam and slab quantities.',
+      'Mention concrete grade clearly.',
+      'Keep shuttering rate separate from concrete rate.',
+    ],
+    sampleRows: [
+      {
+        item: 'RCC M20 in footing',
+        unit: 'm³',
+        qty: '8.50',
+        rate: '₹7,500',
+        amount: '₹63,750',
+      },
+      {
+        item: 'Reinforcement steel Fe500',
+        unit: 'kg',
+        qty: '920',
+        rate: '₹72',
+        amount: '₹66,240',
+      },
+      {
+        item: 'Shuttering for footing sides',
+        unit: 'm²',
+        qty: '36.00',
+        rate: '₹450',
+        amount: '₹16,200',
+      },
+    ],
+  },
+  {
+    slug: 'brickwork-plaster-boq',
+    title: 'Brickwork & Plaster BOQ',
+    level: 'Intermediate',
+    shortDesc:
+      'Prepare BOQ for masonry walls, mortar, plaster thickness, deductions and finishing quantities.',
+    tags: ['Brickwork', 'Plaster', 'Masonry', 'Wall'],
+    purpose:
+      'Brickwork and plaster BOQ helps calculate wall volume, plaster area, mortar requirement and finishing cost.',
+    includes: [
+      '230mm brick wall',
+      '115mm brick wall',
+      'Blockwork',
+      'Internal plaster',
+      'External plaster',
+      'Ceiling plaster',
+      'Chicken mesh if required',
+      'Deductions for openings',
+    ],
+    steps: [
+      'Calculate wall length and height.',
+      'Multiply by wall thickness for brickwork volume.',
+      'Deduct door/window openings where required.',
+      'Calculate plaster area on both sides if applicable.',
+      'Select plaster thickness like 12mm, 15mm or 20mm.',
+      'Apply correct rate for internal and external plaster.',
+      'Add scaffolding if required.',
+    ],
+    commonMistakes: [
+      'Using area instead of volume for brickwork.',
+      'Not deducting openings.',
+      'Ignoring wall thickness.',
+      'Same rate for internal and external plaster.',
+      'Missing chicken mesh at RCC-masonry junction.',
+    ],
+    proTips: [
+      'Brickwork is generally measured in m³.',
+      'Plaster is generally measured in m².',
+      'External plaster rate may be higher due to scaffolding.',
+      'Always mention mortar ratio in description.',
+    ],
+    sampleRows: [
+      {
+        item: 'Brickwork 230mm wall CM 1:6',
+        unit: 'm³',
+        qty: '18.20',
+        rate: '₹6,500',
+        amount: '₹1,18,300',
+      },
+      {
+        item: 'Internal plaster 12mm CM 1:6',
+        unit: 'm²',
+        qty: '245.00',
+        rate: '₹180',
+        amount: '₹44,100',
+      },
+    ],
+  },
+  {
+    slug: 'contractor-billing',
+    title: 'Contractor Billing from BOQ',
+    level: 'Advanced',
+    shortDesc:
+      'Use BOQ for running bills, measurement book, completed quantity and payment certification.',
+    tags: ['Billing', 'MB', 'Payment', 'Contractor'],
+    purpose:
+      'BOQ is used to prepare contractor bills by multiplying completed work quantity with approved BOQ rate.',
+    includes: [
+      'Approved BOQ quantity',
+      'Executed quantity',
+      'Previous bill quantity',
+      'Current bill quantity',
+      'Cumulative quantity',
+      'Rate',
+      'Payable amount',
+      'Retention and deductions',
+    ],
+    steps: [
+      'Measure completed work on site.',
+      'Record quantity in measurement sheet or MB.',
+      'Compare quantity with approved BOQ.',
+      'Calculate current bill quantity.',
+      'Multiply current quantity by approved rate.',
+      'Add GST if applicable.',
+      'Deduct retention, advance or penalties if applicable.',
+      'Certify bill after engineer verification.',
+    ],
+    commonMistakes: [
+      'Billing without site measurement.',
+      'Not deducting previous paid quantity.',
+      'Billing extra item without approval.',
+      'No supporting measurement sheet.',
+      'No quality check before payment.',
+    ],
+    proTips: [
+      'Keep previous bill and current bill separate.',
+      'Use cumulative quantity to avoid duplicate payment.',
+      'Extra items should have written approval.',
+      'Attach photos and measurement records where possible.',
+    ],
+    sampleRows: [
+      {
+        item: 'RCC M20 in slab',
+        unit: 'm³',
+        qty: '12.40',
+        rate: '₹7,800',
+        amount: '₹96,720',
+      },
+      {
+        item: 'Internal plaster',
+        unit: 'm²',
+        qty: '320.00',
+        rate: '₹180',
+        amount: '₹57,600',
+      },
+    ],
+  },
+  {
+    slug: 'boq-checking',
+    title: 'BOQ Checking Checklist',
+    level: 'Professional',
+    shortDesc:
+      'Final checklist to verify BOQ accuracy before tender, quotation, billing or client submission.',
+    tags: ['Checking', 'Review', 'Tender', 'Accuracy'],
+    purpose:
+      'BOQ checking ensures quantities, units, rates, descriptions and totals are accurate before submission.',
+    includes: [
+      'Drawing revision check',
+      'Quantity verification',
+      'Unit check',
+      'Rate check',
+      'Formula check',
+      'Tax and overhead check',
+      'Total amount check',
+      'Exclusions and assumptions',
+    ],
+    steps: [
+      'Check project details and drawing revision.',
+      'Verify all major items are included.',
+      'Check every item unit.',
+      'Randomly cross-check important quantities.',
+      'Check rates with current market rates.',
+      'Verify subtotal, GST and grand total.',
+      'Check spelling and description clarity.',
+      'Save final BOQ with revision number.',
+    ],
+    commonMistakes: [
+      'Submitting BOQ without cross-checking totals.',
+      'Missing drawing revision.',
+      'Wrong units in few items.',
+      'No exclusions mentioned.',
+      'No backup calculation sheet.',
+    ],
+    proTips: [
+      'Always review BOQ category-wise.',
+      'Use color marking for checked items.',
+      'Keep a backup copy before revision.',
+      'For large BOQ, get peer review before submission.',
+    ],
+    sampleRows: [
+      {
+        item: 'Unit check',
+        unit: 'Required',
+        qty: 'Done',
+        rate: '-',
+        amount: 'OK',
+      },
+      {
+        item: 'Rate check',
+        unit: 'Required',
+        qty: 'Done',
+        rate: 'Market verified',
+        amount: 'OK',
+      },
+    ],
+  },
+]
