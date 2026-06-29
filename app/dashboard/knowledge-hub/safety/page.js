@@ -1,389 +1,171 @@
-export const safetyTopics = [
-  {
-    slug: 'ppe-safety',
-    title: 'PPE Safety',
-    level: 'Basic',
-    shortDesc:
-      'Personal protective equipment required for construction site safety.',
-    tags: ['Helmet', 'Shoes', 'Gloves', 'PPE'],
-    purpose:
-      'PPE protects workers from common site hazards like falling objects, sharp materials, dust, chemicals, noise and electrical risk.',
-    hazards: [
-      'Head injury from falling objects.',
-      'Foot injury from nails, steel and debris.',
-      'Hand cuts while handling steel, shuttering and tools.',
-      'Eye injury from dust, grinding or hacking work.',
-      'Respiratory issues due to cement dust and paint fumes.',
-    ],
-    requiredPPE: [
-      'Safety helmet.',
-      'Safety shoes.',
-      'Reflective jacket.',
-      'Hand gloves.',
-      'Safety goggles.',
-      'Dust mask or respirator where required.',
-      'Ear protection for noisy work.',
-      'Safety harness for height work.',
-    ],
-    safePractices: [
-      'Wear helmet before entering construction area.',
-      'Use correct PPE according to activity.',
-      'Replace damaged helmet, gloves or shoes.',
-      'Use goggles during cutting, grinding and hacking.',
-      'Use mask while handling cement, dust or paint.',
-      'Do not allow workers without minimum PPE.',
-    ],
-    commonMistakes: [
-      'Helmet worn without chin strap.',
-      'Workers wearing slippers instead of safety shoes.',
-      'No goggles during cutting or hacking.',
-      'Using damaged gloves.',
-      'Ignoring PPE for small work.',
-    ],
-    emergencyAction: [
-      'Stop work immediately after injury.',
-      'Give first aid.',
-      'Inform site engineer or safety supervisor.',
-      'Record incident and identify cause.',
-      'Restart work only after corrective action.',
-    ],
-  },
-  {
-    slug: 'excavation-safety',
-    title: 'Excavation Safety',
-    level: 'Critical',
-    shortDesc:
-      'Safety precautions for foundation pits, trenches, earthwork and deep excavation.',
-    tags: ['Excavation', 'Trench', 'Shoring', 'Barricade'],
-    purpose:
-      'Excavation safety prevents trench collapse, falls, equipment accidents and soil-related hazards during earthwork.',
-    hazards: [
-      'Soil collapse or trench cave-in.',
-      'Worker falling into excavation.',
-      'Machine movement near trench edge.',
-      'Water accumulation inside excavation.',
-      'Underground utility damage.',
-      'Loose soil sliding into pit.',
-    ],
-    requiredPPE: [
-      'Helmet.',
-      'Safety shoes.',
-      'Reflective jacket.',
-      'Gloves.',
-      'Safety harness for deep excavation where required.',
-    ],
-    safePractices: [
-      'Barricade excavation area properly.',
-      'Keep excavated soil away from trench edge.',
-      'Provide proper slope or shoring in loose soil.',
-      'Check underground utilities before excavation.',
-      'Provide safe entry and exit ladder.',
-      'Avoid machine movement too close to excavation edge.',
-      'Remove water using dewatering pump if required.',
-      'Inspect excavation after rain.',
-    ],
-    commonMistakes: [
-      'No barricading around pit.',
-      'Keeping excavated soil at trench edge.',
-      'Worker entering unsupported deep trench.',
-      'No access ladder.',
-      'Ignoring rainwater and loose soil condition.',
-    ],
-    emergencyAction: [
-      'Evacuate excavation area immediately.',
-      'Do not rush into collapsed trench without support.',
-      'Call emergency/rescue support.',
-      'Stop machine movement nearby.',
-      'Secure area before rescue work.',
-    ],
-  },
-  {
-    slug: 'scaffolding-safety',
-    title: 'Scaffolding Safety',
-    level: 'Critical',
-    shortDesc:
-      'Scaffold erection, platform, guardrail, access and inspection safety.',
-    tags: ['Scaffold', 'Height', 'Platform', 'Guardrail'],
-    purpose:
-      'Scaffolding safety prevents falls from height, platform collapse, falling materials and unsafe access accidents.',
-    hazards: [
-      'Fall from height.',
-      'Scaffold collapse due to poor support.',
-      'Falling tools or materials.',
-      'Unsafe access ladder.',
-      'Overloading of platform.',
-      'Working on incomplete scaffold.',
-    ],
-    requiredPPE: [
-      'Helmet with chin strap.',
-      'Safety shoes.',
-      'Safety harness for height work.',
-      'Gloves.',
-      'Reflective jacket.',
-    ],
-    safePractices: [
-      'Use only properly erected scaffold.',
-      'Provide base plate and firm support.',
-      'Provide guardrail and toe board.',
-      'Use safe ladder access.',
-      'Do not overload scaffold platform.',
-      'Inspect scaffold before use.',
-      'Do not work on scaffold during heavy wind or rain.',
-      'Keep platform free from loose material.',
-    ],
-    commonMistakes: [
-      'Using incomplete scaffold.',
-      'No guardrail.',
-      'Standing on drums or boxes instead of platform.',
-      'Overloading platform with materials.',
-      'No inspection before work.',
-    ],
-    emergencyAction: [
-      'Stop height work immediately.',
-      'Rescue fallen/injured worker safely.',
-      'Do not use damaged scaffold.',
-      'Report incident to site supervisor.',
-      'Reinspect scaffold before restarting.',
-    ],
-  },
-  {
-    slug: 'work-at-height',
-    title: 'Work at Height Safety',
-    level: 'Critical',
-    shortDesc:
-      'Safety guide for slab edge, roof work, ladder work and high-level construction activities.',
-    tags: ['Height', 'Harness', 'Fall Protection'],
-    purpose:
-      'Work at height safety prevents fall accidents during slab, roof, facade, plaster, painting, shuttering and scaffolding work.',
-    hazards: [
-      'Fall from slab edge.',
-      'Fall from ladder.',
-      'Open shaft or duct fall.',
-      'Falling tools from height.',
-      'Unsafe working platform.',
-      'No lifeline or anchor point.',
-    ],
-    requiredPPE: [
-      'Helmet with chin strap.',
-      'Full body safety harness.',
-      'Safety shoes.',
-      'Gloves.',
-      'Reflective jacket.',
-    ],
-    safePractices: [
-      'Cover all openings and shafts.',
-      'Provide guardrail near slab edge.',
-      'Use full body harness with proper anchorage.',
-      'Use safe ladder angle and firm base.',
-      'Do not work at height during unsafe weather.',
-      'Keep tools secured.',
-      'Provide safety net where required.',
-    ],
-    commonMistakes: [
-      'Harness worn but not anchored.',
-      'Open shafts left uncovered.',
-      'Workers standing on unsafe supports.',
-      'No edge protection.',
-      'Using damaged ladder.',
-    ],
-    emergencyAction: [
-      'Stop all height work.',
-      'Do not move injured person unless necessary.',
-      'Call emergency help.',
-      'Secure fall area.',
-      'Investigate cause before restarting.',
-    ],
-  },
-  {
-    slug: 'electrical-safety',
-    title: 'Electrical Safety',
-    level: 'Critical',
-    shortDesc:
-      'Temporary wiring, power tools, DB panels, earthing and shock prevention guide.',
-    tags: ['Electrical', 'Shock', 'DB Panel', 'Tools'],
-    purpose:
-      'Electrical safety prevents shock, burns, fire and electrocution during site power usage and temporary wiring.',
-    hazards: [
-      'Electric shock.',
-      'Short circuit.',
-      'Fire due to loose wiring.',
-      'Damaged cable insulation.',
-      'Power tools without earthing.',
-      'Water contact with electrical equipment.',
-    ],
-    requiredPPE: [
-      'Insulated gloves where required.',
-      'Safety shoes.',
-      'Helmet.',
-      'Safety goggles for electrical maintenance.',
-    ],
-    safePractices: [
-      'Use proper DB panel with MCB/RCCB.',
-      'Keep electrical cables away from water.',
-      'Do not use damaged cables.',
-      'Use proper earthing.',
-      'Switch off power before maintenance.',
-      'Only authorized electrician should repair wiring.',
-      'Use industrial plugs and sockets.',
-      'Do not overload extension boards.',
-    ],
-    commonMistakes: [
-      'Open wire joints.',
-      'Using damaged extension cable.',
-      'No earthing.',
-      'Cables passing through water.',
-      'Untrained worker repairing electrical connection.',
-    ],
-    emergencyAction: [
-      'Switch off power supply immediately.',
-      'Do not touch victim with bare hands while current is live.',
-      'Use dry wooden/non-conductive object if needed.',
-      'Call medical help.',
-      'Report and inspect electrical system.',
-    ],
-  },
-  {
-    slug: 'fire-safety',
-    title: 'Fire Safety',
-    level: 'Critical',
-    shortDesc:
-      'Fire prevention, extinguisher placement, hot work and emergency evacuation guide.',
-    tags: ['Fire', 'Extinguisher', 'Hot Work', 'Emergency'],
-    purpose:
-      'Fire safety reduces risk of fire from welding, cutting, electrical faults, fuel storage and combustible materials.',
-    hazards: [
-      'Welding sparks causing fire.',
-      'Short circuit.',
-      'Improper fuel storage.',
-      'Paint and chemical fire.',
-      'Blocked emergency exit.',
-      'No fire extinguisher nearby.',
-    ],
-    requiredPPE: [
-      'Helmet.',
-      'Gloves.',
-      'Safety goggles.',
-      'Welding face shield for hot work.',
-      'Fire-resistant apron where required.',
-    ],
-    safePractices: [
-      'Keep fire extinguisher accessible.',
-      'Store fuel and chemicals safely.',
-      'Keep hot work area clear from combustible material.',
-      'Use hot work permit for welding/cutting.',
-      'Maintain emergency exit route.',
-      'Train workers on extinguisher use.',
-      'Do not overload electrical circuits.',
-    ],
-    commonMistakes: [
-      'Welding near combustible material.',
-      'No extinguisher at hot work location.',
-      'Blocked access route.',
-      'Fuel stored near electrical area.',
-      'No emergency plan.',
-    ],
-    emergencyAction: [
-      'Raise alarm immediately.',
-      'Use suitable fire extinguisher if safe.',
-      'Evacuate workers.',
-      'Switch off electrical supply if possible.',
-      'Call fire emergency service.',
-    ],
-  },
-  {
-    slug: 'lifting-material-handling',
-    title: 'Lifting & Material Handling Safety',
-    level: 'High',
-    shortDesc:
-      'Safe lifting, crane work, manual handling, material stacking and transport safety.',
-    tags: ['Lifting', 'Crane', 'Material', 'Storage'],
-    purpose:
-      'Material handling safety prevents injuries from lifting, falling material, crane accidents and poor stacking.',
-    hazards: [
-      'Back injury during manual lifting.',
-      'Material falling from height.',
-      'Crane load swing.',
-      'Overloaded trolley or lift.',
-      'Unsafe stacking of steel, bricks or blocks.',
-      'Worker trapped between materials.',
-    ],
-    requiredPPE: [
-      'Helmet.',
-      'Safety shoes.',
-      'Gloves.',
-      'Reflective jacket.',
-      'Safety harness where height is involved.',
-    ],
-    safePractices: [
-      'Use proper lifting technique.',
-      'Do not stand under suspended load.',
-      'Use proper sling and lifting hook.',
-      'Check lifting equipment before use.',
-      'Stack material on level ground.',
-      'Keep passage clear.',
-      'Use tag line for crane load control.',
-      'Follow safe load limit.',
-    ],
-    commonMistakes: [
-      'Standing below crane load.',
-      'Using damaged sling.',
-      'Overloading trolley.',
-      'Stacking bricks too high.',
-      'Manual lifting without team support.',
-    ],
-    emergencyAction: [
-      'Stop lifting work.',
-      'Move workers away from danger zone.',
-      'Give first aid if injury occurs.',
-      'Inspect lifting equipment.',
-      'Resume only after safety clearance.',
-    ],
-  },
-  {
-    slug: 'concrete-work-safety',
-    title: 'Concrete Work Safety',
-    level: 'High',
-    shortDesc:
-      'Safety during batching, mixing, placing, vibration, pumping and curing concrete.',
-    tags: ['Concrete', 'Casting', 'Pump', 'Vibrator'],
-    purpose:
-      'Concrete work safety protects workers from cement burns, pump pressure, vibrator cable hazards and casting platform risks.',
-    hazards: [
-      'Cement burns on skin.',
-      'Eye irritation from cement slurry.',
-      'Electric shock from vibrator.',
-      'Fall during slab casting.',
-      'Concrete pump line burst.',
-      'Trip hazard from pipes and cables.',
-    ],
-    requiredPPE: [
-      'Helmet.',
-      'Rubber gloves.',
-      'Safety shoes or gumboots.',
-      'Safety goggles.',
-      'Reflective jacket.',
-    ],
-    safePractices: [
-      'Wear gloves and boots while handling concrete.',
-      'Keep vibrator cable safe and insulated.',
-      'Do not touch wet concrete with bare skin for long time.',
-      'Keep pump pipeline connections secure.',
-      'Provide safe walkway during slab casting.',
-      'Clean spilled concrete from access path.',
-      'Wash skin immediately after concrete contact.',
-    ],
-    commonMistakes: [
-      'Workers handling concrete without gloves.',
-      'Damaged vibrator cable.',
-      'Unsafe walking over reinforcement.',
-      'No eye protection.',
-      'Concrete pump line not checked.',
-    ],
-    emergencyAction: [
-      'Wash cement contact area with clean water.',
-      'For eye exposure, wash immediately and seek medical help.',
-      'Switch off equipment in electrical hazard.',
-      'Stop casting if platform is unsafe.',
-    ],
-  },
-]
+import Link from 'next/link'
+import {
+  ArrowLeft,
+  ShieldCheck,
+  HardHat,
+  AlertTriangle,
+  ClipboardCheck,
+  Zap,
+  Flame,
+} from 'lucide-react'
+import { safetyTopics } from './safetyData'
+
+export const metadata = {
+  title: 'Safety Hub | CivilCalc Pro Knowledge Hub',
+  description:
+    'Construction site safety hub covering PPE, excavation safety, scaffolding, work at height, electrical safety, fire safety and concrete work safety.',
+}
+
+const levelClass = {
+  Basic: 'border-slate-500/30 bg-slate-500/10 text-slate-200',
+  High: 'border-orange-500/30 bg-orange-500/10 text-orange-200',
+  Critical: 'border-red-500/30 bg-red-500/10 text-red-200',
+}
+
+export default function SafetyHubPage() {
+  return (
+    <main className="min-h-screen bg-[#020B2D] px-4 py-8 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <section className="mb-8 rounded-3xl border border-[#243250] bg-[#071432] p-6 sm:p-8">
+          <Link
+            href="/dashboard/knowledge-hub"
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-400 hover:text-orange-300"
+          >
+            <ArrowLeft size={16} />
+            Back to Knowledge Hub
+          </Link>
+
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm text-orange-300">
+                <ShieldCheck size={16} />
+                Construction Site Safety
+              </div>
+
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+                Safety Hub
+              </h1>
+
+              <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-400 sm:text-base">
+                Practical construction safety guide for site engineers,
+                contractors and workers. Covers PPE, excavation, scaffolding,
+                work at height, electrical safety, fire safety, lifting and
+                concrete work safety.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 px-5 py-4">
+              <p className="text-sm text-slate-300">Safety Topics</p>
+              <p className="mt-1 text-3xl font-bold text-orange-400">
+                {safetyTopics.length}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-7 grid gap-4 md:grid-cols-4">
+          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
+            <HardHat className="mb-3 text-orange-400" size={24} />
+            <h2 className="font-bold text-white">PPE Rules</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Helmet, shoes, gloves, goggles and harness.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
+            <AlertTriangle className="mb-3 text-orange-400" size={24} />
+            <h2 className="font-bold text-white">Hazard Control</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Risk identify karke accident prevent karo.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
+            <Zap className="mb-3 text-orange-400" size={24} />
+            <h2 className="font-bold text-white">Electrical Safety</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Temporary wiring, DB panel and power tools.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#243250] bg-[#071432] p-5">
+            <Flame className="mb-3 text-orange-400" size={24} />
+            <h2 className="font-bold text-white">Fire Safety</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Extinguisher, hot work and emergency plan.
+            </p>
+          </div>
+        </section>
+
+        <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {safetyTopics.map((topic) => (
+            <Link
+              key={topic.slug}
+              href={`/dashboard/knowledge-hub/safety/${topic.slug}`}
+              className="group rounded-3xl border border-[#243250] bg-[#071432] p-5 transition duration-200 hover:-translate-y-1 hover:border-orange-500/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-400">
+                  <ShieldCheck size={20} />
+                </div>
+
+                <div
+                  className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${
+                    levelClass[topic.level] ||
+                    'border-slate-600 bg-[#081126] text-slate-200'
+                  }`}
+                >
+                  {topic.level}
+                </div>
+              </div>
+
+              <h2 className="text-xl font-bold tracking-tight text-white">
+                {topic.title}
+              </h2>
+
+              <p className="mt-3 min-h-[68px] text-sm leading-6 text-slate-400">
+                {topic.shortDesc}
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {topic.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-orange-500/25 bg-orange-500/10 px-3 py-1 text-[11px] font-medium text-orange-300"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-5 border-t border-slate-800 pt-4">
+                <div className="flex items-center justify-between text-sm font-semibold text-orange-400">
+                  <span>Open Safety Guide</span>
+                  <span className="transition group-hover:translate-x-1">
+                    →
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </section>
+
+        <section className="mt-10 rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-6">
+          <div className="flex gap-3">
+            <AlertTriangle className="mt-1 shrink-0 text-yellow-300" size={22} />
+            <div>
+              <h2 className="text-2xl font-bold text-white">
+                Safety First Rule
+              </h2>
+              <p className="mt-3 max-w-4xl text-sm leading-7 text-yellow-100 sm:text-base">
+                Construction site par kaam start karne se pehle hazard identify
+                karo, correct PPE use karo, unsafe condition report karo aur
+                emergency plan ready rakho.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  )
+}
