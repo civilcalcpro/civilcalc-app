@@ -36,7 +36,7 @@ const categories = [
   {
     title: 'Site Engineer Checklist',
     desc: 'Excavation, PCC, footing, column, beam, slab, brickwork, plaster and finishing checklists.',
-    href: '/dashboard/knowledge-hub',
+    href: '/dashboard/knowledge-hub/checklists',
     icon: ClipboardCheck,
   },
   {
