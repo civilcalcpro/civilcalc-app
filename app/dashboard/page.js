@@ -25,6 +25,7 @@ import {
   ArrowLeftRight,
   ClipboardList,
   BookOpen,
+  Building2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -55,6 +56,13 @@ const quickTools = [
   href: '/dashboard/calculators/structural-formula-library',
   color: 'green',
   desc: 'Beam, truss, deflection, moment distribution, arches, cables, ILD and frame formulas',
+},
+  {
+  name: 'RCC Design',
+  icon: Building2,
+  href: '/dashboard/tools/rcc-design',
+  color: 'orange',
+  desc: 'Beam, Column, Slab, Footing design tools | बीम, कॉलम, स्लैब और फुटिंग डिज़ाइन',
 },
   {
     name: 'RCC Beam Design',
