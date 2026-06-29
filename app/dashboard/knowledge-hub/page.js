@@ -88,12 +88,12 @@ const categories = [
   icon: HardHat,
 },
 
-  {
-    title: 'IS Code Summary',
-    desc: 'Important IS code summaries explained in simple practical language.',
-    href: '/dashboard/knowledge-hub',
-    icon: BookOpen,
-  },
+ {
+  title: 'IS Code Summary',
+  desc: 'Important IS code summaries explained in simple practical language.',
+  href: '/dashboard/knowledge-hub/is-code-library',
+  icon: BookOpen,
+},
 ]
 
 export default function DashboardKnowledgeHubPage() {
