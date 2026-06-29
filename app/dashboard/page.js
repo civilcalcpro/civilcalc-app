@@ -64,6 +64,13 @@ const quickTools = [
   desc: 'Beam, Column, Slab, Footing design tools | बीम, कॉलम, स्लैब और फुटिंग डिज़ाइन',
 },
   {
+  name: 'Quantity & Cost',
+  icon: Calculator,
+  href: '/dashboard/tools/quantity-cost',
+  color: 'green',
+  desc: 'Concrete, brickwork, plaster, tile, paint & excavation cost tools | क्वांटिटी और कॉस्ट',
+},
+  {
     name: 'RCC Beam Design',
     icon: Ruler,
     href: '/dashboard/calculators/beam',
