@@ -87,16 +87,23 @@ const liveTools = [
   output: 'Moment in both directions, slab depth, reinforcement along short span and long span, and design summary.',
   outputHi: 'दोनों direction का moment, slab depth, short span steel, long span steel और design summary मिलेगी।',
 },
+  {
+  title: 'RCC Staircase Design',
+  titleHi: 'RCC स्टेयरकेस डिज़ाइन',
+  href: '/dashboard/calculators/staircase',
+  icon: Ruler,
+  badge: 'New',
+  desc: 'Design RCC staircases with riser-tread calculation, waist slab design, reinforcement, concrete quantity and steel cost summary.',
+  descHi: 'RCC staircase का riser-tread, waist slab design, reinforcement, concrete quantity और steel cost निकालने के लिए।',
+  points: ['Riser-tread design', 'Waist slab steel', 'Quantity & PDF report'],
+  useWhen: 'Use this when you want to design straight, dog-legged, quarter-turn, open-well or cantilever RCC staircases for residential and building projects.',
+  useWhenHi: 'जब आपको residential या building project के लिए straight, dog-legged, quarter-turn, open-well या cantilever RCC staircase design करनी हो, तब इस tool का use करें।',
+  output: 'Riser, tread, number of steps, stair angle, waist slab thickness, main steel, distribution steel, concrete quantity, steel quantity, cost summary and staircase diagram.',
+  outputHi: 'Riser, tread, steps की संख्या, stair angle, waist slab thickness, main steel, distribution steel, concrete quantity, steel quantity, cost summary और staircase diagram मिलेगी।',
+},
 ]
 
 const comingSoonTools = [
-  {
-    title: 'RCC Staircase Design',
-    titleHi: 'RCC सीढ़ी डिज़ाइन',
-    icon: Hammer,
-    desc: 'Waist slab, steps, loads, steel and complete staircase design calculation.',
-    descHi: 'Staircase waist slab, steps, load और steel calculation के लिए।',
-  },
   {
     title: 'Retaining Wall Design',
     titleHi: 'Retaining Wall डिज़ाइन',
