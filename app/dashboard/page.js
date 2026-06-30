@@ -74,7 +74,7 @@ const quickTools = [
   {
   name: 'Steel Tools',
   icon: Weight,
-  href: '/dashboard/tools/steel',
+  href: '/dashboard/calculators/steel',
   color: 'blue',
   desc: 'Steel Weight, Lap Length & Development Length | स्टील वेट, लैप और डेवलपमेंट लेंथ',
 },
