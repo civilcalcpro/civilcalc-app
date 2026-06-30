@@ -58,52 +58,93 @@ const liveTools = [
     output: 'Development length, bar anchorage requirement and design safety guidance.',
     outputHi: 'Development length, bar anchorage requirement और design safety guidance मिलेगी।',
   },
-]
-
-const comingSoonTools = [
   {
     title: 'Hook Length Calculator',
     titleHi: 'हुक लेंथ कैलकुलेटर',
+    href: '/dashboard/calculators/hook-length',
     icon: Wrench,
-    desc: 'Calculate hook length for reinforcement bars based on bar diameter and bend requirement.',
-    descHi: 'Bar diameter और bend requirement के हिसाब से hook length निकालने के लिए।',
-  },
-  {
-    title: 'Bend Deduction Calculator',
-    titleHi: 'बेंड डिडक्शन कैलकुलेटर',
-    icon: Calculator,
-    desc: 'Calculate bend deduction for reinforcement bars during cutting length calculation.',
-    descHi: 'Reinforcement cutting length में bend deduction निकालने के लिए।',
-  },
-  {
-    title: 'Cutting Length Calculator',
-    titleHi: 'कटिंग लेंथ कैलकुलेटर',
-    icon: Ruler,
-    desc: 'Calculate cutting length of straight, bent-up and crank reinforcement bars.',
-    descHi: 'Straight, bent-up और crank bars की cutting length निकालने के लिए।',
-  },
-  {
-    title: 'Crank Bar Calculator',
-    titleHi: 'क्रैंक बार कैलकुलेटर',
-    icon: Wrench,
-    desc: 'Calculate crank length, extra length and reinforcement requirement for slab bars.',
-    descHi: 'Slab bars की crank length, extra length और reinforcement requirement निकालने के लिए।',
+    badge: 'Live',
+    desc: 'Calculate reinforcement hook length for standard hook, bend anchorage, stirrup hook and custom hook.',
+    descHi: 'Standard hook, bend anchorage, stirrup hook और custom hook की hook length निकालने के लिए।',
+    points: ['Hook length', 'Bend anchorage', 'Dynamic diagram'],
+    useWhen: 'Use this when you need hook length for main bars, stirrups, ties, anchorage or BBS cutting length.',
+    useWhenHi: 'जब main bar, stirrup, tie, anchorage या BBS cutting length में hook length चाहिए, तब use करें।',
+    output: 'Hook length per hook, total hook length, steel weight, cost, formula and hook diagram.',
+    outputHi: 'Hook length per hook, total hook length, steel weight, cost, formula और hook diagram मिलेगा।',
   },
   {
     title: 'Stirrup Length Calculator',
     titleHi: 'स्टिरप लेंथ कैलकुलेटर',
+    href: '/dashboard/calculators/stirrup-length',
     icon: ShieldCheck,
-    desc: 'Calculate stirrup cutting length with hooks, bends and clear cover.',
-    descHi: 'Hooks, bends और clear cover के साथ stirrup cutting length निकालने के लिए।',
+    badge: 'Live',
+    desc: 'Calculate rectangular, square, circular, diamond and custom stirrup cutting length.',
+    descHi: 'Rectangular, square, circular, diamond और custom stirrup की cutting length निकालने के लिए।',
+    points: ['Stirrup cutting length', 'Hook length', 'Bend deduction'],
+    useWhen: 'Use this for beam stirrups, column ties, footing ties and seismic reinforcement detailing.',
+    useWhenHi: 'Beam stirrup, column tie, footing tie और seismic reinforcement detailing में use करें।',
+    output: 'Cutting length of one stirrup, total cutting length, hook length, bend deduction, steel weight and diagram.',
+    outputHi: 'एक stirrup की cutting length, total cutting length, hook length, bend deduction, steel weight और diagram मिलेगा।',
+  },
+  {
+    title: 'Bend Deduction Calculator',
+    titleHi: 'बेंड डिडक्शन कैलकुलेटर',
+    href: '/dashboard/calculators/bend-deduction',
+    icon: Calculator,
+    badge: 'Live',
+    desc: 'Calculate bend deduction for 45°, 90°, 135°, 180° and custom reinforcement bends.',
+    descHi: '45°, 90°, 135°, 180° और custom reinforcement bends की bend deduction निकालने के लिए।',
+    points: ['45° to 180° bends', 'Total deduction', 'Bend diagram'],
+    useWhen: 'Use this when calculating BBS cutting length where bend deduction needs to be subtracted.',
+    useWhenHi: 'जब BBS cutting length में bend deduction minus करनी हो, तब इस tool का use करें।',
+    output: 'Deduction per bend, total bend deduction, formula, step-by-step solution and bend diagram.',
+    outputHi: 'Deduction per bend, total bend deduction, formula, step-by-step solution और bend diagram मिलेगा।',
+  },
+  {
+    title: 'Cutting Length Calculator',
+    titleHi: 'कटिंग लेंथ कैलकुलेटर',
+    href: '/dashboard/calculators/cutting-length',
+    icon: Ruler,
+    badge: 'Live',
+    desc: 'Calculate cutting length of straight bars, hook bars, L bars, U bars, lap bars and development bars.',
+    descHi: 'Straight bars, hook bars, L bars, U bars, lap bars और development bars की cutting length निकालने के लिए।',
+    points: ['Bar cutting length', 'Hook/lap/Ld addition', 'Bend deduction'],
+    useWhen: 'Use this for general reinforcement cutting length calculation before preparing or checking BBS.',
+    useWhenHi: 'BBS बनाने या check करने से पहले general reinforcement cutting length निकालने के लिए use करें।',
+    output: 'Cutting length per bar, total length, hook/lap/development addition, bend deduction, steel weight and cost.',
+    outputHi: 'Cutting length per bar, total length, hook/lap/development addition, bend deduction, steel weight और cost मिलेगा।',
+  },
+  {
+    title: 'Crank Bar Calculator',
+    titleHi: 'क्रैंक बार कैलकुलेटर',
+    href: '/dashboard/calculators/crank-bar',
+    icon: Wrench,
+    badge: 'Live',
+    desc: 'Calculate bent-up/crank bar cutting length with crank height, angle and extra length.',
+    descHi: 'Crank height, angle और extra length के साथ bent-up/crank bar cutting length निकालने के लिए।',
+    points: ['Crank extra length', 'Bent-up bar length', 'Crank diagram'],
+    useWhen: 'Use this for slab bent-up bars, crank bars, negative reinforcement and BBS cutting length.',
+    useWhenHi: 'Slab bent-up bars, crank bars, negative reinforcement और BBS cutting length में use करें।',
+    output: 'Crank extra length, inclined length, cutting length, bend deduction, steel weight, cost and crank diagram.',
+    outputHi: 'Crank extra length, inclined length, cutting length, bend deduction, steel weight, cost और crank diagram मिलेगा।',
   },
   {
     title: 'Steel Cost Summary',
     titleHi: 'स्टील कॉस्ट समरी',
+    href: '/dashboard/calculators/steel-cost-summary',
     icon: Weight,
-    desc: 'Prepare steel quantity and cost summary for different bar diameters.',
-    descHi: 'Different bar diameters के लिए steel quantity और cost summary बनाने के लिए।',
+    badge: 'Live',
+    desc: 'Prepare complete steel quantity and cost summary with wastage, binding wire, transport, bending charges and GST.',
+    descHi: 'Wastage, binding wire, transport, bending charges और GST के साथ complete steel quantity और cost summary बनाने के लिए।',
+    points: ['Diameter-wise summary', 'Steel cost', 'GST & wastage'],
+    useWhen: 'Use this when you want final steel purchase, billing, quotation or project cost summary.',
+    useWhenHi: 'जब final steel purchase, billing, quotation या project cost summary बनानी हो, तब use करें।',
+    output: 'Raw steel weight, gross weight, diameter-wise summary, item-wise cost, wastage, GST and grand total.',
+    outputHi: 'Raw steel weight, gross weight, diameter-wise summary, item-wise cost, wastage, GST और grand total मिलेगा।',
   },
 ]
+
+const comingSoonTools = [ ] 
 
 function LiveToolCard({ tool }) {
   const Icon = tool.icon
@@ -159,40 +200,27 @@ function LiveToolCard({ tool }) {
   )
 }
 
-function ComingSoonCard({ tool }) {
-  const Icon = tool.icon
-
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-5 opacity-90">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800 text-slate-300 ring-1 ring-slate-700">
-          <Icon size={28} />
-        </div>
-
-        <span className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs font-semibold text-slate-400">
-          <Lock size={12} />
-          Soon
-        </span>
-      </div>
-
-      <h3 className="text-lg font-black text-white">
-        {tool.title}
-      </h3>
-
-      <p className="mt-1 text-sm font-semibold text-orange-300">
-        {tool.titleHi}
+{comingSoonTools.length > 0 && (
+  <section className="mt-10">
+    <div className="mb-5">
+      <h2 className="text-2xl font-black text-white">
+        Upcoming Steel Tools
+      </h2>
+      <p className="mt-1 text-sm text-slate-400">
+        These tools can be added slowly. BBS will remain a separate category.
       </p>
-
-      <p className="mt-4 text-sm leading-6 text-slate-400">
-        {tool.desc}
-      </p>
-
-      <p className="mt-2 text-sm leading-6 text-slate-400">
-        {tool.descHi}
+      <p className="mt-1 text-sm text-slate-400">
+        ये tools धीरे-धीरे add कर सकते हैं। BBS को separate category में ही रखेंगे।
       </p>
     </div>
-  )
-}
+
+    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      {comingSoonTools.map((tool) => (
+        <ComingSoonCard key={tool.title} tool={tool} />
+      ))}
+    </div>
+  </section>
+)}
 
 function ToolGuideCard({ tool }) {
   const Icon = tool.icon
@@ -268,25 +296,27 @@ export default function SteelToolsPage() {
             </h1>
 
             <p className="max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">
-              Calculate steel weight, lap length and development length with
-              practical site-focused outputs and cost estimation.
+            Calculate steel weight, lap length, development length, hook length,
+stirrup length, bend deduction, cutting length, crank bar length and
+complete steel cost summary with practical site-focused outputs.
             </p>
 
             <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">
-              Steel bar weight, lap length और development length को आसानी से
-              calculate करें और site work के लिए practical output पाएं।
+            Steel bar weight, lap length, development length, hook length, stirrup
+length, bend deduction, cutting length, crank bar और steel cost summary
+को आसानी से calculate करें और site work के लिए practical output पाएं।
             </p>
 
             <div className="mt-7 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-                <p className="text-2xl font-black text-orange-400">
-                  3
-                </p>
+               <p className="text-2xl font-black text-orange-400">
+  9
+</p>
                 <p className="text-sm text-slate-400">
                   Live steel tools
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  Weight, Lap Length, Development Length
+                  Weight, Lap, Ld, Hook, Stirrup, Bend, Cutting, Crank, Cost
                 </p>
               </div>
 
@@ -323,10 +353,10 @@ export default function SteelToolsPage() {
               Available Steel Tools
             </h2>
             <p className="mt-1 text-sm text-slate-400">
-              Steel weight, lap length and development length tools grouped in one section.
+             All steel calculation tools grouped in one professional section.
             </p>
             <p className="mt-1 text-sm text-slate-400">
-              Steel weight, lap length और development length tools एक ही जगह।
+             Steel weight, lap length, development length, hook, stirrup, bend deduction, cutting length, crank bar और steel cost summary tools एक ही जगह।
             </p>
           </div>
 
@@ -380,17 +410,18 @@ export default function SteelToolsPage() {
           </h2>
 
           <p className="max-w-4xl text-sm leading-7 text-slate-300 sm:text-base">
-            First select the steel calculation type, enter bar diameter, length,
-            quantity or design requirement, then check the final steel quantity,
-            lap length or development length. BBS will remain separate for detailed
-            bar bending schedules.
+    Start with steel weight for basic quantity, use lap length and development
+length for anchorage and joining, use hook length, stirrup length, bend
+deduction, cutting length and crank bar calculators for BBS checking, then
+prepare final steel cost summary for purchase, billing and quotation.
           </p>
 
           <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-300 sm:text-base">
-            सबसे पहले steel calculation type select करें, फिर bar diameter, length,
-            quantity या design requirement भरें। उसके बाद final steel quantity,
-            lap length या development length check करें। Detailed bar bending schedule
-            के लिए BBS को separate ही रखा जाएगा।
+            सबसे पहले basic quantity के लिए steel weight calculator use करें। Anchorage
+और joining के लिए lap length और development length use करें। BBS checking
+के लिए hook length, stirrup length, bend deduction, cutting length और crank
+bar tools use करें। Finally purchase, billing और quotation के लिए steel cost
+summary तैयार करें।
           </p>
         </section>
       </div>
