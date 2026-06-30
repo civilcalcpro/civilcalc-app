@@ -101,30 +101,52 @@ const liveTools = [
   output: 'Riser, tread, number of steps, stair angle, waist slab thickness, main steel, distribution steel, concrete quantity, steel quantity, cost summary and staircase diagram.',
   outputHi: 'Riser, tread, steps की संख्या, stair angle, waist slab thickness, main steel, distribution steel, concrete quantity, steel quantity, cost summary और staircase diagram मिलेगी।',
 },
+  {
+  title: 'Retaining Wall Design',
+  titleHi: 'रिटेनिंग वॉल डिज़ाइन',
+  href: '/dashboard/calculators/retaining-wall',
+  icon: Ruler,
+  badge: 'New',
+  desc: 'Design RCC cantilever retaining walls with earth pressure, stability checks, bearing pressure and reinforcement summary.',
+  descHi: 'RCC retaining wall का earth pressure, overturning, sliding, bearing और steel reinforcement calculate करने के लिए।',
+  points: ['Earth pressure', 'Stability check', 'Steel design'],
+  useWhen: 'Use this when you want to design a retaining wall for basement, compound wall, soil retention, ramp or level difference.',
+  useWhenHi: 'जब basement, compound wall, soil retaining या level difference के लिए retaining wall design करनी हो।',
+  output: 'Active pressure, FS against overturning/sliding, bearing pressure, stem/toe/heel steel and PDF summary.',
+  outputHi: 'Active pressure, safety factor, bearing pressure, stem/toe/heel steel और PDF summary मिलेगी।',
+},
+  {
+  title: 'Shear Wall Design',
+  titleHi: 'शियर वॉल डिज़ाइन',
+  href: '/dashboard/calculators/shear-wall',
+  icon: Ruler,
+  badge: 'New',
+  desc: 'Design RCC shear walls with axial load, moment, shear check, reinforcement spacing and boundary element recommendation.',
+  descHi: 'RCC shear wall का axial load, moment, shear, steel spacing और boundary element check करने के लिए।',
+  points: ['Shear check', 'Boundary element', 'Steel spacing'],
+  useWhen: 'Use this when you want to design or check RCC shear walls in buildings, basements, cores or lift shafts.',
+  useWhenHi: 'जब building, basement, core wall या lift shaft की RCC shear wall design/check करनी हो।',
+  output: 'Wall safety check, shear stress, edge stress, vertical steel, horizontal steel, boundary element and quantity summary.',
+  outputHi: 'Wall safety check, shear stress, edge stress, vertical steel, horizontal steel, boundary element और quantity summary मिलेगी।',
+},
+  {
+  title: 'Lintel Design',
+  titleHi: 'लिंटल डिज़ाइन',
+  href: '/dashboard/calculators/lintel-design',
+  icon: Ruler,
+  badge: 'New',
+  desc: 'Design RCC lintels for doors and windows with masonry load, slab load, bending, shear, bearing and reinforcement summary.',
+  descHi: 'Door/window opening के लिए RCC lintel का load, bending, shear, bearing और steel reinforcement calculate करने के लिए।',
+  points: ['Door/window lintel', 'Steel design', 'Quantity estimate'],
+  useWhen: 'Use this when you want to design RCC lintels above doors, windows, ventilators or wall openings.',
+  useWhenHi: 'जब door, window, ventilator या wall opening के ऊपर RCC lintel design करना हो।',
+  output: 'Lintel size, load calculation, bending moment, shear force, main steel, stirrups, bearing check and quantity summary.',
+  outputHi: 'Lintel size, load calculation, bending moment, shear force, main steel, stirrups, bearing check और quantity summary मिलेगी।',
+},
 ]
 
 const comingSoonTools = [
-  {
-    title: 'Retaining Wall Design',
-    titleHi: 'Retaining Wall डिज़ाइन',
-    icon: ShieldCheck,
-    desc: 'Earth pressure, stability check, overturning, sliding and reinforcement design.',
-    descHi: 'Earth pressure, sliding, overturning और stability check के लिए।',
-  },
-  {
-    title: 'Lintel Design',
-    titleHi: 'Lintel डिज़ाइन',
-    icon: Ruler,
-    desc: 'Opening width, wall load, lintel depth, steel and design summary.',
-    descHi: 'Door/window opening के ऊपर lintel size और steel निकालने के लिए।',
-  },
-  {
-    title: 'Shear Wall Design',
-    titleHi: 'Shear Wall डिज़ाइन',
-    icon: Building2,
-    desc: 'Vertical load, lateral load, wall thickness and reinforcement design.',
-    descHi: 'High-rise buildings में lateral load resist करने वाली wall design के लिए।',
-  },
+ 
   {
     title: 'Water Tank Design',
     titleHi: 'Water Tank डिज़ाइन',
@@ -132,13 +154,7 @@ const comingSoonTools = [
     desc: 'Tank capacity, wall design, base slab, roof slab and reinforcement.',
     descHi: 'Water tank capacity, wall, base slab और reinforcement calculation के लिए।',
   },
-  {
-    title: 'Combined Footing Design',
-    titleHi: 'Combined Footing डिज़ाइन',
-    icon: Calculator,
-    desc: 'Two-column footing, pressure distribution, depth and reinforcement design.',
-    descHi: 'जब दो columns की footing combined करनी हो, तब इस tool का use होगा।',
-  },
+ 
 ]
 
 function LiveToolCard({ tool }) {
