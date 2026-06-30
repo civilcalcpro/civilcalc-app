@@ -221,6 +221,71 @@ export default function sitemap() {
       priority: 0.3,
       changeFrequency: 'yearly',
     },
+    // Steel Calculator Hub
+{
+  url: `${baseUrl}/steel-calculators`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.95,
+},
+
+// Existing Steel SEO Pages
+{
+  url: `${baseUrl}/steel-weight-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+{
+  url: `${baseUrl}/lap-length-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+{
+  url: `${baseUrl}/development-length-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+
+// New Steel SEO Pages
+{
+  url: `${baseUrl}/hook-length-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+{
+  url: `${baseUrl}/stirrup-length-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+{
+  url: `${baseUrl}/bend-deduction-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+{
+  url: `${baseUrl}/cutting-length-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+{
+  url: `${baseUrl}/crank-bar-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
+{
+  url: `${baseUrl}/steel-cost-summary-calculator`,
+  lastModified: new Date(),
+  changeFrequency: 'weekly',
+  priority: 0.9,
+},
   ]
 
   return pages.map((page) => ({
