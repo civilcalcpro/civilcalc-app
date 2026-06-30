@@ -62,7 +62,7 @@ const liveTools = [
  {
   title: 'One Way Slab Design',
   titleHi: 'वन वे स्लैब डिज़ाइन',
-  href: '/dashboard/calculators/one-way-slab',
+  href: '/dashboard/calculators/slab',
   icon: Layers,
   badge: 'Live',
   desc: 'Design one way RCC slab with span, load, effective depth, main steel and distribution steel.',
