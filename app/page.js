@@ -648,6 +648,89 @@ export default function LandingPage() {
           </p>
         </div>
       </Link>
+  <Link href="/steel-calculators">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">STEEL HUB</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Steel Calculators
+    </h3>
+    <p className="text-slate-400">
+      Complete steel calculator hub for BBS, reinforcement, cutting length, stirrups, hooks and steel cost.
+    </p>
+  </div>
+</Link>
+
+<Link href="/hook-length-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">CALCULATOR</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Hook Length Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate hook length for reinforcement bars, stirrups, bend anchorage and BBS cutting length.
+    </p>
+  </div>
+</Link>
+
+<Link href="/stirrup-length-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">CALCULATOR</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Stirrup Length Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate rectangular, square, circular and diamond stirrup cutting length with hook and bend deduction.
+    </p>
+  </div>
+</Link>
+
+<Link href="/bend-deduction-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">CALCULATOR</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Bend Deduction Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate 45°, 90°, 135°, 180° and custom bend deduction for reinforcement BBS work.
+    </p>
+  </div>
+</Link>
+
+<Link href="/cutting-length-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">CALCULATOR</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Cutting Length Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate steel bar cutting length with hook length, lap length, development length and bend deduction.
+    </p>
+  </div>
+</Link>
+
+<Link href="/crank-bar-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">CALCULATOR</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Crank Bar Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate bent-up bar or crank bar cutting length using crank height, crank angle and bar diameter.
+    </p>
+  </div>
+</Link>
+
+<Link href="/steel-cost-summary-calculator">
+  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
+    <span className="text-orange-500 text-sm font-semibold">CALCULATOR</span>
+    <h3 className="text-2xl font-bold text-white mt-3 mb-4">
+      Steel Cost Summary Calculator
+    </h3>
+    <p className="text-slate-400">
+      Calculate steel weight, wastage, binding wire, bending charges, transport, GST and total steel cost.
+    </p>
+  </div>
+</Link>
 
       <Link href="/bar-bending-schedule-guide">
         <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 hover:border-orange-500 transition-all duration-300 hover:-translate-y-1">
