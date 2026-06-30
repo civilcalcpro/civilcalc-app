@@ -482,164 +482,346 @@ function Row({ label, value, strong = false }) {
 }
 
 function SlabPlanDiagram({ result }) {
+  const isCantilever = result.input.supportType === 'cantilever'
+  const isContinuous = result.input.supportType === 'continuous'
+
   return (
     <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-5 overflow-hidden">
       <h3 className="text-lg font-bold text-white">Slab Plan Diagram</h3>
       <p className="text-xs text-slate-500 mb-4">स्लैब प्लान डायग्राम</p>
 
-      <svg viewBox="0 0 760 450" className="w-full h-auto">
-        <rect x="0" y="0" width="760" height="450" rx="18" fill="#020617" />
+      <svg viewBox="0 0 860 520" className="w-full h-auto">
+        <rect x="0" y="0" width="860" height="520" rx="20" fill="#020617" />
 
+        <text x="40" y="42" fill="#f97316" fontSize="20" fontWeight="700">
+          One Way Slab Plan
+        </text>
+        <text x="40" y="68" fill="#94a3b8" fontSize="14">
+          Support Type: {result.supportLabel}
+        </text>
+
+        {/* Slab panel */}
         <rect
-          x="170"
-          y="90"
-          width="430"
-          height="250"
-          rx="10"
+          x="220"
+          y="110"
+          width="470"
+          height="230"
+          rx="12"
           fill="#0f172a"
           stroke="#f97316"
           strokeWidth="3"
         />
 
-        {Array.from({ length: 10 }).map((_, index) => (
+        {/* Support representation */}
+        {!isCantilever && (
+          <>
+            <rect x="220" y="88" width="470" height="16" rx="4" fill="#334155" />
+            <rect x="220" y="346" width="470" height="16" rx="4" fill="#334155" />
+            <text x="705" y="100" fill="#cbd5e1" fontSize="13">
+              Support
+            </text>
+            <text x="705" y="358" fill="#cbd5e1" fontSize="13">
+              Support
+            </text>
+          </>
+        )}
+
+        {isCantilever && (
+          <>
+            <rect x="196" y="110" width="18" height="230" fill="#475569" />
+            {Array.from({ length: 11 }).map((_, i) => (
+              <line
+                key={i}
+                x1="196"
+                y1={110 + i * 21}
+                x2="165"
+                y2={125 + i * 21}
+                stroke="#64748b"
+                strokeWidth="2"
+              />
+            ))}
+            <text x="110" y="95" fill="#cbd5e1" fontSize="13">
+              Fixed Support
+            </text>
+          </>
+        )}
+
+        {/* Main bars - along short span */}
+        {Array.from({ length: 12 }).map((_, index) => (
           <line
             key={`main-${index}`}
-            x1={200 + index * 42}
-            y1="105"
-            x2={200 + index * 42}
-            y2="325"
+            x1={248 + index * 36}
+            y1="122"
+            x2={248 + index * 36}
+            y2="328"
             stroke="#f97316"
-            strokeWidth="2"
+            strokeWidth="2.4"
           />
         ))}
 
+        {/* Distribution bars - along long span */}
         {Array.from({ length: 7 }).map((_, index) => (
           <line
             key={`dist-${index}`}
-            x1="185"
-            y1={120 + index * 32}
-            x2="585"
-            y2={120 + index * 32}
+            x1="232"
+            y1={132 + index * 30}
+            x2="678"
+            y2={132 + index * 30}
             stroke="#38bdf8"
             strokeWidth="2"
           />
         ))}
 
-        <text x="65" y="70" fill="#f97316" fontSize="16" fontWeight="700">
-          One Way Slab Plan
+        {/* Main steel direction arrow */}
+        <line x1="735" y1="155" x2="735" y2="295" stroke="#f97316" strokeWidth="3" />
+        <polygon points="735,145 728,158 742,158" fill="#f97316" />
+        <polygon points="735,305 728,292 742,292" fill="#f97316" />
+        <text x="748" y="225" fill="#f97316" fontSize="14" fontWeight="700">
+          Main Steel
+        </text>
+        <text x="748" y="243" fill="#f97316" fontSize="13">
+          along Short Span
         </text>
 
-        <text x="65" y="100" fill="#cbd5e1" fontSize="15">
-          Lx = {formatNumber(result.metric.lxM, 2)} m
+        {/* Distribution direction arrow */}
+        <line x1="315" y1="390" x2="575" y2="390" stroke="#38bdf8" strokeWidth="3" />
+        <polygon points="305,390 318,383 318,397" fill="#38bdf8" />
+        <polygon points="585,390 572,383 572,397" fill="#38bdf8" />
+        <text x="365" y="418" fill="#38bdf8" fontSize="14" fontWeight="700">
+          Distribution Steel along Long Span
         </text>
 
-        <text x="65" y="130" fill="#cbd5e1" fontSize="15">
-          Ly = {formatNumber(result.metric.lyM, 2)} m
+        {/* Long span dimension */}
+        <line x1="220" y1="445" x2="690" y2="445" stroke="#94a3b8" strokeWidth="2" />
+        <line x1="220" y1="437" x2="220" y2="453" stroke="#94a3b8" strokeWidth="2" />
+        <line x1="690" y1="437" x2="690" y2="453" stroke="#94a3b8" strokeWidth="2" />
+        <text x="380" y="470" fill="#e2e8f0" fontSize="15">
+          Long Span Ly = {formatNumber(result.metric.lyM, 2)} m
         </text>
 
-        <text x="65" y="160" fill="#cbd5e1" fontSize="15">
+        {/* Short span dimension */}
+        <line x1="740" y1="110" x2="740" y2="340" stroke="#94a3b8" strokeWidth="2" />
+        <line x1="732" y1="110" x2="748" y2="110" stroke="#94a3b8" strokeWidth="2" />
+        <line x1="732" y1="340" x2="748" y2="340" stroke="#94a3b8" strokeWidth="2" />
+        <text x="755" y="228" fill="#e2e8f0" fontSize="15">
+          Short Span Lx
+        </text>
+        <text x="755" y="247" fill="#e2e8f0" fontSize="15">
+          = {formatNumber(result.metric.lxM, 2)} m
+        </text>
+
+        {/* Reinforcement notes */}
+        <rect x="40" y="110" width="150" height="185" rx="12" fill="#0b1220" stroke="#334155" strokeWidth="1.5" />
+        <text x="55" y="136" fill="#f97316" fontSize="16" fontWeight="700">
+          Reinforcement
+        </text>
+        <text x="55" y="168" fill="#cbd5e1" fontSize="14">
+          Main Steel:
+        </text>
+        <text x="55" y="190" fill="#cbd5e1" fontSize="14">
+          {result.mainBars.dia} mm Ø
+        </text>
+        <text x="55" y="210" fill="#cbd5e1" fontSize="14">
+          @ {result.mainBars.spacing} mm c/c
+        </text>
+
+        <text x="55" y="245" fill="#38bdf8" fontSize="14">
+          Distribution:
+        </text>
+        <text x="55" y="267" fill="#cbd5e1" fontSize="14">
+          {result.distributionBars.dia} mm Ø
+        </text>
+        <text x="55" y="287" fill="#cbd5e1" fontSize="14">
+          @ {result.distributionBars.spacing} mm c/c
+        </text>
+
+        <text x="55" y="322" fill="#e2e8f0" fontSize="14">
           Ly/Lx = {formatNumber(result.lyLxRatio, 2)}
         </text>
 
-        <text x="65" y="205" fill="#f97316" fontSize="15" fontWeight="700">
-          Main Steel:
-        </text>
-        <text x="65" y="230" fill="#cbd5e1" fontSize="15">
-          {result.mainBars.dia} mm Ø @ {result.mainBars.spacing} mm c/c
-        </text>
-
-        <text x="65" y="275" fill="#38bdf8" fontSize="15" fontWeight="700">
-          Distribution Steel:
-        </text>
-        <text x="65" y="300" fill="#cbd5e1" fontSize="15">
-          {result.distributionBars.dia} mm Ø @ {result.distributionBars.spacing} mm c/c
-        </text>
-
-        <line x1="170" y1="370" x2="600" y2="370" stroke="#64748b" strokeWidth="2" />
-        <line x1="170" y1="362" x2="170" y2="378" stroke="#64748b" strokeWidth="2" />
-        <line x1="600" y1="362" x2="600" y2="378" stroke="#64748b" strokeWidth="2" />
-        <text x="315" y="400" fill="#e2e8f0" fontSize="15">
-          Long Span Ly
-        </text>
-
-        <line x1="630" y1="90" x2="630" y2="340" stroke="#64748b" strokeWidth="2" />
-        <line x1="622" y1="90" x2="638" y2="90" stroke="#64748b" strokeWidth="2" />
-        <line x1="622" y1="340" x2="638" y2="340" stroke="#64748b" strokeWidth="2" />
-        <text x="645" y="220" fill="#e2e8f0" fontSize="15">
-          Short Span Lx
-        </text>
+        {isContinuous && (
+          <text x="300" y="92" fill="#f8fafc" fontSize="12">
+            Continuous support line
+          </text>
+        )}
       </svg>
     </div>
   )
 }
 
 function SlabSectionDiagram({ result }) {
-  const mainAtTop = result.mainSteelLocation === 'Top'
+  const supportType = result.input.supportType
+  const isCantilever = supportType === 'cantilever'
+  const isContinuous = supportType === 'continuous'
+  const mainAtTop = isCantilever
 
   return (
     <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-5 overflow-hidden">
       <h3 className="text-lg font-bold text-white">Slab Section Diagram</h3>
       <p className="text-xs text-slate-500 mb-4">स्लैब सेक्शन डायग्राम</p>
 
-      <svg viewBox="0 0 760 360" className="w-full h-auto">
-        <rect x="0" y="0" width="760" height="360" rx="18" fill="#020617" />
+      <svg viewBox="0 0 860 420" className="w-full h-auto">
+        <rect x="0" y="0" width="860" height="420" rx="20" fill="#020617" />
 
+        <text x="40" y="42" fill="#f97316" fontSize="20" fontWeight="700">
+          Slab Section
+        </text>
+        <text x="40" y="68" fill="#94a3b8" fontSize="14">
+          Support Type: {result.supportLabel}
+        </text>
+
+        {/* Supports */}
+        {!isCantilever ? (
+          <>
+            <rect x="170" y="265" width="90" height="70" rx="6" fill="#334155" />
+            <rect x="600" y="265" width="90" height="70" rx="6" fill="#334155" />
+          </>
+        ) : (
+          <>
+            <rect x="130" y="120" width="45" height="200" fill="#475569" />
+            {Array.from({ length: 10 }).map((_, i) => (
+              <line
+                key={i}
+                x1="130"
+                y1={125 + i * 18}
+                x2="95"
+                y2={140 + i * 18}
+                stroke="#64748b"
+                strokeWidth="2"
+              />
+            ))}
+          </>
+        )}
+
+        {/* Slab body */}
         <rect
-          x="150"
-          y="150"
-          width="470"
-          height="85"
-          rx="8"
+          x={isCantilever ? 170 : 210}
+          y="180"
+          width={isCantilever ? 470 : 380}
+          height="65"
+          rx="6"
           fill="#0f172a"
           stroke="#f97316"
           strokeWidth="3"
         />
 
-        {Array.from({ length: 12 }).map((_, index) => (
+        {/* Main bars */}
+        {Array.from({ length: 11 }).map((_, index) => (
           <circle
             key={`main-${index}`}
-            cx={180 + index * 38}
-            cy={mainAtTop ? 170 : 215}
+            cx={(isCantilever ? 195 : 235) + index * 34}
+            cy={mainAtTop ? 196 : 228}
             r="5"
             fill="#f97316"
           />
         ))}
 
-        {Array.from({ length: 9 }).map((_, index) => (
+        {/* Distribution bars layer */}
+        {Array.from({ length: 8 }).map((_, index) => (
           <circle
             key={`dist-${index}`}
-            cx={200 + index * 45}
-            cy={mainAtTop ? 215 : 170}
+            cx={(isCantilever ? 210 : 250) + index * 42}
+            cy={mainAtTop ? 228 : 196}
             r="4"
             fill="#38bdf8"
           />
         ))}
 
-        <line x1="640" y1="150" x2="640" y2="235" stroke="#64748b" strokeWidth="2" />
-        <line x1="632" y1="150" x2="648" y2="150" stroke="#64748b" strokeWidth="2" />
-        <line x1="632" y1="235" x2="648" y2="235" stroke="#64748b" strokeWidth="2" />
-        <text x="655" y="198" fill="#e2e8f0" fontSize="15">
+        {/* Top extra steel over supports for continuous */}
+        {isContinuous && (
+          <>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <line
+                key={`top-left-${index}`}
+                x1={220 + index * 12}
+                y1="188"
+                x2={280 + index * 12}
+                y2="188"
+                stroke="#fb7185"
+                strokeWidth="3"
+              />
+            ))}
+            {Array.from({ length: 4 }).map((_, index) => (
+              <line
+                key={`top-right-${index}`}
+                x1={520 + index * 12}
+                y1="188"
+                x2={580 + index * 12}
+                y2="188"
+                stroke="#fb7185"
+                strokeWidth="3"
+              />
+            ))}
+            <text x="610" y="170" fill="#fb7185" fontSize="13">
+              Top steel over supports
+            </text>
+          </>
+        )}
+
+        {/* Load arrows */}
+        {Array.from({ length: 8 }).map((_, index) => (
+          <g key={`load-${index}`}>
+            <line
+              x1={(isCantilever ? 205 : 245) + index * 42}
+              y1="115"
+              x2={(isCantilever ? 205 : 245) + index * 42}
+              y2="170"
+              stroke="#e2e8f0"
+              strokeWidth="2"
+            />
+            <polygon
+              points={`${(isCantilever ? 205 : 245) + index * 42},170 ${(isCantilever ? 200 : 240) + index * 42},160 ${(isCantilever ? 210 : 250) + index * 42},160`}
+              fill="#e2e8f0"
+            />
+          </g>
+        ))}
+        <text x="650" y="118" fill="#e2e8f0" fontSize="13">
+          Uniform Load
+        </text>
+
+        {/* Thickness dimension */}
+        <line x1="715" y1="180" x2="715" y2="245" stroke="#94a3b8" strokeWidth="2" />
+        <line x1="707" y1="180" x2="723" y2="180" stroke="#94a3b8" strokeWidth="2" />
+        <line x1="707" y1="245" x2="723" y2="245" stroke="#94a3b8" strokeWidth="2" />
+        <text x="730" y="208" fill="#e2e8f0" fontSize="15">
           t = {formatPlain(result.thicknessMm)} mm
         </text>
 
-        <text x="70" y="70" fill="#f97316" fontSize="16" fontWeight="700">
-          Slab Thickness = {formatPlain(result.thicknessMm)} mm
+        {/* Effective depth dimension */}
+        <line x1="750" y1={mainAtTop ? 196 : 180} x2="750" y2={mainAtTop ? 245 : 228} stroke="#22c55e" strokeWidth="2" />
+        <line x1="742" y1={mainAtTop ? 196 : 180} x2="758" y2={mainAtTop ? 196 : 180} stroke="#22c55e" strokeWidth="2" />
+        <line x1="742" y1={mainAtTop ? 245 : 228} x2="758" y2={mainAtTop ? 245 : 228} stroke="#22c55e" strokeWidth="2" />
+        <text x="765" y="255" fill="#22c55e" fontSize="14">
+          d = {formatPlain(result.effectiveDepthMm)} mm
         </text>
 
-        <text x="70" y="100" fill="#cbd5e1" fontSize="15">
-          Effective Depth = {formatPlain(result.effectiveDepthMm)} mm
-        </text>
-
-        <text x="70" y="130" fill="#cbd5e1" fontSize="15">
+        {/* Cover note */}
+        <text x="40" y="110" fill="#cbd5e1" fontSize="15">
           Clear Cover = {formatPlain(result.coverMm)} mm ({result.coverMode})
         </text>
 
-        <text x="70" y="280" fill="#f97316" fontSize="15">
-          Main Steel: {result.mainBars.dia} mm Ø @ {result.mainBars.spacing} mm c/c at {result.mainSteelLocation}
+        {/* Notes box */}
+        <rect x="40" y="265" width="260" height="110" rx="12" fill="#0b1220" stroke="#334155" strokeWidth="1.5" />
+        <text x="55" y="292" fill="#f97316" fontSize="15" fontWeight="700">
+          Section Notes
         </text>
-
-        <text x="70" y="310" fill="#38bdf8" fontSize="15">
-          Distribution Steel: {result.distributionBars.dia} mm Ø @ {result.distributionBars.spacing} mm c/c
+        <text x="55" y="317" fill="#cbd5e1" fontSize="14">
+          Main Steel:
+        </text>
+        <text x="150" y="317" fill="#cbd5e1" fontSize="14">
+          {result.mainBars.dia} mm Ø @ {result.mainBars.spacing} mm c/c
+        </text>
+        <text x="55" y="340" fill="#cbd5e1" fontSize="14">
+          Distribution:
+        </text>
+        <text x="150" y="340" fill="#cbd5e1" fontSize="14">
+          {result.distributionBars.dia} mm Ø @ {result.distributionBars.spacing} mm c/c
+        </text>
+        <text x="55" y="363" fill="#cbd5e1" fontSize="14">
+          Main Steel Location:
+        </text>
+        <text x="190" y="363" fill="#cbd5e1" fontSize="14">
+          {result.mainSteelLocation}
         </text>
       </svg>
     </div>
@@ -1104,48 +1286,94 @@ export default function OneWaySlabDesignPage() {
 
 function drawPdfSlabDiagram(doc, result, startY) {
   const y = startY
+  const supportType = result.input.supportType
+  const isCantilever = supportType === 'cantilever'
+  const isContinuous = supportType === 'continuous'
 
   doc.setDrawColor(249, 115, 22)
-  doc.roundedRect(14, y, 182, 85, 3, 3, 'S')
+  doc.roundedRect(14, y, 182, 95, 3, 3, 'S')
 
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
-  doc.text('Plan + Section Detail', 18, y + 7)
+  doc.text('Plan Detail', 18, y + 7)
 
-  doc.rect(30, y + 18, 70, 42)
+  // Plan rectangle
+  doc.rect(28, y + 18, 78, 38)
 
-  for (let i = 0; i < 7; i += 1) {
-    doc.line(38 + i * 9, y + 20, 38 + i * 9, y + 58)
+  // Supports in plan
+  if (!isCantilever) {
+    doc.setFillColor(100, 116, 139)
+    doc.rect(28, y + 15, 78, 3, 'F')
+    doc.rect(28, y + 56, 78, 3, 'F')
+  } else {
+    doc.setFillColor(100, 116, 139)
+    doc.rect(24, y + 18, 4, 38, 'F')
   }
 
+  // Main steel lines
+  for (let i = 0; i < 8; i += 1) {
+    doc.setDrawColor(249, 115, 22)
+    doc.line(36 + i * 8, y + 20, 36 + i * 8, y + 54)
+  }
+
+  // Distribution steel lines
   for (let i = 0; i < 5; i += 1) {
-    doc.line(32, y + 25 + i * 7, 98, y + 25 + i * 7)
+    doc.setDrawColor(56, 189, 248)
+    doc.line(30, y + 24 + i * 7, 104, y + 24 + i * 7)
   }
 
-  doc.rect(120, y + 35, 58, 12)
-
-  for (let i = 0; i < 7; i += 1) {
-    doc.circle(126 + i * 8, y + 43, 1.2, 'F')
-  }
-
+  doc.setTextColor(15, 23, 42)
   doc.setFontSize(7)
   doc.text(`Lx = ${formatNumber(result.metric.lxM, 2)} m`, 18, y + 66)
   doc.text(`Ly = ${formatNumber(result.metric.lyM, 2)} m`, 18, y + 72)
-  doc.text(`Thickness = ${formatPlain(result.thicknessMm)} mm`, 18, y + 78)
+  doc.text(`Ly/Lx = ${formatNumber(result.lyLxRatio, 2)}`, 18, y + 78)
 
-  doc.text(
-    `Main: ${result.mainBars.dia} mm @ ${result.mainBars.spacing} mm c/c`,
-    105,
-    y + 66
-  )
-  doc.text(
-    `Distribution: ${result.distributionBars.dia} mm @ ${result.distributionBars.spacing} mm c/c`,
-    105,
-    y + 72
-  )
-  doc.text(
-    `Main steel location: ${result.mainSteelLocation}`,
-    105,
-    y + 78
-  )
+  doc.text(`Main: ${result.mainBars.dia} mm @ ${result.mainBars.spacing} mm c/c`, 18, y + 85)
+  doc.text(`Dist: ${result.distributionBars.dia} mm @ ${result.distributionBars.spacing} mm c/c`, 18, y + 91)
+
+  // Section title
+  doc.setFontSize(10)
+  doc.text('Section Detail', 118, y + 7)
+
+  // Supports in section
+  doc.setFillColor(71, 85, 105)
+  if (!isCantilever) {
+    doc.rect(124, y + 42, 14, 16, 'F')
+    doc.rect(173, y + 42, 14, 16, 'F')
+    doc.rect(132, y + 32, 47, 10)
+  } else {
+    doc.rect(118, y + 24, 6, 35, 'F')
+    doc.rect(124, y + 32, 55, 10)
+  }
+
+  // Main steel
+  doc.setFillColor(249, 115, 22)
+  for (let i = 0; i < 7; i += 1) {
+    const cx = 136 + i * 6
+    const cy = isCantilever ? y + 35 : y + 40
+    doc.circle(cx, cy, 1.2, 'F')
+  }
+
+  // Distribution steel
+  doc.setFillColor(56, 189, 248)
+  for (let i = 0; i < 5; i += 1) {
+    const cx = 140 + i * 8
+    const cy = isCantilever ? y + 40 : y + 35
+    doc.circle(cx, cy, 1.0, 'F')
+  }
+
+  // Continuous top support steel
+  if (isContinuous) {
+    doc.setDrawColor(251, 113, 133)
+    doc.line(134, y + 33, 144, y + 33)
+    doc.line(166, y + 33, 176, y + 33)
+  }
+
+  doc.setTextColor(15, 23, 42)
+  doc.setFontSize(7)
+  doc.text(`Thickness = ${formatPlain(result.thicknessMm)} mm`, 118, y + 66)
+  doc.text(`Effective depth = ${formatPlain(result.effectiveDepthMm)} mm`, 118, y + 72)
+  doc.text(`Cover = ${formatPlain(result.coverMm)} mm`, 118, y + 78)
+  doc.text(`Main steel location: ${result.mainSteelLocation}`, 118, y + 85)
+  doc.text(`Support: ${result.supportLabel}`, 118, y + 91)
 }
