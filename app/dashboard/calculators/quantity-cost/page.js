@@ -125,27 +125,7 @@ const comingSoonTools = [
     desc: 'Calculate PCC volume, cement, sand, aggregate and cost.',
     descHi: 'PCC volume, cement, sand, aggregate और cost calculation के लिए।',
   },
-  {
-    title: 'Rate Analysis Tool',
-    titleHi: 'रेट एनालिसिस टूल',
-    icon: FileText,
-    desc: 'Calculate final rate per unit using material, labour, machinery, overhead and profit.',
-    descHi: 'Material, labour, machinery, overhead और profit से final rate per unit निकालने के लिए।',
-  },
-  {
-    title: 'Material Wastage Calculator',
-    titleHi: 'मटेरियल वेस्टेज कैलकुलेटर',
-    icon: Hammer,
-    desc: 'Calculate wastage percentage and extra material requirement.',
-    descHi: 'Wastage percentage और extra material requirement निकालने के लिए।',
-  },
-  {
-    title: 'Labour Cost Calculator',
-    titleHi: 'लेबर कॉस्ट कैलकुलेटर',
-    icon: Home,
-    desc: 'Calculate labour cost by area, quantity, labour rate and work type.',
-    descHi: 'Area, quantity, labour rate और work type के हिसाब से labour cost निकालने के लिए।',
-  },
+  
 ]
 
 function LiveToolCard({ tool }) {
