@@ -9,13 +9,16 @@ import {
   Download,
   Droplets,
   Hammer,
+  RefreshCcw,
   RotateCcw,
   Ruler,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react'
 
 const defaultInputs = {
   unitSystem: 'metric',
+  wallType: 'cantilever',
 
   height: 3,
   toe: 0.9,
@@ -24,6 +27,10 @@ const defaultInputs = {
   stemBaseThickness: 300,
   baseThickness: 350,
   embedmentDepth: 0.6,
+
+  counterfortSpacing: 3,
+  counterfortThickness: 250,
+  counterfortProjection: 1.1,
 
   gammaSoil: 18,
   phi: 30,
@@ -34,6 +41,9 @@ const defaultInputs = {
   drainageCondition: 'good',
   waterHeight: 0,
   gammaWater: 9.81,
+
+  seismicEnabled: false,
+  seismicCoefficient: 0.08,
 
   shearKeyEnabled: false,
   keyDepth: 0.45,
@@ -48,6 +58,7 @@ const defaultInputs = {
   stemBarDia: 12,
   toeBarDia: 12,
   heelBarDia: 12,
+  counterfortBarDia: 12,
   distributionBarDia: 8,
 
   wallLength: 10,
@@ -72,6 +83,10 @@ const imperialDefaults = {
   baseThickness: 14,
   embedmentDepth: 2,
 
+  counterfortSpacing: 10,
+  counterfortThickness: 10,
+  counterfortProjection: 4,
+
   gammaSoil: 115,
   surcharge: 200,
   sbc: 3750,
@@ -93,6 +108,11 @@ const safeNumber = (value) => {
   return Number.isFinite(n) ? n : 0
 }
 
+const money = (value) => {
+  if (!Number.isFinite(value)) return '₹0'
+  return `₹${Math.round(value).toLocaleString('en-IN')}`
+}
+
 const barArea = (dia) => (Math.PI * dia * dia) / 4
 const barWeight = (dia) => (dia * dia) / 162
 
@@ -106,6 +126,10 @@ function convertToMetric(input) {
       stemBaseT: input.stemBaseThickness * 25.4,
       baseT: input.baseThickness * 25.4,
       embedment: input.embedmentDepth * 0.3048,
+
+      counterfortSpacing: input.counterfortSpacing * 0.3048,
+      counterfortThickness: input.counterfortThickness * 25.4,
+      counterfortProjection: input.counterfortProjection * 0.3048,
 
       gammaSoil: input.gammaSoil * 0.157087,
       surcharge: input.surcharge * 0.0478803,
@@ -124,6 +148,7 @@ function convertToMetric(input) {
       friction: input.friction,
       gammaWater: input.gammaWater,
       passiveReduction: input.passiveReduction,
+      seismicCoefficient: input.seismicCoefficient,
 
       fck: input.fck,
       fy: input.fy,
@@ -131,6 +156,7 @@ function convertToMetric(input) {
       stemBarDia: input.stemBarDia,
       toeBarDia: input.toeBarDia,
       heelBarDia: input.heelBarDia,
+      counterfortBarDia: input.counterfortBarDia,
       distributionBarDia: input.distributionBarDia,
 
       concreteRate: input.concreteRate,
@@ -149,6 +175,10 @@ function convertToMetric(input) {
     baseT: input.baseThickness,
     embedment: input.embedmentDepth,
 
+    counterfortSpacing: input.counterfortSpacing,
+    counterfortThickness: input.counterfortThickness,
+    counterfortProjection: input.counterfortProjection,
+
     gammaSoil: input.gammaSoil,
     surcharge: input.surcharge,
     sbc: input.sbc,
@@ -166,6 +196,7 @@ function convertToMetric(input) {
     friction: input.friction,
     gammaWater: input.gammaWater,
     passiveReduction: input.passiveReduction,
+    seismicCoefficient: input.seismicCoefficient,
 
     fck: input.fck,
     fy: input.fy,
@@ -173,6 +204,7 @@ function convertToMetric(input) {
     stemBarDia: input.stemBarDia,
     toeBarDia: input.toeBarDia,
     heelBarDia: input.heelBarDia,
+    counterfortBarDia: input.counterfortBarDia,
     distributionBarDia: input.distributionBarDia,
 
     concreteRate: input.concreteRate,
@@ -188,10 +220,522 @@ function statusClass(pass) {
     : 'border-red-500/30 bg-red-500/10 text-red-300'
 }
 
+function steelDesign({ Mu, d, D, dia, fy }) {
+  const effectiveD = Math.max(d, 50)
+  const astCalc = (Mu * 1000000) / (0.87 * fy * 0.9 * effectiveD)
+  const astMin = 0.0012 * 1000 * D
+  const astReq = Math.max(astCalc, astMin)
+  const spacingRaw = (barArea(dia) * 1000) / astReq
+  const maxSpacing = Math.min(3 * effectiveD, 300)
+  const spacing = Math.max(
+    75,
+    Math.min(maxSpacing, Math.floor(spacingRaw / 25) * 25)
+  )
+
+  return {
+    astCalc,
+    astMin,
+    astReq,
+    spacing,
+  }
+}
+
+function computeWall(input, override = {}) {
+  const base = convertToMetric(input)
+  const m = {
+    ...base,
+    ...override,
+  }
+
+  const H = Math.max(m.H, 0.1)
+  const toe = Math.max(m.toe, 0.05)
+  const heel = Math.max(m.heel, 0.05)
+  const stemTopT = Math.max(m.stemTopT / 1000, 0.05)
+  const stemBaseT = Math.max(m.stemBaseT / 1000, 0.05)
+  const baseT = Math.max(m.baseT / 1000, 0.05)
+  const avgStemT = (stemTopT + stemBaseT) / 2
+  const B = toe + stemBaseT + heel
+
+  const counterfortSpacing = Math.max(m.counterfortSpacing, 0.5)
+  const counterfortThickness = Math.max(m.counterfortThickness / 1000, 0.05)
+  const counterfortProjection = Math.max(m.counterfortProjection, 0.05)
+
+  const phiRad = (m.phi * Math.PI) / 180
+  const sinPhi = Math.sin(phiRad)
+  const Ka = (1 - sinPhi) / (1 + sinPhi)
+  const Kp = (1 + sinPhi) / (1 - sinPhi)
+
+  const PaTri = 0.5 * Ka * m.gammaSoil * H * H
+  const PaSurcharge = Ka * m.surcharge * H
+
+  const waterHeight =
+    input.drainageCondition === 'poor'
+      ? Math.min(Math.max(m.waterHeight, 0), H)
+      : 0
+
+  const Pwater = 0.5 * m.gammaWater * waterHeight * waterHeight
+
+  const Pseismic = input.seismicEnabled
+    ? 0.5 * Math.max(m.seismicCoefficient, 0) * m.gammaSoil * H * H
+    : 0
+
+  const PaTotal = PaTri + PaSurcharge + Pwater + Pseismic
+
+  const Mo =
+    PaTri * (baseT + H / 3) +
+    PaSurcharge * (baseT + H / 2) +
+    Pwater * (baseT + waterHeight / 3) +
+    Pseismic * (baseT + 0.6 * H)
+
+  const baseWeight = m.gammaConcrete * B * baseT
+  const stemWeight = m.gammaConcrete * avgStemT * H
+  const soilHeelWeight = m.gammaSoil * heel * H
+  const surchargeHeelWeight = m.surcharge * heel
+
+  const isCounterfort = input.wallType === 'counterfort'
+
+  const counterfortVolumePerM = isCounterfort
+    ? (0.5 * counterfortProjection * H * counterfortThickness) /
+      counterfortSpacing
+    : 0
+
+  const counterfortWeight = m.gammaConcrete * counterfortVolumePerM
+
+  const keyDepth = input.shearKeyEnabled ? Math.max(m.keyDepth, 0) : 0
+  const keyT = input.shearKeyEnabled ? Math.max(m.keyThickness / 1000, 0) : 0
+  const keyWeight = input.shearKeyEnabled
+    ? m.gammaConcrete * keyDepth * keyT
+    : 0
+
+  const xBase = B / 2
+  const xStem = toe + stemBaseT / 2
+  const xHeel = toe + stemBaseT + heel / 2
+  const xKey = toe + stemBaseT / 2
+  const xCounterfort = toe + stemBaseT + counterfortProjection / 3
+
+  const V =
+    baseWeight +
+    stemWeight +
+    soilHeelWeight +
+    surchargeHeelWeight +
+    keyWeight +
+    counterfortWeight
+
+  const Mr =
+    baseWeight * xBase +
+    stemWeight * xStem +
+    soilHeelWeight * xHeel +
+    surchargeHeelWeight * xHeel +
+    keyWeight * xKey +
+    counterfortWeight * xCounterfort
+
+  const passiveDepth = input.passiveEnabled
+    ? Math.max(m.embedment + keyDepth, 0)
+    : 0
+
+  const passiveResistance =
+    input.passiveEnabled && passiveDepth > 0
+      ? 0.5 *
+        Kp *
+        m.gammaSoil *
+        passiveDepth *
+        passiveDepth *
+        m.passiveReduction
+      : 0
+
+  const slidingResistance = m.friction * V + passiveResistance
+  const fsOverturning = Mr / Mo
+  const fsSliding = slidingResistance / PaTotal
+
+  const xResultant = (Mr - Mo) / V
+  const e = B / 2 - xResultant
+
+  const qAvg = V / B
+  const qMax = qAvg * (1 + (6 * Math.abs(e)) / B)
+  const qMin = qAvg * (1 - (6 * Math.abs(e)) / B)
+
+  const qAt = (x) => {
+    return qAvg * (1 + ((6 * e) / B) * (1 - (2 * x) / B))
+  }
+
+  const qToeAvg = (qAt(0) + qAt(toe)) / 2
+  const toeNetPressure = Math.max(qToeAvg - m.gammaConcrete * baseT, 0)
+  const MtoeService = toeNetPressure * toe * toe / 2
+
+  const heelStart = toe + stemBaseT
+  const qHeelAvg = (qAt(heelStart) + qAt(B)) / 2
+  const heelDownPressure =
+    m.gammaConcrete * baseT + m.gammaSoil * H + m.surcharge
+
+  const MheelService = Math.abs(
+    (heelDownPressure - qHeelAvg) * heel * heel / 2
+  )
+
+  const MstemCantileverService =
+    PaTri * (H / 3) +
+    PaSurcharge * (H / 2) +
+    Pwater * (waterHeight / 3) +
+    Pseismic * (0.6 * H)
+
+  const pBase =
+    Ka * m.gammaSoil * H +
+    Ka * m.surcharge +
+    (waterHeight > 0 ? m.gammaWater * waterHeight : 0) +
+    (input.seismicEnabled ? m.seismicCoefficient * m.gammaSoil * H : 0)
+
+  const MstemCounterfortPanelService =
+    (pBase * counterfortSpacing * counterfortSpacing) / 10
+
+  const MstemService = isCounterfort
+    ? MstemCounterfortPanelService
+    : MstemCantileverService
+
+  const McounterfortService = isCounterfort
+    ? (PaTotal * counterfortSpacing * H) / 12
+    : 0
+
+  const loadFactor = 1.5
+
+  const MstemUltimate = MstemService * loadFactor
+  const MtoeUltimate = MtoeService * loadFactor
+  const MheelUltimate = MheelService * loadFactor
+  const McounterfortUltimate = McounterfortService * loadFactor
+
+  const dStem = m.stemBaseT - m.cover - m.stemBarDia / 2
+  const dBaseToe = m.baseT - m.cover - m.toeBarDia / 2
+  const dBaseHeel = m.baseT - m.cover - m.heelBarDia / 2
+  const dCounterfort =
+    Math.max(m.counterfortThickness, 150) - m.cover - m.counterfortBarDia / 2
+
+  const stemSteel = steelDesign({
+    Mu: MstemUltimate,
+    d: dStem,
+    D: m.stemBaseT,
+    dia: m.stemBarDia,
+    fy: m.fy,
+  })
+
+  const toeSteel = steelDesign({
+    Mu: MtoeUltimate,
+    d: dBaseToe,
+    D: m.baseT,
+    dia: m.toeBarDia,
+    fy: m.fy,
+  })
+
+  const heelSteel = steelDesign({
+    Mu: MheelUltimate,
+    d: dBaseHeel,
+    D: m.baseT,
+    dia: m.heelBarDia,
+    fy: m.fy,
+  })
+
+  const counterfortSteel = steelDesign({
+    Mu: McounterfortUltimate,
+    d: dCounterfort,
+    D: Math.max(m.counterfortThickness, 150),
+    dia: m.counterfortBarDia,
+    fy: m.fy,
+  })
+
+  const distributionAstStem = 0.0012 * 1000 * m.stemBaseT
+  const distributionSpacingRaw =
+    (barArea(m.distributionBarDia) * 1000) / distributionAstStem
+
+  const distributionSpacing = Math.max(
+    100,
+    Math.min(300, Math.floor(distributionSpacingRaw / 25) * 25)
+  )
+
+  const concreteVolumePerM =
+    B * baseT +
+    avgStemT * H +
+    (input.shearKeyEnabled ? keyT * keyDepth : 0) +
+    counterfortVolumePerM
+
+  const concreteVolumeTotal = concreteVolumePerM * m.wallLength
+
+  const excavationDepth = baseT + m.embedment
+  const workingSpace = 0.45
+  const excavationVolumePerM = (B + workingSpace * 2) * excavationDepth
+  const excavationVolumeTotal = excavationVolumePerM * m.wallLength
+
+  const backfillVolumePerM = heel * H
+  const backfillVolumeTotal = backfillVolumePerM * m.wallLength
+
+  const shutteringAreaPerM =
+    2 * H +
+    2 * baseT +
+    H * 0.15 +
+    (isCounterfort
+      ? (2 * 0.5 * counterfortProjection * H) / counterfortSpacing
+      : 0)
+
+  const shutteringAreaTotal = shutteringAreaPerM * m.wallLength
+
+  const stemBarsPerM = 1000 / stemSteel.spacing
+  const toeBarsPerM = 1000 / toeSteel.spacing
+  const heelBarsPerM = 1000 / heelSteel.spacing
+  const counterfortsCount = isCounterfort
+    ? Math.ceil(m.wallLength / counterfortSpacing) + 1
+    : 0
+
+  const stemMainLength = H + baseT + 0.45
+  const toeBarLength = toe + stemBaseT + 0.3
+  const heelBarLength = heel + stemBaseT + 0.3
+
+  const stemSteelKgPerM =
+    stemBarsPerM * stemMainLength * barWeight(m.stemBarDia)
+
+  const toeSteelKgPerM = toeBarsPerM * toeBarLength * barWeight(m.toeBarDia)
+
+  const heelSteelKgPerM = heelBarsPerM * heelBarLength * barWeight(m.heelBarDia)
+
+  const horizontalBarsInStem =
+    Math.ceil(H / (distributionSpacing / 1000)) + 1
+
+  const stemDistributionKgPerM =
+    horizontalBarsInStem * 1 * barWeight(m.distributionBarDia)
+
+  const baseDistributionKgPerM =
+    (1000 / 250) * B * barWeight(m.distributionBarDia)
+
+  const counterfortSteelKgTotal = isCounterfort
+    ? counterfortsCount *
+      Math.max(4, Math.ceil(counterfortSteel.astReq / barArea(m.counterfortBarDia))) *
+      (H + counterfortProjection + 0.8) *
+      barWeight(m.counterfortBarDia)
+    : 0
+
+  const steelKgPerM =
+    stemSteelKgPerM +
+    toeSteelKgPerM +
+    heelSteelKgPerM +
+    stemDistributionKgPerM +
+    baseDistributionKgPerM
+
+  const steelKgTotal = steelKgPerM * m.wallLength + counterfortSteelKgTotal
+  const steelWithWastage = steelKgTotal * 1.1
+
+  const weepRows = Math.max(1, Math.floor(H / Math.max(m.weepV, 0.1)))
+  const weepColumns = Math.ceil(m.wallLength / Math.max(m.weepH, 0.1))
+  const totalWeepHoles = weepRows * weepColumns
+
+  const concreteCost = concreteVolumeTotal * m.concreteRate
+  const steelCost = steelWithWastage * m.steelRate
+  const excavationCost = excavationVolumeTotal * m.excavationRate
+  const backfillCost = backfillVolumeTotal * m.backfillRate
+  const estimatedCost = concreteCost + steelCost + excavationCost + backfillCost
+
+  const checks = {
+    overturning: fsOverturning >= 1.5,
+    sliding: fsSliding >= 1.5,
+    eccentricity: Math.abs(e) <= B / 6,
+    bearing: qMax <= m.sbc,
+    noTension: qMin >= 0,
+    drainage: input.drainageCondition === 'good' || waterHeight === 0,
+  }
+
+  const overallSafe =
+    checks.overturning &&
+    checks.sliding &&
+    checks.eccentricity &&
+    checks.bearing &&
+    checks.noTension
+
+  const recommendations = []
+
+  if (!checks.overturning) {
+    recommendations.push(
+      'Overturning unsafe: heel length badhao, base width badhao, ya wall section heavy karo.'
+    )
+  }
+
+  if (!checks.sliding) {
+    recommendations.push(
+      'Sliding unsafe: shear key add karo, base width badhao, friction improve karo, ya passive resistance consider karo.'
+    )
+  }
+
+  if (!checks.bearing) {
+    recommendations.push(
+      'Bearing pressure high hai: base width increase karo ya soil SBC verify karo.'
+    )
+  }
+
+  if (!checks.eccentricity || !checks.noTension) {
+    recommendations.push(
+      'Resultant middle-third ke bahar hai: base proportion revise karo, heel increase karna most effective rahega.'
+    )
+  }
+
+  if (input.drainageCondition === 'poor' && waterHeight > 0) {
+    recommendations.push(
+      'Poor drainage me hydrostatic pressure dangerous hota hai. Weep holes, filter media aur drainage pipe compulsory rakho.'
+    )
+  }
+
+  if (input.seismicEnabled) {
+    recommendations.push(
+      'Seismic pressure preliminary pseudo-static method se add kiya gaya hai. Final seismic design local code aur structural engineer se verify kare.'
+    )
+  }
+
+  if (isCounterfort) {
+    recommendations.push(
+      'Counterfort wall high retaining height ke liye useful hai. Counterfort spacing, web thickness aur tension steel final detailing ke according verify kare.'
+    )
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push(
+      'Preliminary checks safe hain. Final detailing, drainage, soil report aur reinforcement development length verify karo.'
+    )
+  }
+
+  return {
+    m,
+    H,
+    toe,
+    heel,
+    stemTopT,
+    stemBaseT,
+    baseT,
+    avgStemT,
+    B,
+    counterfortSpacing,
+    counterfortThickness,
+    counterfortProjection,
+    counterfortsCount,
+    Ka,
+    Kp,
+    PaTri,
+    PaSurcharge,
+    Pwater,
+    Pseismic,
+    PaTotal,
+    Mo,
+    Mr,
+    V,
+    passiveResistance,
+    slidingResistance,
+    fsOverturning,
+    fsSliding,
+    xResultant,
+    e,
+    qAvg,
+    qMax,
+    qMin,
+    qToeAvg,
+    qHeelAvg,
+    MstemService,
+    MstemCantileverService,
+    MstemCounterfortPanelService,
+    MtoeService,
+    MheelService,
+    McounterfortService,
+    MstemUltimate,
+    MtoeUltimate,
+    MheelUltimate,
+    McounterfortUltimate,
+    stemSteel,
+    toeSteel,
+    heelSteel,
+    counterfortSteel,
+    distributionSpacing,
+    concreteVolumePerM,
+    concreteVolumeTotal,
+    excavationVolumeTotal,
+    backfillVolumeTotal,
+    shutteringAreaTotal,
+    stemSteelKgPerM,
+    toeSteelKgPerM,
+    heelSteelKgPerM,
+    stemDistributionKgPerM,
+    baseDistributionKgPerM,
+    counterfortSteelKgTotal,
+    steelKgPerM,
+    steelKgTotal,
+    steelWithWastage,
+    totalWeepHoles,
+    weepRows,
+    weepColumns,
+    concreteCost,
+    steelCost,
+    excavationCost,
+    backfillCost,
+    estimatedCost,
+    checks,
+    overallSafe,
+    recommendations,
+    waterHeight,
+  }
+}
+
+function findOptimizedGeometry(input) {
+  const m = convertToMetric(input)
+  const H = Math.max(m.H, 0.1)
+  const isCounterfort = input.wallType === 'counterfort'
+
+  const stemBaseStart = Math.max(250, Math.min(650, H * 90))
+  const stemTop = Math.max(150, Math.min(300, H * 45))
+
+  const baseMinRatio = isCounterfort ? 0.45 : 0.55
+  const baseMaxRatio = isCounterfort ? 0.95 : 1.05
+
+  let best = null
+
+  for (let ratio = baseMinRatio; ratio <= baseMaxRatio; ratio += 0.025) {
+    const B = H * ratio
+
+    for (const heelPercent of [0.55, 0.6, 0.65, 0.7]) {
+      for (let baseTmm = Math.max(300, H * 90); baseTmm <= Math.max(650, H * 160); baseTmm += 50) {
+        for (let stemBaseMm = stemBaseStart; stemBaseMm <= stemBaseStart + 250; stemBaseMm += 50) {
+          const stemBaseM = stemBaseMm / 1000
+          const heel = Math.max(B * heelPercent, 0.25 * H)
+          const toe = B - heel - stemBaseM
+
+          if (toe < 0.15 * H || heel < 0.25 * H) continue
+
+          const trial = computeWall(input, {
+            toe,
+            heel,
+            stemTopT: stemTop,
+            stemBaseT: stemBaseMm,
+            baseT: baseTmm,
+          })
+
+          if (trial.overallSafe) {
+            best = {
+              toe,
+              heel,
+              stemTopT: stemTop,
+              stemBaseT: stemBaseMm,
+              baseT: baseTmm,
+              B: trial.B,
+              fsOverturning: trial.fsOverturning,
+              fsSliding: trial.fsSliding,
+              qMax: trial.qMax,
+              qMin: trial.qMin,
+              e: trial.e,
+              results: trial,
+            }
+            return best
+          }
+        }
+      }
+    }
+  }
+
+  return best
+}
+
 export default function RetainingWallDesignPage() {
   const [inputs, setInputs] = useState(defaultInputs)
 
   const isMetric = inputs.unitSystem === 'metric'
+  const isCounterfort = inputs.wallType === 'counterfort'
 
   const unit = {
     length: isMetric ? 'm' : 'ft',
@@ -207,7 +751,7 @@ export default function RetainingWallDesignPage() {
       return
     }
 
-    if (key === 'drainageCondition') {
+    if (['drainageCondition', 'wallType'].includes(key)) {
       setInputs((prev) => ({
         ...prev,
         [key]: value,
@@ -229,357 +773,32 @@ export default function RetainingWallDesignPage() {
     }))
   }
 
-  const results = useMemo(() => {
-    const m = convertToMetric(inputs)
+  const results = useMemo(() => computeWall(inputs), [inputs])
+  const optimized = useMemo(() => findOptimizedGeometry(inputs), [inputs])
 
-    const H = Math.max(m.H, 0.1)
-    const toe = Math.max(m.toe, 0)
-    const heel = Math.max(m.heel, 0)
-    const stemTopT = Math.max(m.stemTopT / 1000, 0.05)
-    const stemBaseT = Math.max(m.stemBaseT / 1000, 0.05)
-    const baseT = Math.max(m.baseT / 1000, 0.05)
-    const avgStemT = (stemTopT + stemBaseT) / 2
-    const B = toe + stemBaseT + heel
+  const applyOptimizedDesign = () => {
+    if (!optimized) return
 
-    const phiRad = (m.phi * Math.PI) / 180
-    const sinPhi = Math.sin(phiRad)
-    const Ka = (1 - sinPhi) / (1 + sinPhi)
-    const Kp = (1 + sinPhi) / (1 - sinPhi)
-
-    const PaTri = 0.5 * Ka * m.gammaSoil * H * H
-    const PaSurcharge = Ka * m.surcharge * H
-
-    const waterHeight =
-      inputs.drainageCondition === 'poor'
-        ? Math.min(Math.max(m.waterHeight, 0), H)
-        : 0
-
-    const Pwater = 0.5 * m.gammaWater * waterHeight * waterHeight
-
-    const PaTotal = PaTri + PaSurcharge + Pwater
-
-    const Mo =
-      PaTri * (baseT + H / 3) +
-      PaSurcharge * (baseT + H / 2) +
-      Pwater * (baseT + waterHeight / 3)
-
-    const baseWeight = m.gammaConcrete * B * baseT
-    const stemWeight = m.gammaConcrete * avgStemT * H
-    const soilHeelWeight = m.gammaSoil * heel * H
-    const surchargeHeelWeight = m.surcharge * heel
-
-    const keyDepth = inputs.shearKeyEnabled ? Math.max(m.keyDepth, 0) : 0
-    const keyT = inputs.shearKeyEnabled ? Math.max(m.keyThickness / 1000, 0) : 0
-    const keyWeight = inputs.shearKeyEnabled
-      ? m.gammaConcrete * keyDepth * keyT
-      : 0
-
-    const xBase = B / 2
-    const xStem = toe + stemBaseT / 2
-    const xHeel = toe + stemBaseT + heel / 2
-    const xKey = toe + stemBaseT / 2
-
-    const V =
-      baseWeight +
-      stemWeight +
-      soilHeelWeight +
-      surchargeHeelWeight +
-      keyWeight
-
-    const Mr =
-      baseWeight * xBase +
-      stemWeight * xStem +
-      soilHeelWeight * xHeel +
-      surchargeHeelWeight * xHeel +
-      keyWeight * xKey
-
-    const passiveDepth = inputs.passiveEnabled
-      ? Math.max(m.embedment + keyDepth, 0)
-      : 0
-
-    const passiveResistance =
-      inputs.passiveEnabled && passiveDepth > 0
-        ? 0.5 * Kp * m.gammaSoil * passiveDepth * passiveDepth * m.passiveReduction
-        : 0
-
-    const slidingResistance = m.friction * V + passiveResistance
-
-    const fsOverturning = Mr / Mo
-    const fsSliding = slidingResistance / PaTotal
-
-    const xResultant = (Mr - Mo) / V
-    const e = B / 2 - xResultant
-
-    const qAvg = V / B
-    const qMax = qAvg * (1 + (6 * Math.abs(e)) / B)
-    const qMin = qAvg * (1 - (6 * Math.abs(e)) / B)
-
-    const qAt = (x) => {
-      return qAvg * (1 + ((6 * e) / B) * (1 - (2 * x) / B))
+    if (isMetric) {
+      setInputs((prev) => ({
+        ...prev,
+        toe: Number(round(optimized.toe, 2)),
+        heel: Number(round(optimized.heel, 2)),
+        stemTopThickness: Math.round(optimized.stemTopT),
+        stemBaseThickness: Math.round(optimized.stemBaseT),
+        baseThickness: Math.round(optimized.baseT),
+      }))
+    } else {
+      setInputs((prev) => ({
+        ...prev,
+        toe: Number(round(optimized.toe / 0.3048, 2)),
+        heel: Number(round(optimized.heel / 0.3048, 2)),
+        stemTopThickness: Number(round(optimized.stemTopT / 25.4, 1)),
+        stemBaseThickness: Number(round(optimized.stemBaseT / 25.4, 1)),
+        baseThickness: Number(round(optimized.baseT / 25.4, 1)),
+      }))
     }
-
-    const qToeAvg = (qAt(0) + qAt(toe)) / 2
-    const toeNetPressure = Math.max(qToeAvg - m.gammaConcrete * baseT, 0)
-    const MtoeService = toeNetPressure * toe * toe / 2
-
-    const heelStart = toe + stemBaseT
-    const qHeelAvg = (qAt(heelStart) + qAt(B)) / 2
-    const heelDownPressure =
-      m.gammaConcrete * baseT + m.gammaSoil * H + m.surcharge
-
-    const MheelService = Math.abs(
-      (heelDownPressure - qHeelAvg) * heel * heel / 2
-    )
-
-    const MstemService =
-      PaTri * (H / 3) +
-      PaSurcharge * (H / 2) +
-      Pwater * (waterHeight / 3)
-
-    const loadFactor = 1.5
-
-    const MstemUltimate = MstemService * loadFactor
-    const MtoeUltimate = MtoeService * loadFactor
-    const MheelUltimate = MheelService * loadFactor
-
-    const steelDesign = (Mu, d, D, dia) => {
-      const effectiveD = Math.max(d, 50)
-      const astCalc = (Mu * 1000000) / (0.87 * m.fy * 0.9 * effectiveD)
-      const astMin = 0.0012 * 1000 * D
-      const astReq = Math.max(astCalc, astMin)
-      const spacingRaw = (barArea(dia) * 1000) / astReq
-      const maxSpacing = Math.min(3 * effectiveD, 300)
-      const spacing = Math.max(
-        75,
-        Math.min(maxSpacing, Math.floor(spacingRaw / 25) * 25)
-      )
-
-      return {
-        astCalc,
-        astMin,
-        astReq,
-        spacing,
-      }
-    }
-
-    const dStem = m.stemBaseT - m.cover - m.stemBarDia / 2
-    const dBaseToe = m.baseT - m.cover - m.toeBarDia / 2
-    const dBaseHeel = m.baseT - m.cover - m.heelBarDia / 2
-
-    const stemSteel = steelDesign(
-      MstemUltimate,
-      dStem,
-      m.stemBaseT,
-      m.stemBarDia
-    )
-
-    const toeSteel = steelDesign(
-      MtoeUltimate,
-      dBaseToe,
-      m.baseT,
-      m.toeBarDia
-    )
-
-    const heelSteel = steelDesign(
-      MheelUltimate,
-      dBaseHeel,
-      m.baseT,
-      m.heelBarDia
-    )
-
-    const distributionAstStem = 0.0012 * 1000 * m.stemBaseT
-    const distributionSpacingRaw =
-      (barArea(m.distributionBarDia) * 1000) / distributionAstStem
-
-    const distributionSpacing = Math.max(
-      100,
-      Math.min(300, Math.floor(distributionSpacingRaw / 25) * 25)
-    )
-
-    const concreteVolumePerM =
-      B * baseT + avgStemT * H + (inputs.shearKeyEnabled ? keyT * keyDepth : 0)
-
-    const concreteVolumeTotal = concreteVolumePerM * m.wallLength
-
-    const excavationDepth = baseT + m.embedment
-    const workingSpace = 0.45
-    const excavationVolumePerM = (B + workingSpace * 2) * excavationDepth
-    const excavationVolumeTotal = excavationVolumePerM * m.wallLength
-
-    const backfillVolumePerM = heel * H
-    const backfillVolumeTotal = backfillVolumePerM * m.wallLength
-
-    const shutteringAreaPerM = 2 * H + 2 * baseT + H * 0.15
-    const shutteringAreaTotal = shutteringAreaPerM * m.wallLength
-
-    const stemBarsPerM = 1000 / stemSteel.spacing
-    const toeBarsPerM = 1000 / toeSteel.spacing
-    const heelBarsPerM = 1000 / heelSteel.spacing
-
-    const stemMainLength = H + baseT + 0.45
-    const toeBarLength = toe + stemBaseT + 0.3
-    const heelBarLength = heel + stemBaseT + 0.3
-
-    const stemSteelKgPerM =
-      stemBarsPerM * stemMainLength * barWeight(m.stemBarDia)
-
-    const toeSteelKgPerM =
-      toeBarsPerM * toeBarLength * barWeight(m.toeBarDia)
-
-    const heelSteelKgPerM =
-      heelBarsPerM * heelBarLength * barWeight(m.heelBarDia)
-
-    const horizontalBarsInStem =
-      Math.ceil(H / (distributionSpacing / 1000)) + 1
-
-    const stemDistributionKgPerM =
-      horizontalBarsInStem * 1 * barWeight(m.distributionBarDia)
-
-    const baseDistributionKgPerM =
-      (1000 / 250) * B * barWeight(m.distributionBarDia)
-
-    const steelKgPerM =
-      stemSteelKgPerM +
-      toeSteelKgPerM +
-      heelSteelKgPerM +
-      stemDistributionKgPerM +
-      baseDistributionKgPerM
-
-    const steelKgTotal = steelKgPerM * m.wallLength
-    const steelWithWastage = steelKgTotal * 1.1
-
-    const weepRows = Math.max(1, Math.floor(H / Math.max(m.weepV, 0.1)))
-    const weepColumns = Math.ceil(m.wallLength / Math.max(m.weepH, 0.1))
-    const totalWeepHoles = weepRows * weepColumns
-
-    const concreteCost = concreteVolumeTotal * m.concreteRate
-    const steelCost = steelWithWastage * m.steelRate
-    const excavationCost = excavationVolumeTotal * m.excavationRate
-    const backfillCost = backfillVolumeTotal * m.backfillRate
-    const estimatedCost =
-      concreteCost + steelCost + excavationCost + backfillCost
-
-    const checks = {
-      overturning: fsOverturning >= 1.5,
-      sliding: fsSliding >= 1.5,
-      eccentricity: Math.abs(e) <= B / 6,
-      bearing: qMax <= m.sbc,
-      noTension: qMin >= 0,
-      drainage: inputs.drainageCondition === 'good' || waterHeight === 0,
-    }
-
-    const overallSafe =
-      checks.overturning &&
-      checks.sliding &&
-      checks.eccentricity &&
-      checks.bearing &&
-      checks.noTension
-
-    const recommendations = []
-
-    if (!checks.overturning) {
-      recommendations.push(
-        'Overturning unsafe: heel length badhao, base width badhao, ya wall section heavy karo.'
-      )
-    }
-
-    if (!checks.sliding) {
-      recommendations.push(
-        'Sliding unsafe: shear key add karo, base width badhao, friction improve karo, ya passive resistance consider karo.'
-      )
-    }
-
-    if (!checks.bearing) {
-      recommendations.push(
-        'Bearing pressure high hai: base width increase karo ya soil SBC verify karo.'
-      )
-    }
-
-    if (!checks.eccentricity || !checks.noTension) {
-      recommendations.push(
-        'Resultant middle-third ke bahar hai: base proportion revise karo, heel increase karna most effective rahega.'
-      )
-    }
-
-    if (inputs.drainageCondition === 'poor' && waterHeight > 0) {
-      recommendations.push(
-        'Poor drainage me hydrostatic pressure dangerous hota hai. Weep holes, filter media aur drainage pipe compulsory rakho.'
-      )
-    }
-
-    if (recommendations.length === 0) {
-      recommendations.push(
-        'Preliminary checks safe hain. Final detailing, drainage, soil report aur reinforcement development length verify karo.'
-      )
-    }
-
-    return {
-      m,
-      H,
-      toe,
-      heel,
-      stemTopT,
-      stemBaseT,
-      baseT,
-      avgStemT,
-      B,
-      Ka,
-      Kp,
-      PaTri,
-      PaSurcharge,
-      Pwater,
-      PaTotal,
-      Mo,
-      Mr,
-      V,
-      passiveResistance,
-      slidingResistance,
-      fsOverturning,
-      fsSliding,
-      xResultant,
-      e,
-      qAvg,
-      qMax,
-      qMin,
-      qToeAvg,
-      qHeelAvg,
-      MstemService,
-      MtoeService,
-      MheelService,
-      MstemUltimate,
-      MtoeUltimate,
-      MheelUltimate,
-      stemSteel,
-      toeSteel,
-      heelSteel,
-      distributionSpacing,
-      concreteVolumePerM,
-      concreteVolumeTotal,
-      excavationVolumeTotal,
-      backfillVolumeTotal,
-      shutteringAreaTotal,
-      stemSteelKgPerM,
-      toeSteelKgPerM,
-      heelSteelKgPerM,
-      stemDistributionKgPerM,
-      baseDistributionKgPerM,
-      steelKgPerM,
-      steelKgTotal,
-      steelWithWastage,
-      totalWeepHoles,
-      weepRows,
-      weepColumns,
-      concreteCost,
-      steelCost,
-      excavationCost,
-      backfillCost,
-      estimatedCost,
-      checks,
-      overallSafe,
-      recommendations,
-      waterHeight,
-    }
-  }, [inputs])
+  }
 
   const downloadPdf = async () => {
     try {
@@ -590,14 +809,16 @@ export default function RetainingWallDesignPage() {
       doc.text('Retaining Wall Design Report', 14, 18)
 
       doc.setFontSize(10)
-      doc.text('CivilCalc Pro - Site Engineer Practical Summary', 14, 26)
+      doc.text('CivilCalc Pro - Practical Site Engineer Summary', 14, 26)
 
       const lines = [
+        `Wall Type: ${inputs.wallType}`,
         `Wall Height: ${round(inputs.height)} ${unit.length}`,
         `Base Width: ${round(results.B)} m`,
         `Ka: ${round(results.Ka, 3)}`,
         `Total Active Pressure: ${round(results.PaTotal)} kN/m`,
         `Water Pressure: ${round(results.Pwater)} kN/m`,
+        `Seismic Pressure: ${round(results.Pseismic)} kN/m`,
         `FS Overturning: ${round(results.fsOverturning)}`,
         `FS Sliding: ${round(results.fsSliding)}`,
         `qmax: ${round(results.qMax)} kPa`,
@@ -632,7 +853,7 @@ export default function RetainingWallDesignPage() {
 
       doc.setFontSize(8)
       doc.text(
-        'Note: This is a preliminary calculation report. Final structural design must be verified by a qualified structural engineer.',
+        'Note: This is a preliminary design report. Final structural design must be verified by a qualified structural engineer.',
         14,
         285,
         { maxWidth: 180 }
@@ -669,7 +890,7 @@ export default function RetainingWallDesignPage() {
           onChange={(e) => updateInput(name, e.target.value)}
           className="w-full bg-transparent px-4 py-3 text-white outline-none placeholder:text-slate-500"
         />
-        <span className="flex min-w-[78px] items-center justify-center border-l border-slate-700 bg-slate-900 px-3 text-xs text-slate-300">
+        <span className="flex min-w-[82px] items-center justify-center border-l border-slate-700 bg-slate-900 px-3 text-xs text-slate-300">
           {suffix}
         </span>
       </div>
@@ -691,6 +912,7 @@ export default function RetainingWallDesignPage() {
           <p className="font-bold text-white">{label}</p>
           <p className="text-xs text-slate-400">{labelHi}</p>
         </div>
+
         <span
           className={`rounded-full px-3 py-1 text-xs font-black ${
             inputs[name]
@@ -724,7 +946,15 @@ export default function RetainingWallDesignPage() {
     </div>
   )
 
-  const SteelRow = ({ part, moment, dia, spacing, ast }) => (
+  const QuantityCard = ({ title, value, subtitle }) => (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+      <p className="text-sm text-slate-400">{title}</p>
+      <h3 className="mt-2 text-2xl font-black text-white">{value}</h3>
+      {subtitle && <p className="mt-2 text-xs text-slate-400">{subtitle}</p>}
+    </div>
+  )
+
+  const SteelRow = ({ part, moment, dia, spacing, ast, note }) => (
     <tr className="border-b border-slate-800">
       <td className="px-4 py-4 font-semibold text-white">{part}</td>
       <td className="px-4 py-4 text-slate-300">{round(moment)} kNm/m</td>
@@ -732,15 +962,8 @@ export default function RetainingWallDesignPage() {
       <td className="px-4 py-4 text-orange-300">
         {dia} mm @ {spacing} mm c/c
       </td>
+      <td className="px-4 py-4 text-slate-400">{note}</td>
     </tr>
-  )
-
-  const QuantityCard = ({ title, value, subtitle }) => (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
-      <p className="text-sm text-slate-400">{title}</p>
-      <h3 className="mt-2 text-2xl font-black text-white">{value}</h3>
-      {subtitle && <p className="mt-2 text-xs text-slate-400">{subtitle}</p>}
-    </div>
   )
 
   return (
@@ -751,7 +974,7 @@ export default function RetainingWallDesignPage() {
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-semibold text-orange-300">
                 <Ruler size={16} />
-                Site Engineer Retaining Wall Tool
+                Advanced Retaining Wall Design
               </div>
 
               <h1 className="text-3xl font-black tracking-tight md:text-5xl">
@@ -759,14 +982,14 @@ export default function RetainingWallDesignPage() {
               </h1>
 
               <p className="mt-3 max-w-3xl text-slate-300">
-                RCC cantilever retaining wall ka stability check, water pressure,
-                shear key, steel design, quantity estimate, site checklist aur
-                PDF report ek hi tool me.
+                Cantilever aur counterfort retaining wall ke liye earth pressure,
+                water pressure, seismic pressure, stability checks, optimizer,
+                reinforcement, quantity, BBS aur PDF report.
               </p>
 
               <p className="mt-2 max-w-3xl text-sm text-slate-400">
-                Site engineer ke liye practical retaining wall design, material
-                quantity, reinforcement spacing aur construction guidance.
+                Site engineer ke liye practical design + safe correction +
+                quantity estimate ek hi tool me.
               </p>
             </div>
 
@@ -806,13 +1029,92 @@ export default function RetainingWallDesignPage() {
           </div>
         </div>
 
+        <div className="mb-6 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 text-xl font-black text-white">
+                <Sparkles className="text-orange-300" size={22} />
+                Auto Safe Design Optimizer
+              </h2>
+
+              <p className="mt-2 text-sm text-orange-100">
+                Ye tool current soil data ke basis par safe toe, heel, stem aur
+                base thickness suggest karta hai.
+              </p>
+            </div>
+
+            {optimized ? (
+              <button
+                onClick={applyOptimizedDesign}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600"
+              >
+                <RefreshCcw size={18} />
+                Apply Optimized Design
+              </button>
+            ) : (
+              <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm font-bold text-red-200">
+                No safe auto design found. Increase SBC, reduce height/load, or
+                use counterfort.
+              </div>
+            )}
+          </div>
+
+          {optimized && (
+            <div className="mt-5 grid gap-4 md:grid-cols-5">
+              <QuantityCard
+                title="Suggested Base Width"
+                value={`${round(optimized.B)} m`}
+                subtitle="Auto safe B"
+              />
+              <QuantityCard
+                title="Suggested Toe"
+                value={`${round(optimized.toe)} m`}
+                subtitle="Front projection"
+              />
+              <QuantityCard
+                title="Suggested Heel"
+                value={`${round(optimized.heel)} m`}
+                subtitle="Backfill side"
+              />
+              <QuantityCard
+                title="Suggested Stem Base"
+                value={`${round(optimized.stemBaseT, 0)} mm`}
+                subtitle="Base stem thickness"
+              />
+              <QuantityCard
+                title="Suggested Base Slab"
+                value={`${round(optimized.baseT, 0)} mm`}
+                subtitle="Base thickness"
+              />
+            </div>
+          )}
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-6">
             <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
               <h2 className="mb-5 flex items-center gap-2 text-xl font-black">
                 <Calculator className="text-orange-400" size={22} />
-                1. Wall Geometry
+                1. Wall Type & Geometry
               </h2>
+
+              <div className="mb-5">
+                <label className="mb-2 block text-sm font-semibold text-slate-200">
+                  Retaining Wall Type
+                  <span className="block text-xs font-normal text-slate-400">
+                    Wall type select karo
+                  </span>
+                </label>
+
+                <select
+                  value={inputs.wallType}
+                  onChange={(e) => updateInput('wallType', e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none"
+                >
+                  <option value="cantilever">Cantilever Retaining Wall</option>
+                  <option value="counterfort">Counterfort Retaining Wall</option>
+                </select>
+              </div>
 
               <div className="grid gap-5 md:grid-cols-2">
                 <Field
@@ -874,6 +1176,38 @@ export default function RetainingWallDesignPage() {
                   suffix={unit.length}
                 />
               </div>
+
+              {isCounterfort && (
+                <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5">
+                  <h3 className="mb-4 text-lg font-black text-emerald-200">
+                    Counterfort Wall Inputs
+                  </h3>
+
+                  <div className="grid gap-5 md:grid-cols-3">
+                    <Field
+                      label="Counterfort Spacing"
+                      labelHi="Counterfort to counterfort distance"
+                      name="counterfortSpacing"
+                      suffix={unit.length}
+                    />
+
+                    <Field
+                      label="Counterfort Thickness"
+                      labelHi="Web thickness"
+                      name="counterfortThickness"
+                      suffix={unit.thickness}
+                      step="1"
+                    />
+
+                    <Field
+                      label="Counterfort Projection"
+                      labelHi="Heel side projection"
+                      name="counterfortProjection"
+                      suffix={unit.length}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
@@ -923,7 +1257,7 @@ export default function RetainingWallDesignPage() {
             <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
               <h2 className="mb-5 flex items-center gap-2 text-xl font-black">
                 <Droplets className="text-sky-400" size={22} />
-                3. Drainage & Water Pressure
+                3. Drainage, Water & Seismic Pressure
               </h2>
 
               <div className="grid gap-5 md:grid-cols-2">
@@ -967,12 +1301,28 @@ export default function RetainingWallDesignPage() {
                   name="weepHoleVerticalSpacing"
                   suffix={unit.length}
                 />
+
+                <Toggle
+                  label="Add Seismic Pressure"
+                  labelHi="Earthquake lateral pressure add kare"
+                  name="seismicEnabled"
+                />
+
+                {inputs.seismicEnabled && (
+                  <Field
+                    label="Seismic Coefficient Ah"
+                    labelHi="Preliminary horizontal seismic coefficient"
+                    name="seismicCoefficient"
+                    suffix="Ah"
+                    step="0.01"
+                  />
+                )}
               </div>
 
               <div className="mt-5 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm text-sky-100">
                 Good drainage me water pressure avoid hota hai. Poor drainage
-                case me hydrostatic pressure add kiya gaya hai, jo retaining wall
-                ke liye dangerous ho sakta hai.
+                case me hydrostatic pressure add hota hai. Seismic option
+                preliminary pseudo-static lateral pressure ke liye hai.
               </div>
             </div>
 
@@ -1085,6 +1435,16 @@ export default function RetainingWallDesignPage() {
                   step="1"
                 />
 
+                {isCounterfort && (
+                  <Field
+                    label="Counterfort Bar Dia"
+                    labelHi="Counterfort web steel"
+                    name="counterfortBarDia"
+                    suffix="mm"
+                    step="1"
+                  />
+                )}
+
                 <Field
                   label="Distribution Bar Dia"
                   labelHi="Horizontal/distribution steel"
@@ -1149,7 +1509,7 @@ export default function RetainingWallDesignPage() {
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-[#071027] p-4">
-                <svg viewBox="0 0 560 350" className="h-auto w-full">
+                <svg viewBox="0 0 600 370" className="h-auto w-full">
                   <defs>
                     <linearGradient id="soilFill" x1="0" x2="1">
                       <stop offset="0%" stopColor="#92400e" stopOpacity="0.55" />
@@ -1162,101 +1522,137 @@ export default function RetainingWallDesignPage() {
                     </linearGradient>
                   </defs>
 
-                  <rect x="0" y="0" width="560" height="350" fill="#071027" />
+                  <rect x="0" y="0" width="600" height="370" fill="#071027" />
 
                   <path
-                    d="M270 45 L520 45 L520 275 L270 275 Z"
+                    d="M290 45 L555 45 L555 288 L290 288 Z"
                     fill="url(#soilFill)"
                     stroke="#f59e0b"
                     strokeOpacity="0.35"
                   />
 
-                  {inputs.drainageCondition === 'poor' && results.waterHeight > 0 && (
-                    <rect
-                      x="275"
-                      y={275 - (results.waterHeight / results.H) * 230}
-                      width="235"
-                      height={(results.waterHeight / results.H) * 230}
-                      fill="#0284c7"
-                      opacity="0.28"
-                    />
-                  )}
+                  {inputs.drainageCondition === 'poor' &&
+                    results.waterHeight > 0 && (
+                      <rect
+                        x="295"
+                        y={288 - (results.waterHeight / results.H) * 243}
+                        width="245"
+                        height={(results.waterHeight / results.H) * 243}
+                        fill="#0284c7"
+                        opacity="0.28"
+                      />
+                    )}
 
                   <rect
-                    x="70"
-                    y="275"
-                    width="385"
-                    height="35"
+                    x="75"
+                    y="288"
+                    width="410"
+                    height="38"
                     rx="4"
                     fill="url(#concFill)"
                   />
 
                   <path
-                    d="M190 75 L220 75 L235 275 L175 275 Z"
+                    d="M205 78 L238 78 L255 288 L185 288 Z"
                     fill="url(#concFill)"
                   />
 
+                  {isCounterfort && (
+                    <path
+                      d="M238 95 L370 288 L238 288 Z"
+                      fill="#64748b"
+                      opacity="0.75"
+                      stroke="#cbd5e1"
+                      strokeOpacity="0.45"
+                    />
+                  )}
+
                   {inputs.shearKeyEnabled && (
                     <rect
-                      x="198"
-                      y="310"
-                      width="30"
-                      height="28"
+                      x="211"
+                      y="326"
+                      width="34"
+                      height="30"
                       rx="3"
                       fill="url(#concFill)"
                     />
                   )}
 
                   <polygon
-                    points="238,80 350,275 238,275"
+                    points="260,82 380,288 260,288"
                     fill="#f97316"
                     opacity="0.22"
                   />
 
                   <line
-                    x1="238"
-                    y1="250"
-                    x2="325"
-                    y2="250"
+                    x1="260"
+                    y1="262"
+                    x2="350"
+                    y2="262"
                     stroke="#fb923c"
                     strokeWidth="3"
                   />
 
-                  <text x="245" y="238" fill="#fb923c" fontSize="12">
+                  {inputs.seismicEnabled && (
+                    <line
+                      x1="260"
+                      y1="150"
+                      x2="370"
+                      y2="150"
+                      stroke="#ef4444"
+                      strokeWidth="3"
+                      strokeDasharray="8 5"
+                    />
+                  )}
+
+                  <text x="267" y="250" fill="#fb923c" fontSize="12">
                     Earth Pressure
                   </text>
 
-                  <text x="305" y="60" fill="#fbbf24" fontSize="13">
-                    Backfill Soil
-                  </text>
-
-                  {inputs.drainageCondition === 'poor' && results.waterHeight > 0 && (
-                    <text x="335" y="255" fill="#7dd3fc" fontSize="12">
-                      Water Pressure
+                  {inputs.seismicEnabled && (
+                    <text x="377" y="155" fill="#fca5a5" fontSize="12">
+                      Seismic
                     </text>
                   )}
 
-                  <line x1="70" y1="325" x2="455" y2="325" stroke="#38bdf8" />
+                  <text x="330" y="62" fill="#fbbf24" fontSize="13">
+                    Backfill Soil
+                  </text>
 
-                  <text x="215" y="342" fill="#93c5fd" fontSize="13">
+                  {inputs.drainageCondition === 'poor' &&
+                    results.waterHeight > 0 && (
+                      <text x="370" y="270" fill="#7dd3fc" fontSize="12">
+                        Water Pressure
+                      </text>
+                    )}
+
+                  {isCounterfort && (
+                    <text x="285" y="210" fill="#e2e8f0" fontSize="12">
+                      Counterfort
+                    </text>
+                  )}
+
+                  <line x1="75" y1="344" x2="485" y2="344" stroke="#38bdf8" />
+
+                  <text x="235" y="361" fill="#93c5fd" fontSize="13">
                     B = {round(results.B)} m
                   </text>
 
                   <text
-                    x="28"
-                    y="185"
+                    x="30"
+                    y="195"
                     fill="#cbd5e1"
                     fontSize="13"
-                    transform="rotate(-90 28 185)"
+                    transform="rotate(-90 30 195)"
                   >
                     H = {round(results.H)} m
                   </text>
 
-                  <text x="80" y="267" fill="#e2e8f0" fontSize="12">
+                  <text x="85" y="280" fill="#e2e8f0" fontSize="12">
                     Toe
                   </text>
 
-                  <text x="325" y="267" fill="#e2e8f0" fontSize="12">
+                  <text x="350" y="280" fill="#e2e8f0" fontSize="12">
                     Heel
                   </text>
                 </svg>
@@ -1279,6 +1675,16 @@ export default function RetainingWallDesignPage() {
                   title="Total Active Pressure"
                   value={`${round(results.PaTotal)} kN/m`}
                   subtitle={`Ka = ${round(results.Ka, 3)}`}
+                />
+
+                <ResultCard
+                  title="Seismic Pressure"
+                  value={`${round(results.Pseismic)} kN/m`}
+                  subtitle={
+                    inputs.seismicEnabled
+                      ? `Ah = ${inputs.seismicCoefficient}`
+                      : 'Seismic OFF'
+                  }
                 />
 
                 <ResultCard
@@ -1327,12 +1733,6 @@ export default function RetainingWallDesignPage() {
                   subtitle={`Limit B/6 = ${round(results.B / 6, 3)} m`}
                   pass={results.checks.eccentricity}
                 />
-
-                <ResultCard
-                  title="Base Width"
-                  value={`${round(results.B)} m`}
-                  subtitle="Toe + Stem + Heel"
-                />
               </div>
             </div>
 
@@ -1368,6 +1768,10 @@ export default function RetainingWallDesignPage() {
                 <p>✓ Stem main steel soil side face par place karo.</p>
                 <p>✓ Heel main steel top face par aur toe main steel bottom face par check karo.</p>
                 <p>✓ Development length, lap length aur cover site par maintain karo.</p>
+                <p>✓ Seismic pressure final design me local code ke according verify karo.</p>
+                {isCounterfort && (
+                  <p>✓ Counterfort spacing, web reinforcement aur construction joint detailing check karo.</p>
+                )}
               </div>
             </div>
           </div>
@@ -1380,13 +1784,14 @@ export default function RetainingWallDesignPage() {
           </h2>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] overflow-hidden rounded-2xl text-left text-sm">
+            <table className="w-full min-w-[860px] overflow-hidden rounded-2xl text-left text-sm">
               <thead className="bg-slate-950 text-slate-300">
                 <tr>
                   <th className="px-4 py-4">Member</th>
                   <th className="px-4 py-4">Ultimate Moment</th>
                   <th className="px-4 py-4">Ast Required</th>
                   <th className="px-4 py-4">Recommended Steel</th>
+                  <th className="px-4 py-4">Site Note</th>
                 </tr>
               </thead>
 
@@ -1397,6 +1802,7 @@ export default function RetainingWallDesignPage() {
                   dia={inputs.stemBarDia}
                   spacing={results.stemSteel.spacing}
                   ast={results.stemSteel.astReq}
+                  note={isCounterfort ? 'Panel action between counterforts' : 'Soil side face'}
                 />
 
                 <SteelRow
@@ -1405,6 +1811,7 @@ export default function RetainingWallDesignPage() {
                   dia={inputs.toeBarDia}
                   spacing={results.toeSteel.spacing}
                   ast={results.toeSteel.astReq}
+                  note="Bottom face"
                 />
 
                 <SteelRow
@@ -1413,7 +1820,19 @@ export default function RetainingWallDesignPage() {
                   dia={inputs.heelBarDia}
                   spacing={results.heelSteel.spacing}
                   ast={results.heelSteel.astReq}
+                  note="Top face"
                 />
+
+                {isCounterfort && (
+                  <SteelRow
+                    part="Counterfort Web Steel"
+                    moment={results.McounterfortUltimate}
+                    dia={inputs.counterfortBarDia}
+                    spacing={results.counterfortSteel.spacing}
+                    ast={results.counterfortSteel.astReq}
+                    note="Inclined/web reinforcement"
+                  />
+                )}
 
                 <tr className="border-b border-slate-800">
                   <td className="px-4 py-4 font-semibold text-white">
@@ -1425,6 +1844,9 @@ export default function RetainingWallDesignPage() {
                     {inputs.distributionBarDia} mm @{' '}
                     {results.distributionSpacing} mm c/c
                   </td>
+                  <td className="px-4 py-4 text-slate-400">
+                    Horizontal and temperature steel
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -1432,10 +1854,9 @@ export default function RetainingWallDesignPage() {
 
           <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
             <strong className="text-white">Placement hint:</strong> Stem main
-            reinforcement generally soil side face par critical hota hai. Heel
-            slab main steel top face par aur toe slab main steel bottom face par
-            provide kiya jata hai. Final detailing structural engineer verify
-            kare.
+            reinforcement generally soil side face par critical hota hai.
+            Counterfort wall me stem panel action aur counterfort web tension
+            reinforcement separately verify karna zaroori hai.
           </div>
         </div>
 
@@ -1454,7 +1875,7 @@ export default function RetainingWallDesignPage() {
             <QuantityCard
               title="Steel Quantity"
               value={`${round(results.steelWithWastage)} kg`}
-              subtitle={`Includes approx 10% wastage`}
+              subtitle="Includes approx 10% wastage"
             />
 
             <QuantityCard
@@ -1489,9 +1910,25 @@ export default function RetainingWallDesignPage() {
 
             <QuantityCard
               title="Estimated Cost"
-              value={`₹${round(results.estimatedCost, 0)}`}
+              value={money(results.estimatedCost)}
               subtitle="Concrete + steel + excavation + backfill"
             />
+
+            {isCounterfort && (
+              <>
+                <QuantityCard
+                  title="Counterfort Count"
+                  value={`${results.counterfortsCount} Nos`}
+                  subtitle="Based on wall length and spacing"
+                />
+
+                <QuantityCard
+                  title="Counterfort Steel"
+                  value={`${round(results.counterfortSteelKgTotal)} kg`}
+                  subtitle="Approx additional steel"
+                />
+              </>
+            )}
           </div>
         </div>
 
@@ -1501,7 +1938,7 @@ export default function RetainingWallDesignPage() {
           </h2>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] overflow-hidden rounded-2xl text-left text-sm">
+            <table className="w-full min-w-[820px] overflow-hidden rounded-2xl text-left text-sm">
               <thead className="bg-slate-950 text-slate-300">
                 <tr>
                   <th className="px-4 py-4">Bar Type</th>
@@ -1544,9 +1981,7 @@ export default function RetainingWallDesignPage() {
                   <td className="px-4 py-4 text-slate-300">
                     {round(results.toeSteelKgPerM)} kg/m
                   </td>
-                  <td className="px-4 py-4 text-slate-400">
-                    Bottom face
-                  </td>
+                  <td className="px-4 py-4 text-slate-400">Bottom face</td>
                 </tr>
 
                 <tr className="border-b border-slate-800">
@@ -1562,10 +1997,28 @@ export default function RetainingWallDesignPage() {
                   <td className="px-4 py-4 text-slate-300">
                     {round(results.heelSteelKgPerM)} kg/m
                   </td>
-                  <td className="px-4 py-4 text-slate-400">
-                    Top face
-                  </td>
+                  <td className="px-4 py-4 text-slate-400">Top face</td>
                 </tr>
+
+                {isCounterfort && (
+                  <tr className="border-b border-slate-800">
+                    <td className="px-4 py-4 font-semibold text-white">
+                      Counterfort Bars
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {inputs.counterfortBarDia} mm
+                    </td>
+                    <td className="px-4 py-4 text-orange-300">
+                      {results.counterfortSteel.spacing} mm c/c
+                    </td>
+                    <td className="px-4 py-4 text-slate-300">
+                      {round(results.counterfortSteelKgTotal)} kg total
+                    </td>
+                    <td className="px-4 py-4 text-slate-400">
+                      Web and tension steel
+                    </td>
+                  </tr>
+                )}
 
                 <tr className="border-b border-slate-800">
                   <td className="px-4 py-4 font-semibold text-white">
@@ -1585,7 +2038,7 @@ export default function RetainingWallDesignPage() {
                     kg/m
                   </td>
                   <td className="px-4 py-4 text-slate-400">
-                    Horizontal & temperature steel
+                    Horizontal and temperature steel
                   </td>
                 </tr>
               </tbody>
@@ -1594,11 +2047,11 @@ export default function RetainingWallDesignPage() {
         </div>
 
         <div className="mt-6 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6 text-sm leading-7 text-orange-100">
-          <strong>Important:</strong> Ye retaining wall tool site engineer ke
-          preliminary design, checking, quantity aur site planning ke liye hai.
-          Final design me soil report, drainage detail, seismic load, water
-          pressure, crack control, development length, construction joint aur
-          local code requirements verify karna zaroori hai.
+          <strong>Important:</strong> Ye retaining wall tool preliminary design,
+          checking, quantity aur site planning ke liye hai. Final design me soil
+          report, drainage detail, seismic load, water pressure, crack control,
+          development length, construction joint aur local code requirements
+          structural engineer se verify karna zaroori hai.
         </div>
       </section>
     </main>
