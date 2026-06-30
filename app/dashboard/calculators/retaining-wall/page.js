@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import {
   AlertTriangle,
   Calculator,
-  CheckCircle2,
   ClipboardList,
   Download,
   Droplets,
@@ -55,6 +54,9 @@ const defaultInputs = {
   fck: 25,
   fy: 500,
   cover: 50,
+
+  barDesignMode: 'auto',
+
   stemBarDia: 12,
   toeBarDia: 12,
   heelBarDia: 12,
@@ -98,6 +100,9 @@ const imperialDefaults = {
   weepHoleVerticalSpacing: 3,
 }
 
+const MAIN_BAR_DIA_OPTIONS = [10, 12, 16, 20, 25, 32]
+const DISTRIBUTION_BAR_DIA_OPTIONS = [8, 10, 12, 16]
+
 const round = (value, digits = 2) => {
   if (!Number.isFinite(value)) return '—'
   return Number(value).toFixed(digits)
@@ -115,6 +120,12 @@ const money = (value) => {
 
 const barArea = (dia) => (Math.PI * dia * dia) / 4
 const barWeight = (dia) => (dia * dia) / 162
+
+function statusClass(pass) {
+  return pass
+    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+    : 'border-red-500/30 bg-red-500/10 text-red-300'
+}
 
 function convertToMetric(input) {
   if (input.unitSystem === 'imperial') {
@@ -153,6 +164,7 @@ function convertToMetric(input) {
       fck: input.fck,
       fy: input.fy,
       cover: input.cover,
+
       stemBarDia: input.stemBarDia,
       toeBarDia: input.toeBarDia,
       heelBarDia: input.heelBarDia,
@@ -201,6 +213,7 @@ function convertToMetric(input) {
     fck: input.fck,
     fy: input.fy,
     cover: input.cover,
+
     stemBarDia: input.stemBarDia,
     toeBarDia: input.toeBarDia,
     heelBarDia: input.heelBarDia,
@@ -214,12 +227,6 @@ function convertToMetric(input) {
   }
 }
 
-function statusClass(pass) {
-  return pass
-    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-    : 'border-red-500/30 bg-red-500/10 text-red-300'
-}
-
 function steelDesign({ Mu, d, D, dia, fy }) {
   const effectiveD = Math.max(d, 50)
   const astCalc = (Mu * 1000000) / (0.87 * fy * 0.9 * effectiveD)
@@ -227,6 +234,7 @@ function steelDesign({ Mu, d, D, dia, fy }) {
   const astReq = Math.max(astCalc, astMin)
   const spacingRaw = (barArea(dia) * 1000) / astReq
   const maxSpacing = Math.min(3 * effectiveD, 300)
+
   const spacing = Math.max(
     75,
     Math.min(maxSpacing, Math.floor(spacingRaw / 25) * 25)
@@ -237,11 +245,13 @@ function steelDesign({ Mu, d, D, dia, fy }) {
     astMin,
     astReq,
     spacing,
+    spacingRaw,
   }
 }
 
 function computeWall(input, override = {}) {
   const base = convertToMetric(input)
+
   const m = {
     ...base,
     ...override,
@@ -303,6 +313,7 @@ function computeWall(input, override = {}) {
 
   const keyDepth = input.shearKeyEnabled ? Math.max(m.keyDepth, 0) : 0
   const keyT = input.shearKeyEnabled ? Math.max(m.keyThickness / 1000, 0) : 0
+
   const keyWeight = input.shearKeyEnabled
     ? m.gammaConcrete * keyDepth * keyT
     : 0
@@ -344,10 +355,10 @@ function computeWall(input, override = {}) {
       : 0
 
   const slidingResistance = m.friction * V + passiveResistance
-  const fsOverturning = Mr / Mo
-  const fsSliding = slidingResistance / PaTotal
+  const fsOverturning = Mr / Math.max(Mo, 0.0001)
+  const fsSliding = slidingResistance / Math.max(PaTotal, 0.0001)
 
-  const xResultant = (Mr - Mo) / V
+  const xResultant = (Mr - Mo) / Math.max(V, 0.0001)
   const e = B / 2 - xResultant
 
   const qAvg = V / B
@@ -404,6 +415,7 @@ function computeWall(input, override = {}) {
   const dStem = m.stemBaseT - m.cover - m.stemBarDia / 2
   const dBaseToe = m.baseT - m.cover - m.toeBarDia / 2
   const dBaseHeel = m.baseT - m.cover - m.heelBarDia / 2
+
   const dCounterfort =
     Math.max(m.counterfortThickness, 150) - m.cover - m.counterfortBarDia / 2
 
@@ -440,6 +452,7 @@ function computeWall(input, override = {}) {
   })
 
   const distributionAstStem = 0.0012 * 1000 * m.stemBaseT
+
   const distributionSpacingRaw =
     (barArea(m.distributionBarDia) * 1000) / distributionAstStem
 
@@ -477,6 +490,7 @@ function computeWall(input, override = {}) {
   const stemBarsPerM = 1000 / stemSteel.spacing
   const toeBarsPerM = 1000 / toeSteel.spacing
   const heelBarsPerM = 1000 / heelSteel.spacing
+
   const counterfortsCount = isCounterfort
     ? Math.ceil(m.wallLength / counterfortSpacing) + 1
     : 0
@@ -488,9 +502,11 @@ function computeWall(input, override = {}) {
   const stemSteelKgPerM =
     stemBarsPerM * stemMainLength * barWeight(m.stemBarDia)
 
-  const toeSteelKgPerM = toeBarsPerM * toeBarLength * barWeight(m.toeBarDia)
+  const toeSteelKgPerM =
+    toeBarsPerM * toeBarLength * barWeight(m.toeBarDia)
 
-  const heelSteelKgPerM = heelBarsPerM * heelBarLength * barWeight(m.heelBarDia)
+  const heelSteelKgPerM =
+    heelBarsPerM * heelBarLength * barWeight(m.heelBarDia)
 
   const horizontalBarsInStem =
     Math.ceil(H / (distributionSpacing / 1000)) + 1
@@ -503,7 +519,10 @@ function computeWall(input, override = {}) {
 
   const counterfortSteelKgTotal = isCounterfort
     ? counterfortsCount *
-      Math.max(4, Math.ceil(counterfortSteel.astReq / barArea(m.counterfortBarDia))) *
+      Math.max(
+        4,
+        Math.ceil(counterfortSteel.astReq / barArea(m.counterfortBarDia))
+      ) *
       (H + counterfortProjection + 0.8) *
       barWeight(m.counterfortBarDia)
     : 0
@@ -673,6 +692,138 @@ function computeWall(input, override = {}) {
   }
 }
 
+function chooseDiaByTrial({
+  input,
+  fieldName,
+  getSteelResult,
+  candidates,
+  minSpacing = 100,
+  maxSpacing = 250,
+  targetSpacing = 150,
+}) {
+  const trials = candidates
+    .map((dia) => {
+      const trialInput = {
+        ...input,
+        [fieldName]: dia,
+      }
+
+      const result = computeWall(trialInput)
+      const steelResult = getSteelResult(result)
+
+      return {
+        dia,
+        spacing: steelResult?.spacing || 0,
+        astReq: steelResult?.astReq || 0,
+      }
+    })
+    .filter((item) => Number.isFinite(item.spacing) && item.spacing > 0)
+
+  const practical = trials.find(
+    (item) => item.spacing >= minSpacing && item.spacing <= maxSpacing
+  )
+
+  if (practical) return practical.dia
+
+  const closest = [...trials].sort(
+    (a, b) =>
+      Math.abs(a.spacing - targetSpacing) -
+      Math.abs(b.spacing - targetSpacing)
+  )[0]
+
+  return closest?.dia || candidates[0]
+}
+
+function autoFillBarDiameters(input) {
+  if (input.barDesignMode !== 'auto') return input
+
+  let draft = {
+    ...input,
+  }
+
+  const stemDia = chooseDiaByTrial({
+    input: draft,
+    fieldName: 'stemBarDia',
+    getSteelResult: (result) => result.stemSteel,
+    candidates: MAIN_BAR_DIA_OPTIONS,
+    minSpacing: 100,
+    maxSpacing: 250,
+    targetSpacing: 150,
+  })
+
+  draft = {
+    ...draft,
+    stemBarDia: stemDia,
+  }
+
+  const toeDia = chooseDiaByTrial({
+    input: draft,
+    fieldName: 'toeBarDia',
+    getSteelResult: (result) => result.toeSteel,
+    candidates: MAIN_BAR_DIA_OPTIONS,
+    minSpacing: 100,
+    maxSpacing: 250,
+    targetSpacing: 150,
+  })
+
+  draft = {
+    ...draft,
+    toeBarDia: toeDia,
+  }
+
+  const heelDia = chooseDiaByTrial({
+    input: draft,
+    fieldName: 'heelBarDia',
+    getSteelResult: (result) => result.heelSteel,
+    candidates: MAIN_BAR_DIA_OPTIONS,
+    minSpacing: 100,
+    maxSpacing: 250,
+    targetSpacing: 150,
+  })
+
+  draft = {
+    ...draft,
+    heelBarDia: heelDia,
+  }
+
+  if (draft.wallType === 'counterfort') {
+    const counterfortDia = chooseDiaByTrial({
+      input: draft,
+      fieldName: 'counterfortBarDia',
+      getSteelResult: (result) => result.counterfortSteel,
+      candidates: MAIN_BAR_DIA_OPTIONS,
+      minSpacing: 100,
+      maxSpacing: 250,
+      targetSpacing: 150,
+    })
+
+    draft = {
+      ...draft,
+      counterfortBarDia: counterfortDia,
+    }
+  }
+
+  const distributionDia = chooseDiaByTrial({
+    input: draft,
+    fieldName: 'distributionBarDia',
+    getSteelResult: (result) => ({
+      spacing: result.distributionSpacing,
+      astReq: 0,
+    }),
+    candidates: DISTRIBUTION_BAR_DIA_OPTIONS,
+    minSpacing: 125,
+    maxSpacing: 300,
+    targetSpacing: 200,
+  })
+
+  draft = {
+    ...draft,
+    distributionBarDia: distributionDia,
+  }
+
+  return draft
+}
+
 function findOptimizedGeometry(input) {
   const m = convertToMetric(input)
   const H = Math.max(m.H, 0.1)
@@ -690,21 +841,32 @@ function findOptimizedGeometry(input) {
     const B = H * ratio
 
     for (const heelPercent of [0.55, 0.6, 0.65, 0.7]) {
-      for (let baseTmm = Math.max(300, H * 90); baseTmm <= Math.max(650, H * 160); baseTmm += 50) {
-        for (let stemBaseMm = stemBaseStart; stemBaseMm <= stemBaseStart + 250; stemBaseMm += 50) {
+      for (
+        let baseTmm = Math.max(300, H * 90);
+        baseTmm <= Math.max(650, H * 160);
+        baseTmm += 50
+      ) {
+        for (
+          let stemBaseMm = stemBaseStart;
+          stemBaseMm <= stemBaseStart + 250;
+          stemBaseMm += 50
+        ) {
           const stemBaseM = stemBaseMm / 1000
           const heel = Math.max(B * heelPercent, 0.25 * H)
           const toe = B - heel - stemBaseM
 
           if (toe < 0.15 * H || heel < 0.25 * H) continue
 
-          const trial = computeWall(input, {
+          const trialInput = autoFillBarDiameters({
+            ...input,
             toe,
             heel,
-            stemTopT: stemTop,
-            stemBaseT: stemBaseMm,
-            baseT: baseTmm,
+            stemTopThickness: stemTop,
+            stemBaseThickness: stemBaseMm,
+            baseThickness: baseTmm,
           })
+
+          const trial = computeWall(trialInput)
 
           if (trial.overallSafe) {
             best = {
@@ -719,8 +881,10 @@ function findOptimizedGeometry(input) {
               qMax: trial.qMax,
               qMin: trial.qMin,
               e: trial.e,
+              trialInput,
               results: trial,
             }
+
             return best
           }
         }
@@ -733,6 +897,8 @@ function findOptimizedGeometry(input) {
 
 export default function RetainingWallDesignPage() {
   const [inputs, setInputs] = useState(defaultInputs)
+  const [calculatedInputs, setCalculatedInputs] = useState(null)
+  const [hasCalculated, setHasCalculated] = useState(false)
 
   const isMetric = inputs.unitSystem === 'metric'
   const isCounterfort = inputs.wallType === 'counterfort'
@@ -745,17 +911,32 @@ export default function RetainingWallDesignPage() {
     sbc: isMetric ? 'kPa' : 'psf',
   }
 
+  const resultInput = calculatedInputs || inputs
+
+  const results = useMemo(() => computeWall(resultInput), [resultInput])
+
+  const optimized = useMemo(() => {
+    if (!hasCalculated) return null
+    return findOptimizedGeometry(resultInput)
+  }, [hasCalculated, resultInput])
+
   const updateInput = (key, value) => {
     if (key === 'unitSystem') {
-      setInputs(value === 'metric' ? defaultInputs : imperialDefaults)
+      const freshInputs = value === 'metric' ? defaultInputs : imperialDefaults
+      setInputs(freshInputs)
+      setCalculatedInputs(null)
+      setHasCalculated(false)
       return
     }
 
-    if (['drainageCondition', 'wallType'].includes(key)) {
+    if (['drainageCondition', 'wallType', 'barDesignMode'].includes(key)) {
       setInputs((prev) => ({
         ...prev,
         [key]: value,
       }))
+
+      setCalculatedInputs(null)
+      setHasCalculated(false)
       return
     }
 
@@ -764,6 +945,9 @@ export default function RetainingWallDesignPage() {
         ...prev,
         [key]: value,
       }))
+
+      setCalculatedInputs(null)
+      setHasCalculated(false)
       return
     }
 
@@ -771,33 +955,63 @@ export default function RetainingWallDesignPage() {
       ...prev,
       [key]: safeNumber(value),
     }))
+
+    setCalculatedInputs(null)
+    setHasCalculated(false)
   }
 
-  const results = useMemo(() => computeWall(inputs), [inputs])
-  const optimized = useMemo(() => findOptimizedGeometry(inputs), [inputs])
+  const handleCalculate = () => {
+    const preparedInputs = autoFillBarDiameters(inputs)
+
+    setInputs(preparedInputs)
+    setCalculatedInputs(preparedInputs)
+    setHasCalculated(true)
+
+    setTimeout(() => {
+      document
+        .getElementById('retaining-wall-results')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+  }
+
+  const resetAll = () => {
+    const freshInputs = isMetric ? defaultInputs : imperialDefaults
+
+    setInputs(freshInputs)
+    setCalculatedInputs(null)
+    setHasCalculated(false)
+  }
 
   const applyOptimizedDesign = () => {
     if (!optimized) return
 
+    let updatedInputs
+
     if (isMetric) {
-      setInputs((prev) => ({
-        ...prev,
+      updatedInputs = {
+        ...inputs,
         toe: Number(round(optimized.toe, 2)),
         heel: Number(round(optimized.heel, 2)),
         stemTopThickness: Math.round(optimized.stemTopT),
         stemBaseThickness: Math.round(optimized.stemBaseT),
         baseThickness: Math.round(optimized.baseT),
-      }))
+      }
     } else {
-      setInputs((prev) => ({
-        ...prev,
+      updatedInputs = {
+        ...inputs,
         toe: Number(round(optimized.toe / 0.3048, 2)),
         heel: Number(round(optimized.heel / 0.3048, 2)),
         stemTopThickness: Number(round(optimized.stemTopT / 25.4, 1)),
         stemBaseThickness: Number(round(optimized.stemBaseT / 25.4, 1)),
         baseThickness: Number(round(optimized.baseT / 25.4, 1)),
-      }))
+      }
     }
+
+    const preparedInputs = autoFillBarDiameters(updatedInputs)
+
+    setInputs(preparedInputs)
+    setCalculatedInputs(preparedInputs)
+    setHasCalculated(true)
   }
 
   const downloadPdf = async () => {
@@ -812,8 +1026,8 @@ export default function RetainingWallDesignPage() {
       doc.text('CivilCalc Pro - Practical Site Engineer Summary', 14, 26)
 
       const lines = [
-        `Wall Type: ${inputs.wallType}`,
-        `Wall Height: ${round(inputs.height)} ${unit.length}`,
+        `Wall Type: ${calculatedInputs?.wallType || inputs.wallType}`,
+        `Wall Height: ${round(resultInput.height)} ${unit.length}`,
         `Base Width: ${round(results.B)} m`,
         `Ka: ${round(results.Ka, 3)}`,
         `Total Active Pressure: ${round(results.PaTotal)} kN/m`,
@@ -823,9 +1037,10 @@ export default function RetainingWallDesignPage() {
         `FS Sliding: ${round(results.fsSliding)}`,
         `qmax: ${round(results.qMax)} kPa`,
         `qmin: ${round(results.qMin)} kPa`,
-        `Stem Steel: ${inputs.stemBarDia} mm @ ${results.stemSteel.spacing} mm c/c`,
-        `Toe Steel: ${inputs.toeBarDia} mm @ ${results.toeSteel.spacing} mm c/c`,
-        `Heel Steel: ${inputs.heelBarDia} mm @ ${results.heelSteel.spacing} mm c/c`,
+        `Stem Steel: ${resultInput.stemBarDia} mm @ ${results.stemSteel.spacing} mm c/c`,
+        `Toe Steel: ${resultInput.toeBarDia} mm @ ${results.toeSteel.spacing} mm c/c`,
+        `Heel Steel: ${resultInput.heelBarDia} mm @ ${results.heelSteel.spacing} mm c/c`,
+        `Distribution Steel: ${resultInput.distributionBarDia} mm @ ${results.distributionSpacing} mm c/c`,
         `Concrete Quantity: ${round(results.concreteVolumeTotal)} m3`,
         `Steel Quantity With Wastage: ${round(results.steelWithWastage)} kg`,
         `Excavation Quantity: ${round(results.excavationVolumeTotal)} m3`,
@@ -930,6 +1145,7 @@ export default function RetainingWallDesignPage() {
     <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-sm text-slate-400">{title}</p>
+
         {typeof pass === 'boolean' && (
           <span
             className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClass(
@@ -984,7 +1200,7 @@ export default function RetainingWallDesignPage() {
               <p className="mt-3 max-w-3xl text-slate-300">
                 Cantilever aur counterfort retaining wall ke liye earth pressure,
                 water pressure, seismic pressure, stability checks, optimizer,
-                reinforcement, quantity, BBS aur PDF report.
+                auto bar dia, reinforcement, quantity, BBS aur PDF report.
               </p>
 
               <p className="mt-2 max-w-3xl text-sm text-slate-400">
@@ -1017,9 +1233,7 @@ export default function RetainingWallDesignPage() {
               </button>
 
               <button
-                onClick={() =>
-                  setInputs(isMetric ? defaultInputs : imperialDefaults)
-                }
+                onClick={resetAll}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-bold text-slate-300 hover:border-orange-500"
               >
                 <RotateCcw size={16} />
@@ -1029,66 +1243,68 @@ export default function RetainingWallDesignPage() {
           </div>
         </div>
 
-        <div className="mb-6 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="flex items-center gap-2 text-xl font-black text-white">
-                <Sparkles className="text-orange-300" size={22} />
-                Auto Safe Design Optimizer
-              </h2>
+        {hasCalculated && (
+          <div className="mb-6 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 text-xl font-black text-white">
+                  <Sparkles className="text-orange-300" size={22} />
+                  Auto Safe Design Optimizer
+                </h2>
 
-              <p className="mt-2 text-sm text-orange-100">
-                Ye tool current soil data ke basis par safe toe, heel, stem aur
-                base thickness suggest karta hai.
-              </p>
+                <p className="mt-2 text-sm text-orange-100">
+                  Current soil data ke basis par safe toe, heel, stem aur base
+                  thickness suggest karta hai.
+                </p>
+              </div>
+
+              {optimized ? (
+                <button
+                  onClick={applyOptimizedDesign}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600"
+                >
+                  <RefreshCcw size={18} />
+                  Apply Optimized Design
+                </button>
+              ) : (
+                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm font-bold text-red-200">
+                  No safe auto design found. Increase SBC, reduce height/load, or
+                  use counterfort.
+                </div>
+              )}
             </div>
 
-            {optimized ? (
-              <button
-                onClick={applyOptimizedDesign}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600"
-              >
-                <RefreshCcw size={18} />
-                Apply Optimized Design
-              </button>
-            ) : (
-              <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm font-bold text-red-200">
-                No safe auto design found. Increase SBC, reduce height/load, or
-                use counterfort.
+            {optimized && (
+              <div className="mt-5 grid gap-4 md:grid-cols-5">
+                <QuantityCard
+                  title="Suggested Base Width"
+                  value={`${round(optimized.B)} m`}
+                  subtitle="Auto safe B"
+                />
+                <QuantityCard
+                  title="Suggested Toe"
+                  value={`${round(optimized.toe)} m`}
+                  subtitle="Front projection"
+                />
+                <QuantityCard
+                  title="Suggested Heel"
+                  value={`${round(optimized.heel)} m`}
+                  subtitle="Backfill side"
+                />
+                <QuantityCard
+                  title="Suggested Stem Base"
+                  value={`${round(optimized.stemBaseT, 0)} mm`}
+                  subtitle="Base stem thickness"
+                />
+                <QuantityCard
+                  title="Suggested Base Slab"
+                  value={`${round(optimized.baseT, 0)} mm`}
+                  subtitle="Base thickness"
+                />
               </div>
             )}
           </div>
-
-          {optimized && (
-            <div className="mt-5 grid gap-4 md:grid-cols-5">
-              <QuantityCard
-                title="Suggested Base Width"
-                value={`${round(optimized.B)} m`}
-                subtitle="Auto safe B"
-              />
-              <QuantityCard
-                title="Suggested Toe"
-                value={`${round(optimized.toe)} m`}
-                subtitle="Front projection"
-              />
-              <QuantityCard
-                title="Suggested Heel"
-                value={`${round(optimized.heel)} m`}
-                subtitle="Backfill side"
-              />
-              <QuantityCard
-                title="Suggested Stem Base"
-                value={`${round(optimized.stemBaseT, 0)} mm`}
-                subtitle="Base stem thickness"
-              />
-              <QuantityCard
-                title="Suggested Base Slab"
-                value={`${round(optimized.baseT, 0)} mm`}
-                subtitle="Base thickness"
-              />
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-6">
@@ -1411,9 +1627,42 @@ export default function RetainingWallDesignPage() {
                   step="1"
                 />
 
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-slate-200">
+                    Bar Diameter Mode
+                    <span className="block text-xs font-normal text-slate-400">
+                      Auto mode me tool stem, toe, heel aur distribution bar dia
+                      khud select karega
+                    </span>
+                  </label>
+
+                  <select
+                    value={inputs.barDesignMode}
+                    onChange={(e) =>
+                      updateInput('barDesignMode', e.target.value)
+                    }
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none"
+                  >
+                    <option value="auto">Auto Calculate Bar Dia</option>
+                    <option value="manual">Manual Bar Dia</option>
+                  </select>
+                </div>
+
+                {inputs.barDesignMode === 'auto' && (
+                  <div className="md:col-span-2 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm text-orange-100">
+                    Auto mode ON hai. Calculate click karne par tool practical
+                    spacing ke basis par stem, toe, heel aur distribution bar dia
+                    automatically select karega.
+                  </div>
+                )}
+
                 <Field
                   label="Stem Main Bar Dia"
-                  labelHi="Vertical main steel"
+                  labelHi={
+                    inputs.barDesignMode === 'auto'
+                      ? 'Auto mode me calculate ke baad update hoga'
+                      : 'Vertical main steel'
+                  }
                   name="stemBarDia"
                   suffix="mm"
                   step="1"
@@ -1421,7 +1670,11 @@ export default function RetainingWallDesignPage() {
 
                 <Field
                   label="Toe Main Bar Dia"
-                  labelHi="Toe slab main steel"
+                  labelHi={
+                    inputs.barDesignMode === 'auto'
+                      ? 'Auto mode me calculate ke baad update hoga'
+                      : 'Toe slab main steel'
+                  }
                   name="toeBarDia"
                   suffix="mm"
                   step="1"
@@ -1429,7 +1682,11 @@ export default function RetainingWallDesignPage() {
 
                 <Field
                   label="Heel Main Bar Dia"
-                  labelHi="Heel slab main steel"
+                  labelHi={
+                    inputs.barDesignMode === 'auto'
+                      ? 'Auto mode me calculate ke baad update hoga'
+                      : 'Heel slab main steel'
+                  }
                   name="heelBarDia"
                   suffix="mm"
                   step="1"
@@ -1438,7 +1695,11 @@ export default function RetainingWallDesignPage() {
                 {isCounterfort && (
                   <Field
                     label="Counterfort Bar Dia"
-                    labelHi="Counterfort web steel"
+                    labelHi={
+                      inputs.barDesignMode === 'auto'
+                        ? 'Auto mode me calculate ke baad update hoga'
+                        : 'Counterfort web steel'
+                    }
                     name="counterfortBarDia"
                     suffix="mm"
                     step="1"
@@ -1447,7 +1708,11 @@ export default function RetainingWallDesignPage() {
 
                 <Field
                   label="Distribution Bar Dia"
-                  labelHi="Horizontal/distribution steel"
+                  labelHi={
+                    inputs.barDesignMode === 'auto'
+                      ? 'Auto mode me calculate ke baad update hoga'
+                      : 'Horizontal/distribution steel'
+                  }
                   name="distributionBarDia"
                   suffix="mm"
                   step="1"
@@ -1456,9 +1721,7 @@ export default function RetainingWallDesignPage() {
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-              <h2 className="mb-5 text-xl font-black">
-                6. Site Rate Inputs
-              </h2>
+              <h2 className="mb-5 text-xl font-black">6. Site Rate Inputs</h2>
 
               <div className="grid gap-5 md:grid-cols-2">
                 <Field
@@ -1490,569 +1753,675 @@ export default function RetainingWallDesignPage() {
                 />
               </div>
             </div>
-          </div>
 
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-slate-800 bg-slate-950 p-6">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 className="text-xl font-black">Wall Diagram</h2>
-
-                <span
-                  className={`rounded-full border px-4 py-2 text-xs font-black ${
-                    results.overallSafe
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                      : 'border-red-500/30 bg-red-500/10 text-red-300'
-                  }`}
-                >
-                  {results.overallSafe ? 'OVERALL SAFE' : 'REVISION NEEDED'}
-                </span>
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-[#071027] p-4">
-                <svg viewBox="0 0 600 370" className="h-auto w-full">
-                  <defs>
-                    <linearGradient id="soilFill" x1="0" x2="1">
-                      <stop offset="0%" stopColor="#92400e" stopOpacity="0.55" />
-                      <stop offset="100%" stopColor="#451a03" stopOpacity="0.8" />
-                    </linearGradient>
-
-                    <linearGradient id="concFill" x1="0" x2="1">
-                      <stop offset="0%" stopColor="#94a3b8" />
-                      <stop offset="100%" stopColor="#475569" />
-                    </linearGradient>
-                  </defs>
-
-                  <rect x="0" y="0" width="600" height="370" fill="#071027" />
-
-                  <path
-                    d="M290 45 L555 45 L555 288 L290 288 Z"
-                    fill="url(#soilFill)"
-                    stroke="#f59e0b"
-                    strokeOpacity="0.35"
-                  />
-
-                  {inputs.drainageCondition === 'poor' &&
-                    results.waterHeight > 0 && (
-                      <rect
-                        x="295"
-                        y={288 - (results.waterHeight / results.H) * 243}
-                        width="245"
-                        height={(results.waterHeight / results.H) * 243}
-                        fill="#0284c7"
-                        opacity="0.28"
-                      />
-                    )}
-
-                  <rect
-                    x="75"
-                    y="288"
-                    width="410"
-                    height="38"
-                    rx="4"
-                    fill="url(#concFill)"
-                  />
-
-                  <path
-                    d="M205 78 L238 78 L255 288 L185 288 Z"
-                    fill="url(#concFill)"
-                  />
-
-                  {isCounterfort && (
-                    <path
-                      d="M238 95 L370 288 L238 288 Z"
-                      fill="#64748b"
-                      opacity="0.75"
-                      stroke="#cbd5e1"
-                      strokeOpacity="0.45"
-                    />
-                  )}
-
-                  {inputs.shearKeyEnabled && (
-                    <rect
-                      x="211"
-                      y="326"
-                      width="34"
-                      height="30"
-                      rx="3"
-                      fill="url(#concFill)"
-                    />
-                  )}
-
-                  <polygon
-                    points="260,82 380,288 260,288"
-                    fill="#f97316"
-                    opacity="0.22"
-                  />
-
-                  <line
-                    x1="260"
-                    y1="262"
-                    x2="350"
-                    y2="262"
-                    stroke="#fb923c"
-                    strokeWidth="3"
-                  />
-
-                  {inputs.seismicEnabled && (
-                    <line
-                      x1="260"
-                      y1="150"
-                      x2="370"
-                      y2="150"
-                      stroke="#ef4444"
-                      strokeWidth="3"
-                      strokeDasharray="8 5"
-                    />
-                  )}
-
-                  <text x="267" y="250" fill="#fb923c" fontSize="12">
-                    Earth Pressure
-                  </text>
-
-                  {inputs.seismicEnabled && (
-                    <text x="377" y="155" fill="#fca5a5" fontSize="12">
-                      Seismic
-                    </text>
-                  )}
-
-                  <text x="330" y="62" fill="#fbbf24" fontSize="13">
-                    Backfill Soil
-                  </text>
-
-                  {inputs.drainageCondition === 'poor' &&
-                    results.waterHeight > 0 && (
-                      <text x="370" y="270" fill="#7dd3fc" fontSize="12">
-                        Water Pressure
-                      </text>
-                    )}
-
-                  {isCounterfort && (
-                    <text x="285" y="210" fill="#e2e8f0" fontSize="12">
-                      Counterfort
-                    </text>
-                  )}
-
-                  <line x1="75" y1="344" x2="485" y2="344" stroke="#38bdf8" />
-
-                  <text x="235" y="361" fill="#93c5fd" fontSize="13">
-                    B = {round(results.B)} m
-                  </text>
-
-                  <text
-                    x="30"
-                    y="195"
-                    fill="#cbd5e1"
-                    fontSize="13"
-                    transform="rotate(-90 30 195)"
-                  >
-                    H = {round(results.H)} m
-                  </text>
-
-                  <text x="85" y="280" fill="#e2e8f0" fontSize="12">
-                    Toe
-                  </text>
-
-                  <text x="350" y="280" fill="#e2e8f0" fontSize="12">
-                    Heel
-                  </text>
-                </svg>
-              </div>
-
+            <div className="sticky bottom-4 z-20 rounded-3xl border border-orange-500/30 bg-slate-950/95 p-4 shadow-2xl backdrop-blur">
               <button
-                onClick={downloadPdf}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-4 font-black text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+                onClick={handleCalculate}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 py-4 text-lg font-black text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
               >
-                <Download size={18} />
-                Download Site Report PDF
+                <Calculator size={20} />
+                Calculate Retaining Wall Design
               </button>
-            </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-              <h2 className="mb-4 text-xl font-black">Safety Summary</h2>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ResultCard
-                  title="Total Active Pressure"
-                  value={`${round(results.PaTotal)} kN/m`}
-                  subtitle={`Ka = ${round(results.Ka, 3)}`}
-                />
-
-                <ResultCard
-                  title="Seismic Pressure"
-                  value={`${round(results.Pseismic)} kN/m`}
-                  subtitle={
-                    inputs.seismicEnabled
-                      ? `Ah = ${inputs.seismicCoefficient}`
-                      : 'Seismic OFF'
-                  }
-                />
-
-                <ResultCard
-                  title="Water Pressure"
-                  value={`${round(results.Pwater)} kN/m`}
-                  subtitle={
-                    inputs.drainageCondition === 'good'
-                      ? 'Good drainage selected'
-                      : `Water height = ${round(results.waterHeight)} m`
-                  }
-                />
-
-                <ResultCard
-                  title="Overturning FS"
-                  value={round(results.fsOverturning)}
-                  subtitle="Required ≥ 1.50"
-                  pass={results.checks.overturning}
-                />
-
-                <ResultCard
-                  title="Sliding FS"
-                  value={round(results.fsSliding)}
-                  subtitle={`Passive resistance = ${round(
-                    results.passiveResistance
-                  )} kN/m`}
-                  pass={results.checks.sliding}
-                />
-
-                <ResultCard
-                  title="Bearing qmax"
-                  value={`${round(results.qMax)} kPa`}
-                  subtitle={`SBC = ${round(results.m.sbc)} kPa`}
-                  pass={results.checks.bearing}
-                />
-
-                <ResultCard
-                  title="Minimum Pressure"
-                  value={`${round(results.qMin)} kPa`}
-                  subtitle="qmin should be positive"
-                  pass={results.checks.noTension}
-                />
-
-                <ResultCard
-                  title="Eccentricity"
-                  value={`${round(results.e, 3)} m`}
-                  subtitle={`Limit B/6 = ${round(results.B / 6, 3)} m`}
-                  pass={results.checks.eccentricity}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-black">
-                <AlertTriangle className="text-orange-400" size={22} />
-                Practical Recommendations
-              </h2>
-
-              <div className="space-y-3">
-                {results.recommendations.map((item, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm leading-6 text-orange-100"
-                  >
-                    {index + 1}. {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-black">
-                <ClipboardList className="text-emerald-400" size={22} />
-                Site Checklist
-              </h2>
-
-              <div className="space-y-3 text-sm text-slate-300">
-                <p>✓ Soil SBC report verify karo.</p>
-                <p>✓ Backfill soil ka φ angle aur unit weight confirm karo.</p>
-                <p>✓ Weep holes aur filter media provide karo.</p>
-                <p>✓ Water pressure avoid karne ke liye drainage pipe lagao.</p>
-                <p>✓ Stem main steel soil side face par place karo.</p>
-                <p>✓ Heel main steel top face par aur toe main steel bottom face par check karo.</p>
-                <p>✓ Development length, lap length aur cover site par maintain karo.</p>
-                <p>✓ Seismic pressure final design me local code ke according verify karo.</p>
-                {isCounterfort && (
-                  <p>✓ Counterfort spacing, web reinforcement aur construction joint detailing check karo.</p>
-                )}
-              </div>
+              <p className="mt-3 text-center text-xs text-slate-400">
+                Input fill karne ke baad calculate click karo. Auto bar dia mode
+                ON hoga toh dia bhi automatically select hoga.
+              </p>
             </div>
           </div>
-        </div>
 
-        <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-          <h2 className="mb-5 flex items-center gap-2 text-xl font-black">
-            <Hammer className="text-orange-400" size={22} />
-            RCC Reinforcement Design Summary
-          </h2>
+          <div id="retaining-wall-results" className="space-y-6">
+            {!hasCalculated ? (
+              <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-8 text-center">
+                <Calculator className="mx-auto mb-4 text-orange-400" size={46} />
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] overflow-hidden rounded-2xl text-left text-sm">
-              <thead className="bg-slate-950 text-slate-300">
-                <tr>
-                  <th className="px-4 py-4">Member</th>
-                  <th className="px-4 py-4">Ultimate Moment</th>
-                  <th className="px-4 py-4">Ast Required</th>
-                  <th className="px-4 py-4">Recommended Steel</th>
-                  <th className="px-4 py-4">Site Note</th>
-                </tr>
-              </thead>
+                <h2 className="text-2xl font-black text-white">
+                  Fill Inputs & Click Calculate
+                </h2>
 
-              <tbody>
-                <SteelRow
-                  part="Stem Main Steel"
-                  moment={results.MstemUltimate}
-                  dia={inputs.stemBarDia}
-                  spacing={results.stemSteel.spacing}
-                  ast={results.stemSteel.astReq}
-                  note={isCounterfort ? 'Panel action between counterforts' : 'Soil side face'}
-                />
-
-                <SteelRow
-                  part="Toe Slab Steel"
-                  moment={results.MtoeUltimate}
-                  dia={inputs.toeBarDia}
-                  spacing={results.toeSteel.spacing}
-                  ast={results.toeSteel.astReq}
-                  note="Bottom face"
-                />
-
-                <SteelRow
-                  part="Heel Slab Steel"
-                  moment={results.MheelUltimate}
-                  dia={inputs.heelBarDia}
-                  spacing={results.heelSteel.spacing}
-                  ast={results.heelSteel.astReq}
-                  note="Top face"
-                />
-
-                {isCounterfort && (
-                  <SteelRow
-                    part="Counterfort Web Steel"
-                    moment={results.McounterfortUltimate}
-                    dia={inputs.counterfortBarDia}
-                    spacing={results.counterfortSteel.spacing}
-                    ast={results.counterfortSteel.astReq}
-                    note="Inclined/web reinforcement"
-                  />
-                )}
-
-                <tr className="border-b border-slate-800">
-                  <td className="px-4 py-4 font-semibold text-white">
-                    Distribution Steel
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">Minimum steel</td>
-                  <td className="px-4 py-4 text-slate-300">0.12%</td>
-                  <td className="px-4 py-4 text-orange-300">
-                    {inputs.distributionBarDia} mm @{' '}
-                    {results.distributionSpacing} mm c/c
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">
-                    Horizontal and temperature steel
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
-            <strong className="text-white">Placement hint:</strong> Stem main
-            reinforcement generally soil side face par critical hota hai.
-            Counterfort wall me stem panel action aur counterfort web tension
-            reinforcement separately verify karna zaroori hai.
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-          <h2 className="mb-5 text-xl font-black">
-            Quantity Estimate & Site Cost Summary
-          </h2>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <QuantityCard
-              title="Concrete Quantity"
-              value={`${round(results.concreteVolumeTotal)} m³`}
-              subtitle={`${round(results.concreteVolumePerM)} m³ per meter length`}
-            />
-
-            <QuantityCard
-              title="Steel Quantity"
-              value={`${round(results.steelWithWastage)} kg`}
-              subtitle="Includes approx 10% wastage"
-            />
-
-            <QuantityCard
-              title="Excavation Quantity"
-              value={`${round(results.excavationVolumeTotal)} m³`}
-              subtitle="Approx trench excavation"
-            />
-
-            <QuantityCard
-              title="Backfill Quantity"
-              value={`${round(results.backfillVolumeTotal)} m³`}
-              subtitle="Behind wall backfilling"
-            />
-
-            <QuantityCard
-              title="Shuttering Area"
-              value={`${round(results.shutteringAreaTotal)} m²`}
-              subtitle="Approx formwork area"
-            />
-
-            <QuantityCard
-              title="Weep Holes"
-              value={`${results.totalWeepHoles} Nos`}
-              subtitle={`${results.weepRows} rows × ${results.weepColumns} columns`}
-            />
-
-            <QuantityCard
-              title="Steel per Meter"
-              value={`${round(results.steelKgPerM)} kg/m`}
-              subtitle="Approx BBS based quantity"
-            />
-
-            <QuantityCard
-              title="Estimated Cost"
-              value={money(results.estimatedCost)}
-              subtitle="Concrete + steel + excavation + backfill"
-            />
-
-            {isCounterfort && (
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Retaining wall ka diagram, stability check, steel design,
+                  auto bar dia, quantity, BBS aur PDF report calculate button
+                  click karne ke baad show hoga.
+                </p>
+              </div>
+            ) : (
               <>
-                <QuantityCard
-                  title="Counterfort Count"
-                  value={`${results.counterfortsCount} Nos`}
-                  subtitle="Based on wall length and spacing"
-                />
+                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-6">
+                  <div className="mb-4 flex items-center justify-between gap-4">
+                    <h2 className="text-xl font-black">Wall Diagram</h2>
 
-                <QuantityCard
-                  title="Counterfort Steel"
-                  value={`${round(results.counterfortSteelKgTotal)} kg`}
-                  subtitle="Approx additional steel"
-                />
+                    <span
+                      className={`rounded-full border px-4 py-2 text-xs font-black ${
+                        results.overallSafe
+                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                          : 'border-red-500/30 bg-red-500/10 text-red-300'
+                      }`}
+                    >
+                      {results.overallSafe
+                        ? 'OVERALL SAFE'
+                        : 'REVISION NEEDED'}
+                    </span>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-800 bg-[#071027] p-4">
+                    <svg viewBox="0 0 600 370" className="h-auto w-full">
+                      <defs>
+                        <linearGradient id="soilFill" x1="0" x2="1">
+                          <stop
+                            offset="0%"
+                            stopColor="#92400e"
+                            stopOpacity="0.55"
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="#451a03"
+                            stopOpacity="0.8"
+                          />
+                        </linearGradient>
+
+                        <linearGradient id="concFill" x1="0" x2="1">
+                          <stop offset="0%" stopColor="#94a3b8" />
+                          <stop offset="100%" stopColor="#475569" />
+                        </linearGradient>
+                      </defs>
+
+                      <rect
+                        x="0"
+                        y="0"
+                        width="600"
+                        height="370"
+                        fill="#071027"
+                      />
+
+                      <path
+                        d="M290 45 L555 45 L555 288 L290 288 Z"
+                        fill="url(#soilFill)"
+                        stroke="#f59e0b"
+                        strokeOpacity="0.35"
+                      />
+
+                      {resultInput.drainageCondition === 'poor' &&
+                        results.waterHeight > 0 && (
+                          <rect
+                            x="295"
+                            y={288 - (results.waterHeight / results.H) * 243}
+                            width="245"
+                            height={(results.waterHeight / results.H) * 243}
+                            fill="#0284c7"
+                            opacity="0.28"
+                          />
+                        )}
+
+                      <rect
+                        x="75"
+                        y="288"
+                        width="410"
+                        height="38"
+                        rx="4"
+                        fill="url(#concFill)"
+                      />
+
+                      <path
+                        d="M205 78 L238 78 L255 288 L185 288 Z"
+                        fill="url(#concFill)"
+                      />
+
+                      {resultInput.wallType === 'counterfort' && (
+                        <path
+                          d="M238 95 L370 288 L238 288 Z"
+                          fill="#64748b"
+                          opacity="0.75"
+                          stroke="#cbd5e1"
+                          strokeOpacity="0.45"
+                        />
+                      )}
+
+                      {resultInput.shearKeyEnabled && (
+                        <rect
+                          x="211"
+                          y="326"
+                          width="34"
+                          height="30"
+                          rx="3"
+                          fill="url(#concFill)"
+                        />
+                      )}
+
+                      <polygon
+                        points="260,82 380,288 260,288"
+                        fill="#f97316"
+                        opacity="0.22"
+                      />
+
+                      <line
+                        x1="260"
+                        y1="262"
+                        x2="350"
+                        y2="262"
+                        stroke="#fb923c"
+                        strokeWidth="3"
+                      />
+
+                      {resultInput.seismicEnabled && (
+                        <line
+                          x1="260"
+                          y1="150"
+                          x2="370"
+                          y2="150"
+                          stroke="#ef4444"
+                          strokeWidth="3"
+                          strokeDasharray="8 5"
+                        />
+                      )}
+
+                      <text x="267" y="250" fill="#fb923c" fontSize="12">
+                        Earth Pressure
+                      </text>
+
+                      {resultInput.seismicEnabled && (
+                        <text x="377" y="155" fill="#fca5a5" fontSize="12">
+                          Seismic
+                        </text>
+                      )}
+
+                      <text x="330" y="62" fill="#fbbf24" fontSize="13">
+                        Backfill Soil
+                      </text>
+
+                      {resultInput.drainageCondition === 'poor' &&
+                        results.waterHeight > 0 && (
+                          <text x="370" y="270" fill="#7dd3fc" fontSize="12">
+                            Water Pressure
+                          </text>
+                        )}
+
+                      {resultInput.wallType === 'counterfort' && (
+                        <text x="285" y="210" fill="#e2e8f0" fontSize="12">
+                          Counterfort
+                        </text>
+                      )}
+
+                      <line
+                        x1="75"
+                        y1="344"
+                        x2="485"
+                        y2="344"
+                        stroke="#38bdf8"
+                      />
+
+                      <text x="235" y="361" fill="#93c5fd" fontSize="13">
+                        B = {round(results.B)} m
+                      </text>
+
+                      <text
+                        x="30"
+                        y="195"
+                        fill="#cbd5e1"
+                        fontSize="13"
+                        transform="rotate(-90 30 195)"
+                      >
+                        H = {round(results.H)} m
+                      </text>
+
+                      <text x="85" y="280" fill="#e2e8f0" fontSize="12">
+                        Toe
+                      </text>
+
+                      <text x="350" y="280" fill="#e2e8f0" fontSize="12">
+                        Heel
+                      </text>
+                    </svg>
+                  </div>
+
+                  <button
+                    onClick={downloadPdf}
+                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-4 font-black text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600"
+                  >
+                    <Download size={18} />
+                    Download Site Report PDF
+                  </button>
+                </div>
+
+                {calculatedInputs?.barDesignMode === 'auto' && (
+                  <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-6">
+                    <h3 className="mb-4 text-xl font-black text-emerald-200">
+                      Auto Selected Bar Diameters
+                    </h3>
+
+                    <div className="grid gap-3 text-sm text-emerald-100 sm:grid-cols-2">
+                      <p>Stem Main Bar: {calculatedInputs.stemBarDia} mm</p>
+                      <p>Toe Main Bar: {calculatedInputs.toeBarDia} mm</p>
+                      <p>Heel Main Bar: {calculatedInputs.heelBarDia} mm</p>
+                      <p>
+                        Distribution Bar: {calculatedInputs.distributionBarDia}{' '}
+                        mm
+                      </p>
+                      {calculatedInputs.wallType === 'counterfort' && (
+                        <p>
+                          Counterfort Bar:{' '}
+                          {calculatedInputs.counterfortBarDia} mm
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                  <h2 className="mb-4 text-xl font-black">Safety Summary</h2>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <ResultCard
+                      title="Total Active Pressure"
+                      value={`${round(results.PaTotal)} kN/m`}
+                      subtitle={`Ka = ${round(results.Ka, 3)}`}
+                    />
+
+                    <ResultCard
+                      title="Seismic Pressure"
+                      value={`${round(results.Pseismic)} kN/m`}
+                      subtitle={
+                        resultInput.seismicEnabled
+                          ? `Ah = ${resultInput.seismicCoefficient}`
+                          : 'Seismic OFF'
+                      }
+                    />
+
+                    <ResultCard
+                      title="Water Pressure"
+                      value={`${round(results.Pwater)} kN/m`}
+                      subtitle={
+                        resultInput.drainageCondition === 'good'
+                          ? 'Good drainage selected'
+                          : `Water height = ${round(results.waterHeight)} m`
+                      }
+                    />
+
+                    <ResultCard
+                      title="Overturning FS"
+                      value={round(results.fsOverturning)}
+                      subtitle="Required ≥ 1.50"
+                      pass={results.checks.overturning}
+                    />
+
+                    <ResultCard
+                      title="Sliding FS"
+                      value={round(results.fsSliding)}
+                      subtitle={`Passive resistance = ${round(
+                        results.passiveResistance
+                      )} kN/m`}
+                      pass={results.checks.sliding}
+                    />
+
+                    <ResultCard
+                      title="Bearing qmax"
+                      value={`${round(results.qMax)} kPa`}
+                      subtitle={`SBC = ${round(results.m.sbc)} kPa`}
+                      pass={results.checks.bearing}
+                    />
+
+                    <ResultCard
+                      title="Minimum Pressure"
+                      value={`${round(results.qMin)} kPa`}
+                      subtitle="qmin should be positive"
+                      pass={results.checks.noTension}
+                    />
+
+                    <ResultCard
+                      title="Eccentricity"
+                      value={`${round(results.e, 3)} m`}
+                      subtitle={`Limit B/6 = ${round(results.B / 6, 3)} m`}
+                      pass={results.checks.eccentricity}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                  <h2 className="mb-4 flex items-center gap-2 text-xl font-black">
+                    <AlertTriangle className="text-orange-400" size={22} />
+                    Practical Recommendations
+                  </h2>
+
+                  <div className="space-y-3">
+                    {results.recommendations.map((item, index) => (
+                      <div
+                        key={index}
+                        className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-4 text-sm leading-6 text-orange-100"
+                      >
+                        {index + 1}. {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                  <h2 className="mb-4 flex items-center gap-2 text-xl font-black">
+                    <ClipboardList className="text-emerald-400" size={22} />
+                    Site Checklist
+                  </h2>
+
+                  <div className="space-y-3 text-sm text-slate-300">
+                    <p>✓ Soil SBC report verify karo.</p>
+                    <p>
+                      ✓ Backfill soil ka φ angle aur unit weight confirm karo.
+                    </p>
+                    <p>✓ Weep holes aur filter media provide karo.</p>
+                    <p>
+                      ✓ Water pressure avoid karne ke liye drainage pipe lagao.
+                    </p>
+                    <p>✓ Stem main steel soil side face par place karo.</p>
+                    <p>
+                      ✓ Heel main steel top face par aur toe main steel bottom
+                      face par check karo.
+                    </p>
+                    <p>
+                      ✓ Development length, lap length aur cover site par
+                      maintain karo.
+                    </p>
+                    <p>
+                      ✓ Seismic pressure final design me local code ke according
+                      verify karo.
+                    </p>
+                    {resultInput.wallType === 'counterfort' && (
+                      <p>
+                        ✓ Counterfort spacing, web reinforcement aur
+                        construction joint detailing check karo.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </>
             )}
           </div>
         </div>
 
-        <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-          <h2 className="mb-5 text-xl font-black">
-            BBS Style Approx Bar Summary
-          </h2>
+        {hasCalculated && (
+          <>
+            <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+              <h2 className="mb-5 flex items-center gap-2 text-xl font-black">
+                <Hammer className="text-orange-400" size={22} />
+                RCC Reinforcement Design Summary
+              </h2>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] overflow-hidden rounded-2xl text-left text-sm">
-              <thead className="bg-slate-950 text-slate-300">
-                <tr>
-                  <th className="px-4 py-4">Bar Type</th>
-                  <th className="px-4 py-4">Dia</th>
-                  <th className="px-4 py-4">Spacing</th>
-                  <th className="px-4 py-4">Approx Steel</th>
-                  <th className="px-4 py-4">Site Note</th>
-                </tr>
-              </thead>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[860px] overflow-hidden rounded-2xl text-left text-sm">
+                  <thead className="bg-slate-950 text-slate-300">
+                    <tr>
+                      <th className="px-4 py-4">Member</th>
+                      <th className="px-4 py-4">Ultimate Moment</th>
+                      <th className="px-4 py-4">Ast Required</th>
+                      <th className="px-4 py-4">Recommended Steel</th>
+                      <th className="px-4 py-4">Site Note</th>
+                    </tr>
+                  </thead>
 
-              <tbody>
-                <tr className="border-b border-slate-800">
-                  <td className="px-4 py-4 font-semibold text-white">
-                    Stem Main Vertical Bars
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">
-                    {inputs.stemBarDia} mm
-                  </td>
-                  <td className="px-4 py-4 text-orange-300">
-                    {results.stemSteel.spacing} mm c/c
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">
-                    {round(results.stemSteelKgPerM)} kg/m
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">
-                    Soil side face
-                  </td>
-                </tr>
+                  <tbody>
+                    <SteelRow
+                      part="Stem Main Steel"
+                      moment={results.MstemUltimate}
+                      dia={resultInput.stemBarDia}
+                      spacing={results.stemSteel.spacing}
+                      ast={results.stemSteel.astReq}
+                      note={
+                        resultInput.wallType === 'counterfort'
+                          ? 'Panel action between counterforts'
+                          : 'Soil side face'
+                      }
+                    />
 
-                <tr className="border-b border-slate-800">
-                  <td className="px-4 py-4 font-semibold text-white">
-                    Toe Main Bars
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">
-                    {inputs.toeBarDia} mm
-                  </td>
-                  <td className="px-4 py-4 text-orange-300">
-                    {results.toeSteel.spacing} mm c/c
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">
-                    {round(results.toeSteelKgPerM)} kg/m
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">Bottom face</td>
-                </tr>
+                    <SteelRow
+                      part="Toe Slab Steel"
+                      moment={results.MtoeUltimate}
+                      dia={resultInput.toeBarDia}
+                      spacing={results.toeSteel.spacing}
+                      ast={results.toeSteel.astReq}
+                      note="Bottom face"
+                    />
 
-                <tr className="border-b border-slate-800">
-                  <td className="px-4 py-4 font-semibold text-white">
-                    Heel Main Bars
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">
-                    {inputs.heelBarDia} mm
-                  </td>
-                  <td className="px-4 py-4 text-orange-300">
-                    {results.heelSteel.spacing} mm c/c
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">
-                    {round(results.heelSteelKgPerM)} kg/m
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">Top face</td>
-                </tr>
+                    <SteelRow
+                      part="Heel Slab Steel"
+                      moment={results.MheelUltimate}
+                      dia={resultInput.heelBarDia}
+                      spacing={results.heelSteel.spacing}
+                      ast={results.heelSteel.astReq}
+                      note="Top face"
+                    />
 
-                {isCounterfort && (
-                  <tr className="border-b border-slate-800">
-                    <td className="px-4 py-4 font-semibold text-white">
-                      Counterfort Bars
-                    </td>
-                    <td className="px-4 py-4 text-slate-300">
-                      {inputs.counterfortBarDia} mm
-                    </td>
-                    <td className="px-4 py-4 text-orange-300">
-                      {results.counterfortSteel.spacing} mm c/c
-                    </td>
-                    <td className="px-4 py-4 text-slate-300">
-                      {round(results.counterfortSteelKgTotal)} kg total
-                    </td>
-                    <td className="px-4 py-4 text-slate-400">
-                      Web and tension steel
-                    </td>
-                  </tr>
+                    {resultInput.wallType === 'counterfort' && (
+                      <SteelRow
+                        part="Counterfort Web Steel"
+                        moment={results.McounterfortUltimate}
+                        dia={resultInput.counterfortBarDia}
+                        spacing={results.counterfortSteel.spacing}
+                        ast={results.counterfortSteel.astReq}
+                        note="Inclined/web reinforcement"
+                      />
+                    )}
+
+                    <tr className="border-b border-slate-800">
+                      <td className="px-4 py-4 font-semibold text-white">
+                        Distribution Steel
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        Minimum steel
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">0.12%</td>
+                      <td className="px-4 py-4 text-orange-300">
+                        {resultInput.distributionBarDia} mm @{' '}
+                        {results.distributionSpacing} mm c/c
+                      </td>
+                      <td className="px-4 py-4 text-slate-400">
+                        Horizontal and temperature steel
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
+                <strong className="text-white">Placement hint:</strong> Stem
+                main reinforcement generally soil side face par critical hota
+                hai. Counterfort wall me stem panel action aur counterfort web
+                tension reinforcement separately verify karna zaroori hai.
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+              <h2 className="mb-5 text-xl font-black">
+                Quantity Estimate & Site Cost Summary
+              </h2>
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <QuantityCard
+                  title="Concrete Quantity"
+                  value={`${round(results.concreteVolumeTotal)} m³`}
+                  subtitle={`${round(results.concreteVolumePerM)} m³ per meter length`}
+                />
+
+                <QuantityCard
+                  title="Steel Quantity"
+                  value={`${round(results.steelWithWastage)} kg`}
+                  subtitle="Includes approx 10% wastage"
+                />
+
+                <QuantityCard
+                  title="Excavation Quantity"
+                  value={`${round(results.excavationVolumeTotal)} m³`}
+                  subtitle="Approx trench excavation"
+                />
+
+                <QuantityCard
+                  title="Backfill Quantity"
+                  value={`${round(results.backfillVolumeTotal)} m³`}
+                  subtitle="Behind wall backfilling"
+                />
+
+                <QuantityCard
+                  title="Shuttering Area"
+                  value={`${round(results.shutteringAreaTotal)} m²`}
+                  subtitle="Approx formwork area"
+                />
+
+                <QuantityCard
+                  title="Weep Holes"
+                  value={`${results.totalWeepHoles} Nos`}
+                  subtitle={`${results.weepRows} rows × ${results.weepColumns} columns`}
+                />
+
+                <QuantityCard
+                  title="Steel per Meter"
+                  value={`${round(results.steelKgPerM)} kg/m`}
+                  subtitle="Approx BBS based quantity"
+                />
+
+                <QuantityCard
+                  title="Estimated Cost"
+                  value={money(results.estimatedCost)}
+                  subtitle="Concrete + steel + excavation + backfill"
+                />
+
+                {resultInput.wallType === 'counterfort' && (
+                  <>
+                    <QuantityCard
+                      title="Counterfort Count"
+                      value={`${results.counterfortsCount} Nos`}
+                      subtitle="Based on wall length and spacing"
+                    />
+
+                    <QuantityCard
+                      title="Counterfort Steel"
+                      value={`${round(results.counterfortSteelKgTotal)} kg`}
+                      subtitle="Approx additional steel"
+                    />
+                  </>
                 )}
+              </div>
+            </div>
 
-                <tr className="border-b border-slate-800">
-                  <td className="px-4 py-4 font-semibold text-white">
-                    Distribution Bars
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">
-                    {inputs.distributionBarDia} mm
-                  </td>
-                  <td className="px-4 py-4 text-orange-300">
-                    {results.distributionSpacing} mm c/c
-                  </td>
-                  <td className="px-4 py-4 text-slate-300">
-                    {round(
-                      results.stemDistributionKgPerM +
-                        results.baseDistributionKgPerM
-                    )}{' '}
-                    kg/m
-                  </td>
-                  <td className="px-4 py-4 text-slate-400">
-                    Horizontal and temperature steel
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+            <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+              <h2 className="mb-5 text-xl font-black">
+                BBS Style Approx Bar Summary
+              </h2>
 
-        <div className="mt-6 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6 text-sm leading-7 text-orange-100">
-          <strong>Important:</strong> Ye retaining wall tool preliminary design,
-          checking, quantity aur site planning ke liye hai. Final design me soil
-          report, drainage detail, seismic load, water pressure, crack control,
-          development length, construction joint aur local code requirements
-          structural engineer se verify karna zaroori hai.
-        </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[820px] overflow-hidden rounded-2xl text-left text-sm">
+                  <thead className="bg-slate-950 text-slate-300">
+                    <tr>
+                      <th className="px-4 py-4">Bar Type</th>
+                      <th className="px-4 py-4">Dia</th>
+                      <th className="px-4 py-4">Spacing</th>
+                      <th className="px-4 py-4">Approx Steel</th>
+                      <th className="px-4 py-4">Site Note</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr className="border-b border-slate-800">
+                      <td className="px-4 py-4 font-semibold text-white">
+                        Stem Main Vertical Bars
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        {resultInput.stemBarDia} mm
+                      </td>
+                      <td className="px-4 py-4 text-orange-300">
+                        {results.stemSteel.spacing} mm c/c
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        {round(results.stemSteelKgPerM)} kg/m
+                      </td>
+                      <td className="px-4 py-4 text-slate-400">
+                        Soil side face
+                      </td>
+                    </tr>
+
+                    <tr className="border-b border-slate-800">
+                      <td className="px-4 py-4 font-semibold text-white">
+                        Toe Main Bars
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        {resultInput.toeBarDia} mm
+                      </td>
+                      <td className="px-4 py-4 text-orange-300">
+                        {results.toeSteel.spacing} mm c/c
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        {round(results.toeSteelKgPerM)} kg/m
+                      </td>
+                      <td className="px-4 py-4 text-slate-400">Bottom face</td>
+                    </tr>
+
+                    <tr className="border-b border-slate-800">
+                      <td className="px-4 py-4 font-semibold text-white">
+                        Heel Main Bars
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        {resultInput.heelBarDia} mm
+                      </td>
+                      <td className="px-4 py-4 text-orange-300">
+                        {results.heelSteel.spacing} mm c/c
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        {round(results.heelSteelKgPerM)} kg/m
+                      </td>
+                      <td className="px-4 py-4 text-slate-400">Top face</td>
+                    </tr>
+
+                    {resultInput.wallType === 'counterfort' && (
+                      <tr className="border-b border-slate-800">
+                        <td className="px-4 py-4 font-semibold text-white">
+                          Counterfort Bars
+                        </td>
+                        <td className="px-4 py-4 text-slate-300">
+                          {resultInput.counterfortBarDia} mm
+                        </td>
+                        <td className="px-4 py-4 text-orange-300">
+                          {results.counterfortSteel.spacing} mm c/c
+                        </td>
+                        <td className="px-4 py-4 text-slate-300">
+                          {round(results.counterfortSteelKgTotal)} kg total
+                        </td>
+                        <td className="px-4 py-4 text-slate-400">
+                          Web and tension steel
+                        </td>
+                      </tr>
+                    )}
+
+                    <tr className="border-b border-slate-800">
+                      <td className="px-4 py-4 font-semibold text-white">
+                        Distribution Bars
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        {resultInput.distributionBarDia} mm
+                      </td>
+                      <td className="px-4 py-4 text-orange-300">
+                        {results.distributionSpacing} mm c/c
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">
+                        {round(
+                          results.stemDistributionKgPerM +
+                            results.baseDistributionKgPerM
+                        )}{' '}
+                        kg/m
+                      </td>
+                      <td className="px-4 py-4 text-slate-400">
+                        Horizontal and temperature steel
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6 text-sm leading-7 text-orange-100">
+              <strong>Important:</strong> Ye retaining wall tool preliminary
+              design, checking, quantity aur site planning ke liye hai. Final
+              design me soil report, drainage detail, seismic load, water
+              pressure, crack control, development length, construction joint aur
+              local code requirements structural engineer se verify karna zaroori
+              hai.
+            </div>
+          </>
+        )}
       </section>
     </main>
   )
