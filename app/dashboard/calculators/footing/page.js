@@ -364,7 +364,14 @@ function isolatedCoreDesign({
     const tauVy = (oneWayVy * 1000) / (1000 * effectiveDepthMm)
     const oneWayTau = Math.max(tauVx, tauVy)
     const oneWaySafe = oneWayTau <= tauC
+const shearProjectionX = Math.max(projectionX - effectiveDepthM, 0)
+const shearProjectionY = Math.max(projectionY - effectiveDepthM, 0)
 
+const criticalDirection = tauVx >= tauVy ? 'X Direction' : 'Y Direction'
+
+const oneWayRecommendation = oneWaySafe
+  ? 'Footing depth is adequate for one-way shear.'
+  : 'Increase footing depth or revise footing size.'
     const innerArea =
       (colDepthMm / 1000 + effectiveDepthM) *
       (colWidthMm / 1000 + effectiveDepthM)
@@ -451,6 +458,12 @@ function isolatedCoreDesign({
       oneWayTau,
       tauC,
       oneWaySafe,
+      criticalDistanceMm: effectiveDepthMm,
+criticalDistanceM: effectiveDepthM,
+shearProjectionX,
+shearProjectionY,
+criticalDirection,
+oneWayRecommendation,
       punchingVu,
       punchingPerimeterM,
       punchingTau,
@@ -977,6 +990,13 @@ function FootingSectionDiagram({ result }) {
         <text x="515" y="285" fill="#22c55e" fontSize="14">
           One-way shear section
         </text>
+          <text x="515" y="305" fill="#22c55e" fontSize="13">
+  at d = {formatPlain(result.criticalDistanceMm)} mm
+</text>
+
+<text x="515" y="325" fill="#22c55e" fontSize="13">
+  {result.criticalDirection}
+</text>
       </svg>
     </div>
   )
@@ -1074,8 +1094,12 @@ export default function FootingDesignPage() {
       ['Depth', `${formatPlain(result.depthMm)} mm`],
       ['Effective Depth', `${formatPlain(result.effectiveDepthMm)} mm`],
       ['Soil Pressure', `${formatNumber(result.soilPressure, 2)} kN/m²`],
-      ['SBC', `${formatNumber(result.input ? 0 : 0, 0)}`],
+      ['Allowable SBC', `${formatNumber(convertInputsToMetric(input).sbcKnM2, 2)} kN/m²`],
       ['One-Way Shear', result.oneWaySafe ? 'Safe' : 'Check Required'],
+      ['One-Way Critical Section', `At d = ${formatPlain(result.criticalDistanceMm)} mm from column face`],
+['One-Way Critical Direction', result.criticalDirection],
+['One-Way Max Shear Stress', `${formatNumber(result.oneWayTau, 3)} N/mm²`],
+['One-Way Allowable Shear', `${formatNumber(result.tauC, 3)} N/mm²`],
       ['Two-Way / Punching Shear', result.punchingSafe ? 'Safe' : 'Check Required'],
       ['X Direction Steel', `${result.xBars.dia} mm dia @ ${result.xBars.spacing} mm c/c`],
       ['Y Direction Steel', `${result.yBars.dia} mm dia @ ${result.yBars.spacing} mm c/c`],
@@ -1550,6 +1574,14 @@ export default function FootingDesignPage() {
                 <ResultCard title="Final Recommendation" hindi="अंतिम सुझाव" highlight>
                   <Row label="Adopt Size" value={getFootingSizeText(result)} strong />
                   <Row label="Adopt Depth" value={`${formatPlain(result.depthMm)} mm`} strong />
+                    <Row
+  label="One-Way Shear"
+  value={result.oneWaySafe ? 'Safe' : 'Check Required'}
+/>
+<Row
+  label="Critical Direction"
+  value={result.criticalDirection}
+/>
                   <Row
                     label="X Direction Steel"
                     value={`${result.xBars.dia} mm dia @ ${result.xBars.spacing} mm c/c`}
@@ -1595,13 +1627,62 @@ export default function FootingDesignPage() {
                   <Row label="Required Ast Y" value={`${formatNumber(result.astY, 2)} mm²/m`} />
                 </ResultCard>
 
-                <ResultCard title="One-Way Shear Check" hindi="वन-वे शियर चेक">
-                  <Row label="Shear Stress X" value={`${formatNumber(result.tauVx, 3)} N/mm²`} />
-                  <Row label="Shear Stress Y" value={`${formatNumber(result.tauVy, 3)} N/mm²`} />
-                  <Row label="Maximum Shear Stress" value={`${formatNumber(result.oneWayTau, 3)} N/mm²`} strong />
-                  <Row label="Allowable Shear" value={`${formatNumber(result.tauC, 3)} N/mm²`} />
-                  <Row label="Status" value={result.oneWaySafe ? 'Safe' : 'Check Required'} strong />
-                </ResultCard>
+               <ResultCard title="One-Way Shear Check" hindi="वन-वे शियर चेक">
+  <Row
+    label="Critical Section"
+    value={`At d = ${formatPlain(result.criticalDistanceMm)} mm from column face`}
+  />
+  <Row
+    label="Factored Soil Pressure"
+    value={`${formatNumber(result.factoredPressure, 2)} kN/m²`}
+  />
+  <Row
+    label="Shear Projection X"
+    value={`${formatNumber(result.shearProjectionX, 2)} m`}
+  />
+  <Row
+    label="Shear Projection Y"
+    value={`${formatNumber(result.shearProjectionY, 2)} m`}
+  />
+  <Row
+    label="Shear Force X"
+    value={`${formatNumber(result.oneWayVx, 2)} kN/m`}
+  />
+  <Row
+    label="Shear Force Y"
+    value={`${formatNumber(result.oneWayVy, 2)} kN/m`}
+  />
+  <Row
+    label="Shear Stress X"
+    value={`${formatNumber(result.tauVx, 3)} N/mm²`}
+  />
+  <Row
+    label="Shear Stress Y"
+    value={`${formatNumber(result.tauVy, 3)} N/mm²`}
+  />
+  <Row
+    label="Maximum Shear Stress"
+    value={`${formatNumber(result.oneWayTau, 3)} N/mm²`}
+    strong
+  />
+  <Row
+    label="Allowable Shear"
+    value={`${formatNumber(result.tauC, 3)} N/mm²`}
+  />
+  <Row
+    label="Critical Direction"
+    value={result.criticalDirection}
+  />
+  <Row
+    label="Status"
+    value={result.oneWaySafe ? 'Safe' : 'Check Required'}
+    strong
+  />
+  <Row
+    label="Recommendation"
+    value={result.oneWayRecommendation}
+  />
+</ResultCard>
 
                 <ResultCard title="Two-Way / Punching Shear" hindi="टू-वे / पंचिंग शियर">
                   <Row label="Punching Shear Vu" value={`${formatNumber(result.punchingVu, 2)} kN`} />
