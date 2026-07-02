@@ -118,6 +118,42 @@ const defaultWastage = {
   brick: 5,
 };
 
+// Practical residential thumb rules used only for fast planning estimates.
+// Exact quantities still depend on structural drawings, wall layout, concrete grade and site execution method.
+const materialRules = {
+  Economy: {
+    cementBagsPerSqft: 0.36,
+    steelKgPerSqft: 3.2,
+    sandCftPerSqft: 1.05,
+    aggregateCftPerSqft: 0.85,
+    bricksPerSqft: 7.2,
+  },
+  Standard: {
+    cementBagsPerSqft: 0.42,
+    steelKgPerSqft: 3.8,
+    sandCftPerSqft: 1.18,
+    aggregateCftPerSqft: 0.95,
+    bricksPerSqft: 8.0,
+  },
+  Premium: {
+    cementBagsPerSqft: 0.48,
+    steelKgPerSqft: 4.4,
+    sandCftPerSqft: 1.32,
+    aggregateCftPerSqft: 1.08,
+    bricksPerSqft: 8.6,
+  },
+};
+
+const roundQty = (value, decimals = 2) => {
+  const factor = 10 ** decimals;
+  return Math.round((Number(value) || 0) * factor) / factor;
+};
+
+const positiveRate = (value, fallback) => {
+  const num = Number(value);
+  return Number.isFinite(num) && num >= 0 ? num : fallback;
+};
+
 const numberValue = (value, fallback = 0) => {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
@@ -285,17 +321,46 @@ export default function HomeConstructionCalculator() {
         : []),
     ];
 
-    const cementBase = constructionArea * 0.4;
-    const steelBase = constructionArea * 4;
-    const sandBase = constructionArea * 0.045;
-    const aggregateBase = constructionArea * 0.09;
-    const bricksBase = constructionArea * 8;
+    const selectedMaterialRule = materialRules[form.quality] || materialRules.Standard;
 
-    const cementBags = cementBase + (cementBase * numberValue(wastage.cement, 0)) / 100;
-    const steelKg = steelBase + (steelBase * numberValue(wastage.steel, 0)) / 100;
-    const sandCft = sandBase + (sandBase * numberValue(wastage.sand, 0)) / 100;
-    const aggregateCft = aggregateBase + (aggregateBase * numberValue(wastage.aggregate, 0)) / 100;
-    const bricks = bricksBase + (bricksBase * numberValue(wastage.brick, 0)) / 100;
+    // Multi-floor RCC framed houses need slightly higher steel/cement intensity.
+    const structuralFloorFactor = 1 + Math.max(floorCount - 1, 0) * 0.04;
+
+    // If staircase is already inside built-up area, its materials are considered covered by constructionArea.
+    // If staircase is separate, add its material quantity explicitly to the material summary.
+    const separateStaircaseMaterial =
+      form.includeStaircase && form.staircaseAreaStatus === "Not Included / Separate";
+
+    const staircaseCementBags = separateStaircaseMaterial ? staircaseConcrete * 8 : 0;
+    const staircaseSandCft = separateStaircaseMaterial ? staircaseConcrete * 15 : 0;
+    const staircaseAggregateCft = separateStaircaseMaterial ? staircaseConcrete * 28 : 0;
+    const staircaseSteelKg = separateStaircaseMaterial ? staircaseSteel : 0;
+
+    const cementBase =
+      constructionArea * selectedMaterialRule.cementBagsPerSqft * structuralFloorFactor +
+      staircaseCementBags;
+
+    const steelBase =
+      constructionArea * selectedMaterialRule.steelKgPerSqft * structuralFloorFactor +
+      staircaseSteelKg;
+
+    const sandBase = constructionArea * selectedMaterialRule.sandCftPerSqft + staircaseSandCft;
+    const aggregateBase =
+      constructionArea * selectedMaterialRule.aggregateCftPerSqft + staircaseAggregateCft;
+    const bricksBase = constructionArea * selectedMaterialRule.bricksPerSqft;
+
+    const cementWastageQty = (cementBase * numberValue(wastage.cement, 0)) / 100;
+    const steelWastageQty = (steelBase * numberValue(wastage.steel, 0)) / 100;
+    const sandWastageQty = (sandBase * numberValue(wastage.sand, 0)) / 100;
+    const aggregateWastageQty =
+      (aggregateBase * numberValue(wastage.aggregate, 0)) / 100;
+    const brickWastageQty = (bricksBase * numberValue(wastage.brick, 0)) / 100;
+
+    const cementBags = Math.ceil(cementBase + cementWastageQty);
+    const steelKg = Math.ceil(steelBase + steelWastageQty);
+    const sandCft = Math.ceil(sandBase + sandWastageQty);
+    const aggregateCft = Math.ceil(aggregateBase + aggregateWastageQty);
+    const bricks = Math.ceil(bricksBase + brickWastageQty);
 
     const foundationShutteringArea = constructionArea * 0.15;
     const columnShutteringArea = constructionArea * 0.25;
@@ -314,72 +379,86 @@ export default function HomeConstructionCalculator() {
     const plywoodSheets = totalShutteringArea
       ? Math.ceil(totalShutteringArea / (plywoodSheetArea * plywoodReuseFactor))
       : 0;
-    const timberCft = totalShutteringArea * 0.03;
-    const nailsKg = totalShutteringArea * 0.015;
-    const formOilLitre = totalShutteringArea * 0.015;
+    const timberCft = roundQty(totalShutteringArea * 0.03);
+    const nailsKg = roundQty(totalShutteringArea * 0.015);
+    const formOilLitre = roundQty(totalShutteringArea * 0.015);
     const propsNos = slabShutteringArea ? Math.ceil(slabShutteringArea / 25) : 0;
+
+    const safeRates = {
+      cement: positiveRate(rates.cement, defaultRates.cement),
+      steel: positiveRate(rates.steel, defaultRates.steel),
+      sand: positiveRate(rates.sand, defaultRates.sand),
+      aggregate: positiveRate(rates.aggregate, defaultRates.aggregate),
+      brick: positiveRate(rates.brick, defaultRates.brick),
+    };
 
     const materials = [
       {
         name: "Cement / सीमेंट",
         pdfName: "Cement",
-        baseQty: cementBase,
-        wastageQty: (cementBase * numberValue(wastage.cement, 0)) / 100,
+        baseQty: roundQty(cementBase),
+        wastageQty: roundQty(cementWastageQty),
         qty: cementBags,
         unit: "Bags",
-        rate: rates.cement,
-        amount: cementBags * rates.cement,
+        rate: safeRates.cement,
+        amount: cementBags * safeRates.cement,
+        note: "Used in RCC, PCC, brick masonry mortar and plaster.",
       },
       {
         name: "Steel / स्टील",
         pdfName: "Steel",
-        baseQty: steelBase,
-        wastageQty: (steelBase * numberValue(wastage.steel, 0)) / 100,
+        baseQty: roundQty(steelBase),
+        wastageQty: roundQty(steelWastageQty),
         qty: steelKg,
         unit: "Kg",
-        rate: rates.steel,
-        amount: steelKg * rates.steel,
+        rate: safeRates.steel,
+        amount: steelKg * safeRates.steel,
+        note: "Used in footing, column, beam, slab and staircase reinforcement.",
       },
       {
         name: "Sand / रेत",
         pdfName: "Sand",
-        baseQty: sandBase,
-        wastageQty: (sandBase * numberValue(wastage.sand, 0)) / 100,
+        baseQty: roundQty(sandBase),
+        wastageQty: roundQty(sandWastageQty),
         qty: sandCft,
         unit: "Cft",
-        rate: rates.sand,
-        amount: sandCft * rates.sand,
+        rate: safeRates.sand,
+        amount: sandCft * safeRates.sand,
+        note: "Used in concrete, masonry mortar and plaster.",
       },
       {
         name: "Aggregate / गिट्टी",
         pdfName: "Aggregate",
-        baseQty: aggregateBase,
-        wastageQty: (aggregateBase * numberValue(wastage.aggregate, 0)) / 100,
+        baseQty: roundQty(aggregateBase),
+        wastageQty: roundQty(aggregateWastageQty),
         qty: aggregateCft,
         unit: "Cft",
-        rate: rates.aggregate,
-        amount: aggregateCft * rates.aggregate,
+        rate: safeRates.aggregate,
+        amount: aggregateCft * safeRates.aggregate,
+        note: "Used mainly in PCC and RCC concrete work.",
       },
       {
         name: "Bricks / ईंट",
         pdfName: "Bricks",
-        baseQty: bricksBase,
-        wastageQty: (bricksBase * numberValue(wastage.brick, 0)) / 100,
+        baseQty: roundQty(bricksBase),
+        wastageQty: roundQty(brickWastageQty),
         qty: bricks,
         unit: "Nos",
-        rate: rates.brick,
-        amount: bricks * rates.brick,
+        rate: safeRates.brick,
+        amount: bricks * safeRates.brick,
+        note: "Used for internal and external wall masonry.",
       },
       {
         name: "Shuttering Area / शटरिंग एरिया",
         pdfName: "Shuttering Area",
-        baseQty: totalShutteringArea,
+        baseQty: roundQty(totalShutteringArea),
         wastageQty: 0,
-        qty: totalShutteringArea,
+        qty: roundQty(totalShutteringArea),
         unit: "sq ft",
         rate: 0,
         amount: 0,
         referenceOnly: true,
+        note: "Reference quantity for formwork planning.",
       },
       {
         name: "Plywood Sheets / प्लाईवुड शीट",
@@ -391,6 +470,7 @@ export default function HomeConstructionCalculator() {
         rate: 0,
         amount: 0,
         referenceOnly: true,
+        note: "Approximate 8x4 sheet requirement with reuse factor.",
       },
       {
         name: "Timber / Wooden Batten / लकड़ी",
@@ -402,6 +482,7 @@ export default function HomeConstructionCalculator() {
         rate: 0,
         amount: 0,
         referenceOnly: true,
+        note: "Reference quantity for shuttering support work.",
       },
       {
         name: "Nails / कील",
@@ -413,6 +494,7 @@ export default function HomeConstructionCalculator() {
         rate: 0,
         amount: 0,
         referenceOnly: true,
+        note: "Reference quantity for formwork fixing.",
       },
       {
         name: "Form Oil / फॉर्म ऑयल",
@@ -424,6 +506,7 @@ export default function HomeConstructionCalculator() {
         rate: 0,
         amount: 0,
         referenceOnly: true,
+        note: "Reference quantity for shuttering surface treatment.",
       },
       {
         name: "Props / Supports / सपोर्ट",
@@ -435,8 +518,13 @@ export default function HomeConstructionCalculator() {
         rate: 0,
         amount: 0,
         referenceOnly: true,
+        note: "Approximate support quantity for slab formwork.",
       },
     ];
+
+    const materialCostTotal = materials
+      .filter((item) => !item.referenceOnly)
+      .reduce((sum, item) => sum + item.amount, 0);
 
     const shuttering = {
       foundation: foundationShutteringArea,
@@ -588,6 +676,7 @@ export default function HomeConstructionCalculator() {
       additionalHiddenCost,
       grandTotal,
       gstAmount,
+      materialCostTotal,
       breakdown,
       staircase: {
         included: form.includeStaircase,
@@ -962,9 +1051,17 @@ export default function HomeConstructionCalculator() {
     doc.addPage();
     addHeader("Material Requirement");
     sectionTitle("Material Quantity and Cost", 36);
+    doc.setTextColor(...DARK);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Estimated Material Cost: ${pdfMoney(result.materialCostTotal)}`, margin, 46);
+    doc.setTextColor(...GREY);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text("Approximate residential thumb-rule based quantity estimate. Verify final BOQ with structural drawings.", margin, 52);
 
     autoTable(doc, {
-      startY: 43,
+      startY: 58,
       head: [["Material", "Base Qty", "Wastage Qty", "Final Qty", "Unit", "Rate", "Amount"]],
       body: result.materials.map((m) => [
         safeText(m.pdfName),
@@ -1483,29 +1580,75 @@ export default function HomeConstructionCalculator() {
                 )}
 
                 <Panel title="4. Material Cost Breakdown / सामग्री विवरण">
+                  <div className="rounded-3xl border border-orange-500/30 bg-orange-500/10 p-5">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                        <p className="text-orange-300 font-bold">Estimated Material Cost</p>
+                        <h3 className="text-3xl font-black text-orange-400 mt-1">
+                          {money(result.materialCostTotal)}
+                        </h3>
+                      </div>
+
+                      <div className="text-sm text-slate-300 md:text-right">
+                        <p>
+                          Quality: <span className="font-bold text-white">{form.quality}</span>
+                        </p>
+                        <p>
+                          Area: <span className="font-bold text-white">{result.constructionArea.toFixed(0)} sq ft</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-400 mt-3">
+                      Material quantities are practical thumb-rule based estimates for residential construction.
+                      Final site quantity may vary by structural design, wall thickness, concrete grade, soil condition
+                      and contractor execution method.
+                    </p>
+                  </div>
+
                   <div className="grid sm:grid-cols-2 gap-4">
                     {result.materials.map((m) => (
-                      <div key={m.pdfName} className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                      <div
+                        key={m.pdfName}
+                        className={`rounded-2xl border p-4 ${
+                          m.referenceOnly
+                            ? "bg-slate-900/50 border-slate-700"
+                            : "bg-white/5 border-white/10"
+                        }`}
+                      >
                         <div className="flex justify-between gap-3">
-                          <h3 className="font-black">{m.name}</h3>
-                          <span className="text-orange-400 font-black">
+                          <div>
+                            <h3 className="font-black">{m.name}</h3>
+                            <p className="text-xs text-slate-500 mt-1">{m.note}</p>
+                          </div>
+
+                          <span className="text-orange-400 font-black whitespace-nowrap">
                             {m.referenceOnly ? "Reference" : money(m.amount)}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-400 mt-2">
-                          Base Quantity: {Number(m.baseQty || 0).toFixed(2)} {m.unit}
-                        </p>
-                        {!m.referenceOnly && (
-                          <p className="text-sm text-slate-400">
-                            Wastage: {Number(m.wastageQty || 0).toFixed(2)} {m.unit}
-                          </p>
-                        )}
-                        <p className="text-sm text-green-400 font-bold">
-                          Final Quantity: {Number(m.qty || 0).toFixed(2)} {m.unit}
-                        </p>
-                        <p className="text-sm text-slate-400">
-                          {m.referenceOnly ? "Cost included in construction rate" : `Rate: ${money(m.rate)} / ${m.unit}`}
-                        </p>
+
+                        <div className="mt-4 space-y-2">
+                          <Row
+                            label="Base Quantity"
+                            value={`${Number(m.baseQty || 0).toLocaleString("en-IN")} ${m.unit}`}
+                          />
+
+                          {!m.referenceOnly && (
+                            <Row
+                              label="Wastage"
+                              value={`${Number(m.wastageQty || 0).toLocaleString("en-IN")} ${m.unit}`}
+                            />
+                          )}
+
+                          <Row
+                            label="Final Quantity"
+                            value={`${Number(m.qty || 0).toLocaleString("en-IN")} ${m.unit}`}
+                          />
+
+                          {!m.referenceOnly && (
+                            <Row label="Rate" value={`${money(m.rate)} / ${m.unit}`} />
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
