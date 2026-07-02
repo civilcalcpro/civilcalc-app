@@ -105,6 +105,7 @@ const createDefaultForm = () => ({
   terrace: "0",
   basement: "0",
   lift: "0",
+  brickType: "Red Clay Brick",
   quality: "Standard",
   state: "",
   city: "",
@@ -116,6 +117,42 @@ const defaultWastage = {
   sand: 8,
   aggregate: 8,
   brick: 5,
+};
+
+const wallMaterialOptions = {
+  "Red Clay Brick": {
+    name: "Red Clay Brick",
+    hindi: "लाल ईंट",
+    pdfName: "Red Clay Brick",
+    qtyPerSqft: 8.0,
+    unit: "Nos",
+    rateLabel: "Brick / Block ₹/piece",
+    note: "Default option. Commonly used in normal residential construction.",
+    cementFactor: 1,
+    sandFactor: 1,
+  },
+  "Fly Ash Brick": {
+    name: "Fly Ash Brick",
+    hindi: "फ्लाई ऐश ईंट",
+    pdfName: "Fly Ash Brick",
+    qtyPerSqft: 7.5,
+    unit: "Nos",
+    rateLabel: "Brick / Block ₹/piece",
+    note: "Good alternative to red brick. Quantity is adjusted automatically.",
+    cementFactor: 0.96,
+    sandFactor: 0.96,
+  },
+  "AAC Block": {
+    name: "AAC Block",
+    hindi: "AAC ब्लॉक",
+    pdfName: "AAC Block",
+    qtyPerSqft: 1.6,
+    unit: "Blocks",
+    rateLabel: "AAC Block ₹/block",
+    note: "Lightweight block option. Block quantity and mortar assumptions are adjusted automatically.",
+    cementFactor: 0.9,
+    sandFactor: 0.85,
+  },
 };
 
 // Practical residential thumb rules used only for fast planning estimates.
@@ -322,6 +359,8 @@ export default function HomeConstructionCalculator() {
     ];
 
     const selectedMaterialRule = materialRules[form.quality] || materialRules.Standard;
+    const selectedWallMaterial =
+      wallMaterialOptions[form.brickType] || wallMaterialOptions["Red Clay Brick"];
 
     // Multi-floor RCC framed houses need slightly higher steel/cement intensity.
     const structuralFloorFactor = 1 + Math.max(floorCount - 1, 0) * 0.04;
@@ -344,19 +383,29 @@ export default function HomeConstructionCalculator() {
       constructionArea * selectedMaterialRule.steelKgPerSqft * structuralFloorFactor +
       staircaseSteelKg;
 
-    const sandBase = constructionArea * selectedMaterialRule.sandCftPerSqft + staircaseSandCft;
+    const sandBase =
+      constructionArea *
+        selectedMaterialRule.sandCftPerSqft *
+        selectedWallMaterial.sandFactor +
+      staircaseSandCft;
+
     const aggregateBase =
       constructionArea * selectedMaterialRule.aggregateCftPerSqft + staircaseAggregateCft;
-    const bricksBase = constructionArea * selectedMaterialRule.bricksPerSqft;
 
-    const cementWastageQty = (cementBase * numberValue(wastage.cement, 0)) / 100;
+    const bricksBase = constructionArea * selectedWallMaterial.qtyPerSqft;
+
+    const masonryCementAdjustment =
+      cementBase * 0.22 * (selectedWallMaterial.cementFactor - 1);
+    const adjustedCementBase = Math.max(cementBase + masonryCementAdjustment, 0);
+
+    const cementWastageQty = (adjustedCementBase * numberValue(wastage.cement, 0)) / 100;
     const steelWastageQty = (steelBase * numberValue(wastage.steel, 0)) / 100;
     const sandWastageQty = (sandBase * numberValue(wastage.sand, 0)) / 100;
     const aggregateWastageQty =
       (aggregateBase * numberValue(wastage.aggregate, 0)) / 100;
     const brickWastageQty = (bricksBase * numberValue(wastage.brick, 0)) / 100;
 
-    const cementBags = Math.ceil(cementBase + cementWastageQty);
+    const cementBags = Math.ceil(adjustedCementBase + cementWastageQty);
     const steelKg = Math.ceil(steelBase + steelWastageQty);
     const sandCft = Math.ceil(sandBase + sandWastageQty);
     const aggregateCft = Math.ceil(aggregateBase + aggregateWastageQty);
@@ -396,7 +445,7 @@ export default function HomeConstructionCalculator() {
       {
         name: "Cement / सीमेंट",
         pdfName: "Cement",
-        baseQty: roundQty(cementBase),
+        baseQty: roundQty(adjustedCementBase),
         wastageQty: roundQty(cementWastageQty),
         qty: cementBags,
         unit: "Bags",
@@ -438,15 +487,15 @@ export default function HomeConstructionCalculator() {
         note: "Used mainly in PCC and RCC concrete work.",
       },
       {
-        name: "Bricks / ईंट",
-        pdfName: "Bricks",
+        name: `${selectedWallMaterial.name} / ${selectedWallMaterial.hindi}`,
+        pdfName: selectedWallMaterial.pdfName,
         baseQty: roundQty(bricksBase),
         wastageQty: roundQty(brickWastageQty),
         qty: bricks,
-        unit: "Nos",
+        unit: selectedWallMaterial.unit,
         rate: safeRates.brick,
         amount: bricks * safeRates.brick,
-        note: "Used for internal and external wall masonry.",
+        note: `${selectedWallMaterial.note} Used for internal and external wall masonry.`,
       },
       {
         name: "Shuttering Area / शटरिंग एरिया",
@@ -526,6 +575,57 @@ export default function HomeConstructionCalculator() {
       .filter((item) => !item.referenceOnly)
       .reduce((sum, item) => sum + item.amount, 0);
 
+    const labourAndWorkmanshipCost = Math.max(constructionCost - materialCostTotal, 0);
+    const materialCostPercent = constructionCost
+      ? Number(((materialCostTotal / constructionCost) * 100).toFixed(1))
+      : 0;
+    const labourCostPercent = constructionCost
+      ? Number(((labourAndWorkmanshipCost / constructionCost) * 100).toFixed(1))
+      : 0;
+
+    const stageMaterialBreakdown = [
+      {
+        stage: "Foundation",
+        material: `${(cementBags * 0.18).toFixed(0)} bags cement, ${(steelKg * 0.18).toFixed(0)} kg steel, ${(sandCft * 0.2).toFixed(0)} cft sand`,
+        amount: constructionCost * 0.12,
+      },
+      {
+        stage: "RCC Work",
+        material: `${(cementBags * 0.35).toFixed(0)} bags cement, ${(steelKg * 0.45).toFixed(0)} kg steel, ${(aggregateCft * 0.45).toFixed(0)} cft aggregate`,
+        amount: constructionCost * 0.2,
+      },
+      {
+        stage: "Brick / Block Work",
+        material: `${(bricks * 0.75).toFixed(0)} ${selectedWallMaterial.unit} ${selectedWallMaterial.name}, ${(cementBags * 0.15).toFixed(0)} bags cement, ${(sandCft * 0.25).toFixed(0)} cft sand`,
+        amount: constructionCost * 0.1,
+      },
+      {
+        stage: "Plaster",
+        material: `${(cementBags * 0.12).toFixed(0)} bags cement, ${(sandCft * 0.2).toFixed(0)} cft sand`,
+        amount: constructionCost * 0.08,
+      },
+      {
+        stage: "Flooring",
+        material: `${(constructionArea * 1.05).toFixed(0)} sq ft tiles, ${(constructionArea * 0.08).toFixed(0)} bags adhesive`,
+        amount: constructionCost * 0.08,
+      },
+      {
+        stage: "Shuttering / Formwork",
+        material: `${totalShutteringArea.toFixed(0)} sq ft formwork, ${plywoodSheets} plywood sheets, ${propsNos} props`,
+        amount: 0,
+        referenceOnly: true,
+      },
+    ];
+
+    const assumptions = [
+      "Normal residential RCC construction is assumed by default.",
+      `${selectedWallMaterial.name} is selected as the wall material. If you are not sure, keep Red Clay Brick.`,
+      `${form.quality} quality rate and material intensity are used for this estimate.`,
+      "Standard residential wastage is included and can be edited from the material rates section.",
+      "Material rates can be edited as per local market rates before generating the PDF.",
+      "Final site quantity may vary due to structural design, wall layout, soil condition and contractor execution method.",
+    ];
+
     const shuttering = {
       foundation: foundationShutteringArea,
       column: columnShutteringArea,
@@ -591,7 +691,7 @@ export default function HomeConstructionCalculator() {
         Note: "Shuttering material quantities are for reference. Cost is considered included in construction rate.",
       },
       Brickwork: {
-        Bricks: `${(bricks * 0.75).toFixed(0)} nos`,
+        [selectedWallMaterial.pdfName]: `${(bricks * 0.75).toFixed(0)} ${selectedWallMaterial.unit}`,
         Cement: `${(cementBags * 0.15).toFixed(2)} bags`,
         Sand: `${(sandCft * 0.25).toFixed(2)} cft`,
         Cost: money(constructionCost * 0.1),
@@ -677,6 +777,12 @@ export default function HomeConstructionCalculator() {
       grandTotal,
       gstAmount,
       materialCostTotal,
+      labourAndWorkmanshipCost,
+      materialCostPercent,
+      labourCostPercent,
+      wallMaterial: selectedWallMaterial,
+      assumptions,
+      stageMaterialBreakdown,
       breakdown,
       staircase: {
         included: form.includeStaircase,
@@ -807,7 +913,8 @@ export default function HomeConstructionCalculator() {
       result.additionalHiddenCost
     )}\nGrand Total: ${money(result.grandTotal)}\nConstruction Area: ${result.constructionArea.toFixed(
       0
-    )} sq ft`;
+    )} sq ft
+Wall Material: ${result.wallMaterial?.name || form.brickType}`;
 
     if (navigator.share) {
       await navigator.share({ title: "Home Construction Estimate", text });
@@ -958,6 +1065,7 @@ export default function HomeConstructionCalculator() {
         ["Floors", form.floors === "Custom" ? `${form.customFloors || "-"} Floors` : form.floors],
         ["Location", `${form.city || "-"}, ${form.state || "-"}`],
         ["Construction Quality", form.quality],
+        ["Wall Material", safeText(result.wallMaterial?.name || form.brickType || "Red Clay Brick")],
         [
           "Staircase",
           result.staircase.included
@@ -993,6 +1101,8 @@ export default function HomeConstructionCalculator() {
       head: [["Cost Head", "Amount"]],
       body: [
         ["Base Construction Cost", pdfMoney(result.baseConstructionCost)],
+        ["Estimated Material Cost", pdfMoney(result.materialCostTotal)],
+        ["Labour + Workmanship", pdfMoney(result.labourAndWorkmanshipCost)],
         ["Room Allowance", pdfMoney(result.roomAdditionalCost)],
         ["Optional Feature Cost", pdfMoney(result.optionalFeatureCost)],
         ["Staircase Estimate", result.staircase.included ? pdfMoney(result.staircase.cost) : "Not Included"],
@@ -1055,13 +1165,14 @@ export default function HomeConstructionCalculator() {
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text(`Estimated Material Cost: ${pdfMoney(result.materialCostTotal)}`, margin, 46);
+    doc.text(`Wall Material: ${safeText(result.wallMaterial?.name || "Red Clay Brick")}`, margin, 52);
     doc.setTextColor(...GREY);
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text("Approximate residential thumb-rule based quantity estimate. Verify final BOQ with structural drawings.", margin, 52);
+    doc.text("Approximate residential thumb-rule based quantity estimate. Verify final BOQ with structural drawings.", margin, 58);
 
     autoTable(doc, {
-      startY: 58,
+      startY: 64,
       head: [["Material", "Base Qty", "Wastage Qty", "Final Qty", "Unit", "Rate", "Amount"]],
       body: result.materials.map((m) => [
         safeText(m.pdfName),
@@ -1083,6 +1194,37 @@ export default function HomeConstructionCalculator() {
         5: { halign: "right" },
         6: { halign: "right", fontStyle: "bold" },
       },
+    });
+
+    sectionTitle("Material vs Labour Summary", doc.lastAutoTable.finalY + 14);
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 21,
+      head: [["Head", "Amount / Percentage"]],
+      body: [
+        ["Estimated Material Cost", `${pdfMoney(result.materialCostTotal)} (${result.materialCostPercent}%)`],
+        ["Labour + Workmanship", `${pdfMoney(result.labourAndWorkmanshipCost)} (${result.labourCostPercent}%)`],
+        ["Hidden Cost", pdfMoney(result.additionalHiddenCost)],
+        ["Grand Total", pdfMoney(result.grandTotal)],
+      ],
+      theme: "grid",
+      styles: { fontSize: 9, cellPadding: 3, textColor: DARK, lineColor: [226, 232, 240] },
+      headStyles: { fillColor: ORANGE, textColor: [255, 255, 255], fontStyle: "bold" },
+      columnStyles: { 0: { fontStyle: "bold" }, 1: { halign: "right", fontStyle: "bold" } },
+    });
+
+    sectionTitle("Stage-wise Material Summary", doc.lastAutoTable.finalY + 14);
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 21,
+      head: [["Stage", "Material", "Cost"]],
+      body: result.stageMaterialBreakdown.map((item) => [
+        safeText(item.stage),
+        safeText(item.material),
+        item.referenceOnly ? "Reference" : pdfMoney(item.amount),
+      ]),
+      theme: "grid",
+      styles: { fontSize: 8.4, cellPadding: 2.5, textColor: DARK, lineColor: [226, 232, 240] },
+      headStyles: { fillColor: ORANGE, textColor: [255, 255, 255], fontStyle: "bold" },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 42 }, 1: { cellWidth: 95 }, 2: { halign: "right", fontStyle: "bold" } },
     });
 
     sectionTitle("Shuttering / Formwork Material", doc.lastAutoTable.finalY + 14);
@@ -1189,6 +1331,7 @@ export default function HomeConstructionCalculator() {
     sectionTitle("Important Notes and Disclaimer", doc.lastAutoTable.finalY + 18);
 
     const notes = [
+      `Wall material selected: ${safeText(result.wallMaterial?.name || "Red Clay Brick")}.`,
       "This report is an approximate construction cost estimate generated using user inputs and standard construction assumptions.",
       "Actual cost may vary depending on site condition, structural design, material quality, market rates, labour charges and local authority requirements.",
       "If staircase area is included in built-up area, staircase cost is shown for reference and BOQ purpose only. It is not added again to the grand total.",
@@ -1448,12 +1591,22 @@ export default function HomeConstructionCalculator() {
             </Panel>
 
             <Panel title="Step 5 — Material Rates / मटेरियल रेट">
+              <Select
+                label="Brick / Block Type / दीवार का मटेरियल"
+                value={form.brickType}
+                onChange={(v) => updateForm("brickType", v)}
+                options={Object.keys(wallMaterialOptions)}
+              />
+              <p className="text-xs text-slate-500">
+                Not sure? Keep Red Clay Brick. Normal residential construction me yahi commonly use hoti hai.
+              </p>
+
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Cement ₹/bag" value={rates.cement} onChange={(v) => updateRate("cement", v)} />
                 <Input label="Sand ₹/cft" value={rates.sand} onChange={(v) => updateRate("sand", v)} />
                 <Input label="Aggregate ₹/cft" value={rates.aggregate} onChange={(v) => updateRate("aggregate", v)} />
                 <Input label="Steel ₹/kg" value={rates.steel} onChange={(v) => updateRate("steel", v)} />
-                <Input label="Brick ₹/piece" value={rates.brick} onChange={(v) => updateRate("brick", v)} />
+                <Input label={wallMaterialOptions[form.brickType]?.rateLabel || "Brick / Block ₹/piece"} value={rates.brick} onChange={(v) => updateRate("brick", v)} />
               </div>
 
               <div className="mt-4">
@@ -1505,6 +1658,7 @@ export default function HomeConstructionCalculator() {
                     <Mini label="Configuration" value={`${form.bedrooms}BHK`} />
                     <Mini label="Rooms" value={`${form.bedrooms} Bed | ${form.kitchens} Kitchen | ${form.bathrooms} Bath`} />
                     <Mini label="Quality" value={form.quality} />
+                    <Mini label="Wall Material" value={result.wallMaterial?.name || form.brickType} />
                     <Mini label="Duration" value={result.timeline.total} />
                   </div>
 
@@ -1596,7 +1750,17 @@ export default function HomeConstructionCalculator() {
                         <p>
                           Area: <span className="font-bold text-white">{result.constructionArea.toFixed(0)} sq ft</span>
                         </p>
+                        <p>
+                          Wall Material: <span className="font-bold text-white">{result.wallMaterial?.name || form.brickType}</span>
+                        </p>
                       </div>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                      <Mini label="Material Cost" value={`${money(result.materialCostTotal)} (${result.materialCostPercent}%)`} />
+                      <Mini label="Labour + Workmanship" value={`${money(result.labourAndWorkmanshipCost)} (${result.labourCostPercent}%)`} />
+                      <Mini label="Hidden Cost" value={money(result.additionalHiddenCost)} />
+                      <Mini label="Grand Total" value={money(result.grandTotal)} />
                     </div>
 
                     <p className="text-xs text-slate-400 mt-3">
@@ -1654,7 +1818,36 @@ export default function HomeConstructionCalculator() {
                   </div>
                 </Panel>
 
-                <Panel title="5. Shuttering / Formwork Material / शटरिंग मटेरियल">
+                <Panel title="5. Stage-wise Material Summary / स्टेज-वाइज सामग्री सारांश">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {result.stageMaterialBreakdown.map((item) => (
+                      <div key={item.stage} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <div className="flex justify-between gap-3">
+                          <h3 className="font-black text-white">{item.stage}</h3>
+                          <span className="text-orange-400 font-black whitespace-nowrap">
+                            {item.referenceOnly ? "Reference" : money(item.amount)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-400 mt-2">{item.material}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Stage-wise split is generated automatically from simple house inputs. User ko extra technical data fill karne ki zarurat nahi hai.
+                  </p>
+                </Panel>
+
+                <Panel title="6. Default Assumptions / डिफॉल्ट मान्यताएं">
+                  <div className="grid gap-3">
+                    {result.assumptions.map((item) => (
+                      <div key={item} className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </Panel>
+
+                <Panel title="7. Shuttering / Formwork Material / शटरिंग मटेरियल">
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <Mini label="Foundation Formwork" value={`${result.shuttering.foundation.toFixed(0)} sq ft`} />
                     <Mini label="Column Formwork" value={`${result.shuttering.column.toFixed(0)} sq ft`} />
@@ -1673,7 +1866,7 @@ export default function HomeConstructionCalculator() {
                   </p>
                 </Panel>
 
-                <Panel title="6. Room Recommendation / रूम सुझाव">
+                <Panel title="8. Room Recommendation / रूम सुझाव">
                   <div className="grid sm:grid-cols-2 gap-3">
                     {result.roomRecommendation.rooms.map((room) => (
                       <Mini key={room.name} label={room.name} value={room.size} />
@@ -1682,7 +1875,7 @@ export default function HomeConstructionCalculator() {
                   <p className="text-slate-400 text-sm">Suggested Type: {result.roomRecommendation.type}</p>
                 </Panel>
 
-                <Panel title="7. Construction Timeline / निर्माण समय">
+                <Panel title="9. Construction Timeline / निर्माण समय">
                   <div className="space-y-2">
                     {result.timeline.stages.map((stage) => (
                       <Row key={stage.name} label={stage.name} value={stage.duration} />
@@ -1691,7 +1884,7 @@ export default function HomeConstructionCalculator() {
                   </div>
                 </Panel>
 
-                <Panel title="8. BOQ Generation / स्टेज-वाइज BOQ">
+                <Panel title="10. BOQ Generation / स्टेज-वाइज BOQ">
                   <div className="space-y-3">
                     {Object.entries(result.boq).map(([stage, data]) => (
                       <div key={stage} className="rounded-2xl border border-white/10 overflow-hidden bg-black/20">
@@ -1714,7 +1907,7 @@ export default function HomeConstructionCalculator() {
                   </div>
                 </Panel>
 
-                <Panel title="9. Hidden Costs / अतिरिक्त छिपी हुई लागत">
+                <Panel title="11. Hidden Costs / अतिरिक्त छिपी हुई लागत">
                   <div className="grid sm:grid-cols-2 gap-3">
                     <Input label="Architect Fees" value={hiddenCosts.architect} onChange={(v) => updateHiddenCost("architect", v)} />
                     <Input label="Structural Design" value={hiddenCosts.structural} onChange={(v) => updateHiddenCost("structural", v)} />
@@ -1734,7 +1927,7 @@ export default function HomeConstructionCalculator() {
                   </p>
                 </Panel>
 
-                <Panel title="10. Save and Export / सेव और एक्सपोर्ट">
+                <Panel title="12. Save and Export / सेव और एक्सपोर्ट">
                   <div className="grid sm:grid-cols-4 gap-3">
                     <button onClick={saveProject} className="actionBtn">
                       Save
