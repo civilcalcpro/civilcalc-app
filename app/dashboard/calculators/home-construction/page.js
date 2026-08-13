@@ -15,10 +15,13 @@ import {
 
 // 3D Visualization Imports
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Box, Plane } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text, Box, Plane } from '@react-three/drei';
 import * as THREE from 'three';
 
-// ==================== EXISTING CONSTANTS ====================
+// Floor Plan Generation
+import html2canvas from 'html2canvas';
+
+// [Keep all your existing constants and helper functions]
 const qualityOptions = {
   Economy: {
     rate: 1400,
@@ -37,178 +40,9 @@ const qualityOptions = {
   },
 };
 
-const defaultRates = {
-  cement: 380,
-  sand: 50,
-  aggregate: 45,
-  steel: 65,
-  brick: 10,
-};
+// ... [Keep all existing constants]
 
-const hiddenDefaults = {
-  architect: 50000,
-  structural: 35000,
-  approval: 45000,
-  water: 25000,
-  electricity: 30000,
-  borewell: 80000,
-  boundaryWall: 120000,
-  gstPercent: 0,
-};
-
-const costPercentages = {
-  Excavation: 3,
-  Foundation: 12,
-  "RCC Work": 20,
-  "Brick Work": 10,
-  Plaster: 8,
-  Flooring: 8,
-  "Doors & Windows": 8,
-  Electrical: 7,
-  Plumbing: 6,
-  Painting: 5,
-  Finishing: 5,
-  Bedrooms: 4,
-  Kitchens: 2,
-  Bathrooms: 2,
-};
-
-const COLORS = [
-  "#FF7A00",
-  "#f97316",
-  "#fb923c",
-  "#fdba74",
-  "#ea580c",
-  "#f59e0b",
-  "#fbbf24",
-  "#9a3412",
-  "#7c2d12",
-  "#fed7aa",
-  "#c2410c",
-];
-
-const createDefaultForm = () => ({
-  projectName: "",
-  ownerName: "",
-  plotLength: "",
-  plotWidth: "",
-  builtUpArea: "",
-  unit: "sqft",
-  floors: "Ground",
-  customFloors: "",
-  bedrooms: "2",
-  kitchens: "1",
-  bathrooms: "2",
-  halls: "1",
-  includeStaircase: false,
-  staircaseAreaStatus: "Included in Built-up Area",
-  staircaseCount: "1",
-  staircaseType: "RCC Dog-Legged",
-  staircaseAccess: "Up to Terrace / Roof",
-  staircaseFinish: "Standard",
-  carParking: "0",
-  balcony: "0",
-  terrace: "0",
-  basement: "0",
-  lift: "0",
-  brickType: "Red Clay Brick",
-  quality: "Standard",
-  state: "",
-  city: "",
-});
-
-const defaultWastage = {
-  cement: 5,
-  steel: 3,
-  sand: 8,
-  aggregate: 8,
-  brick: 5,
-};
-
-const wallMaterialOptions = {
-  "Red Clay Brick": {
-    name: "Red Clay Brick",
-    hindi: "लाल ईंट",
-    pdfName: "Red Clay Brick",
-    qtyPerSqft: 8.0,
-    unit: "Nos",
-    rateLabel: "Brick / Block ₹/piece",
-    note: "Default option. Commonly used in normal residential construction.",
-    cementFactor: 1,
-    sandFactor: 1,
-  },
-  "Fly Ash Brick": {
-    name: "Fly Ash Brick",
-    hindi: "फ्लाई ऐश ईंट",
-    pdfName: "Fly Ash Brick",
-    qtyPerSqft: 7.5,
-    unit: "Nos",
-    rateLabel: "Brick / Block ₹/piece",
-    note: "Good alternative to red brick. Quantity is adjusted automatically.",
-    cementFactor: 0.96,
-    sandFactor: 0.96,
-  },
-  "AAC Block": {
-    name: "AAC Block",
-    hindi: "AAC ब्लॉक",
-    pdfName: "AAC Block",
-    qtyPerSqft: 1.6,
-    unit: "Blocks",
-    rateLabel: "AAC Block ₹/block",
-    note: "Lightweight block option. Block quantity and mortar assumptions are adjusted automatically.",
-    cementFactor: 0.9,
-    sandFactor: 0.85,
-  },
-};
-
-const materialRules = {
-  Economy: {
-    cementBagsPerSqft: 0.36,
-    steelKgPerSqft: 3.2,
-    sandCftPerSqft: 1.05,
-    aggregateCftPerSqft: 0.85,
-    bricksPerSqft: 7.2,
-  },
-  Standard: {
-    cementBagsPerSqft: 0.42,
-    steelKgPerSqft: 3.8,
-    sandCftPerSqft: 1.18,
-    aggregateCftPerSqft: 0.95,
-    bricksPerSqft: 8.0,
-  },
-  Premium: {
-    cementBagsPerSqft: 0.48,
-    steelKgPerSqft: 4.4,
-    sandCftPerSqft: 1.32,
-    aggregateCftPerSqft: 1.08,
-    bricksPerSqft: 8.6,
-  },
-};
-
-const roundQty = (value, decimals = 2) => {
-  const factor = 10 ** decimals;
-  return Math.round((Number(value) || 0) * factor) / factor;
-};
-
-const positiveRate = (value, fallback) => {
-  const num = Number(value);
-  return Number.isFinite(num) && num >= 0 ? num : fallback;
-};
-
-const numberValue = (value, fallback = 0) => {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : fallback;
-};
-
-const getFloorCountFromValue = (floors, customFloors) => {
-  if (floors === "Ground") return 1;
-  if (floors === "G+1") return 2;
-  if (floors === "G+2") return 3;
-  if (floors === "Custom") return Math.max(1, numberValue(customFloors, 1));
-  return 1;
-};
-
-// ==================== NEW: FLOOR PLAN GENERATOR ====================
+// NEW: Floor Plan Generator Class
 class FloorPlanGenerator {
   constructor(config) {
     this.length = config.length || 30;
@@ -226,6 +60,7 @@ class FloorPlanGenerator {
     const totalArea = this.length * this.width;
     let usedArea = 0;
 
+    // Intelligent room placement algorithm
     const allocations = this.calculateRoomAllocations(totalArea);
 
     let currentX = 0;
@@ -361,7 +196,7 @@ class FloorPlanGenerator {
   }
 }
 
-// ==================== NEW: 3D COMPONENTS ====================
+// NEW: 3D Room Component
 function Room3D({ room, floorHeight, isSelected, onClick }) {
   const meshRef = useRef();
   const [hovered, setHovered] = useState(false);
@@ -437,28 +272,32 @@ function Room3D({ room, floorHeight, isSelected, onClick }) {
   );
 }
 
+// NEW: 3D House Viewer Component
 function HouseViewer3D({ floorPlan, buildingHeight, floors }) {
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [cameraMode, setCameraMode] = useState('orbit');
+  const [cameraMode, setCameraMode] = useState('orbit'); // 'orbit' or 'walkthrough'
   
   return (
-    <div className="relative w-full h-[600px] rounded-2xl overflow-hidden border border-white/10 bg-black/20">
+    <div className="relative w-full h-[600px] rounded-2xl overflow-hidden border border-white/10">
       <Canvas shadows>
-        <ambientLight intensity={0.5} />
-        <directionalLight
-          position={[10, 20, 10]}
-          intensity={1}
-          castShadow
-        />
-        <pointLight position={[0, 10, 0]} intensity={0.5} />
-
+        <PerspectiveCamera makeDefault position={[50, 30, 50]} />
         <OrbitControls
-          makeDefault
           enablePan={true}
           enableZoom={true}
           enableRotate={true}
           maxPolarAngle={Math.PI / 2}
         />
+
+        {/* Lighting */}
+        <ambientLight intensity={0.5} />
+        <directionalLight
+          position={[10, 20, 10]}
+          intensity={1}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+        />
+        <pointLight position={[0, 10, 0]} intensity={0.5} />
 
         {/* Ground Plane */}
         <Plane
@@ -525,11 +364,11 @@ function HouseViewer3D({ floorPlan, buildingHeight, floors }) {
   );
 }
 
-// ==================== NEW: 2D FLOOR PLAN ====================
+// NEW: 2D Floor Plan Component
 function FloorPlan2D({ floorPlan, onRoomClick }) {
   const canvasRef = useRef(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [scale, setScale] = useState(10);
+  const [scale, setScale] = useState(10); // pixels per foot
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -537,8 +376,10 @@ function FloorPlan2D({ floorPlan, onRoomClick }) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
+    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Set canvas size
     canvas.width = (floorPlan.plotLength + 5) * scale;
     canvas.height = (floorPlan.plotWidth + 5) * scale;
 
@@ -559,25 +400,30 @@ function FloorPlan2D({ floorPlan, onRoomClick }) {
       const w = room.width * scale;
       const h = room.height * scale;
 
+      // Fill room
       ctx.fillStyle = selectedRoom === index ? '#ff7a00' : room.color;
       ctx.globalAlpha = 0.6;
       ctx.fillRect(x, y, w, h);
 
+      // Room border
       ctx.globalAlpha = 1;
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, w, h);
 
+      // Room label
       ctx.fillStyle = '#fff';
       ctx.font = `bold ${scale * 0.8}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(room.name, x + w / 2, y + h / 2);
 
+      // Room dimensions
       ctx.font = `${scale * 0.6}px Arial`;
       ctx.fillText(`${room.width}' × ${room.height}'`, x + w / 2, y + h / 2 + scale);
     });
 
+    // Add dimensions
     ctx.fillStyle = '#ff7a00';
     ctx.font = `bold ${scale * 0.7}px Arial`;
     ctx.fillText(
@@ -650,11 +496,13 @@ function FloorPlan2D({ floorPlan, onRoomClick }) {
   );
 }
 
-// ==================== NEW: EXPORT FUNCTIONS ====================
+// NEW: Export Functions
 const exportToDXF = (floorPlan) => {
+  // Simple DXF export (basic implementation)
   let dxf = `0\nSECTION\n2\nENTITIES\n`;
 
   floorPlan.rooms.forEach(room => {
+    // Add rectangle for each room
     dxf += `0\nLWPOLYLINE\n8\n${room.type}\n62\n1\n90\n5\n70\n1\n`;
     dxf += `10\n${room.x}\n20\n${room.y}\n`;
     dxf += `10\n${room.x + room.width}\n20\n${room.y}\n`;
@@ -681,6 +529,7 @@ const exportToOBJ = (floorPlan, buildingHeight) => {
   floorPlan.rooms.forEach(room => {
     obj += `# ${room.name}\n`;
     
+    // Define 8 vertices for the room box
     const vertices = [
       [room.x, 0, room.y],
       [room.x + room.width, 0, room.y],
@@ -696,13 +545,14 @@ const exportToOBJ = (floorPlan, buildingHeight) => {
       obj += `v ${v[0]} ${v[1]} ${v[2]}\n`;
     });
 
+    // Define faces
     const faces = [
-      [1, 2, 3, 4],
-      [5, 6, 7, 8],
-      [1, 2, 6, 5],
-      [2, 3, 7, 6],
-      [3, 4, 8, 7],
-      [4, 1, 5, 8],
+      [1, 2, 3, 4], // bottom
+      [5, 6, 7, 8], // top
+      [1, 2, 6, 5], // front
+      [2, 3, 7, 6], // right
+      [3, 4, 8, 7], // back
+      [4, 1, 5, 8], // left
     ];
 
     faces.forEach(face => {
@@ -721,7 +571,7 @@ const exportToOBJ = (floorPlan, buildingHeight) => {
   URL.revokeObjectURL(url);
 };
 
-// ==================== MAIN COMPONENT ====================
+// Main Component Modifications
 export default function HomeConstructionCalculator() {
   const { authFetch } = useAuth();
   const [screen, setScreen] = useState("home");
@@ -734,45 +584,16 @@ export default function HomeConstructionCalculator() {
   const [show3DView, setShow3DView] = useState(false);
   const [showFloorPlan, setShowFloorPlan] = useState(false);
   const [floorPlan, setFloorPlan] = useState(null);
-  const [buildingHeight, setBuildingHeight] = useState(10);
+  const [buildingHeight, setBuildingHeight] = useState(10); // feet per floor
 
   const [form, setForm] = useState(createDefaultForm);
   const [rates, setRates] = useState(defaultRates);
   const [wastage, setWastage] = useState(defaultWastage);
   const [hiddenCosts, setHiddenCosts] = useState(hiddenDefaults);
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("homeConstructionProjects")) || [];
-    setSavedProjects(saved);
-  }, []);
+  // [Keep all existing useEffect and functions]
 
-  const updateForm = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const updateWastage = (field, value) => {
-    setWastage((prev) => ({ ...prev, [field]: numberValue(value, 0) }));
-  };
-
-  const updateRate = (field, value) => {
-    setRates((prev) => ({ ...prev, [field]: numberValue(value, 0) }));
-  };
-
-  const updateHiddenCost = (field, value) => {
-    setHiddenCosts((prev) => ({ ...prev, [field]: numberValue(value, 0) }));
-  };
-
-  const money = (num) =>
-    `₹${Number(num || 0).toLocaleString("en-IN", {
-      maximumFractionDigits: 0,
-    })}`;
-
-  const pdfMoney = (num) =>
-    `Rs. ${Number(num || 0).toLocaleString("en-IN", {
-      maximumFractionDigits: 0,
-    })}`;
-
-  // NEW: Generate Floor Plan
+  // NEW: Generate Floor Plan Function
   const generateFloorPlan = () => {
     const generator = new FloorPlanGenerator({
       length: numberValue(form.plotLength, 30),
@@ -796,925 +617,63 @@ export default function HomeConstructionCalculator() {
     }, 100);
   };
 
-  // EXISTING CALCULATION LOGIC (unchanged)
-  const result = useMemo(() => {
-    const floorCount = getFloorCountFromValue(form.floors, form.customFloors);
-
-    let baseArea = numberValue(form.builtUpArea, 0);
-
-    if (!baseArea) {
-      const length = numberValue(form.plotLength, 0);
-      const width = numberValue(form.plotWidth, 0);
-      baseArea = length * width;
-    }
-
-    if (form.unit === "sqm") {
-      baseArea = baseArea * 10.7639;
-    }
-
-    const constructionArea = baseArea * floorCount;
-    const costPerSqFt = qualityOptions[form.quality]?.rate || qualityOptions.Standard.rate;
-    const baseConstructionCost = constructionArea * costPerSqFt;
-
-    const staircaseCount = Math.max(1, numberValue(form.staircaseCount, 1));
-    const staircaseLevels = form.includeStaircase
-      ? form.staircaseAccess === "Up to Terrace / Roof"
-        ? floorCount
-        : Math.max(floorCount - 1, 1)
-      : 0;
-
-    const staircaseTypeMultiplier = {
-      "RCC Dog-Legged": 1,
-      "Straight Staircase": 0.95,
-      "Open Well Staircase": 1.15,
-      "Spiral Staircase": 1.3,
-    };
-
-    const staircaseFinishMultiplier = {
-      Basic: 0.9,
-      Standard: 1,
-      Premium: 1.25,
-    };
-
-    const typeMultiplier = staircaseTypeMultiplier[form.staircaseType] || 1;
-    const finishMultiplier = staircaseFinishMultiplier[form.staircaseFinish] || 1;
-
-    const staircaseConcrete = staircaseLevels * staircaseCount * 2.5 * typeMultiplier;
-    const staircaseSteel = staircaseLevels * staircaseCount * 250 * typeMultiplier;
-    const staircaseShuttering = staircaseLevels * staircaseCount * 180 * typeMultiplier;
-    const staircaseFinishingArea = staircaseLevels * staircaseCount * 120;
-    const staircaseRailing = staircaseLevels * staircaseCount * 20;
-
-    const staircaseEstimatedCost = form.includeStaircase
-      ? baseConstructionCost * 0.035 * staircaseLevels * staircaseCount * typeMultiplier * finishMultiplier
-      : 0;
-
-    const staircaseExtraCost =
-      form.includeStaircase && form.staircaseAreaStatus === "Not Included / Separate"
-        ? staircaseEstimatedCost
-        : 0;
-
-    const bedroomCost = numberValue(form.bedrooms, 0) * 50000;
-    const kitchenCost = numberValue(form.kitchens, 0) * 80000;
-    const bathroomCost = numberValue(form.bathrooms, 0) * 60000;
-    const hallCost = numberValue(form.halls, 0) * 40000;
-
-    const parkingCost = numberValue(form.carParking, 0) * 100000;
-    const balconyCost = numberValue(form.balcony, 0) * 50000;
-    const terraceCost = numberValue(form.terrace, 0) * 75000;
-    const basementCost = numberValue(form.basement, 0) * 400000;
-    const liftCost = numberValue(form.lift, 0) * 1000000;
-
-    const roomAdditionalCost = bedroomCost + kitchenCost + bathroomCost + hallCost;
-    const optionalFeatureCost = parkingCost + balconyCost + terraceCost + basementCost + liftCost;
-
-    const normalConstructionCost = baseConstructionCost + roomAdditionalCost + optionalFeatureCost;
-    const constructionCost = normalConstructionCost + staircaseExtraCost;
-
-    const gstAmount = constructionCost * (numberValue(hiddenCosts.gstPercent, 0) / 100);
-
-    const additionalHiddenCost =
-      numberValue(hiddenCosts.architect, 0) +
-      numberValue(hiddenCosts.structural, 0) +
-      numberValue(hiddenCosts.approval, 0) +
-      numberValue(hiddenCosts.water, 0) +
-      numberValue(hiddenCosts.electricity, 0) +
-      numberValue(hiddenCosts.borewell, 0) +
-      numberValue(hiddenCosts.boundaryWall, 0) +
-      gstAmount;
-
-    const grandTotal = constructionCost + additionalHiddenCost;
-
-    const breakdown = [
-      ...Object.entries(costPercentages).map(([item, percent]) => ({
-        item,
-        percent,
-        amount: (normalConstructionCost * percent) / 100,
-      })),
-      ...(form.includeStaircase
-        ? [
-            {
-              item:
-                form.staircaseAreaStatus === "Included in Built-up Area"
-                  ? "Staircase / सीढ़ी Work (Included)"
-                  : "Staircase / सीढ़ी Work (Extra)",
-              percent: constructionCost
-                ? Number(((staircaseEstimatedCost / constructionCost) * 100).toFixed(1))
-                : 0,
-              amount: staircaseEstimatedCost,
-            },
-          ]
-        : []),
-    ];
-
-    const selectedMaterialRule = materialRules[form.quality] || materialRules.Standard;
-    const selectedWallMaterial =
-      wallMaterialOptions[form.brickType] || wallMaterialOptions["Red Clay Brick"];
-
-    const structuralFloorFactor = 1 + Math.max(floorCount - 1, 0) * 0.04;
-
-    const separateStaircaseMaterial =
-      form.includeStaircase && form.staircaseAreaStatus === "Not Included / Separate";
-
-    const staircaseCementBags = separateStaircaseMaterial ? staircaseConcrete * 8 : 0;
-    const staircaseSandCft = separateStaircaseMaterial ? staircaseConcrete * 15 : 0;
-    const staircaseAggregateCft = separateStaircaseMaterial ? staircaseConcrete * 28 : 0;
-    const staircaseSteelKg = separateStaircaseMaterial ? staircaseSteel : 0;
-
-    const cementBase =
-      constructionArea * selectedMaterialRule.cementBagsPerSqft * structuralFloorFactor +
-      staircaseCementBags;
-
-    const steelBase =
-      constructionArea * selectedMaterialRule.steelKgPerSqft * structuralFloorFactor +
-      staircaseSteelKg;
-
-    const sandBase =
-      constructionArea *
-        selectedMaterialRule.sandCftPerSqft *
-        selectedWallMaterial.sandFactor +
-      staircaseSandCft;
-
-    const aggregateBase =
-      constructionArea * selectedMaterialRule.aggregateCftPerSqft + staircaseAggregateCft;
-
-    const bricksBase = constructionArea * selectedWallMaterial.qtyPerSqft;
-
-    const masonryCementAdjustment =
-      cementBase * 0.22 * (selectedWallMaterial.cementFactor - 1);
-    const adjustedCementBase = Math.max(cementBase + masonryCementAdjustment, 0);
-
-    const cementWastageQty = (adjustedCementBase * numberValue(wastage.cement, 0)) / 100;
-    const steelWastageQty = (steelBase * numberValue(wastage.steel, 0)) / 100;
-    const sandWastageQty = (sandBase * numberValue(wastage.sand, 0)) / 100;
-    const aggregateWastageQty =
-      (aggregateBase * numberValue(wastage.aggregate, 0)) / 100;
-    const brickWastageQty = (bricksBase * numberValue(wastage.brick, 0)) / 100;
-
-    const cementBags = Math.ceil(adjustedCementBase + cementWastageQty);
-    const steelKg = Math.ceil(steelBase + steelWastageQty);
-    const sandCft = Math.ceil(sandBase + sandWastageQty);
-    const aggregateCft = Math.ceil(aggregateBase + aggregateWastageQty);
-    const bricks = Math.ceil(bricksBase + brickWastageQty);
-
-    const foundationShutteringArea = constructionArea * 0.15;
-    const columnShutteringArea = constructionArea * 0.25;
-    const beamShutteringArea = constructionArea * 0.35;
-    const slabShutteringArea = constructionArea * 1.0;
-    const staircaseShutteringArea = form.includeStaircase ? staircaseShuttering : 0;
-    const totalShutteringArea =
-      foundationShutteringArea +
-      columnShutteringArea +
-      beamShutteringArea +
-      slabShutteringArea +
-      staircaseShutteringArea;
-
-    const plywoodSheetArea = 32;
-    const plywoodReuseFactor = 4;
-    const plywoodSheets = totalShutteringArea
-      ? Math.ceil(totalShutteringArea / (plywoodSheetArea * plywoodReuseFactor))
-      : 0;
-    const timberCft = roundQty(totalShutteringArea * 0.03);
-    const nailsKg = roundQty(totalShutteringArea * 0.015);
-    const formOilLitre = roundQty(totalShutteringArea * 0.015);
-    const propsNos = slabShutteringArea ? Math.ceil(slabShutteringArea / 25) : 0;
-
-    const safeRates = {
-      cement: positiveRate(rates.cement, defaultRates.cement),
-      steel: positiveRate(rates.steel, defaultRates.steel),
-      sand: positiveRate(rates.sand, defaultRates.sand),
-      aggregate: positiveRate(rates.aggregate, defaultRates.aggregate),
-      brick: positiveRate(rates.brick, defaultRates.brick),
-    };
-
-    const materials = [
-      {
-        name: "Cement / सीमेंट",
-        pdfName: "Cement",
-        baseQty: roundQty(adjustedCementBase),
-        wastageQty: roundQty(cementWastageQty),
-        qty: cementBags,
-        unit: "Bags",
-        rate: safeRates.cement,
-        amount: cementBags * safeRates.cement,
-        note: "Used in RCC, PCC, brick masonry mortar and plaster.",
-      },
-      {
-        name: "Steel / स्टील",
-        pdfName: "Steel",
-        baseQty: roundQty(steelBase),
-        wastageQty: roundQty(steelWastageQty),
-        qty: steelKg,
-        unit: "Kg",
-        rate: safeRates.steel,
-        amount: steelKg * safeRates.steel,
-        note: "Used in footing, column, beam, slab and staircase reinforcement.",
-      },
-      {
-        name: "Sand / रेत",
-        pdfName: "Sand",
-        baseQty: roundQty(sandBase),
-        wastageQty: roundQty(sandWastageQty),
-        qty: sandCft,
-        unit: "Cft",
-        rate: safeRates.sand,
-        amount: sandCft * safeRates.sand,
-        note: "Used in concrete, masonry mortar and plaster.",
-      },
-      {
-        name: "Aggregate / गिट्टी",
-        pdfName: "Aggregate",
-        baseQty: roundQty(aggregateBase),
-        wastageQty: roundQty(aggregateWastageQty),
-        qty: aggregateCft,
-        unit: "Cft",
-        rate: safeRates.aggregate,
-        amount: aggregateCft * safeRates.aggregate,
-        note: "Used mainly in PCC and RCC concrete work.",
-      },
-      {
-        name: `${selectedWallMaterial.name} / ${selectedWallMaterial.hindi}`,
-        pdfName: selectedWallMaterial.pdfName,
-        baseQty: roundQty(bricksBase),
-        wastageQty: roundQty(brickWastageQty),
-        qty: bricks,
-        unit: selectedWallMaterial.unit,
-        rate: safeRates.brick,
-        amount: bricks * safeRates.brick,
-        note: `${selectedWallMaterial.note} Used for internal and external wall masonry.`,
-      },
-      {
-        name: "Shuttering Area / शटरिंग एरिया",
-        pdfName: "Shuttering Area",
-        baseQty: roundQty(totalShutteringArea),
-        wastageQty: 0,
-        qty: roundQty(totalShutteringArea),
-        unit: "sq ft",
-        rate: 0,
-        amount: 0,
-        referenceOnly: true,
-        note: "Reference quantity for formwork planning.",
-      },
-      {
-        name: "Plywood Sheets / प्लाईवुड शीट",
-        pdfName: "Plywood Sheets 8x4",
-        baseQty: plywoodSheets,
-        wastageQty: 0,
-        qty: plywoodSheets,
-        unit: "Sheets",
-        rate: 0,
-        amount: 0,
-        referenceOnly: true,
-        note: "Approximate 8x4 sheet requirement with reuse factor.",
-      },
-      {
-        name: "Timber / Wooden Batten / लकड़ी",
-        pdfName: "Timber / Wooden Batten",
-        baseQty: timberCft,
-        wastageQty: 0,
-        qty: timberCft,
-        unit: "Cft",
-        rate: 0,
-        amount: 0,
-        referenceOnly: true,
-        note: "Reference quantity for shuttering support work.",
-      },
-      {
-        name: "Nails / कील",
-        pdfName: "Nails",
-        baseQty: nailsKg,
-        wastageQty: 0,
-        qty: nailsKg,
-        unit: "Kg",
-        rate: 0,
-        amount: 0,
-        referenceOnly: true,
-        note: "Reference quantity for formwork fixing.",
-      },
-      {
-        name: "Form Oil / फॉर्म ऑयल",
-        pdfName: "Form Oil",
-        baseQty: formOilLitre,
-        wastageQty: 0,
-        qty: formOilLitre,
-        unit: "Litre",
-        rate: 0,
-        amount: 0,
-        referenceOnly: true,
-        note: "Reference quantity for shuttering surface treatment.",
-      },
-      {
-        name: "Props / Supports / सपोर्ट",
-        pdfName: "Props / Supports",
-        baseQty: propsNos,
-        wastageQty: 0,
-        qty: propsNos,
-        unit: "Nos",
-        rate: 0,
-        amount: 0,
-        referenceOnly: true,
-        note: "Approximate support quantity for slab formwork.",
-      },
-    ];
-
-    const materialCostTotal = materials
-      .filter((item) => !item.referenceOnly)
-      .reduce((sum, item) => sum + item.amount, 0);
-
-    const labourAndWorkmanshipCost = Math.max(constructionCost - materialCostTotal, 0);
-    const materialCostPercent = constructionCost
-      ? Number(((materialCostTotal / constructionCost) * 100).toFixed(1))
-      : 0;
-    const labourCostPercent = constructionCost
-      ? Number(((labourAndWorkmanshipCost / constructionCost) * 100).toFixed(1))
-      : 0;
-
-    const stageMaterialBreakdown = [
-      {
-        stage: "Foundation",
-        material: `${(cementBags * 0.18).toFixed(0)} bags cement, ${(steelKg * 0.18).toFixed(0)} kg steel, ${(sandCft * 0.2).toFixed(0)} cft sand`,
-        amount: constructionCost * 0.12,
-      },
-      {
-        stage: "RCC Work",
-        material: `${(cementBags * 0.35).toFixed(0)} bags cement, ${(steelKg * 0.45).toFixed(0)} kg steel, ${(aggregateCft * 0.45).toFixed(0)} cft aggregate`,
-        amount: constructionCost * 0.2,
-      },
-      {
-        stage: "Brick / Block Work",
-        material: `${(bricks * 0.75).toFixed(0)} ${selectedWallMaterial.unit} ${selectedWallMaterial.name}, ${(cementBags * 0.15).toFixed(0)} bags cement, ${(sandCft * 0.25).toFixed(0)} cft sand`,
-        amount: constructionCost * 0.1,
-      },
-      {
-        stage: "Plaster",
-        material: `${(cementBags * 0.12).toFixed(0)} bags cement, ${(sandCft * 0.2).toFixed(0)} cft sand`,
-        amount: constructionCost * 0.08,
-      },
-      {
-        stage: "Flooring",
-        material: `${(constructionArea * 1.05).toFixed(0)} sq ft tiles, ${(constructionArea * 0.08).toFixed(0)} bags adhesive`,
-        amount: constructionCost * 0.08,
-      },
-      {
-        stage: "Shuttering / Formwork",
-        material: `${totalShutteringArea.toFixed(0)} sq ft formwork, ${plywoodSheets} plywood sheets, ${propsNos} props`,
-        amount: 0,
-        referenceOnly: true,
-      },
-    ];
-
-    const assumptions = [
-      "Normal residential RCC construction is assumed by default.",
-      `${selectedWallMaterial.name} is selected as the wall material. If you are not sure, keep Red Clay Brick.`,
-      `${form.quality} quality rate and material intensity are used for this estimate.`,
-      "Standard residential wastage is included and can be edited from the material rates section.",
-      "Material rates can be edited as per local market rates before generating the PDF.",
-      "Final site quantity may vary due to structural design, wall layout, soil condition and contractor execution method.",
-    ];
-
-    const shuttering = {
-      foundation: foundationShutteringArea,
-      column: columnShutteringArea,
-      beam: beamShutteringArea,
-      slab: slabShutteringArea,
-      staircase: staircaseShutteringArea,
-      totalArea: totalShutteringArea,
-      plywoodSheets,
-      timberCft,
-      nailsKg,
-      formOilLitre,
-      propsNos,
-      note: "Quantity reference only. Cost is assumed included in construction rate unless contractor quotes separately.",
-    };
-
-    const boq = {
-      Foundation: {
-        "Concrete Volume": `${(constructionArea * 0.015).toFixed(2)} m3`,
-        "Cement Bags": `${(cementBags * 0.18).toFixed(2)} bags`,
-        "Sand Quantity": `${(sandCft * 0.2).toFixed(2)} cft`,
-        "Aggregate Quantity": `${(aggregateCft * 0.25).toFixed(2)} cft`,
-        "Steel Quantity": `${(steelKg * 0.18).toFixed(2)} kg`,
-        Cost: money(constructionCost * 0.12),
-      },
-      RCC: {
-        "Concrete Volume": `${(constructionArea * 0.04).toFixed(2)} m3`,
-        Cement: `${(cementBags * 0.35).toFixed(2)} bags`,
-        Steel: `${(steelKg * 0.45).toFixed(2)} kg`,
-        Sand: `${(sandCft * 0.35).toFixed(2)} cft`,
-        Aggregate: `${(aggregateCft * 0.45).toFixed(2)} cft`,
-        Cost: money(constructionCost * 0.2),
-      },
-      ...(form.includeStaircase
-        ? {
-            Staircase: {
-              "Staircase Type": form.staircaseType,
-              "Access Type": form.staircaseAccess,
-              "Area Status": form.staircaseAreaStatus,
-              "No. of Staircases": `${staircaseCount} nos`,
-              "Staircase Levels": `${staircaseLevels} level`,
-              "Concrete Approx.": `${staircaseConcrete.toFixed(2)} m3`,
-              "Steel Approx.": `${staircaseSteel.toFixed(2)} kg`,
-              "Shuttering Approx.": `${staircaseShuttering.toFixed(2)} sq ft`,
-              "Finishing Area": `${staircaseFinishingArea.toFixed(2)} sq ft`,
-              "Railing Length": `${staircaseRailing.toFixed(2)} rft`,
-              "Estimated Staircase Cost": money(staircaseEstimatedCost),
-              "Extra Added in Total": money(staircaseExtraCost),
-            },
-          }
-        : {}),
-      "Shuttering / Formwork": {
-        "Foundation Formwork": `${foundationShutteringArea.toFixed(0)} sq ft`,
-        "Column Formwork": `${columnShutteringArea.toFixed(0)} sq ft`,
-        "Beam Formwork": `${beamShutteringArea.toFixed(0)} sq ft`,
-        "Slab Formwork": `${slabShutteringArea.toFixed(0)} sq ft`,
-        "Staircase Formwork": `${staircaseShutteringArea.toFixed(0)} sq ft`,
-        "Total Shuttering Area": `${totalShutteringArea.toFixed(0)} sq ft`,
-        "Plywood Sheets 8x4": `${plywoodSheets} sheets`,
-        "Timber / Wooden Batten": `${timberCft.toFixed(2)} cft`,
-        Nails: `${nailsKg.toFixed(2)} kg`,
-        "Form Oil": `${formOilLitre.toFixed(2)} litre`,
-        "Props / Supports": `${propsNos} nos`,
-        Note: "Shuttering material quantities are for reference. Cost is considered included in construction rate.",
-      },
-      Brickwork: {
-        [selectedWallMaterial.pdfName]: `${(bricks * 0.75).toFixed(0)} ${selectedWallMaterial.unit}`,
-        Cement: `${(cementBags * 0.15).toFixed(2)} bags`,
-        Sand: `${(sandCft * 0.25).toFixed(2)} cft`,
-        Cost: money(constructionCost * 0.1),
-      },
-      Plaster: {
-        Cement: `${(cementBags * 0.12).toFixed(2)} bags`,
-        Sand: `${(sandCft * 0.2).toFixed(2)} cft`,
-        Area: `${(constructionArea * 2.5).toFixed(0)} sq ft`,
-        Cost: money(constructionCost * 0.08),
-      },
-      Flooring: {
-        Area: `${constructionArea.toFixed(0)} sq ft`,
-        "Tile Quantity": `${(constructionArea * 1.05).toFixed(0)} sq ft`,
-        Adhesive: `${(constructionArea * 0.08).toFixed(2)} bags`,
-        Cost: money(constructionCost * 0.08),
-      },
-      Finishing: {
-        "Paint Quantity": `${(constructionArea * 0.18).toFixed(2)} litres`,
-        Doors: `${Math.ceil(constructionArea / 350)} nos`,
-        Windows: `${Math.ceil(constructionArea / 300)} nos`,
-        Cost: money(constructionCost * 0.08),
-      },
-      "Optional Features": {
-        Bedrooms: form.bedrooms || 0,
-        Kitchens: form.kitchens || 0,
-        Bathrooms: form.bathrooms || 0,
-        Halls: form.halls || 0,
-        Parking: form.carParking || 0,
-        Balcony: form.balcony || 0,
-        Terrace: form.terrace || 0,
-        Basement: form.basement || 0,
-        Lift: form.lift || 0,
-        "Room Allowance": money(roomAdditionalCost),
-        "Feature Cost": money(optionalFeatureCost),
-      },
-    };
-
-    const hiddenList = [
-      ["Architect Fees", hiddenCosts.architect],
-      ["Structural Design", hiddenCosts.structural],
-      ["Government Approval", hiddenCosts.approval],
-      ["Water Connection", hiddenCosts.water],
-      ["Electricity Connection", hiddenCosts.electricity],
-      ["Borewell", hiddenCosts.borewell],
-      ["Boundary Wall", hiddenCosts.boundaryWall],
-      [`GST (${hiddenCosts.gstPercent || 0}%)`, gstAmount],
-    ];
-
-    const roomRecommendation = {
-      type: `${form.bedrooms} BHK House`,
-      rooms: [
-        ...Array.from({ length: numberValue(form.bedrooms, 0) }, (_, i) => ({
-          name: `Bedroom ${i + 1}`,
-          size: "12 x 12 ft",
-        })),
-        ...Array.from({ length: numberValue(form.kitchens, 0) }, (_, i) => ({
-          name: `Kitchen ${i + 1}`,
-          size: "10 x 10 ft",
-        })),
-        ...Array.from({ length: numberValue(form.bathrooms, 0) }, (_, i) => ({
-          name: `Bathroom ${i + 1}`,
-          size: "5 x 8 ft",
-        })),
-        ...Array.from({ length: numberValue(form.halls, 0) }, (_, i) => ({
-          name: `Hall ${i + 1}`,
-          size: "15 x 20 ft",
-        })),
-      ],
-    };
-
-    const timeline = getTimeline(constructionArea, floorCount, form.includeStaircase);
-
-    return {
-      floorCount,
-      constructionArea,
-      costPerSqFt,
-      costPerSqM: costPerSqFt * 10.7639,
-      baseConstructionCost,
-      roomAdditionalCost,
-      optionalFeatureCost,
-      constructionCost,
-      additionalHiddenCost,
-      grandTotal,
-      gstAmount,
-      materialCostTotal,
-      labourAndWorkmanshipCost,
-      materialCostPercent,
-      labourCostPercent,
-      wallMaterial: selectedWallMaterial,
-      assumptions,
-      stageMaterialBreakdown,
-      breakdown,
-      staircase: {
-        included: form.includeStaircase,
-        areaStatus: form.staircaseAreaStatus || "Included in Built-up Area",
-        count: staircaseCount,
-        type: form.staircaseType || "RCC Dog-Legged",
-        access: form.staircaseAccess || "Up to Terrace / Roof",
-        finish: form.staircaseFinish || "Standard",
-        levels: staircaseLevels,
-        cost: staircaseEstimatedCost,
-        extraCost: staircaseExtraCost,
-        concrete: staircaseConcrete,
-        steel: staircaseSteel,
-        shuttering: staircaseShuttering,
-        finishingArea: staircaseFinishingArea,
-        railing: staircaseRailing,
-      },
-      shuttering,
-      materials,
-      boq,
-      hiddenList,
-      roomRecommendation,
-      timeline,
-    };
-  }, [form, rates, hiddenCosts, wastage]);
-
-  const startNewEstimate = () => {
-    setForm(createDefaultForm());
-    setRates(defaultRates);
-    setWastage(defaultWastage);
-    setHiddenCosts(hiddenDefaults);
-    setCalculated(false);
-    setEditingId(null);
-    setOpenBoq("Foundation");
-    setFloorPlan(null);
-    setShowFloorPlan(false);
-    setShow3DView(false);
-    setScreen("calculator");
-  };
-
-  const calculate = () => {
-    if (!form.builtUpArea && (!form.plotLength || !form.plotWidth)) {
-      alert("Please enter Built-up Area or Plot Length + Plot Width.");
-      return;
-    }
-
-    setCalculated(true);
-
-    saveCalculationHistory(
-      authFetch,
-      "home-construction",
-      {
-        form,
-        rates,
-        wastage,
-        hiddenCosts,
-      },
-      result
-    ).catch(() => {});
-
-    setTimeout(() => {
-      const el = document.getElementById("results-section");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
-  };
-
-  const saveProject = () => {
-    if (!calculated) calculate();
-
-    const projectData = {
-      id: editingId || Date.now(),
-      form,
-      rates,
-      wastage,
-      hiddenCosts,
-      result,
-      floorPlan,
-      buildingHeight,
-      updatedAt: new Date().toISOString(),
-    };
-
-    let updatedProjects = [...savedProjects];
-
-    if (editingId) {
-      updatedProjects = updatedProjects.map((p) => (p.id === editingId ? projectData : p));
-    } else {
-      updatedProjects.unshift(projectData);
-    }
-
-    localStorage.setItem("homeConstructionProjects", JSON.stringify(updatedProjects));
-    setSavedProjects(updatedProjects);
-    setEditingId(projectData.id);
-    alert("Project Saved Successfully");
-  };
-
-  const openProject = (project) => {
-    setEditingId(project.id);
-    setForm({ ...createDefaultForm(), ...(project.form || {}) });
-    setRates({ ...defaultRates, ...(project.rates || {}) });
-    setWastage({ ...defaultWastage, ...(project.wastage || {}) });
-    setHiddenCosts({ ...hiddenDefaults, ...(project.hiddenCosts || {}) });
-    setFloorPlan(project.floorPlan || null);
-    setBuildingHeight(project.buildingHeight || 10);
-    setShowFloorPlan(!!project.floorPlan);
-    setCalculated(true);
-    setScreen("calculator");
-    setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
-  };
-
-  const deleteProject = (id) => {
-    const updated = savedProjects.filter((p) => p.id !== id);
-    localStorage.setItem("homeConstructionProjects", JSON.stringify(updated));
-    setSavedProjects(updated);
-  };
-
-  const duplicateProject = (project) => {
-    const copy = {
-      ...project,
-      id: Date.now(),
-      form: {
-        ...createDefaultForm(),
-        ...(project.form || {}),
-        projectName: `${project.form?.projectName || "Untitled"} Copy`,
-      },
-      updatedAt: new Date().toISOString(),
-    };
-    const updated = [copy, ...savedProjects];
-    localStorage.setItem("homeConstructionProjects", JSON.stringify(updated));
-    setSavedProjects(updated);
-  };
-
-  const shareEstimate = async () => {
-    const text = `CivilCalc Pro Home Construction Estimate\nProject: ${
-      form.projectName || "N/A"
-    }\nConstruction Cost: ${money(result.constructionCost)}\nAdditional Hidden Cost: ${money(
-      result.additionalHiddenCost
-    )}\nGrand Total: ${money(result.grandTotal)}\nConstruction Area: ${result.constructionArea.toFixed(
-      0
-    )} sq ft\nWall Material: ${result.wallMaterial?.name || form.brickType}`;
-
-    if (navigator.share) {
-      await navigator.share({ title: "Home Construction Estimate", text });
-    } else {
-      await navigator.clipboard.writeText(text);
-      alert("Estimate copied to clipboard");
-    }
-  };
-
-  const downloadPDF = () => {
+  // NEW: Enhanced PDF with Floor Plan
+  const downloadEnhancedPDF = async () => {
     if (!calculated) {
-      alert("Please calculate estimate first, then download PDF.");
+      alert("Please calculate estimate first");
       return;
     }
 
     const doc = new jsPDF("p", "mm", "a4");
+    
+    // [Keep existing PDF generation code]
+    // ... existing PDF code ...
 
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    const ORANGE = [255, 122, 0];
-    const NAVY = [5, 11, 31];
-    const DARK = [15, 23, 42];
-    const LIGHT = [248, 250, 252];
-    const GREY = [100, 116, 139];
-
-    const margin = 14;
-    const today = new Date().toLocaleDateString("en-IN");
-
-    const safeText = (value) =>
-      String(value ?? "-")
-        .replace(/₹/g, "Rs.")
-        .replace(/–/g, "-")
-        .replace(/—/g, "-")
-        .replace(/"|"/g, '"')
-        .replace(/'/g, "'");
-
-    const safeFileName = (form.projectName || "civilcalc-home-estimate")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-
-    const sectionTitle = (title, y) => {
-      doc.setTextColor(...NAVY);
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text(title, margin, y);
-      doc.setDrawColor(...ORANGE);
-      doc.setLineWidth(0.7);
-      doc.line(margin, y + 2.5, pageWidth - margin, y + 2.5);
-    };
-
-    const addHeader = (title) => {
-      doc.setFillColor(...NAVY);
-      doc.rect(0, 0, pageWidth, 24, "F");
+    // Add Floor Plan Page
+    if (floorPlan) {
+      doc.addPage();
+      doc.setFillColor(5, 11, 31);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("CivilCalc Pro", margin, 10);
-      doc.setTextColor(...ORANGE);
-      doc.setFontSize(10);
-      doc.text(title, margin, 17);
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.text(today, pageWidth - margin, 10, { align: "right" });
-    };
+      doc.text("Floor Plan", 14, 10);
 
-    const addFooterToAllPages = () => {
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setDrawColor(226, 232, 240);
-        doc.line(margin, pageHeight - 16, pageWidth - margin, pageHeight - 16);
-        doc.setFontSize(8);
-        doc.setTextColor(...GREY);
-        doc.setFont("helvetica", "normal");
-        doc.text("Generated by CivilCalc Pro - civilcalcpro.in", margin, pageHeight - 10);
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 10, {
-          align: "right",
-        });
+      // Capture floor plan as image
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 14, 30, 180, 180);
       }
-    };
 
-    const summaryCard = (x, y, w, h, label, value, highlight = false) => {
-      doc.setFillColor(highlight ? 255 : 248, highlight ? 122 : 250, highlight ? 0 : 252);
-      doc.roundedRect(x, y, w, h, 3, 3, "F");
-      doc.setDrawColor(highlight ? 255 : 226, highlight ? 122 : 232, highlight ? 0 : 240);
-      doc.roundedRect(x, y, w, h, 3, 3, "S");
-      doc.setTextColor(highlight ? 255 : 100, highlight ? 255 : 116, highlight ? 255 : 139);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.text(label, x + 4, y + 7);
-      doc.setTextColor(highlight ? 255 : 15, highlight ? 255 : 23, highlight ? 255 : 42);
-      doc.setFontSize(highlight ? 14 : 12);
-      doc.setFont("helvetica", "bold");
-      doc.text(safeText(value), x + 4, y + 16);
-    };
+      // Add room details table
+      autoTable(doc, {
+        startY: 220,
+        head: [['Room', 'Type', 'Size', 'Area']],
+        body: floorPlan.rooms.map(room => [
+          room.name,
+          room.type,
+          `${room.width}' × ${room.height}'`,
+          `${(room.width * room.height).toFixed(0)} sq ft`
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [255, 122, 0] },
+      });
+    }
 
-    const formattedRate = (m) => (m.referenceOnly ? "Included" : pdfMoney(m.rate));
-    const formattedAmount = (m) => (m.referenceOnly ? "Included in rate" : pdfMoney(m.amount));
-
-    doc.setProperties({
-      title: "Home Construction Cost Estimate",
-      subject: "CivilCalc Pro Home Construction Estimate Report",
-      author: "CivilCalc Pro",
-      creator: "CivilCalc Pro",
-    });
-
-    // PAGE 1 — COVER + SUMMARY
-    doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pageWidth, 78, "F");
-    doc.setTextColor(...ORANGE);
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.text("CivilCalc Pro", margin, 22);
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.text("Home Construction Cost Estimate Report", margin, 36);
-    doc.setTextColor(203, 213, 225);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("Professional construction budget, material estimate, BOQ and timeline report", margin, 45);
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(9);
-    doc.text(`Report Date: ${today}`, margin, 58);
-    doc.text(`Project: ${safeText(form.projectName || "Not Provided")}`, margin, 65);
-    doc.text(`Owner: ${safeText(form.ownerName || "Not Provided")}`, margin, 72);
-
-    summaryCard(margin, 90, pageWidth - margin * 2, 28, "GRAND TOTAL PROJECT BUDGET", pdfMoney(result.grandTotal), true);
-
-    const cardW = (pageWidth - margin * 2 - 9) / 4;
-    summaryCard(margin, 126, cardW, 24, "Construction Cost", pdfMoney(result.constructionCost));
-    summaryCard(margin + cardW + 3, 126, cardW, 24, "Hidden Cost", pdfMoney(result.additionalHiddenCost));
-    summaryCard(margin + (cardW + 3) * 2, 126, cardW, 24, "Area", `${result.constructionArea.toFixed(0)} sq ft`);
-    summaryCard(margin + (cardW + 3) * 3, 126, cardW, 24, "Rate / sq ft", pdfMoney(result.costPerSqFt));
-
-    sectionTitle("Project Details", 165);
-
-    autoTable(doc, {
-      startY: 172,
-      head: [["Field", "Value"]],
-      body: [
-        ["Project Name", safeText(form.projectName || "Not Provided")],
-        ["Owner Name", safeText(form.ownerName || "Not Provided")],
-        ["Plot Size", `${form.plotLength || "-"} x ${form.plotWidth || "-"} ft`],
-        ["Built-up Area", `${form.builtUpArea || "-"} ${form.unit}`],
-        ["Floors", form.floors === "Custom" ? `${form.customFloors || "-"} Floors` : form.floors],
-        ["Location", `${form.city || "-"}, ${form.state || "-"}`],
-        ["Construction Quality", form.quality],
-        ["Wall Material", safeText(result.wallMaterial?.name || form.brickType || "Red Clay Brick")],
-        [
-          "Staircase",
-          result.staircase.included
-            ? `${result.staircase.type} - ${
-                result.staircase.access === "Up to Terrace / Roof" ? "Ground to Terrace" : "Up to Selected Floor"
-              }`
-            : "Not Included",
-        ],
-        ["Staircase Area Status", result.staircase.included ? result.staircase.areaStatus : "-"],
-        ["Construction Area", `${result.constructionArea.toFixed(0)} sq ft`],
-        ["Estimated Duration", result.timeline.total],
-      ],
-      theme: "grid",
-      styles: {
-        fontSize: 9,
-        cellPadding: 3,
-        textColor: DARK,
-        lineColor: [226, 232, 240],
-        lineWidth: 0.2,
-      },
-      headStyles: { fillColor: ORANGE, textColor: [255, 255, 255], fontStyle: "bold" },
-      alternateRowStyles: { fillColor: LIGHT },
-      columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 }, 1: { cellWidth: 115 } },
-    });
-
-    // Add remaining PDF pages here (same as before)
-    // ... [Keep all existing PDF generation code] ...
-
-    addFooterToAllPages();
-    doc.save(`${safeFileName || "civilcalc-home-estimate"}.pdf`);
+    doc.save(`${form.projectName || 'home-estimate'}-with-floor-plan.pdf`);
   };
+
+  // [Keep all existing result calculation logic]
+  const result = useMemo(() => {
+    // ... existing calculation code ...
+  }, [form, rates, hiddenCosts, wastage]);
+
+  // [Keep existing functions: calculate, saveProject, etc.]
 
   if (screen === "home") {
     return (
       <div className="min-h-screen bg-[#050B1F] text-white p-4 md:p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-white/5 p-6">
-            <p className="text-orange-400 text-sm font-bold">CivilCalc Pro / सिविलकैल्क प्रो</p>
-            <h1 className="text-3xl md:text-5xl font-black mt-2">Home Construction Assistant</h1>
-            <p className="text-slate-300 mt-3 max-w-3xl">
-              Complete house construction estimate with cost breakdown, material quantities, BOQ,
-              shuttering/formwork quantity, hidden costs, 3D floor plan and PDF report.
-              <br />
-              घर बनाने का पूरा खर्च, मटेरियल, BOQ, shuttering, 3D plan और PDF रिपोर्ट एक जगह.
-            </p>
-
-            <button
-              onClick={startNewEstimate}
-              className="mt-6 bg-orange-500 hover:bg-orange-600 px-6 py-4 rounded-2xl font-black w-full sm:w-auto"
-            >
-              + New Home Calculator / नया अनुमान बनाएं
-            </button>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-5 md:p-6">
-            <h2 className="text-xl font-black mb-5">Saved Projects / सेव किए हुए प्रोजेक्ट</h2>
-
-            {savedProjects.length === 0 && (
-              <p className="text-slate-500">No saved projects available. अभी कोई saved project नहीं है.</p>
-            )}
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {savedProjects.map((project) => (
-                <div key={project.id} className="rounded-2xl border border-white/10 p-4 bg-black/20">
-                  <h3 className="font-bold">{project.form?.projectName || "Untitled Project"}</h3>
-                  <p className="text-sm text-slate-400 mt-1">
-                    {new Date(project.updatedAt).toLocaleString("en-IN")}
-                  </p>
-                  <div className="text-orange-400 font-black text-xl mt-3">
-                    {money(project.result?.grandTotal || 0)}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Area: {project.result?.constructionArea?.toFixed(0) || 0} sq ft
-                  </p>
-                  {project.floorPlan && (
-                    <p className="text-xs text-green-400 mt-1">✅ Floor Plan Available</p>
-                  )}
-
-                  <div className="grid grid-cols-3 gap-2 mt-4">
-                    <button onClick={() => openProject(project)} className="smallBtn">
-                      Open
-                    </button>
-                    <button onClick={() => duplicateProject(project)} className="smallBtn">
-                      Copy
-                    </button>
-                    <button onClick={() => deleteProject(project.id)} className="smallBtn">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <StyleBlock />
+        {/* ... existing home screen code ... */}
       </div>
     );
   }
@@ -1722,165 +681,13 @@ export default function HomeConstructionCalculator() {
   return (
     <div className="min-h-screen bg-[#050B1F] text-white pb-28">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-white/5 p-5">
-          <div>
-            <button onClick={() => setScreen("home")} className="text-sm text-orange-400 font-bold mb-2">
-              ← Back to Saved Projects
-            </button>
-            <h1 className="text-2xl md:text-4xl font-black">Home Construction Cost Calculator</h1>
-            <p className="text-slate-300 mt-2">
-              Practical construction estimate software with 3D floor plan / उपयोग में आसान घर निर्माण अनुमान.
-            </p>
-          </div>
-
-          <button onClick={calculate} className="bg-orange-500 hover:bg-orange-600 rounded-2xl px-6 py-4 font-black">
-            Calculate Construction Cost
-          </button>
-        </div>
+        {/* ... existing header code ... */}
 
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-1 space-y-6">
-            {/* EXISTING INPUT PANELS */}
-            <Panel title="Step 1 — Plot Details / प्लॉट डिटेल्स">
-              <Input label="Project Name / प्रोजेक्ट नाम" value={form.projectName} onChange={(v) => updateForm("projectName", v)} />
-              <Input label="Owner Name / मालिक का नाम" value={form.ownerName} onChange={(v) => updateForm("ownerName", v)} />
+            {/* ... existing input panels ... */}
 
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Plot Length ft" value={form.plotLength} onChange={(v) => updateForm("plotLength", v)} />
-                <Input label="Plot Width ft" value={form.plotWidth} onChange={(v) => updateForm("plotWidth", v)} />
-              </div>
-
-              <Input label="OR Built-up Area / बना हुआ एरिया" value={form.builtUpArea} onChange={(v) => updateForm("builtUpArea", v)} />
-
-              <div className="grid grid-cols-2 gap-3">
-                <Select label="Unit / यूनिट" value={form.unit} onChange={(v) => updateForm("unit", v)} options={["sqft", "sqm"]} />
-                <Select
-                  label="Floors / मंजिल"
-                  value={form.floors}
-                  onChange={(v) => {
-                    setForm((prev) => ({
-                      ...prev,
-                      floors: v,
-                      includeStaircase: v === "Ground" ? false : true,
-                      staircaseAccess: v === "Ground" ? prev.staircaseAccess : "Up to Terrace / Roof",
-                      staircaseAreaStatus:
-                        v === "Ground" ? prev.staircaseAreaStatus : "Included in Built-up Area",
-                    }));
-                  }}
-                  options={["Ground", "G+1", "G+2", "Custom"]}
-                />
-              </div>
-
-              {form.floors === "Custom" && (
-                <Input label="Custom Floors / मंजिल संख्या" value={form.customFloors} onChange={(v) => updateForm("customFloors", v)} />
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Bedrooms / बेडरूम" value={form.bedrooms} onChange={(v) => updateForm("bedrooms", v)} />
-                <Input label="Kitchens / किचन" value={form.kitchens} onChange={(v) => updateForm("kitchens", v)} />
-                <Input label="Bathrooms / टॉयलेट" value={form.bathrooms} onChange={(v) => updateForm("bathrooms", v)} />
-                <Input label="Halls / हॉल" value={form.halls} onChange={(v) => updateForm("halls", v)} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Car Parking / पार्किंग" value={form.carParking} onChange={(v) => updateForm("carParking", v)} />
-                <Input label="Balcony / बालकनी" value={form.balcony} onChange={(v) => updateForm("balcony", v)} />
-                <Input label="Terrace / टैरेस" value={form.terrace} onChange={(v) => updateForm("terrace", v)} />
-                <Input label="Basement / बेसमेंट" value={form.basement} onChange={(v) => updateForm("basement", v)} />
-                <Input label="Lift / लिफ्ट" value={form.lift} onChange={(v) => updateForm("lift", v)} />
-              </div>
-            </Panel>
-
-            <Panel title="Step 2 — Construction Type / क्वालिटी">
-              {Object.entries(qualityOptions).map(([key, item]) => (
-                <button
-                  key={key}
-                  onClick={() => updateForm("quality", key)}
-                  className={`w-full text-left rounded-2xl p-4 border transition ${
-                    form.quality === key
-                      ? "border-orange-500 bg-orange-500/15"
-                      : "border-white/10 bg-white/5 hover:border-orange-500/40"
-                  }`}
-                >
-                  <div className="flex justify-between gap-3">
-                    <div>
-                      <h3 className="font-black">
-                        {key} / {item.hindi}
-                      </h3>
-                      <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
-                    </div>
-                    <span className="text-orange-400 font-black whitespace-nowrap">{money(item.rate)}/sq ft</span>
-                  </div>
-                </button>
-              ))}
-            </Panel>
-
-            <Panel title="Step 3 — Location / लोकेशन">
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="State / राज्य" value={form.state} onChange={(v) => updateForm("state", v)} />
-                <Input label="City / शहर" value={form.city} onChange={(v) => updateForm("city", v)} />
-              </div>
-              <p className="text-xs text-slate-500">
-                Used for local rate reference. Future contractor-connect can use this city/area.
-              </p>
-            </Panel>
-
-            <Panel title="Step 4 — Staircase Details / सीढ़ी विवरण">
-              <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-white">Include Staircase / सीढ़ी जोड़ें</p>
-                  <p className="text-xs text-slate-500">For G+1, G+2 or terrace access house estimate.</p>
-                </div>
-
-                <input
-                  type="checkbox"
-                  checked={form.includeStaircase}
-                  onChange={(e) => updateForm("includeStaircase", e.target.checked)}
-                  className="h-5 w-5 accent-orange-500"
-                />
-              </div>
-
-              {form.includeStaircase && (
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <Input label="No. of Staircases" value={form.staircaseCount} onChange={(v) => updateForm("staircaseCount", v)} />
-
-                  <Select
-                    label="Staircase Type"
-                    value={form.staircaseType}
-                    onChange={(v) => updateForm("staircaseType", v)}
-                    options={["RCC Dog-Legged", "Straight Staircase", "Open Well Staircase", "Spiral Staircase"]}
-                  />
-
-                  <Select
-                    label="Staircase Access"
-                    value={form.staircaseAccess}
-                    onChange={(v) => updateForm("staircaseAccess", v)}
-                    options={["Up to Selected Floor Only", "Up to Terrace / Roof"]}
-                  />
-
-                  <Select
-                    label="Area Status"
-                    value={form.staircaseAreaStatus}
-                    onChange={(v) => updateForm("staircaseAreaStatus", v)}
-                    options={["Included in Built-up Area", "Not Included / Separate"]}
-                  />
-
-                  <Select
-                    label="Finish Quality"
-                    value={form.staircaseFinish}
-                    onChange={(v) => updateForm("staircaseFinish", v)}
-                    options={["Basic", "Standard", "Premium"]}
-                  />
-                </div>
-              )}
-
-              <p className="text-xs text-slate-500 mt-3">
-                If staircase is already inside built-up area, extra cost will be ₹0. If staircase is separate,
-                its extra cost will be added to total.
-              </p>
-            </Panel>
-
-            {/* NEW: FLOOR PLAN GENERATOR PANEL */}
+            {/* NEW: Floor Plan Generation Panel */}
             <Panel title="🏗️ Floor Plan Generator / फ्लोर प्लान बनाएं">
               <div className="space-y-3">
                 <p className="text-sm text-slate-300">
@@ -1891,7 +698,7 @@ export default function HomeConstructionCalculator() {
                 <button
                   onClick={generateFloorPlan}
                   disabled={!form.plotLength || !form.plotWidth}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl px-6 py-4 font-black disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl px-6 py-4 font-black disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   🎨 Generate Floor Plan
                 </button>
@@ -1900,7 +707,7 @@ export default function HomeConstructionCalculator() {
                   <button
                     onClick={() => setShow3DView(!show3DView)}
                     disabled={!floorPlan}
-                    className="px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold disabled:opacity-50 transition-all"
+                    className="px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold disabled:opacity-50"
                   >
                     {show3DView ? '📐 2D View' : '🏠 3D View'}
                   </button>
@@ -1911,7 +718,7 @@ export default function HomeConstructionCalculator() {
                       setShowFloorPlan(!showFloorPlan);
                     }}
                     disabled={!floorPlan}
-                    className="px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold disabled:opacity-50 transition-all"
+                    className="px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold disabled:opacity-50"
                   >
                     {showFloorPlan ? '❌ Hide Plan' : '📋 Show Plan'}
                   </button>
@@ -1943,45 +750,10 @@ export default function HomeConstructionCalculator() {
                 </p>
               </Panel>
             )}
-
-            <Panel title="Step 5 — Material Rates / मटेरियल रेट">
-              <Select
-                label="Brick / Block Type / दीवार का मटेरियल"
-                value={form.brickType}
-                onChange={(v) => updateForm("brickType", v)}
-                options={Object.keys(wallMaterialOptions)}
-              />
-              <p className="text-xs text-slate-500">
-                Not sure? Keep Red Clay Brick. Normal residential construction me yahi commonly use hoti hai.
-              </p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Cement ₹/bag" value={rates.cement} onChange={(v) => updateRate("cement", v)} />
-                <Input label="Sand ₹/cft" value={rates.sand} onChange={(v) => updateRate("sand", v)} />
-                <Input label="Aggregate ₹/cft" value={rates.aggregate} onChange={(v) => updateRate("aggregate", v)} />
-                <Input label="Steel ₹/kg" value={rates.steel} onChange={(v) => updateRate("steel", v)} />
-                <Input label={wallMaterialOptions[form.brickType]?.rateLabel || "Brick / Block ₹/piece"} value={rates.brick} onChange={(v) => updateRate("brick", v)} />
-              </div>
-
-              <div className="mt-4">
-                <h3 className="font-bold text-orange-400 mb-3">Material Wastage / सामग्री बर्बादी</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input label="Cement Wastage %" value={wastage.cement} onChange={(v) => updateWastage("cement", v)} />
-                  <Input label="Steel Wastage %" value={wastage.steel} onChange={(v) => updateWastage("steel", v)} />
-                  <Input label="Sand Wastage %" value={wastage.sand} onChange={(v) => updateWastage("sand", v)} />
-                  <Input label="Aggregate Wastage %" value={wastage.aggregate} onChange={(v) => updateWastage("aggregate", v)} />
-                  <Input label="Brick Wastage %" value={wastage.brick} onChange={(v) => updateWastage("brick", v)} />
-                </div>
-              </div>
-
-              <button onClick={calculate} className="w-full mt-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black py-4 transition-all">
-                Calculate Construction Cost
-              </button>
-            </Panel>
           </div>
 
           <div className="xl:col-span-2 space-y-6">
-            {/* NEW: FLOOR PLAN DISPLAY SECTION */}
+            {/* NEW: Floor Plan Display Section */}
             {floorPlan && showFloorPlan && (
               <div id="floor-plan-section">
                 <Panel title="📐 Generated Floor Plan / बना हुआ फ्लोर प्लान">
@@ -1994,10 +766,7 @@ export default function HomeConstructionCalculator() {
                     ) : (
                       <Suspense fallback={
                         <div className="h-[600px] flex items-center justify-center bg-black/20 rounded-2xl">
-                          <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-                            <p className="text-white mt-4">Loading 3D View...</p>
-                          </div>
+                          <p className="text-white">Loading 3D View...</p>
                         </div>
                       }>
                         <HouseViewer3D
@@ -2023,14 +792,15 @@ export default function HomeConstructionCalculator() {
                         📦 Export 3D (OBJ)
                       </button>
                       <button
-                        onClick={downloadPDF}
+                        onClick={downloadEnhancedPDF}
                         className="actionBtn"
                       >
                         📑 PDF with Plan
                       </button>
                       <button
                         onClick={() => {
-                          alert('IFC export for Revit coming soon!\nRevit ke liye IFC export jald aa raha hai!');
+                          // Future: IFC export for Revit
+                          alert('IFC export coming soon for Revit compatibility!');
                         }}
                         className="actionBtn"
                       >
@@ -2045,7 +815,7 @@ export default function HomeConstructionCalculator() {
                         {floorPlan.rooms.map((room, idx) => (
                           <div
                             key={idx}
-                            className="rounded-xl border border-white/10 p-3 transition-all hover:border-orange-500/40"
+                            className="rounded-xl border border-white/10 p-3"
                             style={{ borderLeftColor: room.color, borderLeftWidth: '4px' }}
                           >
                             <h4 className="font-bold text-white">{room.name}</h4>
@@ -2061,216 +831,23 @@ export default function HomeConstructionCalculator() {
               </div>
             )}
 
-            {/* EXISTING RESULTS SECTIONS (Keep all as-is) */}
-            {!calculated && (
-              <Panel title="SEO Guide / जानकारी">
-                <SeoContent />
-              </Panel>
-            )}
-
+            {/* ... existing results panels ... */}
             {calculated && (
               <div id="results-section" className="space-y-6">
-                {/* Keep all existing result panels */}
-                {/* ... */}
+                {/* ... existing result panels ... */}
               </div>
             )}
+
+            {/* ... rest of existing code ... */}
           </div>
         </section>
       </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#050B1F]/95 border-t border-orange-500/30 p-3">
-        <div className="max-w-7xl mx-auto grid grid-cols-4 gap-2">
-          <button onClick={saveProject} className="bottomBtn">
-            Save
-          </button>
-          <button onClick={downloadPDF} className="bottomBtn">
-            PDF
-          </button>
-          <button
-            onClick={() => {
-              setOpenBoq("Foundation");
-              document.getElementById("results-section")?.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="bottomBtn"
-          >
-            BOQ
-          </button>
-          <button onClick={shareEstimate} className="bottomBtn">
-            Share
-          </button>
-        </div>
-      </div>
+      {/* ... existing bottom navigation ... */}
 
       <StyleBlock />
     </div>
   );
 }
 
-// ==================== HELPER COMPONENTS ====================
-function getTimeline(area, floors, includeStaircase) {
-  const factor = Math.max(1, Math.ceil(area / 1000)) + Math.max(0, floors - 1);
-
-  return {
-    total: factor <= 2 ? "6–8 Months" : "8–12 Months",
-    stages: [
-      { name: "Excavation", duration: `${5 + factor} Days` },
-      { name: "Foundation", duration: `${10 + factor * 2} Days` },
-      { name: "RCC Work", duration: `${20 + factor * 5} Days` },
-      ...(includeStaircase ? [{ name: "Staircase Work", duration: `${7 + factor * 2} Days` }] : []),
-      { name: "Brick Work", duration: `${25 + factor * 4} Days` },
-      { name: "Plaster", duration: `${15 + factor * 3} Days` },
-      { name: "Flooring", duration: `${15 + factor * 2} Days` },
-      { name: "Finishing", duration: `${30 + factor * 5} Days` },
-    ],
-  };
-}
-
-function Panel({ title, children }) {
-  return (
-    <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-xl">
-      <h2 className="text-lg font-black text-orange-400 mb-4">{title}</h2>
-      <div className="space-y-4">{children}</div>
-    </section>
-  );
-}
-
-function Input({ label, value, onChange }) {
-  return (
-    <div>
-      <label className="text-sm text-slate-300 mb-1 block">{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white outline-none focus:border-orange-500 transition-all"
-      />
-    </div>
-  );
-}
-
-function Select({ label, value, onChange, options }) {
-  return (
-    <div>
-      <label className="text-sm text-slate-300 mb-1 block">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl bg-[#0B1229] border border-white/10 px-4 py-3 text-white outline-none focus:border-orange-500 transition-all"
-      >
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex justify-between gap-4 border-b border-white/10 pb-2 text-sm">
-      <span className="text-slate-400 capitalize">{label}</span>
-      <span className="font-bold text-white text-right">{value}</span>
-    </div>
-  );
-}
-
-function Mini({ label, value }) {
-  return (
-    <div className="rounded-2xl bg-black/20 border border-white/10 p-4">
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="font-black text-white mt-1">{value}</p>
-    </div>
-  );
-}
-
-function SeoContent() {
-  return (
-    <div className="space-y-4 text-sm text-slate-300">
-      <div>
-        <h3 className="font-black text-white">What is House Construction Cost?</h3>
-        <p>
-          House construction cost is the estimated amount required to build a home, including foundation,
-          RCC, brickwork, plaster, flooring, electrical, plumbing, finishing, hidden charges and labour.
-        </p>
-      </div>
-      <div>
-        <h3 className="font-black text-white">घर बनाने का खर्च क्या होता है?</h3>
-        <p>
-          घर बनाने का खर्च foundation, RCC, brickwork, plaster, flooring, electrical, plumbing,
-          finishing और hidden costs को मिलाकर बनता है.
-        </p>
-      </div>
-      <div>
-        <h3 className="font-black text-white">Floor Plan Generation / फ्लोर प्लान जनरेशन</h3>
-        <p>
-          Now you can generate automatic 2D/3D floor plans from your room inputs. Export to DWG, OBJ or PDF.
-          Ab aap apne inputs se automatic floor plan generate kar sakte hain aur DWG, 3D ya PDF me export kar sakte hain.
-        </p>
-      </div>
-      <div>
-        <h3 className="font-black text-white">3D Visualization Features</h3>
-        <p>
-          Interactive 3D house viewer with rotation, zoom, room selection and walkthrough mode.
-          Revit, SketchUp aur CivilCalc ke liye export options available hain.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function StyleBlock() {
-  return (
-    <style jsx global>{`
-      .bottomBtn,
-      .actionBtn {
-        background: rgba(255, 122, 0, 0.15);
-        border: 1px solid rgba(255, 122, 0, 0.35);
-        border-radius: 14px;
-        padding: 12px 8px;
-        font-weight: 900;
-        color: white;
-        font-size: 13px;
-        transition: all 0.2s;
-      }
-
-      .bottomBtn:hover,
-      .actionBtn:hover {
-        background: rgba(255, 122, 0, 0.25);
-        border-color: rgba(255, 122, 0, 0.5);
-      }
-
-      .actionBtn {
-        padding: 14px 12px;
-      }
-
-      .smallBtn {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        padding: 8px 10px;
-        font-size: 12px;
-        color: white;
-        font-weight: 700;
-        transition: all 0.2s;
-      }
-
-      .smallBtn:hover {
-        background: rgba(255, 255, 255, 0.15);
-      }
-
-      input::placeholder {
-        color: rgba(255, 255, 255, 0.35);
-      }
-
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      
-      .animate-spin {
-        animation: spin 1s linear infinite;
-      }
-    `}</style>
-  );
-}
+// [Keep all existing helper components: Panel, Input, Select, Row, Mini, etc.]
