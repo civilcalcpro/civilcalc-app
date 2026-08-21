@@ -12,6 +12,10 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import FloorPlanGenerator from "@/components/FloorPlanGenerator";
+import ThreeDViewer from "@/components/ThreeDViewer";
+import LayoutOptions from "@/components/LayoutOptions";
+import { downloadDXF } from "@/lib/dxf-export";
 
 // ===== CONFIG =====
 const qualityOptions = {
@@ -128,6 +132,7 @@ export default function HomeConstructionCalculator() {
   const [calculated, setCalculated] = useState(false);
   const [savedProjects, setSavedProjects] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [selectedLayout, setSelectedLayout] = useState(null);
 
   const [form, setForm] = useState(createDefaultForm);
   const [rates, setRates] = useState(defaultRates);
@@ -314,89 +319,107 @@ export default function HomeConstructionCalculator() {
     alert("✅ Project Saved Successfully");
   };
 
-const downloadPDF = async () => {
-  if (!calculated) {
-    alert("Please calculate estimate first.");
-    return;
-  }
+  const downloadPDF = async () => {
+    if (!calculated) {
+      alert("Please calculate estimate first.");
+      return;
+    }
 
-  const doc = new jsPDF("p", "mm", "a4");
-  
-  // PAGE 1 - TITLE + SUMMARY
-  doc.setFontSize(20);
-  doc.text("Home Construction Cost Estimate", 10, 15);
-  doc.setFontSize(10);
-  doc.text(`Date: ${new Date().toLocaleDateString("en-IN")}`, 10, 22);
-  
-  doc.setFontSize(12);
-  doc.text(`Project: ${form.projectName || "N/A"}`, 10, 30);
-  doc.text(`Owner: ${form.ownerName || "N/A"}`, 10, 36);
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const today = new Date().toLocaleDateString("en-IN");
 
-  // Summary table
-  autoTable(doc, {
-    startY: 42,
-    head: [["Item", "Amount"]],
-    body: [
-      ["Construction Cost", money(result.constructionCost)],
-      ["Material Cost", money(result.materialCostTotal)],
-      ["Labour Cost", money(result.labourAndWorkmanshipCost)],
-      ["Hidden Costs", money(result.additionalHiddenCost)],
-      ["GRAND TOTAL", money(result.grandTotal)],
-    ],
-  });
+    // PAGE 1 - TITLE + SUMMARY
+    doc.setFontSize(20);
+    doc.setTextColor(255, 122, 0);
+    doc.text("HOME CONSTRUCTION ESTIMATE", margin, 20);
 
-  // PAGE 2 - FLOOR PLAN
-  doc.addPage();
-  doc.setFontSize(14);
-  doc.text("Floor Plan", 10, 15);
-
-  // Capture canvas and add to PDF
-  const canvas = document.querySelector("canvas[width='700']");
-  if (canvas) {
-    const imgData = canvas.toDataURL("image/png");
-    doc.addImage(imgData, "PNG", 10, 25, 190, 160);
-  }
-
-  // PAGE 3 - COST BREAKDOWN
-  doc.addPage();
-  doc.setFontSize(14);
-  doc.text("Detailed Cost Breakdown", 10, 15);
-
-  autoTable(doc, {
-    startY: 25,
-    head: [["Work Category", "Percentage", "Amount"]],
-    body: result.breakdown.map((b) => [
-      b.item,
-      `${b.percent}%`,
-      money(b.amount),
-    ]),
-  });
-
-  // PAGE 4 - MATERIALS
-  doc.addPage();
-  doc.setFontSize(14);
-  doc.text("Material Requirements", 10, 15);
-
-  autoTable(doc, {
-    startY: 25,
-    head: [["Material", "Quantity", "Unit", "Rate", "Amount"]],
-    body: result.materials.map((m) => [
-      m.name,
-      m.qty.toString(),
-      m.unit,
-      money(m.rate),
-      money(m.amount),
-    ]),
-  });
-
-  doc.save(`${form.projectName || "estimate"}.pdf`);
-};
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Date: ${today}`, pageWidth - margin, 20, { align: "right" });
 
     doc.setFontSize(12);
-    doc.text("Construction Area: " + result.constructionArea.toFixed(0) + " sq ft", 10, doc.lastAutoTable.finalY + 10);
-    doc.text("Cost per Sq Ft: " + money(result.costPerSqFt), 10, doc.lastAutoTable.finalY + 17);
+    doc.setTextColor(50, 50, 50);
+    doc.text(`Project: ${form.projectName || "N/A"}`, margin, 35);
+    doc.text(`Owner: ${form.ownerName || "N/A"}`, margin, 42);
+
+    // Summary table
+    autoTable(doc, {
+      startY: 50,
+      head: [["Item", "Amount"]],
+      body: [
+        ["Construction Cost", money(result.constructionCost)],
+        ["Material Cost", money(result.materialCostTotal)],
+        ["Labour Cost", money(result.labourAndWorkmanshipCost)],
+        ["Hidden Costs", money(result.additionalHiddenCost)],
+        ["GRAND TOTAL", money(result.grandTotal)],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [255, 122, 0], textColor: [255, 255, 255] },
+      columnStyles: { 1: { halign: "right" } },
+    });
+
+    // PAGE 2 - FLOOR PLAN
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setTextColor(255, 122, 0);
+    doc.text("2D Floor Plan", margin, 15);
+
+    const canvas = document.querySelector("canvas[width='700']");
+    if (canvas) {
+      const imgData = canvas.toDataURL("image/png");
+      doc.addImage(imgData, "PNG", margin, 25, 180, 150);
+    }
+
+    // PAGE 3 - COST BREAKDOWN
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setTextColor(255, 122, 0);
+    doc.text("Detailed Cost Breakdown", margin, 15);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [["Work Category", "Percentage", "Amount"]],
+      body: result.breakdown.map((b) => [
+        b.item,
+        `${b.percent}%`,
+        money(b.amount),
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [255, 122, 0], textColor: [255, 255, 255] },
+      columnStyles: { 1: { halign: "center" }, 2: { halign: "right" } },
+    });
+
+    // PAGE 4 - MATERIALS
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setTextColor(255, 122, 0);
+    doc.text("Material Requirements", margin, 15);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [["Material", "Quantity", "Unit", "Rate", "Amount"]],
+      body: result.materials.map((m) => [
+        m.name,
+        m.qty.toString(),
+        m.unit,
+        money(m.rate),
+        money(m.amount),
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [255, 122, 0], textColor: [255, 255, 255] },
+      columnStyles: { 1: { halign: "center" }, 3: { halign: "right" }, 4: { halign: "right" } },
+    });
 
     doc.save(`${form.projectName || "estimate"}.pdf`);
+    alert("✅ PDF Downloaded!");
+  };
+
+  const handleDownloadDXF = () => {
+    downloadDXF(form, result, form.projectName || "floor-plan");
+    alert("✅ DXF file downloaded!");
   };
 
   // ===== HOME SCREEN =====
@@ -407,7 +430,7 @@ const downloadPDF = async () => {
           <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-white/5 p-8">
             <h1 className="text-5xl font-black">Home Design & Cost Estimator</h1>
             <p className="text-slate-300 mt-4 text-lg max-w-3xl">
-              Complete house construction estimate with cost breakdown, material quantities, BOQ and PDF report.
+              Complete house construction estimate with cost breakdown, material quantities, floor plans, 3D viewer and PDF reports.
             </p>
 
             <button
@@ -475,7 +498,7 @@ const downloadPDF = async () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white pb-20">
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
-        <div className="flex justify-between items-center rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-white/5 p-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-white/5 p-6">
           <div>
             <button onClick={() => setScreen("home")} className="text-orange-400 font-bold mb-2">
               ← Back to Projects
@@ -485,7 +508,7 @@ const downloadPDF = async () => {
 
           <button
             onClick={calculate}
-            className="bg-orange-500 hover:bg-orange-600 rounded-2xl px-8 py-4 font-black transition"
+            className="bg-orange-500 hover:bg-orange-600 rounded-2xl px-8 py-4 font-black transition whitespace-nowrap"
           >
             Calculate Cost
           </button>
@@ -593,7 +616,7 @@ const downloadPDF = async () => {
           {!calculated && (
             <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.04] p-6 flex items-center justify-center min-h-96">
               <div className="text-center">
-                <p className="text-slate-400 text-lg">Click "Calculate Cost" button to see results</p>
+                <p className="text-slate-400 text-lg">👈 Fill the form and click "Calculate Cost" button to see results</p>
               </div>
             </div>
           )}
@@ -601,7 +624,7 @@ const downloadPDF = async () => {
           {calculated && (
             <div className="lg:col-span-2 space-y-6">
               {/* Summary */}
-              <Panel title="Construction Summary">
+              <Panel title="💰 Construction Summary">
                 <div className="rounded-3xl bg-gradient-to-br from-orange-500/25 to-black/30 border border-orange-500/40 p-6">
                   <p className="text-orange-300 font-bold">Grand Total Project Budget</p>
                   <h2 className="text-5xl font-black text-orange-400 mt-2">{money(result.grandTotal)}</h2>
@@ -620,7 +643,7 @@ const downloadPDF = async () => {
               </Panel>
 
               {/* Cost Breakdown Chart */}
-              <Panel title="Cost Breakdown">
+              <Panel title="📊 Cost Breakdown Chart">
                 <div className="h-64 rounded-2xl bg-black/20 border border-white/10 p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -645,7 +668,7 @@ const downloadPDF = async () => {
               </Panel>
 
               {/* Materials */}
-              <Panel title="Material Requirements">
+              <Panel title="🏗️ Material Requirements">
                 <div className="space-y-3">
                   {result.materials.map((m) => (
                     <div key={m.name} className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -662,21 +685,42 @@ const downloadPDF = async () => {
                 </div>
               </Panel>
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={saveProject}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 rounded-2xl px-6 py-4 font-black transition"
-                >
-                  Save Project
-                </button>
-                <button
-                  onClick={downloadPDF}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-2xl px-6 py-4 font-black transition"
-                >
-                  Download PDF
-                </button>
-              </div>
+              {/* FLOOR PLAN */}
+              <Panel title="📐 2D Floor Plan">
+                <FloorPlanGenerator formData={form} result={result} />
+              </Panel>
+
+              {/* 3D VIEWER */}
+              <Panel title="🏠 3D Building Preview">
+                <ThreeDViewer formData={form} />
+              </Panel>
+
+              {/* LAYOUT OPTIONS */}
+              <Panel title="🎨 Layout Options">
+                <LayoutOptions onSelect={(layout) => setSelectedLayout(layout)} />
+              </Panel>
+
+              {/* EXPORT OPTIONS */}
+              <Panel title="📥 Export & Download">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <ExportButton label="PDF Report" icon="📄" onClick={downloadPDF} />
+                  <ExportButton label="DXF File" icon="📐" onClick={handleDownloadDXF} />
+                  <ExportButton
+                    label="Floor Plan PNG"
+                    icon="🖼️"
+                    onClick={() => {
+                      const canvas = document.querySelector("canvas[width='700']");
+                      if (canvas) {
+                        const link = document.createElement("a");
+                        link.href = canvas.toDataURL("image/png");
+                        link.download = "floor-plan.png";
+                        link.click();
+                      }
+                    }}
+                  />
+                  <ExportButton label="Save Project" icon="💾" onClick={saveProject} />
+                </div>
+              </Panel>
             </div>
           )}
         </div>
@@ -702,7 +746,8 @@ function Input({ label, value, onChange }) {
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white outline-none focus:border-orange-500"
+        className="w-full rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white outline-none focus:border-orange-500 transition"
+        type="text"
       />
     </div>
   );
@@ -715,7 +760,7 @@ function Select({ label, value, onChange, options }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl bg-slate-900 border border-white/10 px-4 py-3 text-white outline-none focus:border-orange-500"
+        className="w-full rounded-2xl bg-slate-900 border border-white/10 px-4 py-3 text-white outline-none focus:border-orange-500 transition cursor-pointer"
       >
         {options.map((o) => (
           <option key={o} value={o}>
@@ -733,5 +778,17 @@ function MiniCard({ label, value }) {
       <p className="text-xs text-slate-400">{label}</p>
       <p className="font-black text-white mt-1">{value}</p>
     </div>
+  );
+}
+
+function ExportButton({ label, icon, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-2xl border border-white/10 bg-white/5 hover:bg-orange-500/15 p-4 text-center transition font-bold text-white hover:border-orange-500/40"
+    >
+      <div className="text-2xl mb-2">{icon}</div>
+      <p className="text-xs">{label}</p>
+    </button>
   );
 }
