@@ -314,34 +314,83 @@ export default function HomeConstructionCalculator() {
     alert("✅ Project Saved Successfully");
   };
 
-  const downloadPDF = () => {
-    if (!calculated) {
-      alert("Please calculate estimate first.");
-      return;
-    }
+const downloadPDF = async () => {
+  if (!calculated) {
+    alert("Please calculate estimate first.");
+    return;
+  }
 
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text("Home Construction Cost Estimate", 10, 10);
+  const doc = new jsPDF("p", "mm", "a4");
+  
+  // PAGE 1 - TITLE + SUMMARY
+  doc.setFontSize(20);
+  doc.text("Home Construction Cost Estimate", 10, 15);
+  doc.setFontSize(10);
+  doc.text(`Date: ${new Date().toLocaleDateString("en-IN")}`, 10, 22);
+  
+  doc.setFontSize(12);
+  doc.text(`Project: ${form.projectName || "N/A"}`, 10, 30);
+  doc.text(`Owner: ${form.ownerName || "N/A"}`, 10, 36);
 
-    doc.setFontSize(12);
-    doc.text(`Project: ${form.projectName || "N/A"}`, 10, 25);
-    doc.text(`Owner: ${form.ownerName || "N/A"}`, 10, 32);
+  // Summary table
+  autoTable(doc, {
+    startY: 42,
+    head: [["Item", "Amount"]],
+    body: [
+      ["Construction Cost", money(result.constructionCost)],
+      ["Material Cost", money(result.materialCostTotal)],
+      ["Labour Cost", money(result.labourAndWorkmanshipCost)],
+      ["Hidden Costs", money(result.additionalHiddenCost)],
+      ["GRAND TOTAL", money(result.grandTotal)],
+    ],
+  });
 
-    doc.setFontSize(14);
-    doc.text("Cost Summary", 10, 45);
+  // PAGE 2 - FLOOR PLAN
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.text("Floor Plan", 10, 15);
 
-    autoTable(doc, {
-      startY: 52,
-      head: [["Item", "Amount"]],
-      body: [
-        ["Construction Cost", money(result.constructionCost)],
-        ["Material Cost", money(result.materialCostTotal)],
-        ["Labour Cost", money(result.labourAndWorkmanshipCost)],
-        ["Hidden Costs", money(result.additionalHiddenCost)],
-        ["Grand Total", money(result.grandTotal)],
-      ],
-    });
+  // Capture canvas and add to PDF
+  const canvas = document.querySelector("canvas[width='700']");
+  if (canvas) {
+    const imgData = canvas.toDataURL("image/png");
+    doc.addImage(imgData, "PNG", 10, 25, 190, 160);
+  }
+
+  // PAGE 3 - COST BREAKDOWN
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.text("Detailed Cost Breakdown", 10, 15);
+
+  autoTable(doc, {
+    startY: 25,
+    head: [["Work Category", "Percentage", "Amount"]],
+    body: result.breakdown.map((b) => [
+      b.item,
+      `${b.percent}%`,
+      money(b.amount),
+    ]),
+  });
+
+  // PAGE 4 - MATERIALS
+  doc.addPage();
+  doc.setFontSize(14);
+  doc.text("Material Requirements", 10, 15);
+
+  autoTable(doc, {
+    startY: 25,
+    head: [["Material", "Quantity", "Unit", "Rate", "Amount"]],
+    body: result.materials.map((m) => [
+      m.name,
+      m.qty.toString(),
+      m.unit,
+      money(m.rate),
+      money(m.amount),
+    ]),
+  });
+
+  doc.save(`${form.projectName || "estimate"}.pdf`);
+};
 
     doc.setFontSize(12);
     doc.text("Construction Area: " + result.constructionArea.toFixed(0) + " sq ft", 10, doc.lastAutoTable.finalY + 10);
