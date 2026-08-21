@@ -1,853 +1,1914 @@
-"use client";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Design & Cost Estimator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-import React, { useEffect, useMemo, useState, useRef, Suspense } from "react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { useAuth } from "@/lib/auth-context";
-import { saveCalculationHistory } from "@/lib/calculation-history";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+        body {
+            font-family: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            color: #2c2c2c;
+            line-height: 1.6;
+        }
 
-// 3D Visualization Imports
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Text, Box, Plane } from '@react-three/drei';
-import * as THREE from 'three';
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-// Floor Plan Generation
-import html2canvas from 'html2canvas';
+        header {
+            background: white;
+            padding: 30px 0;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
 
-// [Keep all your existing constants and helper functions]
-const qualityOptions = {
-  Economy: {
-    rate: 1400,
-    hindi: "इकॉनॉमी",
-    desc: "Budget construction with basic finishing / कम बजट में बेसिक फिनिशिंग",
-  },
-  Standard: {
-    rate: 1800,
-    hindi: "स्टैंडर्ड",
-    desc: "Good quality family home / अच्छी क्वालिटी का फैमिली घर",
-  },
-  Premium: {
-    rate: 2400,
-    hindi: "प्रीमियम",
-    desc: "Premium materials and better finishing / प्रीमियम मटेरियल और फिनिशिंग",
-  },
-};
+        header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
 
-// ... [Keep all existing constants]
+        header p {
+            font-size: 14px;
+            color: #666;
+        }
 
-// NEW: Floor Plan Generator Class
-class FloorPlanGenerator {
-  constructor(config) {
-    this.length = config.length || 30;
-    this.width = config.width || 40;
-    this.bedrooms = config.bedrooms || 2;
-    this.bathrooms = config.bathrooms || 2;
-    this.kitchens = config.kitchens || 1;
-    this.halls = config.halls || 1;
-    this.balconies = config.balconies || 0;
-    this.floors = config.floors || 1;
-  }
+        .progress-bar {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
 
-  generate() {
-    const rooms = [];
-    const totalArea = this.length * this.width;
-    let usedArea = 0;
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
 
-    // Intelligent room placement algorithm
-    const allocations = this.calculateRoomAllocations(totalArea);
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
 
-    let currentX = 0;
-    let currentY = 0;
-    let maxRowHeight = 0;
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
 
-    // Hall (Living Room)
-    for (let i = 0; i < this.halls; i++) {
-      const room = {
-        type: 'hall',
-        name: `Hall ${i + 1}`,
-        width: allocations.hall.width,
-        height: allocations.hall.height,
-        x: currentX,
-        y: currentY,
-        color: '#3b82f6',
-      };
-      rooms.push(room);
-      currentX += room.width;
-      maxRowHeight = Math.max(maxRowHeight, room.height);
-      usedArea += room.width * room.height;
-    }
+        .progress-step.active .step-number {
+            background: #2c5aa0;
+            color: white;
+        }
 
-    // Bedrooms
-    for (let i = 0; i < this.bedrooms; i++) {
-      if (currentX + allocations.bedroom.width > this.length) {
-        currentX = 0;
-        currentY += maxRowHeight;
-        maxRowHeight = 0;
-      }
+        .progress-step.completed .step-number {
+            background: #4caf50;
+            color: white;
+        }
 
-      const room = {
-        type: 'bedroom',
-        name: `Bedroom ${i + 1}`,
-        width: allocations.bedroom.width,
-        height: allocations.bedroom.height,
-        x: currentX,
-        y: currentY,
-        color: '#10b981',
-      };
-      rooms.push(room);
-      currentX += room.width;
-      maxRowHeight = Math.max(maxRowHeight, room.height);
-      usedArea += room.width * room.height;
-    }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e0e0e0;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
 
-    // Kitchen
-    for (let i = 0; i < this.kitchens; i++) {
-      if (currentX + allocations.kitchen.width > this.length) {
-        currentX = 0;
-        currentY += maxRowHeight;
-        maxRowHeight = 0;
-      }
+        .step-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
 
-      const room = {
-        type: 'kitchen',
-        name: `Kitchen ${i + 1}`,
-        width: allocations.kitchen.width,
-        height: allocations.kitchen.height,
-        x: currentX,
-        y: currentY,
-        color: '#f59e0b',
-      };
-      rooms.push(room);
-      currentX += room.width;
-      maxRowHeight = Math.max(maxRowHeight, room.height);
-      usedArea += room.width * room.height;
-    }
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
 
-    // Bathrooms
-    for (let i = 0; i < this.bathrooms; i++) {
-      if (currentX + allocations.bathroom.width > this.length) {
-        currentX = 0;
-        currentY += maxRowHeight;
-        maxRowHeight = 0;
-      }
+        .main-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
 
-      const room = {
-        type: 'bathroom',
-        name: `Bathroom ${i + 1}`,
-        width: allocations.bathroom.width,
-        height: allocations.bathroom.height,
-        x: currentX,
-        y: currentY,
-        color: '#8b5cf6',
-      };
-      rooms.push(room);
-      currentX += room.width;
-      maxRowHeight = Math.max(maxRowHeight, room.height);
-      usedArea += room.width * room.height;
-    }
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
 
-    // Balconies
-    for (let i = 0; i < this.balconies; i++) {
-      if (currentX + allocations.balcony.width > this.length) {
-        currentX = 0;
-        currentY += maxRowHeight;
-        maxRowHeight = 0;
-      }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2c5aa0;
+        }
 
-      const room = {
-        type: 'balcony',
-        name: `Balcony ${i + 1}`,
-        width: allocations.balcony.width,
-        height: allocations.balcony.height,
-        x: currentX,
-        y: currentY,
-        color: '#ec4899',
-      };
-      rooms.push(room);
-      currentX += room.width;
-      usedArea += room.width * room.height;
-    }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-    return {
-      rooms,
-      plotLength: this.length,
-      plotWidth: this.width,
-      totalArea,
-      usedArea,
-      efficiency: ((usedArea / totalArea) * 100).toFixed(1),
-    };
-  }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
 
-  calculateRoomAllocations(totalArea) {
-    return {
-      hall: { width: 15, height: 20 },
-      bedroom: { width: 12, height: 12 },
-      kitchen: { width: 10, height: 10 },
-      bathroom: { width: 5, height: 8 },
-      balcony: { width: 8, height: 5 },
-    };
-  }
-}
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
 
-// NEW: 3D Room Component
-function Room3D({ room, floorHeight, isSelected, onClick }) {
-  const meshRef = useRef();
-  const [hovered, setHovered] = useState(false);
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #333;
+        }
 
-  useFrame(() => {
-    if (meshRef.current) {
-      meshRef.current.scale.y = THREE.MathUtils.lerp(
-        meshRef.current.scale.y,
-        hovered || isSelected ? 1.05 : 1,
-        0.1
-      );
-    }
-  });
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #333;
+            transition: border-color 0.2s;
+        }
 
-  return (
-    <group>
-      {/* Floor */}
-      <Box
-        ref={meshRef}
-        args={[room.width, 0.2, room.height]}
-        position={[room.x + room.width / 2, 0.1, room.y + room.height / 2]}
-        onClick={onClick}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      >
-        <meshStandardMaterial color={hovered || isSelected ? '#ff7a00' : '#1a1a2e'} />
-      </Box>
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+        }
 
-      {/* Walls */}
-      {/* Front Wall */}
-      <Box
-        args={[room.width, floorHeight, 0.2]}
-        position={[room.x + room.width / 2, floorHeight / 2, room.y]}
-      >
-        <meshStandardMaterial color={room.color} opacity={0.7} transparent />
-      </Box>
+        .checkbox-group,
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
 
-      {/* Back Wall */}
-      <Box
-        args={[room.width, floorHeight, 0.2]}
-        position={[room.x + room.width / 2, floorHeight / 2, room.y + room.height]}
-      >
-        <meshStandardMaterial color={room.color} opacity={0.7} transparent />
-      </Box>
+        .checkbox-item,
+        .radio-item {
+            display: flex;
+            align-items: center;
+        }
 
-      {/* Left Wall */}
-      <Box
-        args={[0.2, floorHeight, room.height]}
-        position={[room.x, floorHeight / 2, room.y + room.height / 2]}
-      >
-        <meshStandardMaterial color={room.color} opacity={0.7} transparent />
-      </Box>
+        input[type="checkbox"],
+        input[type="radio"] {
+            margin-right: 8px;
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: #2c5aa0;
+        }
 
-      {/* Right Wall */}
-      <Box
-        args={[0.2, floorHeight, room.height]}
-        position={[room.x + room.width, floorHeight / 2, room.y + room.height / 2]}
-      >
-        <meshStandardMaterial color={room.color} opacity={0.7} transparent />
-      </Box>
+        .checkbox-item label,
+        .radio-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
 
-      {/* Room Label */}
-      <Text
-        position={[room.x + room.width / 2, floorHeight + 1, room.y + room.height / 2]}
-        fontSize={0.8}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {room.name}
-      </Text>
-    </group>
-  );
-}
+        .hint-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
 
-// NEW: 3D House Viewer Component
-function HouseViewer3D({ floorPlan, buildingHeight, floors }) {
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [cameraMode, setCameraMode] = useState('orbit'); // 'orbit' or 'walkthrough'
-  
-  return (
-    <div className="relative w-full h-[600px] rounded-2xl overflow-hidden border border-white/10">
-      <Canvas shadows>
-        <PerspectiveCamera makeDefault position={[50, 30, 50]} />
-        <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          maxPolarAngle={Math.PI / 2}
-        />
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            justify-content: flex-end;
+        }
 
-        {/* Lighting */}
-        <ambientLight intensity={0.5} />
-        <directionalLight
-          position={[10, 20, 10]}
-          intensity={1}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-        />
-        <pointLight position={[0, 10, 0]} intensity={0.5} />
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-        {/* Ground Plane */}
-        <Plane
-          args={[floorPlan.plotLength * 1.5, floorPlan.plotWidth * 1.5]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[floorPlan.plotLength / 2, -0.1, floorPlan.plotWidth / 2]}
-          receiveShadow
-        >
-          <meshStandardMaterial color="#0a0a0a" />
-        </Plane>
+        .btn-primary {
+            background: #2c5aa0;
+            color: white;
+        }
 
-        {/* Plot Boundary */}
-        <Box
-          args={[floorPlan.plotLength, 0.1, floorPlan.plotWidth]}
-          position={[floorPlan.plotLength / 2, 0, floorPlan.plotWidth / 2]}
-        >
-          <meshStandardMaterial color="#1a1a2e" wireframe />
-        </Box>
+        .btn-primary:hover {
+            background: #1e3f5a;
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.3);
+        }
 
-        {/* Render Floors */}
-        {Array.from({ length: floors }).map((_, floorIndex) => (
-          <group key={floorIndex} position={[0, floorIndex * buildingHeight, 0]}>
-            {floorPlan.rooms.map((room, idx) => (
-              <Room3D
-                key={`${floorIndex}-${idx}`}
-                room={room}
-                floorHeight={buildingHeight}
-                isSelected={selectedRoom === `${floorIndex}-${idx}`}
-                onClick={() => setSelectedRoom(`${floorIndex}-${idx}`)}
-              />
-            ))}
-          </group>
-        ))}
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
 
-        {/* Grid Helper */}
-        <gridHelper args={[100, 50, '#444444', '#222222']} />
-      </Canvas>
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
 
-      {/* Controls Overlay */}
-      <div className="absolute top-4 left-4 bg-black/80 rounded-xl p-3 space-y-2">
-        <button
-          onClick={() => setCameraMode(cameraMode === 'orbit' ? 'walkthrough' : 'orbit')}
-          className="w-full px-3 py-2 bg-orange-500/20 hover:bg-orange-500/30 rounded-lg text-xs font-bold"
-        >
-          {cameraMode === 'orbit' ? '👁️ Walk Mode' : '🔄 Orbit Mode'}
-        </button>
-        
-        {selectedRoom && (
-          <div className="text-xs text-white">
-            <p className="font-bold">Selected:</p>
-            <p>{floorPlan.rooms[parseInt(selectedRoom.split('-')[1])]?.name}</p>
-          </div>
-        )}
-      </div>
+        .btn-outline {
+            border: 2px solid #2c5aa0;
+            background: transparent;
+            color: #2c5aa0;
+        }
 
-      {/* Instructions */}
-      <div className="absolute bottom-4 left-4 bg-black/80 rounded-xl p-3 text-xs text-slate-300">
-        <p>🖱️ Left Click + Drag: Rotate</p>
-        <p>🖱️ Right Click + Drag: Pan</p>
-        <p>🖱️ Scroll: Zoom</p>
-        <p>🖱️ Click Room: Select</p>
-      </div>
-    </div>
-  );
-}
+        .btn-outline:hover {
+            background: #f0f5ff;
+        }
 
-// NEW: 2D Floor Plan Component
-function FloorPlan2D({ floorPlan, onRoomClick }) {
-  const canvasRef = useRef(null);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [scale, setScale] = useState(10); // pixels per foot
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
 
-  useEffect(() => {
-    if (!canvasRef.current) return;
+        .tab-container {
+            margin-top: 20px;
+        }
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
 
-    // Set canvas size
-    canvas.width = (floorPlan.plotLength + 5) * scale;
-    canvas.height = (floorPlan.plotWidth + 5) * scale;
+        .tab-button {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
 
-    // Draw plot boundary
-    ctx.strokeStyle = '#666';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(
-      scale,
-      scale,
-      floorPlan.plotLength * scale,
-      floorPlan.plotWidth * scale
-    );
+        .tab-button.active {
+            color: #2c5aa0;
+            border-bottom-color: #2c5aa0;
+        }
 
-    // Draw rooms
-    floorPlan.rooms.forEach((room, index) => {
-      const x = (room.x + 1) * scale;
-      const y = (room.y + 1) * scale;
-      const w = room.width * scale;
-      const h = room.height * scale;
+        .tab-content {
+            display: none;
+        }
 
-      // Fill room
-      ctx.fillStyle = selectedRoom === index ? '#ff7a00' : room.color;
-      ctx.globalAlpha = 0.6;
-      ctx.fillRect(x, y, w, h);
+        .tab-content.active {
+            display: block;
+        }
 
-      // Room border
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x, y, w, h);
+        .plan-container {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
 
-      // Room label
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold ${scale * 0.8}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(room.name, x + w / 2, y + h / 2);
+        .plan-canvas {
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 600px;
+        }
 
-      // Room dimensions
-      ctx.font = `${scale * 0.6}px Arial`;
-      ctx.fillText(`${room.width}' × ${room.height}'`, x + w / 2, y + h / 2 + scale);
-    });
+        #threeDContainer {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            border-radius: 8px;
+            position: relative;
+        }
 
-    // Add dimensions
-    ctx.fillStyle = '#ff7a00';
-    ctx.font = `bold ${scale * 0.7}px Arial`;
-    ctx.fillText(
-      `Plot: ${floorPlan.plotLength}' × ${floorPlan.plotWidth}'`,
-      canvas.width / 2,
-      scale * 0.5
-    );
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 40px;
+        }
 
-  }, [floorPlan, selectedRoom, scale]);
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #2c5aa0;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
 
-  const handleCanvasClick = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / scale - 1;
-    const y = (e.clientY - rect.top) / scale - 1;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
-    const clickedRoom = floorPlan.rooms.findIndex(room =>
-      x >= room.x && x <= room.x + room.width &&
-      y >= room.y && y <= room.y + room.height
-    );
+        .cost-breakdown {
+            margin-top: 20px;
+        }
 
-    setSelectedRoom(clickedRoom >= 0 ? clickedRoom : null);
-    if (clickedRoom >= 0 && onRoomClick) {
-      onRoomClick(floorPlan.rooms[clickedRoom]);
-    }
-  };
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="font-bold text-white">2D Floor Plan</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setScale(Math.max(5, scale - 2))}
-            className="px-3 py-1 bg-white/10 rounded-lg text-sm"
-          >
-            −
-          </button>
-          <span className="px-3 py-1 bg-white/5 rounded-lg text-sm">
-            {scale}x
-          </span>
-          <button
-            onClick={() => setScale(Math.min(20, scale + 2))}
-            className="px-3 py-1 bg-white/10 rounded-lg text-sm"
-          >
-            +
-          </button>
+        thead {
+            background: #f5f5f5;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        tr:last-child td {
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .highlight-row {
+            background: #f0f5ff;
+            font-weight: 600;
+        }
+
+        .cost-value {
+            text-align: right;
+        }
+
+        .summary-box {
+            background: #f0f5ff;
+            border-left: 4px solid #2c5aa0;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .summary-item:last-child {
+            margin-bottom: 0;
+            padding-top: 10px;
+            border-top: 1px solid rgba(44, 90, 160, 0.2);
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .export-card {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-card:hover {
+            border-color: #2c5aa0;
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.15);
+        }
+
+        .export-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .export-label {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .export-desc {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .layout-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .layout-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .layout-card:hover {
+            border-color: #2c5aa0;
+            box-shadow: 0 2px 8px rgba(44, 90, 160, 0.15);
+        }
+
+        .layout-card.selected {
+            border-color: #2c5aa0;
+            background: #f0f5ff;
+        }
+
+        .layout-preview {
+            width: 100%;
+            height: 150px;
+            background: #fafafa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .layout-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .layout-desc {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .disclaimer {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 13px;
+            color: #664d03;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .progress-steps {
+                flex-wrap: wrap;
+            }
+
+            .progress-steps::before {
+                display: none;
+            }
+
+            .step-label {
+                font-size: 11px;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .button-group,
+            .tab-buttons,
+            header {
+                display: none;
+            }
+
+            .main-panel {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+
+        .unit-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .unit-btn {
+            padding: 8px 16px;
+            font-size: 12px;
+            border: 1px solid #d0d0d0;
+            background: white;
+            color: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .unit-btn.active {
+            background: #2c5aa0;
+            color: white;
+            border-color: #2c5aa0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #0d47a1;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Home Design & Cost Estimator</h1>
+            <p>Professional architectural planning and construction cost estimation</p>
         </div>
-      </div>
+    </header>
 
-      <div className="bg-black/40 rounded-2xl p-4 overflow-auto">
-        <canvas
-          ref={canvasRef}
-          onClick={handleCanvasClick}
-          className="cursor-pointer max-w-full"
-        />
-      </div>
-
-      {selectedRoom !== null && (
-        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
-          <h4 className="font-bold text-orange-400">Selected Room</h4>
-          <div className="mt-2 space-y-1 text-sm">
-            <p>Name: {floorPlan.rooms[selectedRoom].name}</p>
-            <p>Type: {floorPlan.rooms[selectedRoom].type}</p>
-            <p>Size: {floorPlan.rooms[selectedRoom].width}' × {floorPlan.rooms[selectedRoom].height}'</p>
-            <p>Area: {(floorPlan.rooms[selectedRoom].width * floorPlan.rooms[selectedRoom].height).toFixed(1)} sq ft</p>
-          </div>
+    <div class="container">
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-steps">
+                <div class="progress-step active" id="step1-indicator">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Plot Details</div>
+                </div>
+                <div class="progress-step" id="step2-indicator">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Room Layout</div>
+                </div>
+                <div class="progress-step" id="step3-indicator">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Design & Cost</div>
+                </div>
+                <div class="progress-step" id="step4-indicator">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Review & Export</div>
+                </div>
+            </div>
         </div>
-      )}
-    </div>
-  );
-}
 
-// NEW: Export Functions
-const exportToDXF = (floorPlan) => {
-  // Simple DXF export (basic implementation)
-  let dxf = `0\nSECTION\n2\nENTITIES\n`;
-
-  floorPlan.rooms.forEach(room => {
-    // Add rectangle for each room
-    dxf += `0\nLWPOLYLINE\n8\n${room.type}\n62\n1\n90\n5\n70\n1\n`;
-    dxf += `10\n${room.x}\n20\n${room.y}\n`;
-    dxf += `10\n${room.x + room.width}\n20\n${room.y}\n`;
-    dxf += `10\n${room.x + room.width}\n20\n${room.y + room.height}\n`;
-    dxf += `10\n${room.x}\n20\n${room.y + room.height}\n`;
-    dxf += `10\n${room.x}\n20\n${room.y}\n`;
-  });
-
-  dxf += `0\nENDSEC\n0\nEOF`;
-
-  const blob = new Blob([dxf], { type: 'application/dxf' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'floor-plan.dxf';
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-const exportToOBJ = (floorPlan, buildingHeight) => {
-  let obj = `# Floor Plan 3D Model\n`;
-  let vertexIndex = 1;
-
-  floorPlan.rooms.forEach(room => {
-    obj += `# ${room.name}\n`;
-    
-    // Define 8 vertices for the room box
-    const vertices = [
-      [room.x, 0, room.y],
-      [room.x + room.width, 0, room.y],
-      [room.x + room.width, 0, room.y + room.height],
-      [room.x, 0, room.y + room.height],
-      [room.x, buildingHeight, room.y],
-      [room.x + room.width, buildingHeight, room.y],
-      [room.x + room.width, buildingHeight, room.y + room.height],
-      [room.x, buildingHeight, room.y + room.height],
-    ];
-
-    vertices.forEach(v => {
-      obj += `v ${v[0]} ${v[1]} ${v[2]}\n`;
-    });
-
-    // Define faces
-    const faces = [
-      [1, 2, 3, 4], // bottom
-      [5, 6, 7, 8], // top
-      [1, 2, 6, 5], // front
-      [2, 3, 7, 6], // right
-      [3, 4, 8, 7], // back
-      [4, 1, 5, 8], // left
-    ];
-
-    faces.forEach(face => {
-      obj += `f ${face.map(f => f + vertexIndex - 1).join(' ')}\n`;
-    });
-
-    vertexIndex += 8;
-  });
-
-  const blob = new Blob([obj], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'floor-plan-3d.obj';
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-// Main Component Modifications
-export default function HomeConstructionCalculator() {
-  const { authFetch } = useAuth();
-  const [screen, setScreen] = useState("home");
-  const [calculated, setCalculated] = useState(false);
-  const [savedProjects, setSavedProjects] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [openBoq, setOpenBoq] = useState("Foundation");
-
-  // NEW STATES
-  const [show3DView, setShow3DView] = useState(false);
-  const [showFloorPlan, setShowFloorPlan] = useState(false);
-  const [floorPlan, setFloorPlan] = useState(null);
-  const [buildingHeight, setBuildingHeight] = useState(10); // feet per floor
-
-  const [form, setForm] = useState(createDefaultForm);
-  const [rates, setRates] = useState(defaultRates);
-  const [wastage, setWastage] = useState(defaultWastage);
-  const [hiddenCosts, setHiddenCosts] = useState(hiddenDefaults);
-
-  // [Keep all existing useEffect and functions]
-
-  // NEW: Generate Floor Plan Function
-  const generateFloorPlan = () => {
-    const generator = new FloorPlanGenerator({
-      length: numberValue(form.plotLength, 30),
-      width: numberValue(form.plotWidth, 40),
-      bedrooms: numberValue(form.bedrooms, 2),
-      bathrooms: numberValue(form.bathrooms, 2),
-      kitchens: numberValue(form.kitchens, 1),
-      halls: numberValue(form.halls, 1),
-      balconies: numberValue(form.balcony, 0),
-      floors: getFloorCountFromValue(form.floors, form.customFloors),
-    });
-
-    const plan = generator.generate();
-    setFloorPlan(plan);
-    setShowFloorPlan(true);
-    
-    setTimeout(() => {
-      document.getElementById('floor-plan-section')?.scrollIntoView({ 
-        behavior: 'smooth' 
-      });
-    }, 100);
-  };
-
-  // NEW: Enhanced PDF with Floor Plan
-  const downloadEnhancedPDF = async () => {
-    if (!calculated) {
-      alert("Please calculate estimate first");
-      return;
-    }
-
-    const doc = new jsPDF("p", "mm", "a4");
-    
-    // [Keep existing PDF generation code]
-    // ... existing PDF code ...
-
-    // Add Floor Plan Page
-    if (floorPlan) {
-      doc.addPage();
-      doc.setFillColor(5, 11, 31);
-      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 24, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(14);
-      doc.text("Floor Plan", 14, 10);
-
-      // Capture floor plan as image
-      const canvas = document.querySelector('canvas');
-      if (canvas) {
-        const imgData = canvas.toDataURL('image/png');
-        doc.addImage(imgData, 'PNG', 14, 30, 180, 180);
-      }
-
-      // Add room details table
-      autoTable(doc, {
-        startY: 220,
-        head: [['Room', 'Type', 'Size', 'Area']],
-        body: floorPlan.rooms.map(room => [
-          room.name,
-          room.type,
-          `${room.width}' × ${room.height}'`,
-          `${(room.width * room.height).toFixed(0)} sq ft`
-        ]),
-        theme: 'grid',
-        headStyles: { fillColor: [255, 122, 0] },
-      });
-    }
-
-    doc.save(`${form.projectName || 'home-estimate'}-with-floor-plan.pdf`);
-  };
-
-  // [Keep all existing result calculation logic]
-  const result = useMemo(() => {
-    // ... existing calculation code ...
-  }, [form, rates, hiddenCosts, wastage]);
-
-  // [Keep existing functions: calculate, saveProject, etc.]
-
-  if (screen === "home") {
-    return (
-      <div className="min-h-screen bg-[#050B1F] text-white p-4 md:p-6">
-        {/* ... existing home screen code ... */}
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#050B1F] text-white pb-28">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
-        {/* ... existing header code ... */}
-
-        <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-1 space-y-6">
-            {/* ... existing input panels ... */}
-
-            {/* NEW: Floor Plan Generation Panel */}
-            <Panel title="🏗️ Floor Plan Generator / फ्लोर प्लान बनाएं">
-              <div className="space-y-3">
-                <p className="text-sm text-slate-300">
-                  Automatic floor plan generation based on your inputs.
-                  Length, breadth aur rooms se automatic plan ban jayega.
-                </p>
-
-                <button
-                  onClick={generateFloorPlan}
-                  disabled={!form.plotLength || !form.plotWidth}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl px-6 py-4 font-black disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  🎨 Generate Floor Plan
-                </button>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setShow3DView(!show3DView)}
-                    disabled={!floorPlan}
-                    className="px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold disabled:opacity-50"
-                  >
-                    {show3DView ? '📐 2D View' : '🏠 3D View'}
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      if (!floorPlan) return;
-                      setShowFloorPlan(!showFloorPlan);
-                    }}
-                    disabled={!floorPlan}
-                    className="px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold disabled:opacity-50"
-                  >
-                    {showFloorPlan ? '❌ Hide Plan' : '📋 Show Plan'}
-                  </button>
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <!-- Step 1: Plot Details -->
+            <div class="main-panel" id="step1">
+                <h2 class="section-title">Step 1: Plot & Site Details</h2>
+                
+                <div class="unit-toggle">
+                    <button class="unit-btn active" onclick="setUnit('ft')">Feet (ft)</button>
+                    <button class="unit-btn" onclick="setUnit('m')">Meters (m)</button>
                 </div>
 
-                {floorPlan && (
-                  <div className="space-y-2 text-sm">
-                    <div className="bg-white/5 rounded-xl p-3">
-                      <Row label="Total Rooms" value={floorPlan.rooms.length} />
-                      <Row label="Used Area" value={`${floorPlan.usedArea.toFixed(0)} sq ft`} />
-                      <Row label="Efficiency" value={`${floorPlan.efficiency}%`} />
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Plot Length (<span id="unit-length">ft</span>)</label>
+                        <input type="number" id="plotLength" placeholder="e.g., 50" min="1">
                     </div>
-                  </div>
-                )}
-              </div>
-            </Panel>
+                    <div class="form-group">
+                        <label>Plot Width (<span id="unit-width">ft</span>)</label>
+                        <input type="number" id="plotWidth" placeholder="e.g., 30" min="1">
+                    </div>
+                </div>
 
-            {/* NEW: Building Height Control */}
-            {show3DView && (
-              <Panel title="🏢 Building Settings / बिल्डिंग सेटिंग्स">
-                <Input
-                  label="Floor Height (feet) / फ्लोर की ऊंचाई"
-                  value={buildingHeight}
-                  onChange={(v) => setBuildingHeight(numberValue(v, 10))}
-                />
-                <p className="text-xs text-slate-400">
-                  Standard residential floor height is 10 feet.
-                  Normal घर में 10 feet floor height रहती है.
-                </p>
-              </Panel>
-            )}
-          </div>
+                <div class="form-group">
+                    <label>Plot Area (Auto-calculated) - <span id="plotArea">0</span> <span id="unit-area">sq.ft</span></label>
+                    <div class="info-box">Plot area will be calculated automatically based on length and width</div>
+                </div>
 
-          <div className="xl:col-span-2 space-y-6">
-            {/* NEW: Floor Plan Display Section */}
-            {floorPlan && showFloorPlan && (
-              <div id="floor-plan-section">
-                <Panel title="📐 Generated Floor Plan / बना हुआ फ्लोर प्लान">
-                  <div className="space-y-4">
-                    {!show3DView ? (
-                      <FloorPlan2D
-                        floorPlan={floorPlan}
-                        onRoomClick={(room) => console.log('Room clicked:', room)}
-                      />
-                    ) : (
-                      <Suspense fallback={
-                        <div className="h-[600px] flex items-center justify-center bg-black/20 rounded-2xl">
-                          <p className="text-white">Loading 3D View...</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Plot Facing</label>
+                        <select id="plotFacing">
+                            <option value="">Select...</option>
+                            <option value="north">North</option>
+                            <option value="south">South</option>
+                            <option value="east">East</option>
+                            <option value="west">West</option>
+                            <option value="ne">North-East (Corner)</option>
+                            <option value="nw">North-West (Corner)</option>
+                            <option value="se">South-East (Corner)</option>
+                            <option value="sw">South-West (Corner)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Road Width in Front (<span id="unit-road">ft</span>)</label>
+                        <input type="number" id="roadWidth" placeholder="e.g., 30" min="0">
+                    </div>
+                </div>
+
+                <div class="section-title" style="margin-top: 30px;">Setback Requirements</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Front Setback (<span id="unit-setback-f">ft</span>)</label>
+                        <input type="number" id="setbackFront" placeholder="e.g., 20" min="0">
+                        <div class="hint-text">Auto-suggest: Check local bylaws or enter manually</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Rear Setback (<span id="unit-setback-r">ft</span>)</label>
+                        <input type="number" id="setbackRear" placeholder="e.g., 15" min="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Left Setback (<span id="unit-setback-l">ft</span>)</label>
+                        <input type="number" id="setbackLeft" placeholder="e.g., 5" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Right Setback (<span id="unit-setback-r2">ft</span>)</label>
+                        <input type="number" id="setbackRight" placeholder="e.g., 5" min="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Number of Floors</label>
+                        <select id="numFloors">
+                            <option value="G">Ground Floor (G)</option>
+                            <option value="G+1">Ground + 1 (G+1)</option>
+                            <option value="G+2">Ground + 2 (G+2)</option>
+                            <option value="G+3">Ground + 3 (G+3)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Vastu Compliance</label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="vastu-yes" name="vastu" value="yes">
+                                <label for="vastu-yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="vastu-no" name="vastu" value="no" checked>
+                                <label for="vastu-no">No</label>
+                            </div>
                         </div>
-                      }>
-                        <HouseViewer3D
-                          floorPlan={floorPlan}
-                          buildingHeight={buildingHeight}
-                          floors={getFloorCountFromValue(form.floors, form.customFloors)}
-                        />
-                      </Suspense>
-                    )}
+                    </div>
+                </div>
 
-                    {/* Export Options */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <button
-                        onClick={() => exportToDXF(floorPlan)}
-                        className="actionBtn"
-                      >
-                        📄 Export DWG
-                      </button>
-                      <button
-                        onClick={() => exportToOBJ(floorPlan, buildingHeight)}
-                        className="actionBtn"
-                      >
-                        📦 Export 3D (OBJ)
-                      </button>
-                      <button
-                        onClick={downloadEnhancedPDF}
-                        className="actionBtn"
-                      >
-                        📑 PDF with Plan
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Future: IFC export for Revit
-                          alert('IFC export coming soon for Revit compatibility!');
-                        }}
-                        className="actionBtn"
-                      >
-                        🏗️ Export IFC (Revit)
-                      </button>
+                <div class="form-group">
+                    <label>City / State</label>
+                    <input type="text" id="location" placeholder="e.g., Bangalore, Karnataka">
+                    <div class="hint-text">Used for local cost rate adjustments</div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="nextStep(2)">Continue to Room Layout →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Room Layout -->
+            <div class="main-panel hidden" id="step2">
+                <h2 class="section-title">Step 2: Room & Layout Requirements</h2>
+
+                <div class="section-title" style="margin-top: 0;">Basic Requirements</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Number of Bedrooms</label>
+                        <input type="number" id="bedrooms" value="2" min="1" max="8">
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Bathrooms/Toilets</label>
+                        <input type="number" id="bathrooms" value="2" min="1" max="8">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Kitchen Type</label>
+                        <select id="kitchenType">
+                            <option value="open">Open Kitchen</option>
+                            <option value="closed">Closed/Modular Kitchen</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Parking Spaces</label>
+                        <input type="number" id="parking" value="1" min="0" max="5">
+                    </div>
+                </div>
+
+                <div class="section-title">Optional Rooms</div>
+
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hasLiving" checked>
+                        <label for="hasLiving">Living/Drawing Room</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hasDining" checked>
+                        <label for="hasDining">Dining Area</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hasPooja">
+                        <label for="hasPooja">Pooja Room</label>
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hasStudy">
+                        <label for="hasStudy">Study/Home Office</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hasServant">
+                        <label for="hasServant">Servant Room/Store</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hasTerrace">
+                        <label for="hasTerrace">Terrace/Roof Garden</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Number of Balconies</label>
+                        <input type="number" id="balconies" value="1" min="0" max="5">
+                    </div>
+                    <div class="form-group">
+                        <label>Staircase Location Preference</label>
+                        <select id="staircaseLocation">
+                            <option value="central">Central</option>
+                            <option value="side">Side</option>
+                            <option value="corner">Corner</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="prevStep(1)">← Back to Plot Details</button>
+                    <button class="btn-primary" onclick="nextStep(3)">Continue to Design & Cost →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Design & Cost -->
+            <div class="main-panel hidden" id="step3">
+                <h2 class="section-title">Step 3: Design Style & Construction Preferences</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Architectural Style</label>
+                        <select id="archStyle">
+                            <option value="modern">Modern</option>
+                            <option value="traditional">Traditional/Indian</option>
+                            <option value="contemporary">Contemporary</option>
+                            <option value="minimalist">Minimalist</option>
+                            <option value="colonial">Colonial</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Construction Type</label>
+                        <select id="constructionType">
+                            <option value="rcc">RCC Framed Structure</option>
+                            <option value="loadbearing">Load-Bearing</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Wall Material</label>
+                        <select id="wallMaterial">
+                            <option value="brick">Brick</option>
+                            <option value="aac">AAC Block</option>
+                            <option value="concrete">Concrete</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Flooring Preference</label>
+                        <select id="flooring">
+                            <option value="tiles">Ceramic Tiles</option>
+                            <option value="marble">Marble</option>
+                            <option value="vitrified">Vitrified</option>
+                            <option value="wood">Wood/Laminate</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Roofing Type</label>
+                        <select id="roofing">
+                            <option value="flat-rcc">Flat RCC</option>
+                            <option value="sloped">Sloped/Tiled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quality Grade</label>
+                        <select id="qualityGrade">
+                            <option value="basic">Basic</option>
+                            <option value="standard">Standard</option>
+                            <option value="premium">Premium</option>
+                            <option value="luxury">Luxury</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-title" style="margin-top: 30px;">Budget</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Budget Min (₹ per sq.ft)</label>
+                        <input type="number" id="budgetMin" placeholder="e.g., 800" min="0">
+                        <div class="hint-text">Typical range: ₹600–1500/sq.ft in India</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Budget Max (₹ per sq.ft)</label>
+                        <input type="number" id="budgetMax" placeholder="e.g., 1500" min="0">
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div class="loading-state hidden" id="loadingState">
+                    <div class="spinner"></div>
+                    <p>Generating floor plan and 3D design...</p>
+                </div>
+
+                <!-- Floor Plan Display -->
+                <div id="planSection" class="hidden">
+                    <div class="section-title" style="margin-top: 30px;">Generated Floor Plan</div>
+                    
+                    <div class="tab-container">
+                        <div class="tab-buttons">
+                            <button class="tab-button active" onclick="switchTab('plan', this)">2D Floor Plan</button>
+                            <button class="tab-button" onclick="switchTab('3d', this)">3D View</button>
+                            <button class="tab-button" onclick="switchTab('layouts', this)">Layout Options</button>
+                        </div>
+
+                        <div class="tab-content active" id="tab-plan">
+                            <div class="plan-container">
+                                <canvas id="planCanvas" class="plan-canvas"></canvas>
+                            </div>
+                            <div style="text-align: center; margin-top: 10px;">
+                                <small style="color: #999;">2D Floor Plan - Scaled Drawing</small>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="tab-3d">
+                            <div id="threeDContainer"></div>
+                            <div style="text-align: center; margin-top: 10px;">
+                                <small style="color: #999;">3D Exterior View</small>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="tab-layouts">
+                            <div class="layout-options" id="layoutOptions"></div>
+                        </div>
                     </div>
 
-                    {/* Room List */}
-                    <div className="bg-white/5 rounded-2xl p-4">
-                      <h3 className="font-bold text-orange-400 mb-3">Room Details / रूम विवरण</h3>
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {floorPlan.rooms.map((room, idx) => (
-                          <div
-                            key={idx}
-                            className="rounded-xl border border-white/10 p-3"
-                            style={{ borderLeftColor: room.color, borderLeftWidth: '4px' }}
-                          >
-                            <h4 className="font-bold text-white">{room.name}</h4>
-                            <p className="text-sm text-slate-400 mt-1">
-                              {room.width}' × {room.height}' ({(room.width * room.height).toFixed(0)} sq ft)
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+                    <button class="btn-secondary" onclick="regenerateDesign()" style="margin-top: 20px;">🔄 Regenerate Layout</button>
+                </div>
+
+                <div class="button-group" style="margin-top: 40px;">
+                    <button class="btn-secondary" onclick="prevStep(2)">← Back to Room Layout</button>
+                    <button class="btn-primary" onclick="generateDesign()">Generate Design & Cost Estimate</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Review & Export -->
+            <div class="main-panel hidden" id="step4">
+                <h2 class="section-title">Step 4: Review & Export</h2>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" onclick="switchTab('cost', this)">Cost Estimate</button>
+                        <button class="tab-button" onclick="switchTab('summary', this)">Project Summary</button>
+                        <button class="tab-button" onclick="switchTab('export', this)">Export Options</button>
                     </div>
-                  </div>
-                </Panel>
-              </div>
-            )}
 
-            {/* ... existing results panels ... */}
-            {calculated && (
-              <div id="results-section" className="space-y-6">
-                {/* ... existing result panels ... */}
-              </div>
-            )}
+                    <div class="tab-content active" id="tab-cost">
+                        <div class="section-title">Room-wise Area Breakdown</div>
+                        <table id="areaTable">
+                            <thead>
+                                <tr>
+                                    <th>Room Type</th>
+                                    <th>Quantity</th>
+                                    <th>Size (Avg <span id="unit-table">sq.ft</span>)</th>
+                                    <th>Total Area</th>
+                                </tr>
+                            </thead>
+                            <tbody id="areaTableBody">
+                            </tbody>
+                        </table>
 
-            {/* ... rest of existing code ... */}
-          </div>
-        </section>
-      </div>
+                        <div class="section-title" style="margin-top: 30px;">Material-wise Cost Breakdown</div>
+                        <table id="costTable">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Quantity/Unit</th>
+                                    <th>Rate</th>
+                                    <th>Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody id="costTableBody">
+                            </tbody>
+                        </table>
 
-      {/* ... existing bottom navigation ... */}
+                        <div class="summary-box">
+                            <div class="summary-item">
+                                <span>Built-up Area:</span>
+                                <strong id="totalArea">0</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Construction Type:</span>
+                                <strong id="summaryConstType">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Quality Grade:</span>
+                                <strong id="summaryQuality">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Rate per sq.ft:</span>
+                                <strong id="ratePerSqft">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>TOTAL ESTIMATED COST:</span>
+                                <strong id="totalCost" style="color: #2c5aa0;">—</strong>
+                            </div>
+                        </div>
 
-      <StyleBlock />
+                        <div class="disclaimer">
+                            <strong>⚠ Disclaimer:</strong> This is a preliminary/conceptual design and cost estimate. Before construction, it must be:
+                            <ul style="margin-top: 10px; margin-left: 20px;">
+                                <li>Verified and stamped by a licensed architect</li>
+                                <li>Approved by structural engineer</li>
+                                <li>Submitted to local municipal authorities for approvals</li>
+                                <li>Adjusted based on actual site conditions and material rates</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="tab-summary">
+                        <div class="summary-box">
+                            <div class="summary-item">
+                                <span>Plot Length:</span>
+                                <strong id="sumPlotLength">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Plot Width:</span>
+                                <strong id="sumPlotWidth">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Plot Area:</span>
+                                <strong id="sumPlotArea">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Built-up Area:</span>
+                                <strong id="sumBuiltArea">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Plot Coverage:</span>
+                                <strong id="sumCoverage">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Number of Floors:</span>
+                                <strong id="sumFloors">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Bedrooms:</span>
+                                <strong id="sumBeds">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Bathrooms:</span>
+                                <strong id="sumBaths">—</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Estimated Cost:</span>
+                                <strong id="sumCost" style="color: #2c5aa0;">—</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="tab-export">
+                        <div class="section-title">Download & Export Options</div>
+                        <div class="export-options">
+                            <div class="export-card" onclick="exportPDF()">
+                                <div class="export-icon">📄</div>
+                                <div class="export-label">Complete PDF Report</div>
+                                <div class="export-desc">Plan + 3D view + Cost estimate + Summary</div>
+                            </div>
+                            <div class="export-card" onclick="exportDWG()">
+                                <div class="export-icon">📐</div>
+                                <div class="export-label">DWG File</div>
+                                <div class="export-desc">AutoCAD format for architects</div>
+                            </div>
+                            <div class="export-card" onclick="exportCSV()">
+                                <div class="export-icon">📊</div>
+                                <div class="export-label">Cost Estimate (CSV)</div>
+                                <div class="export-desc">Excel-compatible spreadsheet</div>
+                            </div>
+                            <div class="export-card" onclick="printProject()">
+                                <div class="export-icon">🖨️</div>
+                                <div class="export-label">Print Report</div>
+                                <div class="export-desc">Print-ready high-quality layout</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group" style="margin-top: 40px;">
+                    <button class="btn-secondary" onclick="prevStep(3)">← Back to Design</button>
+                    <button class="btn-primary" onclick="saveProject()">💾 Save Project</button>
+                </div>
+            </div>
+        </div>
     </div>
-  );
-}
 
-// [Keep all existing helper components: Panel, Input, Select, Row, Mini, etc.]
+    <script>
+        // ===== Global State =====
+        let currentStep = 1;
+        let currentUnit = 'ft';
+        let projectData = {};
+        let generatedPlan = null;
+        let scene = null;
+        let camera = null;
+        let renderer = null;
+
+        // ===== Unit Conversion =====
+        function setUnit(unit) {
+            currentUnit = unit;
+            
+            // Update button states
+            document.querySelectorAll('.unit-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update unit labels
+            const unitLabel = unit === 'ft' ? 'ft' : 'm';
+            const areaUnit = unit === 'ft' ? 'sq.ft' : 'sq.m';
+            
+            document.querySelectorAll('#unit-length, #unit-width, #unit-road, #unit-setback-f, #unit-setback-r, #unit-setback-l, #unit-setback-r2, #unit-table').forEach(el => {
+                el.textContent = unitLabel;
+            });
+            document.querySelector('#unit-area').textContent = areaUnit;
+
+            calculatePlotArea();
+        }
+
+        // ===== Plot Area Calculation =====
+        function calculatePlotArea() {
+            const length = parseFloat(document.getElementById('plotLength').value) || 0;
+            const width = parseFloat(document.getElementById('plotWidth').value) || 0;
+            const area = (length * width).toFixed(2);
+            document.getElementById('plotArea').textContent = area;
+        }
+
+        // ===== Step Navigation =====
+        function nextStep(step) {
+            if (step === 2 && !validateStep1()) return;
+            if (step === 3 && !validateStep2()) return;
+            
+            showStep(step);
+            currentStep = step;
+        }
+
+        function prevStep(step) {
+            showStep(step);
+            currentStep = step;
+        }
+
+        function showStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.main-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+
+            // Show current step
+            document.getElementById(`step${step}`).classList.remove('hidden');
+
+            // Update progress indicators
+            document.querySelectorAll('.progress-step').forEach((s, idx) => {
+                s.classList.remove('active', 'completed');
+                if (idx + 1 < step) {
+                    s.classList.add('completed');
+                } else if (idx + 1 === step) {
+                    s.classList.add('active');
+                }
+            });
+
+            window.scrollTo(0, 0);
+        }
+
+        // ===== Validation =====
+        function validateStep1() {
+            const errors = [];
+            if (!document.getElementById('plotLength').value) errors.push('Plot Length required');
+            if (!document.getElementById('plotWidth').value) errors.push('Plot Width required');
+            if (!document.getElementById('plotFacing').value) errors.push('Plot Facing required');
+
+            if (errors.length) {
+                alert('Please fill:\n' + errors.join('\n'));
+                return false;
+            }
+            return true;
+        }
+
+        function validateStep2() {
+            const errors = [];
+            if (!document.getElementById('bedrooms').value) errors.push('Bedrooms required');
+            if (!document.getElementById('bathrooms').value) errors.push('Bathrooms required');
+
+            if (errors.length) {
+                alert('Please fill:\n' + errors.join('\n'));
+                return false;
+            }
+            return true;
+        }
+
+        // ===== Generate Design =====
+        function generateDesign() {
+            // Collect form data
+            projectData = {
+                // Plot Details
+                plotLength: parseFloat(document.getElementById('plotLength').value),
+                plotWidth: parseFloat(document.getElementById('plotWidth').value),
+                plotArea: parseFloat(document.getElementById('plotArea').textContent),
+                plotFacing: document.getElementById('plotFacing').value,
+                roadWidth: parseFloat(document.getElementById('roadWidth').value) || 0,
+                setback: {
+                    front: parseFloat(document.getElementById('setbackFront').value) || 20,
+                    rear: parseFloat(document.getElementById('setbackRear').value) || 15,
+                    left: parseFloat(document.getElementById('setbackLeft').value) || 5,
+                    right: parseFloat(document.getElementById('setbackRight').value) || 5
+                },
+                floors: document.getElementById('numFloors').value,
+                vastu: document.querySelector('input[name="vastu"]:checked').value,
+                location: document.getElementById('location').value,
+
+                // Room Details
+                bedrooms: parseInt(document.getElementById('bedrooms').value),
+                bathrooms: parseInt(document.getElementById('bathrooms').value),
+                parking: parseInt(document.getElementById('parking').value),
+                kitchenType: document.getElementById('kitchenType').value,
+                balconies: parseInt(document.getElementById('balconies').value),
+                hasLiving: document.getElementById('hasLiving').checked,
+                hasDining: document.getElementById('hasDining').checked,
+                hasPooja: document.getElementById('hasPooja').checked,
+                hasStudy: document.getElementById('hasStudy').checked,
+                hasServant: document.getElementById('hasServant').checked,
+                hasTerrace: document.getElementById('hasTerrace').checked,
+                staircaseLocation: document.getElementById('staircaseLocation').value,
+
+                // Design Preferences
+                archStyle: document.getElementById('archStyle').value,
+                constructionType: document.getElementById('constructionType').value,
+                wallMaterial: document.getElementById('wallMaterial').value,
+                flooring: document.getElementById('flooring').value,
+                roofing: document.getElementById('roofing').value,
+                qualityGrade: document.getElementById('qualityGrade').value,
+                budgetMin: parseFloat(document.getElementById('budgetMin').value) || 800,
+                budgetMax: parseFloat(document.getElementById('budgetMax').value) || 1500,
+
+                unit: currentUnit
+            };
+
+            // Show loading state
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('planSection').classList.add('hidden');
+
+            // Simulate AI generation delay
+            setTimeout(() => {
+                generateFloorPlan();
+                generate3DView();
+                generateLayoutOptions();
+                calculateCost();
+
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('planSection').classList.remove('hidden');
+
+                nextStep(4);
+            }, 1500);
+        }
+
+        // ===== Generate Floor Plan (2D Canvas) =====
+        function generateFloorPlan() {
+            const canvas = document.getElementById('planCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            canvas.width = 600;
+            canvas.height = 600;
+
+            // Clear canvas
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate usable area (considering setbacks)
+            const plotL = projectData.plotLength;
+            const plotW = projectData.plotWidth;
+            const usableLength = plotL - (projectData.setback.front + projectData.setback.rear);
+            const usableWidth = plotW - (projectData.setback.left + projectData.setback.right);
+
+            // Scale to fit canvas
+            const scale = Math.min(500 / usableLength, 500 / usableWidth);
+
+            // Draw plot boundary
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(50, 50, usableLength * scale, usableWidth * scale);
+
+            // Draw grid
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= 10; i++) {
+                const x = 50 + (i / 10) * usableLength * scale;
+                const y = 50 + (i / 10) * usableWidth * scale;
+                ctx.beginPath();
+                ctx.moveTo(x, 50);
+                ctx.lineTo(x, 50 + usableWidth * scale);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(50, y);
+                ctx.lineTo(50 + usableLength * scale, y);
+                ctx.stroke();
+            }
+
+            // Draw rooms (simplified layout)
+            drawRooms(ctx, scale, usableLength, usableWidth);
+
+            // Draw dimensions
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Roboto';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${usableLength.toFixed(1)} ${projectData.unit}`, 50 + usableLength * scale / 2, 30);
+            ctx.textAlign = 'right';
+            ctx.fillText(`${usableWidth.toFixed(1)} ${projectData.unit}`, 570, 50 + usableWidth * scale / 2);
+
+            // Title
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 16px Roboto';
+            ctx.textAlign = 'left';
+            ctx.fillText('Ground Floor Plan', 50, 580);
+        }
+
+        function drawRooms(ctx, scale, width, height) {
+            const roomWidth = width * scale / 3;
+            const roomHeight = height * scale / 2;
+            const startX = 50;
+            const startY = 50;
+
+            // Bedroom 1
+            ctx.fillStyle = '#e3f2fd';
+            ctx.fillRect(startX, startY, roomWidth, roomHeight);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(startX, startY, roomWidth, roomHeight);
+            ctx.fillStyle = '#2c5aa0';
+            ctx.font = '12px Roboto';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Bedroom 1', startX + roomWidth / 2, startY + roomHeight / 2 - 10);
+            ctx.fillText(`${(roomWidth / scale).toFixed(0)} x ${(roomHeight / scale).toFixed(0)} ft`, startX + roomWidth / 2, startY + roomHeight / 2 + 10);
+
+            // Bedroom 2
+            ctx.fillRect(startX + roomWidth, startY, roomWidth, roomHeight);
+            ctx.strokeRect(startX + roomWidth, startY, roomWidth, roomHeight);
+            ctx.fillText('Bedroom 2', startX + 1.5 * roomWidth, startY + roomHeight / 2 - 10);
+
+            // Living Room
+            ctx.fillStyle = '#f0f4ff';
+            ctx.fillRect(startX + 2 * roomWidth, startY, roomWidth, roomHeight);
+            ctx.strokeRect(startX + 2 * roomWidth, startY, roomWidth, roomHeight);
+            ctx.fillStyle = '#2c5aa0;
+            ctx.fillText('Living', startX + 2.5 * roomWidth, startY + roomHeight / 2 - 10);
+
+            // Kitchen
+            ctx.fillStyle = '#fff3cd';
+            ctx.fillRect(startX, startY + roomHeight, roomWidth, roomHeight);
+            ctx.strokeRect(startX, startY + roomHeight, roomWidth, roomHeight);
+            ctx.fillStyle = '#856404';
+            ctx.fillText('Kitchen', startX + roomWidth / 2, startY + 1.5 * roomHeight);
+
+            // Bathroom
+            ctx.fillStyle = '#e8f5e9';
+            ctx.fillRect(startX + roomWidth, startY + roomHeight, roomWidth / 2, roomHeight / 2);
+            ctx.strokeRect(startX + roomWidth, startY + roomHeight, roomWidth / 2, roomHeight / 2);
+            ctx.fillStyle = '#1b5e20';
+            ctx.font = '10px Roboto';
+            ctx.fillText('Bath', startX + roomWidth + roomWidth / 4, startY + roomHeight + roomHeight / 4);
+
+            // Staircase
+            ctx.fillStyle = '#fce4ec';
+            ctx.fillRect(startX + roomWidth + roomWidth / 2, startY + roomHeight, roomWidth / 2, roomHeight / 2);
+            ctx.strokeRect(startX + roomWidth + roomWidth / 2, startY + roomHeight, roomWidth / 2, roomHeight / 2);
+            ctx.fillStyle = '#c2185b';
+            ctx.fillText('Stair', startX + roomWidth + roomWidth * 3 / 4, startY + roomHeight + roomHeight / 4);
+
+            // Dining
+            ctx.fillStyle = '#f3e5f5';
+            ctx.fillRect(startX + 2 * roomWidth, startY + roomHeight, roomWidth, roomHeight);
+            ctx.strokeRect(startX + 2 * roomWidth, startY + roomHeight, roomWidth, roomHeight);
+            ctx.fillStyle = '#4a148c';
+            ctx.fillText('Dining', startX + 2.5 * roomWidth, startY + 1.5 * roomHeight);
+        }
+
+        // ===== Generate 3D View =====
+        function generate3DView() {
+            const container = document.getElementById('threeDContainer');
+            container.innerHTML = ''; // Clear
+
+            // Initialize Three.js
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf5f5f5);
+
+            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            camera.position.set(20, 15, 20);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Add lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 10);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            // Draw ground
+            const groundGeometry = new THREE.PlaneGeometry(50, 50);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90ee90 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Draw building
+            const buildingWidth = projectData.plotWidth * 0.6;
+            const buildingLength = projectData.plotLength * 0.8;
+            const buildingHeight = projectData.floors === 'G' ? 12 : projectData.floors === 'G+1' ? 20 : projectData.floors === 'G+2' ? 28 : 36;
+
+            // Main walls
+            const wallGeometry = new THREE.BoxGeometry(buildingLength, buildingHeight, buildingWidth);
+            const wallMaterial = new THREE.MeshLambertMaterial({ color: 0xd4a574 }); // Beige/cream
+            const building = new THREE.Mesh(wallGeometry, wallMaterial);
+            building.position.y = buildingHeight / 2;
+            building.castShadow = true;
+            building.receiveShadow = true;
+            scene.add(building);
+
+            // Roof
+            const roofGeometry = new THREE.ConeGeometry(Math.sqrt(buildingLength ** 2 + buildingWidth ** 2) / 2, 3, 4);
+            const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 }); // Brown
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = buildingHeight;
+            roof.rotation.z = Math.PI / 4;
+            roof.castShadow = true;
+            scene.add(roof);
+
+            // Windows
+            const windowGeometry = new THREE.BoxGeometry(2, 2, 0.1);
+            const windowMaterial = new THREE.MeshLambertMaterial({ color: 0x87ceeb }); // Sky blue
+
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const window1 = new THREE.Mesh(windowGeometry, windowMaterial);
+                    window1.position.set(-buildingLength / 2.5 + i * 3, 3 + j * 4, buildingWidth / 2 + 0.05);
+                    window1.castShadow = true;
+                    scene.add(window1);
+
+                    const window2 = new THREE.Mesh(windowGeometry, windowMaterial);
+                    window2.position.set(-buildingLength / 2.5 + i * 3, 3 + j * 4, -buildingWidth / 2 - 0.05);
+                    window2.castShadow = true;
+                    scene.add(window2);
+                }
+            }
+
+            // Door
+            const doorGeometry = new THREE.BoxGeometry(2, 3, 0.1);
+            const doorMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 }); // Brown
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(0, 1.5, buildingWidth / 2 + 0.05);
+            door.castShadow = true;
+            scene.add(door);
+
+            // Animate
+            function animate() {
+                requestAnimationFrame(animate);
+                building.rotation.y += 0.005;
+                roof.rotation.y += 0.005;
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        // ===== Generate Layout Options =====
+        function generateLayoutOptions() {
+            const container = document.getElementById('layoutOptions');
+            container.innerHTML = '';
+
+            const layouts = [
+                {
+                    name: 'L-Shaped',
+                    desc: 'Classic L-shaped design with corner placement',
+                    type: 'l-shaped'
+                },
+                {
+                    name: 'Linear',
+                    desc: 'Sequential rooms along main axis',
+                    type: 'linear'
+                },
+                {
+                    name: 'Central Court',
+                    desc: 'Rooms around central courtyard (Vastu-style)',
+                    type: 'courtyard'
+                }
+            ];
+
+            layouts.forEach((layout, idx) => {
+                const card = document.createElement('div');
+                card.className = 'layout-card' + (idx === 0 ? ' selected' : '');
+                card.onclick = () => selectLayout(card);
+                card.innerHTML = `
+                    <div class="layout-preview">
+                        ${['L', 'I', 'C'][idx]}-Shape Layout
+                    </div>
+                    <div class="layout-name">${layout.name}</div>
+                    <div class="layout-desc">${layout.desc}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectLayout(card) {
+            document.querySelectorAll('.layout-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+        }
+
+        function regenerateDesign() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('planSection').classList.add('hidden');
+
+            setTimeout(() => {
+                generateFloorPlan();
+                generate3DView();
+                generateLayoutOptions();
+
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('planSection').classList.remove('hidden');
+            }, 1500);
+        }
+
+        // ===== Tab Switching =====
+        function switchTab(tabName, button) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Deactivate all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            button.classList.add('active');
+
+            // Re-render 3D if needed
+            if (tabName === '3d' && renderer) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        // ===== Cost Calculation =====
+        function calculateCost() {
+            // Calculate built-up area (simple approximation)
+            const usableLength = projectData.plotLength - (projectData.setback.front + projectData.setback.rear);
+            const usableWidth = projectData.plotWidth - (projectData.setback.left + projectData.setback.right);
+            const builtupPerFloor = usableLength * usableWidth * 0.85; // 85% coverage
+            const numFloors = projectData.floors === 'G' ? 1 : projectData.floors === 'G+1' ? 2 : projectData.floors === 'G+2' ? 3 : 4;
+            const totalBuiltup = builtupPerFloor * numFloors;
+
+            // Estimate room areas
+            const roomAreas = {
+                'Master Bedroom': 150,
+                'Bedroom': 120,
+                'Bathroom': 50,
+                'Kitchen': 120,
+                'Living Room': 250,
+                'Dining Area': 120,
+                'Staircase': 60,
+                'Balcony': 60,
+                'Pooja Room': 80,
+                'Study': 100,
+                'Servant Room': 100
+            };
+
+            // Build area table
+            const areaTableBody = document.getElementById('areaTableBody');
+            areaTableBody.innerHTML = '';
+
+            let totalRoomArea = 0;
+
+            if (projectData.bedrooms > 0) {
+                const masterArea = 150;
+                const otherArea = 120;
+                let html = `
+                    <tr>
+                        <td>Master Bedroom</td>
+                        <td>1</td>
+                        <td>150</td>
+                        <td>150</td>
+                    </tr>
+                `;
+                totalRoomArea += 150;
+
+                if (projectData.bedrooms > 1) {
+                    html += `
+                        <tr>
+                            <td>Bedroom(s)</td>
+                            <td>${projectData.bedrooms - 1}</td>
+                            <td>120</td>
+                            <td>${(projectData.bedrooms - 1) * 120}</td>
+                        </tr>
+                    `;
+                    totalRoomArea += (projectData.bedrooms - 1) * 120;
+                }
+
+                areaTableBody.innerHTML += html;
+            }
+
+            if (projectData.bathrooms > 0) {
+                areaTableBody.innerHTML += `
+                    <tr>
+                        <td>Bathroom(s)</td>
+                        <td>${projectData.bathrooms}</td>
+                        <td>50</td>
+                        <td>${projectData.bathrooms * 50}</td>
+                    </tr>
+                `;
+                totalRoomArea += projectData.bathrooms * 50;
+            }
+
+            if (projectData.hasLiving) {
+                areaTableBody.innerHTML += `
+                    <tr>
+                        <td>Living Room</td>
+                        <td>1</td>
+                        <td>250</td>
+                        <td>250</td>
+                    </tr>
+                `;
+                totalRoomArea += 250;
+            }
+
+            if (projectData.hasDining) {
+                areaTableBody.innerHTML += `
+                    <tr>
+                        <td>Dining Area</td>
+                        <td>1</td>
+                        <td>120</td>
+                        <td>120</td>
+                    </tr>
+                `;
+                totalRoomArea += 120;
+            }
+
+            areaTableBody.innerHTML += `
+                <tr>
+                    <td>Kitchen</td>
+                    <td>1</td>
+                    <td>120</td>
+                    <td>120</td>
+                </tr>
+            `;
+            totalRoomArea += 120;
+
+            if (projectData.hasPooja) {
+                areaTableBody.innerHTML += `
+                    <tr>
+                        <td>Pooja Room</td>
+                        <td>1</td>
+                        <td>80</td>
+                        <td>80</td>
+                    </tr>
+                `;
+                totalRoomArea += 80;
+            }
+
+            areaTableBody.innerHTML += `
+                <tr>
+                    <td>Staircase</td>
+                    <td>1</td>
+                    <td>60</td>
+                    <td>60</td>
+                </tr>
+            `;
+            totalRoomArea += 60;
+
+            areaTableBody.innerHTML += `
+                <tr class="highlight-row">
+                    <td>TOTAL BUILT-UP AREA</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>${totalRoomArea.toFixed(0)} ${currentUnit === 'ft' ? 'sq.ft' : 'sq.m'}</td>
+                </tr>
+            `;
+
+            // Cost calculation
+            const rateQualityMultiplier = {
+                'basic': 0.8,
+                'standard': 1.0,
+                'premium': 1.5,
+                'luxury': 2.0
+            };
+
+            const baseRate = (projectData.budgetMin + projectData.budgetMax) / 2;
+            const qualityMultiplier = rateQualityMultiplier[projectData.qualityGrade] || 1.0;
+            const finalRate = baseRate * qualityMultiplier;
+
+            // Material cost breakdown
+            const costsData = [
+                { item: 'Cement & Concrete', qty: Math.round(totalRoomArea / 10), unit: 'bags', rate: 400 },
+                { item: 'Steel (TMT Bars)', qty: Math.round(totalRoomArea / 20), unit: 'quintals', rate: 45000 },
+                { item: 'Bricks/AAC Blocks', qty: Math.round(totalRoomArea / 5), unit: 'thousand', rate: 4000 },
+                { item: 'Sand & Aggregate', qty: Math.round(totalRoomArea / 8), unit: 'cum', rate: 500 },
+                { item: 'Flooring (Tiles)', qty: totalRoomArea, unit: 'sq.ft', rate: 80 },
+                { item: 'Wall Painting', qty: totalRoomArea * 2, unit: 'sq.ft', rate: 30 },
+                { item: 'Electrical Works', qty: 1, unit: 'lot', rate: finalRate * totalRoomArea * 0.08 },
+                { item: 'Plumbing Works', qty: 1, unit: 'lot', rate: finalRate * totalRoomArea * 0.06 },
+                { item: 'Doors & Windows', qty: projectData.bedrooms + projectData.bathrooms + 5, unit: 'units', rate: 5000 },
+                { item: 'Miscellaneous', qty: 1, unit: 'lot', rate: finalRate * totalRoomArea * 0.1 }
+            ];
+
+            const costTableBody = document.getElementById('costTableBody');
+            costTableBody.innerHTML = '';
+
+            let totalCost = 0;
+            costsData.forEach(cost => {
+                const itemCost = cost.qty * cost.rate;
+                totalCost += itemCost;
+                costTableBody.innerHTML += `
+                    <tr>
+                        <td>${cost.item}</td>
+                        <td>${cost.qty.toFixed(0)} ${cost.unit}</td>
+                        <td>₹${cost.rate.toFixed(0)}</td>
+                        <td class="cost-value">₹${itemCost.toFixed(0)}</td>
+                    </tr>
+                `;
+            });
+
+            const laborCost = totalCost * 0.15; // 15% labor
+            totalCost += laborCost;
+
+            costTableBody.innerHTML += `
+                <tr>
+                    <td>Labor Cost (estimated 15%)</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td class="cost-value">₹${laborCost.toFixed(0)}</td>
+                </tr>
+                <tr class="highlight-row">
+                    <td>TOTAL ESTIMATED COST</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td class="cost-value">₹${totalCost.toFixed(0)}</td>
+                </tr>
+            `;
+
+            // Update summary
+            document.getElementById('totalArea').textContent = `${totalRoomArea.toFixed(0)} ${currentUnit === 'ft' ? 'sq.ft' : 'sq.m'}`;
+            document.getElementById('summaryConstType').textContent = projectData.constructionType === 'rcc' ? 'RCC Framed' : 'Load-Bearing';
+            document.getElementById('summaryQuality').textContent = projectData.qualityGrade.charAt(0).toUpperCase() + projectData.qualityGrade.slice(1);
+            document.getElementById('ratePerSqft').textContent = `₹${finalRate.toFixed(0)}`;
+            document.getElementById('totalCost').textContent = `₹${totalCost.toFixed(0)}`;
+
+            // Update project summary
+            const plotArea = parseFloat(document.getElementById('plotArea').textContent);
+            const coverage = ((totalRoomArea / plotArea) * 100).toFixed(1);
+
+            document.getElementById('sumPlotLength').textContent = `${projectData.plotLength} ${currentUnit}`;
+            document.getElementById('sumPlotWidth').textContent = `${projectData.plotWidth} ${currentUnit}`;
+            document.getElementById('sumPlotArea').textContent = `${plotArea} ${currentUnit === 'ft' ? 'sq.ft' : 'sq.m'}`;
+            document.getElementById('sumBuiltArea').textContent = `${totalRoomArea.toFixed(0)} ${currentUnit === 'ft' ? 'sq.ft' : 'sq.m'}`;
+            document.getElementById('sumCoverage').textContent = `${coverage}%`;
+            document.getElementById('sumFloors').textContent = projectData.floors;
+            document.getElementById('sumBeds').textContent = projectData.bedrooms;
+            document.getElementById('sumBaths').textContent = projectData.bathrooms;
+            document.getElementById('sumCost').textContent = `₹${totalCost.toFixed(0)}`;
+
+            // Store for export
+            projectData.totalBuiltup = totalRoomArea;
+            projectData.totalCost = totalCost;
+            projectData.finalRate = finalRate;
+        }
+
+        // ===== Export Functions =====
+        function exportPDF() {
+            const element = document.querySelector('.main-panel:not(.hidden)');
+            const opt = {
+                margin: 10,
+                filename: 'Home-Design-Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function exportDWG() {
+            alert('DWG export feature:\n\nNote: Full DWG generation requires specialized libraries.\n\nFor production use, integrate with libraries like:\n- dxf-writer (Node.js)\n- LibreDXF\n\nThe 2D floor plan can be converted to DWG using online tools or AutoCAD itself.');
+            
+            // Simulate download
+            const mockDWGData = generateMockDWG();
+            downloadFile(mockDWGData, 'FloorPlan.dxf', 'text/plain');
+        }
+
+        function generateMockDWG() {
+            return `0
+SECTION
+2
+ENTITIES
+0
+LINE
+8
+0
+10
+0
+20
+0
+11
+100
+21
+0
+0
+LINE
+8
+0
+10
+100
+20
+0
+11
+100
+21
+100
+0
+LINE
+8
+0
+10
+100
+20
+100
+11
+0
+21
+100
+0
+LINE
+8
+0
+10
+0
+20
+100
+11
+0
+21
+0
+0
+ENDSEC
+0
+EOF`;
+        }
+
+        function exportCSV() {
+            let csv = 'Item,Quantity,Unit,Rate,Total Cost\n';
+            const rows = document.querySelectorAll('#costTableBody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = [
+                    cells[0]?.textContent || '',
+                    cells[1]?.textContent || '',
+                    cells[2]?.textContent || '',
+                    cells[3]?.textContent || ''
+                ].join(',');
+                csv += rowData + '\n';
+            });
+
+            downloadFile(csv, 'Cost-Estimate.csv', 'text/csv');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        function printProject() {
+            window.print();
+        }
+
+        function saveProject() {
+            const projectJSON = JSON.stringify(projectData, null, 2);
+            downloadFile(projectJSON, 'Project-Data.json', 'application/json');
+            alert('Project saved successfully!');
+        }
+
+        // ===== Initialize =====
+        document.getElementById('plotLength').addEventListener('input', calculatePlotArea);
+        document.getElementById('plotWidth').addEventListener('input', calculatePlotArea);
+
+        showStep(1);
+    </script>
+</body>
+</html>
