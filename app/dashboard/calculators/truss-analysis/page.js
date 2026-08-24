@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 
 const templates = [
   { key: 'triangular', label: 'Triangular Truss' },
@@ -29,6 +29,7 @@ function uid(prefix) {
 }
 
 function toNum(value, fallback = 0) {
+  if (value === '' || value === null || value === undefined) return fallback
   const n = Number(value)
   return Number.isFinite(n) ? n : fallback
 }
@@ -194,6 +195,7 @@ function loadAtJoint(loads, jointId) {
 
 function solveLinearSystem(A, b) {
   const n = b.length
+  if (n === 0) return { error: '', solution: [] }
   const M = A.map((row, index) => [...row, b[index]])
 
   for (let col = 0; col < n; col += 1) {
@@ -238,6 +240,18 @@ function solveLinearSystem(A, b) {
   return {
     error: '',
     solution: M.map((row) => row[n]),
+  }
+}
+
+function getMemberVectorFromJoint(joint, member, joints) {
+  const otherId = member.start === joint.id ? member.end : member.start
+  const other = joints.find((j) => j.id === otherId)
+
+  if (!other) return { x: 0, y: 0 }
+
+  return {
+    x: toNum(other.x) - toNum(joint.x),
+    y: toNum(other.y) - toNum(joint.y),
   }
 }
 
@@ -304,18 +318,6 @@ function getZeroForceMembersByRules(joints, members, loads) {
   return unique
 }
 
-function getMemberVectorFromJoint(joint, member, joints) {
-  const otherId = member.start === joint.id ? member.end : member.start
-  const other = joints.find((j) => j.id === otherId)
-
-  if (!other) return { x: 0, y: 0 }
-
-  return {
-    x: other.x - joint.x,
-    y: other.y - joint.y,
-  }
-}
-
 function analyzeTruss(form) {
   const joints = form.joints.map((joint) => ({
     ...joint,
@@ -354,6 +356,29 @@ function analyzeTruss(form) {
   } else if (determinacyValue < 0) {
     determinacyStatus = `Unstable by count, deficiency = ${Math.abs(determinacyValue)}`
   }
+
+  const emptyResult = (errorMsg) => ({
+    error: errorMsg,
+    joints,
+    members,
+    loads,
+    memberResults: [],
+    reactions: [],
+    displacements: [],
+    zeroForceMembers: getZeroForceMembersByRules(joints, members, loads),
+    determinacy: { m, r, j, value: determinacyValue, status: determinacyStatus },
+    summary: [
+      { label: 'Joints', value: `${j}` },
+      { label: 'Members', value: `${m}` },
+      { label: 'Reaction Components', value: `${r}` },
+      { label: 'Status', value: 'Check input' },
+    ],
+    finalAnswer: errorMsg,
+    steps: [errorMsg],
+  })
+
+  if (j < 2) return emptyResult('Add at least 2 joints to analyze the truss.')
+  if (m < 1) return emptyResult('Add at least 1 member to analyze the truss.')
 
   const dof = 2 * joints.length
   const K = Array.from({ length: dof }, () => Array(dof).fill(0))
@@ -443,37 +468,16 @@ function analyzeTruss(form) {
   const solution = solveLinearSystem(Kff, Ff)
 
   if (solution.error) {
-    return {
-      error: solution.error,
-      joints,
-      members,
-      loads,
-      memberResults: [],
-      reactions: [],
-      displacements: [],
-      zeroForceMembers: getZeroForceMembersByRules(joints, members, loads),
-      determinacy: {
-        m,
-        r,
-        j,
-        value: determinacyValue,
-        status: 'Unstable / mechanism likely',
-      },
-      summary: [
-        { label: 'Joints', value: `${j}` },
-        { label: 'Members', value: `${m}` },
-        { label: 'Reaction Components', value: `${r}` },
-        { label: 'Status', value: 'Unstable' },
-      ],
-      finalAnswer: solution.error,
-      steps: [
-        `Number of joints j = ${j}.`,
-        `Number of members m = ${m}.`,
-        `Reaction components r = ${r}.`,
-        `Check m + r - 2j = ${m} + ${r} - ${2 * j} = ${determinacyValue}.`,
-        solution.error,
-      ],
-    }
+    const errResult = emptyResult(solution.error)
+    errResult.determinacy.status = 'Unstable / mechanism likely'
+    errResult.steps = [
+      `Number of joints j = ${j}.`,
+      `Number of members m = ${m}.`,
+      `Reaction components r = ${r}.`,
+      `Check m + r - 2j = ${m} + ${r} - ${2 * j} = ${determinacyValue}.`,
+      solution.error,
+    ]
+    return errResult
   }
 
   const U = Array(dof).fill(0)
@@ -665,8 +669,7 @@ function copyToClipboard(text, message) {
   if (typeof window === 'undefined') return
 
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text)
-    alert(message)
+    navigator.clipboard.writeText(text).then(() => alert(message)).catch(() => alert('Copy failed.'))
     return
   }
 
@@ -677,9 +680,13 @@ function copyToClipboard(text, message) {
   document.body.appendChild(textarea)
   textarea.focus()
   textarea.select()
-  document.execCommand('copy')
+  try {
+    document.execCommand('copy')
+    alert(message)
+  } catch {
+    alert('Copy failed.')
+  }
   document.body.removeChild(textarea)
-  alert(message)
 }
 
 function buildReportHtml(result, form) {
@@ -734,85 +741,18 @@ function buildReportHtml(result, form) {
   <title>${cleanHtml(form.reportTitle || 'Truss Analysis Report')}</title>
   <meta charset="utf-8" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 28px;
-      color: #111827;
-    }
-
-    .page {
-      max-width: 980px;
-      margin: 0 auto;
-    }
-
-    .header {
-      border-bottom: 4px solid #f97316;
-      padding-bottom: 16px;
-      margin-bottom: 24px;
-    }
-
-    h1 {
-      margin: 0;
-      color: #0f172a;
-      font-size: 30px;
-    }
-
-    h2 {
-      margin-top: 28px;
-      border-left: 5px solid #f97316;
-      padding-left: 10px;
-      color: #0f172a;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      margin-top: 12px;
-    }
-
-    th {
-      background: #0f172a;
-      color: #fff;
-      padding: 10px;
-      text-align: left;
-      border: 1px solid #cbd5e1;
-    }
-
-    td {
-      padding: 10px;
-      border: 1px solid #cbd5e1;
-    }
-
-    .answer {
-      background: #fff7ed;
-      border: 1px solid #fdba74;
-      border-radius: 10px;
-      padding: 14px;
-      line-height: 1.7;
-      font-weight: 600;
-    }
-
-    li {
-      margin-bottom: 8px;
-      line-height: 1.6;
-    }
-
-    .sub {
-      margin-top: 8px;
-      color: #475569;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .footer {
-      margin-top: 30px;
-      padding-top: 12px;
-      border-top: 1px solid #cbd5e1;
-      color: #64748b;
-      font-size: 12px;
-    }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 28px; color: #111827; }
+    .page { max-width: 980px; margin: 0 auto; }
+    .header { border-bottom: 4px solid #f97316; padding-bottom: 16px; margin-bottom: 24px; }
+    h1 { margin: 0; color: #0f172a; font-size: 30px; }
+    h2 { margin-top: 28px; border-left: 5px solid #f97316; padding-left: 10px; color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+    th { background: #0f172a; color: #fff; padding: 10px; text-align: left; border: 1px solid #cbd5e1; }
+    td { padding: 10px; border: 1px solid #cbd5e1; }
+    .answer { background: #fff7ed; border: 1px solid #fdba74; border-radius: 10px; padding: 14px; line-height: 1.7; font-weight: 600; }
+    li { margin-bottom: 8px; line-height: 1.6; }
+    .sub { margin-top: 8px; color: #475569; font-size: 14px; line-height: 1.6; }
+    .footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #cbd5e1; color: #64748b; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -846,12 +786,7 @@ function buildReportHtml(result, form) {
     <table>
       <thead>
         <tr>
-          <th>Member</th>
-          <th>Length</th>
-          <th>Force</th>
-          <th>Type</th>
-          <th>Stress</th>
-          <th>Elongation</th>
+          <th>Member</th><th>Length</th><th>Force</th><th>Type</th><th>Stress</th><th>Elongation</th>
         </tr>
       </thead>
       <tbody>${memberRows}</tbody>
@@ -906,7 +841,7 @@ function TextField({ label, value, onChange, helper, placeholder }) {
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none placeholder:text-slate-500"
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-orange-400"
       />
       {helper && <p className="mt-2 text-xs leading-5 text-slate-500">{helper}</p>}
     </label>
@@ -918,7 +853,7 @@ function NumberField({ label, value, onChange, suffix, helper, min = undefined }
     <label className="block">
       <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
 
-      <div className="flex overflow-hidden rounded-xl border border-slate-700 bg-slate-950">
+      <div className="flex overflow-hidden rounded-xl border border-slate-700 bg-slate-950 focus-within:border-orange-400">
         <input
           type="number"
           min={min}
@@ -946,7 +881,7 @@ function SelectField({ label, value, onChange, children, helper }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none"
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-orange-400"
       >
         {children}
       </select>
@@ -1117,6 +1052,14 @@ function TrussDiagram({ result }) {
   const height = 460
   const pad = 80
 
+  if (!result.joints || result.joints.length === 0) {
+    return (
+      <div className="rounded-3xl border border-slate-800 bg-slate-950 p-6 text-center text-slate-400">
+        Add joints to see the truss diagram.
+      </div>
+    )
+  }
+
   const xs = result.joints.map((joint) => joint.x)
   const ys = result.joints.map((joint) => joint.y)
 
@@ -1191,15 +1134,14 @@ function TrussDiagram({ result }) {
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
               />
-              <text
-                x={mx + 6}
-                y={my - 6}
-                fill="#e2e8f0"
-                fontSize="13"
-                fontWeight="800"
-              >
+              <text x={mx + 6} y={my - 6} fill="#e2e8f0" fontSize="13" fontWeight="800">
                 {memberName(member, result.joints)}
               </text>
+              {res && Math.abs(res.force) >= 0.001 && (
+                <text x={mx + 6} y={my + 12} fill={color} fontSize="11" fontWeight="700">
+                  {fmt(res.force, 2)} kN
+                </text>
+              )}
             </g>
           )
         })}
@@ -1211,29 +1153,37 @@ function TrussDiagram({ result }) {
           const mag = Math.sqrt(load.Fx ** 2 + load.Fy ** 2)
           if (mag < 1e-9) return null
 
+          // Screen direction: Fx +ve => right, Fy +ve => up (screen y flipped)
           const ux = load.Fx / mag
           const uy = -load.Fy / mag
-          const length = 48
+          const length = 50
           const px = sx(joint.x)
           const py = sy(joint.y)
+
+          // Arrow points TOWARDS the joint (load applied)
+          const tailX = px - ux * length
+          const tailY = py - uy * length
+          const headX = px - ux * 10
+          const headY = py - uy * 10
 
           return (
             <g key={load.id}>
               <line
-                x1={px - ux * length}
-                y1={py - uy * length}
-                x2={px + ux * 12}
-                y2={py + uy * 12}
+                x1={tailX}
+                y1={tailY}
+                x2={headX}
+                y2={headY}
                 stroke="#f97316"
                 strokeWidth="4"
                 markerEnd="url(#loadArrow)"
               />
               <text
-                x={px + ux * 18 + 6}
-                y={py + uy * 18}
+                x={tailX - ux * 8}
+                y={tailY - uy * 8}
                 fill="#fed7aa"
                 fontSize="13"
                 fontWeight="800"
+                textAnchor="middle"
               >
                 {fmt(mag)} kN
               </text>
@@ -1262,13 +1212,7 @@ function TrussDiagram({ result }) {
                 strokeWidth="3"
                 markerEnd="url(#reactionArrow)"
               />
-              <text
-                x={x2 + 6}
-                y={y2 - 4}
-                fill="#bbf7d0"
-                fontSize="12"
-                fontWeight="800"
-              >
+              <text x={x2 + 6} y={y2 - 4} fill="#bbf7d0" fontSize="12" fontWeight="800">
                 {reaction.component} {fmt(reaction.value)}
               </text>
             </g>
@@ -1314,8 +1258,8 @@ function TrussDiagram({ result }) {
           )
         })}
 
-        <text x="18" y="430" fill="#94a3b8" fontSize="13">
-          Blue = tension, orange = compression, gray = zero/nearly zero force.
+        <text x="18" y="440" fill="#94a3b8" fontSize="12">
+          Blue = tension, Orange = compression, Gray = zero-force. Green = supports & reactions.
         </text>
       </svg>
     </div>
@@ -1365,8 +1309,10 @@ function ActionButtons({ result, form }) {
   )
 }
 
-function ResultTables({ result, form, updateForm }) {
-  const selected = result.memberResults.find((item) => item.member.id === form.selectedMember) || result.memberResults[0]
+function ResultTables({ result, form }) {
+  const selected =
+    result.memberResults.find((item) => item.member.id === form.selectedMember) ||
+    result.memberResults[0]
 
   return (
     <div className="space-y-6">
@@ -1383,6 +1329,13 @@ function ResultTables({ result, form, updateForm }) {
               </tr>
             </thead>
             <tbody>
+              {result.reactions.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-4 py-6 text-center text-slate-400">
+                    No support reactions.
+                  </td>
+                </tr>
+              )}
               {result.reactions.map((reaction) => (
                 <tr key={`${reaction.joint.id}-${reaction.component}`} className="bg-slate-900/50">
                   <td className="border-b border-slate-800 px-4 py-3 text-slate-200">{reaction.joint.name}</td>
@@ -1411,6 +1364,13 @@ function ResultTables({ result, form, updateForm }) {
               </tr>
             </thead>
             <tbody>
+              {result.memberResults.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-slate-400">
+                    No member results.
+                  </td>
+                </tr>
+              )}
               {result.memberResults.map((item) => (
                 <tr key={item.member.id} className="bg-slate-900/50">
                   <td className="border-b border-slate-800 px-4 py-3 font-bold text-slate-200">{item.name}</td>
@@ -1453,8 +1413,7 @@ function ResultTables({ result, form, updateForm }) {
           </div>
 
           <p className="mt-5 leading-8 text-slate-300">
-            Positive axial force means tension. Negative axial force means compression.
-            This selected member result can be used directly in method of sections type questions.
+            Positive axial force means tension. Negative axial force means compression. This selected member result can be used directly in method of sections type questions.
           </p>
         </div>
       )}
@@ -1521,6 +1480,15 @@ function ZeroForcePanel({ result }) {
 export default function TrussAnalysisPage() {
   const [form, setForm] = useState(getTemplate('triangular'))
   const result = useMemo(() => analyzeTruss(form), [form])
+
+  // Auto-fix selectedMember if it no longer exists
+  useEffect(() => {
+    if (form.members.length === 0) return
+    const exists = form.members.some((m) => m.id === form.selectedMember)
+    if (!exists) {
+      setForm((prev) => ({ ...prev, selectedMember: prev.members[0]?.id || '' }))
+    }
+  }, [form.members, form.selectedMember])
 
   const updateForm = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -1604,6 +1572,9 @@ export default function TrussAnalysisPage() {
     setForm((prev) => ({
       ...prev,
       members: prev.members.length > 1 ? prev.members.filter((member) => member.id !== id) : prev.members,
+      selectedMember: prev.selectedMember === id
+        ? (prev.members.find((m) => m.id !== id)?.id || '')
+        : prev.selectedMember,
     }))
   }
 
@@ -1632,7 +1603,7 @@ export default function TrussAnalysisPage() {
   const deleteLoad = (id) => {
     setForm((prev) => ({
       ...prev,
-      loads: prev.loads.length > 1 ? prev.loads.filter((load) => load.id !== id) : prev.loads,
+      loads: prev.loads.filter((load) => load.id !== id),
     }))
   }
 
@@ -1649,9 +1620,7 @@ export default function TrussAnalysisPage() {
           </h1>
 
           <p className="mt-4 max-w-4xl text-base leading-8 text-slate-300 md:text-lg">
-            Analyze 2D pin-jointed trusses with templates, custom joints, members, supports,
-            joint loads, member forces, tension/compression results, zero-force members,
-            stress, strain and displacement.
+            Analyze 2D pin-jointed trusses with templates, custom joints, members, supports, joint loads, member forces, tension/compression results, zero-force members, stress, strain and displacement.
           </p>
         </div>
 
@@ -1691,6 +1660,7 @@ export default function TrussAnalysisPage() {
                   onChange={(value) => updateForm('selectedMember', value)}
                   helper="Selected member detail is shown separately for exam-style member force questions."
                 >
+                  {form.members.length === 0 && <option value="">No members</option>}
                   {form.members.map((member) => (
                     <option key={member.id} value={member.id}>
                       {memberName(member, form.joints)}
@@ -1723,7 +1693,7 @@ export default function TrussAnalysisPage() {
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-black text-white">Joints</h2>
+                <h2 className="text-2xl font-black text-white">Joints ({form.joints.length})</h2>
                 <button
                   type="button"
                   onClick={addJoint}
@@ -1747,7 +1717,7 @@ export default function TrussAnalysisPage() {
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-black text-white">Members</h2>
+                <h2 className="text-2xl font-black text-white">Members ({form.members.length})</h2>
                 <button
                   type="button"
                   onClick={addMember}
@@ -1772,7 +1742,7 @@ export default function TrussAnalysisPage() {
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-black text-white">Joint Loads</h2>
+                <h2 className="text-2xl font-black text-white">Joint Loads ({form.loads.length})</h2>
                 <button
                   type="button"
                   onClick={addLoad}
@@ -1783,6 +1753,11 @@ export default function TrussAnalysisPage() {
               </div>
 
               <div className="mt-5 space-y-5">
+                {form.loads.length === 0 && (
+                  <p className="rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">
+                    No loads added. Add joint loads to see reactions and forces.
+                  </p>
+                )}
                 {form.loads.map((load) => (
                   <LoadEditor
                     key={load.id}
@@ -1811,7 +1786,7 @@ export default function TrussAnalysisPage() {
 
               {result.error && (
                 <div className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm leading-7 text-red-100">
-                  {result.error}
+                  ⚠️ {result.error}
                 </div>
               )}
             </div>
@@ -1850,12 +1825,9 @@ export default function TrussAnalysisPage() {
 
             <TrussDiagram result={result} />
 
-            {!result.error && (
-              <>
-                <ResultTables result={result} form={form} updateForm={updateForm} />
-                <ZeroForcePanel result={result} />
-              </>
-            )}
+            {/* ALWAYS show tables — even if error, show what we have */}
+            <ResultTables result={result} form={form} />
+            <ZeroForcePanel result={result} />
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
@@ -1863,7 +1835,7 @@ export default function TrussAnalysisPage() {
 
                 <div className="mt-6 space-y-4">
                   {result.steps.map((step, index) => (
-                    <div key={step} className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                    <div key={`step-${index}`} className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-sm font-black text-white">
                         {index + 1}
                       </div>
