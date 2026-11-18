@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 
 const templates = [
   { key: 'triangular', label: 'Triangular Truss' },
@@ -11,6 +11,7 @@ const templates = [
 
 const topicCards = [
   '2D Pin-Jointed Truss',
+  'Interactive CAD Canvas',
   'Support Reactions',
   'Member Forces',
   'Tension / Compression',
@@ -18,14 +19,13 @@ const topicCards = [
   'Determinacy Check',
   'Joint Displacement',
   'Stress & Strain',
-  'Truss Diagram',
   'Copy Solution',
   'Print / Save PDF',
   'Exam Answer',
 ]
 
 function uid(prefix) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`
 }
 
 function toNum(value, fallback = 0) {
@@ -37,6 +37,7 @@ function toNum(value, fallback = 0) {
 function fmt(value, digits = 3) {
   const n = Number(value)
   if (!Number.isFinite(n)) return '0'
+  if (Math.abs(n) < 1e-9) return '0'
   const fixed = n.toFixed(digits)
   return fixed.replace(/\.?0+$/, '')
 }
@@ -59,19 +60,17 @@ function supportDofs(type) {
 
 function getTemplate(key) {
   if (key === 'kingpost') {
-    const joints = [
-      { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
-      { id: 'B', name: 'B', x: 6, y: 0, support: 'rollerY' },
-      { id: 'C', name: 'C', x: 3, y: 3, support: 'none' },
-      { id: 'D', name: 'D', x: 3, y: 0, support: 'none' },
-    ]
-
     return {
       reportTitle: 'King Post Truss Analysis',
       preparedBy: '',
       template: key,
       selectedMember: 'AC',
-      joints,
+      joints: [
+        { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
+        { id: 'B', name: 'B', x: 6, y: 0, support: 'rollerY' },
+        { id: 'C', name: 'C', x: 3, y: 3, support: 'none' },
+        { id: 'D', name: 'D', x: 3, y: 0, support: 'none' },
+      ],
       members: [
         { id: 'AD', start: 'A', end: 'D', area: 500, E: 200 },
         { id: 'DB', start: 'D', end: 'B', area: 500, E: 200 },
@@ -79,27 +78,23 @@ function getTemplate(key) {
         { id: 'CB', start: 'C', end: 'B', area: 500, E: 200 },
         { id: 'CD', start: 'C', end: 'D', area: 500, E: 200 },
       ],
-      loads: [
-        { id: 'L1', joint: 'D', Fx: 0, Fy: -20 },
-      ],
+      loads: [{ id: 'L1', joint: 'D', Fx: 0, Fy: -20 }],
     }
   }
 
   if (key === 'warren') {
-    const joints = [
-      { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
-      { id: 'B', name: 'B', x: 3, y: 3, support: 'none' },
-      { id: 'C', name: 'C', x: 6, y: 0, support: 'none' },
-      { id: 'D', name: 'D', x: 9, y: 3, support: 'none' },
-      { id: 'E', name: 'E', x: 12, y: 0, support: 'rollerY' },
-    ]
-
     return {
       reportTitle: 'Warren Truss Analysis',
       preparedBy: '',
       template: key,
       selectedMember: 'AB',
-      joints,
+      joints: [
+        { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
+        { id: 'B', name: 'B', x: 3, y: 3, support: 'none' },
+        { id: 'C', name: 'C', x: 6, y: 0, support: 'none' },
+        { id: 'D', name: 'D', x: 9, y: 3, support: 'none' },
+        { id: 'E', name: 'E', x: 12, y: 0, support: 'rollerY' },
+      ],
       members: [
         { id: 'AB', start: 'A', end: 'B', area: 500, E: 200 },
         { id: 'BC', start: 'B', end: 'C', area: 500, E: 200 },
@@ -118,21 +113,19 @@ function getTemplate(key) {
   }
 
   if (key === 'pratt') {
-    const joints = [
-      { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
-      { id: 'B', name: 'B', x: 3, y: 0, support: 'none' },
-      { id: 'C', name: 'C', x: 6, y: 0, support: 'none' },
-      { id: 'D', name: 'D', x: 9, y: 0, support: 'rollerY' },
-      { id: 'E', name: 'E', x: 3, y: 3, support: 'none' },
-      { id: 'F', name: 'F', x: 6, y: 3, support: 'none' },
-    ]
-
     return {
       reportTitle: 'Pratt Truss Analysis',
       preparedBy: '',
       template: key,
       selectedMember: 'AE',
-      joints,
+      joints: [
+        { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
+        { id: 'B', name: 'B', x: 3, y: 0, support: 'none' },
+        { id: 'C', name: 'C', x: 6, y: 0, support: 'none' },
+        { id: 'D', name: 'D', x: 9, y: 0, support: 'rollerY' },
+        { id: 'E', name: 'E', x: 3, y: 3, support: 'none' },
+        { id: 'F', name: 'F', x: 6, y: 3, support: 'none' },
+      ],
       members: [
         { id: 'AB', start: 'A', end: 'B', area: 500, E: 200 },
         { id: 'BC', start: 'B', end: 'C', area: 500, E: 200 },
@@ -151,26 +144,22 @@ function getTemplate(key) {
     }
   }
 
-  const joints = [
-    { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
-    { id: 'B', name: 'B', x: 4, y: 0, support: 'rollerY' },
-    { id: 'C', name: 'C', x: 2, y: 3, support: 'none' },
-  ]
-
   return {
     reportTitle: 'Triangular Truss Analysis',
     preparedBy: '',
     template: 'triangular',
     selectedMember: 'AC',
-    joints,
+    joints: [
+      { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
+      { id: 'B', name: 'B', x: 4, y: 0, support: 'rollerY' },
+      { id: 'C', name: 'C', x: 2, y: 3, support: 'none' },
+    ],
     members: [
       { id: 'AB', start: 'A', end: 'B', area: 500, E: 200 },
       { id: 'AC', start: 'A', end: 'C', area: 500, E: 200 },
       { id: 'BC', start: 'B', end: 'C', area: 500, E: 200 },
     ],
-    loads: [
-      { id: 'L1', joint: 'C', Fx: 0, Fy: -20 },
-    ],
+    loads: [{ id: 'L1', joint: 'C', Fx: 0, Fy: -20 }],
   }
 }
 
@@ -200,7 +189,6 @@ function solveLinearSystem(A, b) {
 
   for (let col = 0; col < n; col += 1) {
     let pivot = col
-
     for (let row = col + 1; row < n; row += 1) {
       if (Math.abs(M[row][col]) > Math.abs(M[pivot][col])) {
         pivot = row
@@ -209,7 +197,8 @@ function solveLinearSystem(A, b) {
 
     if (Math.abs(M[pivot][col]) < 1e-10) {
       return {
-        error: 'The stiffness matrix is singular. The truss may be unstable, under-supported, or a mechanism.',
+        error:
+          'Unstable truss geometry (singular stiffness matrix). Ensure all joints are triangulated and at least 3 non-concurrent support reactions exist (e.g., 1 Pin + 1 Roller).',
         solution: null,
       }
     }
@@ -221,16 +210,13 @@ function solveLinearSystem(A, b) {
     }
 
     const pivotValue = M[col][col]
-
     for (let j = col; j <= n; j += 1) {
       M[col][j] /= pivotValue
     }
 
     for (let row = 0; row < n; row += 1) {
       if (row === col) continue
-
       const factor = M[row][col]
-
       for (let j = col; j <= n; j += 1) {
         M[row][j] -= factor * M[col][j]
       }
@@ -246,9 +232,7 @@ function solveLinearSystem(A, b) {
 function getMemberVectorFromJoint(joint, member, joints) {
   const otherId = member.start === joint.id ? member.end : member.start
   const other = joints.find((j) => j.id === otherId)
-
   if (!other) return { x: 0, y: 0 }
-
   return {
     x: toNum(other.x) - toNum(joint.x),
     y: toNum(other.y) - toNum(joint.y),
@@ -262,7 +246,6 @@ function getZeroForceMembersByRules(joints, members, loads) {
     const jointLoad = loadAtJoint(loads, joint.id)
     const hasExternalLoad = Math.abs(jointLoad.Fx) > 1e-9 || Math.abs(jointLoad.Fy) > 1e-9
     const hasSupport = joint.support !== 'none'
-
     if (hasExternalLoad || hasSupport) return
 
     const connected = members.filter((member) => member.start === joint.id || member.end === joint.id)
@@ -271,15 +254,14 @@ function getZeroForceMembersByRules(joints, members, loads) {
       const [m1, m2] = connected
       const v1 = getMemberVectorFromJoint(joint, m1, joints)
       const v2 = getMemberVectorFromJoint(joint, m2, joints)
-
       if (Math.abs(v1.x * v2.y - v1.y * v2.x) > 1e-6) {
         zero.push({
           memberId: m1.id,
-          reason: `Joint ${joint.name} has two non-collinear members and no external load/support.`,
+          reason: `Joint ${joint.name} has 2 non-collinear members and no external load/support.`,
         })
         zero.push({
           memberId: m2.id,
-          reason: `Joint ${joint.name} has two non-collinear members and no external load/support.`,
+          reason: `Joint ${joint.name} has 2 non-collinear members and no external load/support.`,
         })
       }
     }
@@ -291,13 +273,12 @@ function getZeroForceMembersByRules(joints, members, loads) {
           const m2 = connected[j]
           const v1 = getMemberVectorFromJoint(joint, m1, joints)
           const v2 = getMemberVectorFromJoint(joint, m2, joints)
-
           if (Math.abs(v1.x * v2.y - v1.y * v2.x) < 1e-6) {
             const third = connected.find((m) => m.id !== m1.id && m.id !== m2.id)
             if (third) {
               zero.push({
                 memberId: third.id,
-                reason: `Joint ${joint.name} has three members, two are collinear and no external load/support.`,
+                reason: `Joint ${joint.name} has 3 members (2 collinear) and no external load/support.`,
               })
             }
           }
@@ -308,13 +289,12 @@ function getZeroForceMembersByRules(joints, members, loads) {
 
   const unique = []
   const seen = new Set()
-
   zero.forEach((item) => {
-    if (seen.has(item.memberId)) return
-    seen.add(item.memberId)
-    unique.push(item)
+    if (!seen.has(item.memberId)) {
+      seen.add(item.memberId)
+      unique.push(item)
+    }
   })
-
   return unique
 }
 
@@ -349,16 +329,16 @@ function analyzeTruss(form) {
   const r = joints.reduce((sum, joint) => sum + supportDofs(joint.support).length, 0)
   const determinacyValue = m + r - 2 * j
 
-  let determinacyStatus = 'Statically determinate by count'
-
+  let determinacyStatus = 'Statically determinate by count (m + r = 2j)'
   if (determinacyValue > 0) {
     determinacyStatus = `Statically indeterminate by count, degree = ${determinacyValue}`
   } else if (determinacyValue < 0) {
     determinacyStatus = `Unstable by count, deficiency = ${Math.abs(determinacyValue)}`
   }
 
-  const emptyResult = (errorMsg) => ({
+  const emptyResult = (errorMsg, warningMsg = '') => ({
     error: errorMsg,
+    warning: warningMsg,
     joints,
     members,
     loads,
@@ -370,15 +350,29 @@ function analyzeTruss(form) {
     summary: [
       { label: 'Joints', value: `${j}` },
       { label: 'Members', value: `${m}` },
-      { label: 'Reaction Components', value: `${r}` },
-      { label: 'Status', value: 'Check input' },
+      { label: 'Reactions', value: `${r}` },
+      { label: 'Status', value: 'Needs Fix' },
     ],
     finalAnswer: errorMsg,
     steps: [errorMsg],
   })
 
   if (j < 2) return emptyResult('Add at least 2 joints to analyze the truss.')
-  if (m < 1) return emptyResult('Add at least 1 member to analyze the truss.')
+  if (m < 1) return emptyResult('Add at least 1 member connecting two joints.')
+  if (r < 3) return emptyResult(`Add supports so total reaction components r ≥ 3 (currently r = ${r}). Example: 1 Pin (r=2) + 1 Roller (r=1).`)
+
+  // Check for orphan joints (joints with 0 connected members) so they don't break [K]
+  const connectedJointIds = new Set()
+  members.forEach((mem) => {
+    connectedJointIds.add(mem.start)
+    connectedJointIds.add(mem.end)
+  })
+
+  const orphanJoints = joints.filter((jt) => !connectedJointIds.has(jt.id))
+  const warningMsg =
+    orphanJoints.length > 0
+      ? `Note: Joint(s) ${orphanJoints.map((o) => o.name).join(', ')} have no members attached and were excluded from stiffness assembly.`
+      : ''
 
   const dof = 2 * joints.length
   const K = Array.from({ length: dof }, () => Array(dof).fill(0))
@@ -388,30 +382,26 @@ function analyzeTruss(form) {
   loads.forEach((load) => {
     const info = jointMap.get(load.joint)
     if (!info) return
-
     F[2 * info.index] += load.Fx
     F[2 * info.index + 1] += load.Fy
   })
 
-  members.forEach((member) => {
+  for (const member of members) {
     const startInfo = jointMap.get(member.start)
     const endInfo = jointMap.get(member.end)
+    if (!startInfo || !endInfo) continue
 
-    if (!startInfo || !endInfo) return
-
-    const xi = startInfo.joint.x
-    const yi = startInfo.joint.y
-    const xj = endInfo.joint.x
-    const yj = endInfo.joint.y
-
-    const dx = xj - xi
-    const dy = yj - yi
+    const dx = endInfo.joint.x - startInfo.joint.x
+    const dy = endInfo.joint.y - startInfo.joint.y
     const length = Math.sqrt(dx * dx + dy * dy)
 
-    if (length <= 1e-9) return
+    if (length <= 1e-6) {
+      return emptyResult(`Member ${memberName(member, joints)} has zero length. Move one of its joints.`)
+    }
 
     const c = dx / length
     const s = dy / length
+    // E (GPa = 10^9 N/m^2) * A (mm^2 = 10^-6 m^2) / L (m) => 10^3 N/m = kN/m
     const AEoverL = (member.E * member.area) / length
 
     const k = [
@@ -443,23 +433,25 @@ function analyzeTruss(form) {
       startIndex: startInfo.index,
       endIndex: endInfo.index,
     })
-  })
+  }
 
   const fixed = Array(dof).fill(false)
 
   joints.forEach((joint, index) => {
+    // Lock orphan joints so zero-rows don't cause false singularity
+    if (!connectedJointIds.has(joint.id)) {
+      fixed[2 * index] = true
+      fixed[2 * index + 1] = true
+      return
+    }
     const dofs = supportDofs(joint.support)
-
     if (dofs.includes('x')) fixed[2 * index] = true
     if (dofs.includes('y')) fixed[2 * index + 1] = true
   })
 
   const freeDofs = []
-  const fixedDofs = []
-
   fixed.forEach((isFixed, index) => {
-    if (isFixed) fixedDofs.push(index)
-    else freeDofs.push(index)
+    if (!isFixed) freeDofs.push(index)
   })
 
   const Kff = freeDofs.map((row) => freeDofs.map((col) => K[row][col]))
@@ -468,8 +460,8 @@ function analyzeTruss(form) {
   const solution = solveLinearSystem(Kff, Ff)
 
   if (solution.error) {
-    const errResult = emptyResult(solution.error)
-    errResult.determinacy.status = 'Unstable / mechanism likely'
+    const errResult = emptyResult(solution.error, warningMsg)
+    errResult.determinacy.status = 'Unstable / mechanism detected'
     errResult.steps = [
       `Number of joints j = ${j}.`,
       `Number of members m = ${m}.`,
@@ -481,7 +473,6 @@ function analyzeTruss(form) {
   }
 
   const U = Array(dof).fill(0)
-
   freeDofs.forEach((dofIndex, index) => {
     U[dofIndex] = solution.solution[index]
   })
@@ -518,34 +509,18 @@ function analyzeTruss(form) {
       stress,
       strain,
       elongationMm,
-      type:
-        Math.abs(force) < 0.001
-          ? 'Zero'
-          : force > 0
-            ? 'Tension'
-            : 'Compression',
+      type: Math.abs(force) < 0.001 ? 'Zero' : force > 0 ? 'Tension' : 'Compression',
     }
   })
 
   const reactions = []
-
   joints.forEach((joint, index) => {
     const dofs = supportDofs(joint.support)
-
     if (dofs.includes('x')) {
-      reactions.push({
-        joint,
-        component: 'Rx',
-        value: R[2 * index],
-      })
+      reactions.push({ joint, component: 'Rx', value: R[2 * index] })
     }
-
     if (dofs.includes('y')) {
-      reactions.push({
-        joint,
-        component: 'Ry',
-        value: R[2 * index + 1],
-      })
+      reactions.push({ joint, component: 'Ry', value: R[2 * index + 1] })
     }
   })
 
@@ -568,19 +543,16 @@ function analyzeTruss(form) {
     }))
 
   const zeroMap = new Map()
-
   zeroByRules.concat(zeroByForce).forEach((item) => {
-    if (!zeroMap.has(item.memberId)) {
-      zeroMap.set(item.memberId, item)
-    }
+    if (!zeroMap.has(item.memberId)) zeroMap.set(item.memberId, item)
   })
-
   const zeroForceMembers = [...zeroMap.values()]
 
-  const finalAnswer = `The truss has ${joints.length} joints, ${members.length} members and ${r} reaction components. ${determinacyStatus}. Maximum member force is ${fmt(maxForce.force)} kN in member ${maxForce.name}, which is ${maxForce.force >= 0 ? 'tension' : 'compression'}. Maximum joint displacement is ${fmt(maxDisp.totalMm)} mm at joint ${maxDisp.joint.name}.`
+  const finalAnswer = `The truss has ${joints.length} joints, ${members.length} members, and ${r} reaction components. ${determinacyStatus}. Maximum member force is ${fmt(Math.abs(maxForce.force))} kN (${maxForce.force >= 0 ? 'Tension' : 'Compression'}) in member ${maxForce.name}. Maximum joint displacement is ${fmt(maxDisp.totalMm)} mm at joint ${maxDisp.joint.name}.`
 
   return {
     error: '',
+    warning: warningMsg,
     joints,
     members,
     loads,
@@ -588,13 +560,7 @@ function analyzeTruss(form) {
     reactions,
     displacements,
     zeroForceMembers,
-    determinacy: {
-      m,
-      r,
-      j,
-      value: determinacyValue,
-      status: determinacyStatus,
-    },
+    determinacy: { m, r, j, value: determinacyValue, status: determinacyStatus },
     summary: [
       { label: 'Joints', value: `${j}` },
       { label: 'Members', value: `${m}` },
@@ -603,235 +569,551 @@ function analyzeTruss(form) {
     ],
     finalAnswer,
     steps: [
-      `Number of joints j = ${j}.`,
-      `Number of members m = ${m}.`,
-      `Reaction components r = ${r}.`,
-      `Determinacy check: m + r - 2j = ${m} + ${r} - ${2 * j} = ${determinacyValue}.`,
-      `Global stiffness matrix is assembled using each member stiffness AE/L.`,
-      `Support boundary conditions are applied based on pin and roller supports.`,
-      `Joint displacements are solved from [K]{d} = {F}.`,
-      `Member axial force is calculated using N = AE/L × member axial deformation.`,
-      `Positive force is reported as tension. Negative force is reported as compression.`,
+      `Number of joints j = ${j}, members m = ${m}, and support reaction components r = ${r}.`,
+      `Determinacy check: m + r - 2j = ${m} + ${r} - ${2 * j} = ${determinacyValue} (${determinacyStatus}).`,
+      `Global stiffness matrix [K] is assembled from individual member stiffness matrices (AE/L).`,
+      `Boundary conditions applied at supported joints (${reactions.map((rc) => `${rc.joint.name}${rc.component}`).join(', ')}).`,
+      `Support reactions solved: ${reactions.map((rc) => `${rc.joint.name}${rc.component} = ${fmt(rc.value)} kN`).join(', ')}.`,
+      `Joint displacements solved from [K]{d} = {F}; max displacement = ${fmt(maxDisp.totalMm)} mm at Joint ${maxDisp.joint.name}.`,
+      `Member axial forces computed via N = (AE/L)·ΔL (+ve = Tension, -ve = Compression).`,
     ],
   }
 }
 
-function buildPlainReport(result, form) {
-  const reactionText = result.reactions
-    .map((reaction) => `${reaction.joint.name}${reaction.component} = ${fmt(reaction.value)} kN`)
-    .join('\n')
+/* ---------------- INTERACTIVE CAD DIAGRAM COMPONENT ---------------- */
 
-  const memberText = result.memberResults
-    .map(
-      (item) =>
-        `${item.name}: ${fmt(item.force)} kN (${item.type}), Stress = ${fmt(item.stress)} MPa, Elongation = ${fmt(item.elongationMm)} mm`
-    )
-    .join('\n')
+function InteractiveTrussDiagram({
+  result,
+  form,
+  selectedEntity,
+  setSelectedEntity,
+  onMoveJoint,
+  onAddJointAt,
+  onToggleSupport,
+  onAddMemberBetween,
+  onDeleteSelected,
+  onSelectMember,
+}) {
+  const svgRef = useRef(null)
+  const [toolMode, setToolMode] = useState('select') // 'select' | 'addJoint' | 'addMember' | 'support'
+  const [snapGrid, setSnapGrid] = useState(0.5)
+  const [memberStartJoint, setMemberStartJoint] = useState(null)
+  const [draggingJointId, setDraggingJointId] = useState(null)
+  const [cursorWorld, setCursorWorld] = useState(null)
 
-  const zeroText = result.zeroForceMembers.length
-    ? result.zeroForceMembers
-        .map((item) => {
-          const member = result.members.find((m) => m.id === item.memberId)
-          return `${member ? memberName(member, result.joints) : item.memberId}: ${item.reason}`
-        })
-        .join('\n')
-    : 'No zero-force member detected.'
+  const width = 760
+  const height = 480
+  const pad = 75
 
-  return `
-${form.reportTitle || 'Truss Analysis Report'}
-Prepared By: ${form.preparedBy || '-'}
+  // Compute bounding box with margin so users have empty workspace to click/drag into
+  const bounds = useMemo(() => {
+    const xs = result.joints.map((j) => j.x)
+    const ys = result.joints.map((j) => j.y)
+    const minX = Math.min(...xs, 0) - 1
+    const maxX = Math.max(...xs, 6) + 1
+    const minY = Math.min(...ys, 0) - 1
+    const maxY = Math.max(...ys, 4) + 1
+    const dx = Math.max(maxX - minX, 2)
+    const dy = Math.max(maxY - minY, 2)
+    const scale = Math.min((width - 2 * pad) / dx, (height - 2 * pad) / dy)
+    return { minX, maxX, minY, maxY, scale }
+  }, [result.joints])
 
-DETERMINACY CHECK
-m = ${result.determinacy?.m}
-r = ${result.determinacy?.r}
-j = ${result.determinacy?.j}
-m + r - 2j = ${result.determinacy?.value}
-Status: ${result.determinacy?.status}
+  const toScreenX = useCallback((x) => pad + (x - bounds.minX) * bounds.scale, [bounds])
+  const toScreenY = useCallback((y) => height - pad - (y - bounds.minY) * bounds.scale, [bounds])
 
-SUPPORT REACTIONS
-${reactionText || '-'}
+  const toWorld = useCallback(
+    (clientX, clientY) => {
+      const svg = svgRef.current
+      if (!svg) return { x: 0, y: 0 }
+      const rect = svg.getBoundingClientRect()
+      const svgX = ((clientX - rect.left) / rect.width) * width
+      const svgY = ((clientY - rect.top) / rect.height) * height
+      let wx = bounds.minX + (svgX - pad) / bounds.scale
+      let wy = bounds.minY + (height - pad - svgY) / bounds.scale
+      if (snapGrid > 0) {
+        wx = Math.round(wx / snapGrid) * snapGrid
+        wy = Math.round(wy / snapGrid) * snapGrid
+      }
+      return { x: Number(wx.toFixed(3)), y: Number(wy.toFixed(3)) }
+    },
+    [bounds, snapGrid]
+  )
 
-MEMBER FORCES
-${memberText || '-'}
+  // Keyboard shortcuts when canvas or wrapper is focused
+  const handleKeyDown = (e) => {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return
 
-ZERO FORCE MEMBERS
-${zeroText}
+    if (e.key === 'Escape') {
+      setMemberStartJoint(null)
+      setToolMode('select')
+      setSelectedEntity(null)
+      return
+    }
 
-STEP-BY-STEP SOLUTION
-${result.steps.map((step, index) => `${index + 1}. ${step}`).join('\n')}
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selectedEntity) {
+        e.preventDefault()
+        onDeleteSelected(selectedEntity)
+      }
+      return
+    }
 
-FINAL ANSWER
-${result.finalAnswer}
-`.trim()
-}
+    // Tool hotkeys
+    if (e.key.toLowerCase() === 'v') setToolMode('select')
+    if (e.key.toLowerCase() === 'j') setToolMode('addJoint')
+    if (e.key.toLowerCase() === 'm') setToolMode('addMember')
+    if (e.key.toLowerCase() === 's') setToolMode('support')
 
-function copyToClipboard(text, message) {
-  if (typeof window === 'undefined') return
-
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(() => alert(message)).catch(() => alert('Copy failed.'))
-    return
+    // Arrow keys nudge selected joint
+    if (selectedEntity?.type === 'joint' && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault()
+      const step = e.shiftKey ? 0.1 : snapGrid || 0.5
+      const jt = form.joints.find((j) => j.id === selectedEntity.id)
+      if (!jt) return
+      let nx = toNum(jt.x)
+      let ny = toNum(jt.y)
+      if (e.key === 'ArrowLeft') nx -= step
+      if (e.key === 'ArrowRight') nx += step
+      if (e.key === 'ArrowUp') ny += step
+      if (e.key === 'ArrowDown') ny -= step
+      onMoveJoint(jt.id, Number(nx.toFixed(3)), Number(ny.toFixed(3)))
+    }
   }
 
-  const textarea = document.createElement('textarea')
-  textarea.value = text
-  textarea.style.position = 'fixed'
-  textarea.style.left = '-9999px'
-  document.body.appendChild(textarea)
-  textarea.focus()
-  textarea.select()
-  try {
-    document.execCommand('copy')
-    alert(message)
-  } catch {
-    alert('Copy failed.')
+  const handleSvgPointerMove = (e) => {
+    const worldPt = toWorld(e.clientX, e.clientY)
+    setCursorWorld(worldPt)
+    if (draggingJointId) {
+      onMoveJoint(draggingJointId, worldPt.x, worldPt.y)
+    }
   }
-  document.body.removeChild(textarea)
-}
 
-function buildReportHtml(result, form) {
-  const memberRows = result.memberResults
-    .map(
-      (item) => `
-        <tr>
-          <td>${cleanHtml(item.name)}</td>
-          <td>${fmt(item.length)} m</td>
-          <td>${fmt(item.force)} kN</td>
-          <td>${cleanHtml(item.type)}</td>
-          <td>${fmt(item.stress)} MPa</td>
-          <td>${fmt(item.elongationMm)} mm</td>
-        </tr>
-      `
-    )
-    .join('')
+  const handleSvgPointerUp = () => {
+    setDraggingJointId(null)
+  }
 
-  const reactionRows = result.reactions
-    .map(
-      (item) => `
-        <tr>
-          <td>${cleanHtml(item.joint.name)}</td>
-          <td>${cleanHtml(item.component)}</td>
-          <td>${fmt(item.value)} kN</td>
-        </tr>
-      `
-    )
-    .join('')
+  const handleSvgClick = (e) => {
+    if (toolMode === 'addJoint') {
+      const worldPt = toWorld(e.clientX, e.clientY)
+      onAddJointAt(worldPt.x, worldPt.y)
+    } else if (e.target === svgRef.current || e.target.dataset.bg === 'true') {
+      setMemberStartJoint(null)
+      setSelectedEntity(null)
+    }
+  }
 
-  const displacementRows = result.displacements
-    .map(
-      (item) => `
-        <tr>
-          <td>${cleanHtml(item.joint.name)}</td>
-          <td>${fmt(item.uxMm)} mm</td>
-          <td>${fmt(item.uyMm)} mm</td>
-          <td>${fmt(item.totalMm)} mm</td>
-        </tr>
-      `
-    )
-    .join('')
+  const handleJointClick = (e, joint) => {
+    e.stopPropagation()
+    setSelectedEntity({ type: 'joint', id: joint.id })
 
-  const steps = result.steps
-    .map((step, index) => `<li><strong>Step ${index + 1}:</strong> ${cleanHtml(step)}</li>`)
-    .join('')
+    if (toolMode === 'support') {
+      onToggleSupport(joint.id)
+      return
+    }
 
-  return `
-<!doctype html>
-<html>
-<head>
-  <title>${cleanHtml(form.reportTitle || 'Truss Analysis Report')}</title>
-  <meta charset="utf-8" />
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 28px; color: #111827; }
-    .page { max-width: 980px; margin: 0 auto; }
-    .header { border-bottom: 4px solid #f97316; padding-bottom: 16px; margin-bottom: 24px; }
-    h1 { margin: 0; color: #0f172a; font-size: 30px; }
-    h2 { margin-top: 28px; border-left: 5px solid #f97316; padding-left: 10px; color: #0f172a; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
-    th { background: #0f172a; color: #fff; padding: 10px; text-align: left; border: 1px solid #cbd5e1; }
-    td { padding: 10px; border: 1px solid #cbd5e1; }
-    .answer { background: #fff7ed; border: 1px solid #fdba74; border-radius: 10px; padding: 14px; line-height: 1.7; font-weight: 600; }
-    li { margin-bottom: 8px; line-height: 1.6; }
-    .sub { margin-top: 8px; color: #475569; font-size: 14px; line-height: 1.6; }
-    .footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #cbd5e1; color: #64748b; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <div class="header">
-      <h1>${cleanHtml(form.reportTitle || 'Truss Analysis Report')}</h1>
-      <div class="sub">
-        Prepared By: ${cleanHtml(form.preparedBy || '-')}<br/>
-        Generated using CivilCalc Pro Truss Analysis Solver
+    if (toolMode === 'addMember') {
+      if (!memberStartJoint) {
+        setMemberStartJoint(joint.id)
+      } else if (memberStartJoint !== joint.id) {
+        onAddMemberBetween(memberStartJoint, joint.id)
+        setMemberStartJoint(joint.id) // Chain drawing! Press Esc to stop
+      }
+    }
+  }
+
+  const handleMemberClick = (e, member) => {
+    e.stopPropagation()
+    setSelectedEntity({ type: 'member', id: member.id })
+    onSelectMember(member.id)
+  }
+
+  const memberMap = new Map(result.memberResults.map((item) => [item.member.id, item]))
+  const reactionMap = result.reactions || []
+
+  // Generate grid lines
+  const gridStep = snapGrid >= 0.5 ? snapGrid : 0.5
+  const xTicks = []
+  for (let x = Math.ceil(bounds.minX / gridStep) * gridStep; x <= bounds.maxX; x += gridStep) {
+    xTicks.push(Number(x.toFixed(2)))
+  }
+  const yTicks = []
+  for (let y = Math.ceil(bounds.minY / gridStep) * gridStep; y <= bounds.maxY; y += gridStep) {
+    yTicks.push(Number(y.toFixed(2)))
+  }
+
+  return (
+    <div
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      className="rounded-3xl border border-slate-800 bg-slate-950 p-4 outline-none focus:border-orange-500/60"
+    >
+      {/* CAD Toolbar */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[
+            { id: 'select', label: 'Select / Drag (V)' },
+            { id: 'addJoint', label: '+ Joint (J)' },
+            { id: 'addMember', label: '+ Member (M)' },
+            { id: 'support', label: 'Cycle Support (S)' },
+          ].map((tool) => (
+            <button
+              key={tool.id}
+              type="button"
+              onClick={() => {
+                setToolMode(tool.id)
+                setMemberStartJoint(null)
+              }}
+              className={`rounded-xl px-3 py-1.5 text-xs font-extrabold transition ${
+                toolMode === tool.id
+                  ? 'bg-orange-500 text-white'
+                  : 'border border-slate-700 bg-slate-900 text-slate-300 hover:border-orange-400'
+              }`}
+            >
+              {tool.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span>Grid Snap:</span>
+          <select
+            value={snapGrid}
+            onChange={(e) => setSnapGrid(Number(e.target.value))}
+            className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-white"
+          >
+            <option value={0.1}>0.1 m</option>
+            <option value={0.25}>0.25 m</option>
+            <option value={0.5}>0.5 m</option>
+            <option value={1}>1.0 m</option>
+            <option value={0}>Off</option>
+          </select>
+
+          {selectedEntity && (
+            <button
+              type="button"
+              onClick={() => onDeleteSelected(selectedEntity)}
+              className="rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1 font-bold text-red-300 hover:bg-red-500/20"
+            >
+              Delete (Del)
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Contextual Hint Bar */}
+      <div className="mb-2 flex flex-wrap items-center justify-between text-xs text-slate-400">
+        <span>
+          {toolMode === 'select' && 'Tip: Drag any joint to reshape truss, or click a joint/member & use Arrow keys or Delete.'}
+          {toolMode === 'addJoint' && 'Click anywhere on the grid to place a new joint.'}
+          {toolMode === 'addMember' &&
+            (memberStartJoint
+              ? 'Click the second joint to connect member (press Esc to finish).'
+              : 'Click the starting joint for the new member.')}
+          {toolMode === 'support' && 'Click any joint to cycle: None → Pin → Roller Y → Roller X.'}
+        </span>
+        {cursorWorld && (
+          <span className="font-mono text-orange-300">
+            x: {cursorWorld.x}m, y: {cursorWorld.y}m
+          </span>
+        )}
+      </div>
+
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${width} ${height}`}
+        onPointerMove={handleSvgPointerMove}
+        onPointerUp={handleSvgPointerUp}
+        onPointerLeave={handleSvgPointerUp}
+        onClick={handleSvgClick}
+        className={`h-auto w-full select-none rounded-2xl bg-[#040919] ${
+          toolMode === 'addJoint' ? 'cursor-crosshair' : 'cursor-default'
+        }`}
+      >
+        <defs>
+          <marker id="loadArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#f97316" />
+          </marker>
+          <marker id="reactionArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#22c55e" />
+          </marker>
+        </defs>
+
+        <rect x="0" y="0" width={width} height={height} fill="transparent" data-bg="true" />
+
+        {/* Coordinate Grid */}
+        {xTicks.map((gx) => (
+          <g key={`gx-${gx}`}>
+            <line
+              x1={toScreenX(gx)}
+              y1={pad / 2}
+              x2={toScreenX(gx)}
+              y2={height - pad / 2}
+              stroke={gx === 0 ? '#334155' : '#0f172a'}
+              strokeWidth={gx === 0 ? 1.5 : 1}
+            />
+            {Number.isInteger(gx) && (
+              <text x={toScreenX(gx)} y={height - 18} fill="#475569" fontSize="10" textAnchor="middle">
+                {gx}m
+              </text>
+            )}
+          </g>
+        ))}
+
+        {yTicks.map((gy) => (
+          <g key={`gy-${gy}`}>
+            <line
+              x1={pad / 2}
+              y1={toScreenY(gy)}
+              x2={width - pad / 2}
+              y2={toScreenY(gy)}
+              stroke={gy === 0 ? '#334155' : '#0f172a'}
+              strokeWidth={gy === 0 ? 1.5 : 1}
+            />
+            {Number.isInteger(gy) && (
+              <text x={22} y={toScreenY(gy) + 3} fill="#475569" fontSize="10" textAnchor="middle">
+                {gy}m
+              </text>
+            )}
+          </g>
+        ))}
+
+        {/* Preview rubber-band line when adding a member */}
+        {toolMode === 'addMember' && memberStartJoint && cursorWorld && (() => {
+          const startJt = result.joints.find((j) => j.id === memberStartJoint)
+          if (!startJt) return null
+          return (
+            <line
+              x1={toScreenX(startJt.x)}
+              y1={toScreenY(startJt.y)}
+              x2={toScreenX(cursorWorld.x)}
+              y2={toScreenY(cursorWorld.y)}
+              stroke="#fb923c"
+              strokeWidth="3"
+              strokeDasharray="6 4"
+            />
+          )
+        })()}
+
+        {/* Truss Members */}
+        {result.members.map((member) => {
+          const a = result.joints.find((joint) => joint.id === member.start)
+          const b = result.joints.find((joint) => joint.id === member.end)
+          const res = memberMap.get(member.id)
+          if (!a || !b) return null
+
+          const isSelected = selectedEntity?.type === 'member' && selectedEntity.id === member.id
+          let color = '#64748b'
+          let strokeWidth = 4
+
+          if (res) {
+            if (Math.abs(res.force) < 0.001) {
+              color = '#64748b'
+              strokeWidth = 3.5
+            } else if (res.force > 0) {
+              color = '#38bdf8'
+              strokeWidth = 5
+            } else {
+              color = '#f97316'
+              strokeWidth = 5
+            }
+          }
+
+          const mx = (toScreenX(a.x) + toScreenX(b.x)) / 2
+          const my = (toScreenY(a.y) + toScreenY(b.y)) / 2
+
+          return (
+            <g
+              key={member.id}
+              onClick={(e) => handleMemberClick(e, member)}
+              className="cursor-pointer"
+            >
+              {/* Invisible thick hit target for easy clicking */}
+              <line
+                x1={toScreenX(a.x)}
+                y1={toScreenY(a.y)}
+                x2={toScreenX(b.x)}
+                y2={toScreenY(b.y)}
+                stroke="transparent"
+                strokeWidth="18"
+              />
+              {isSelected && (
+                <line
+                  x1={toScreenX(a.x)}
+                  y1={toScreenY(a.y)}
+                  x2={toScreenX(b.x)}
+                  y2={toScreenY(b.y)}
+                  stroke="#facc15"
+                  strokeWidth={strokeWidth + 6}
+                  strokeLinecap="round"
+                  opacity="0.5"
+                />
+              )}
+              <line
+                x1={toScreenX(a.x)}
+                y1={toScreenY(a.y)}
+                x2={toScreenX(b.x)}
+                y2={toScreenY(b.y)}
+                stroke={color}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+              />
+              <text x={mx + 6} y={my - 6} fill="#e2e8f0" fontSize="12" fontWeight="800">
+                {memberName(member, result.joints)}
+              </text>
+              {res && Math.abs(res.force) >= 0.001 && (
+                <text x={mx + 6} y={my + 11} fill={color} fontSize="11" fontWeight="700">
+                  {fmt(res.force, 2)} kN
+                </text>
+              )}
+            </g>
+          )
+        })}
+
+        {/* External Loads */}
+        {result.loads.map((load) => {
+          const joint = result.joints.find((j) => j.id === load.joint)
+          if (!joint) return null
+          const mag = Math.sqrt(load.Fx ** 2 + load.Fy ** 2)
+          if (mag < 1e-9) return null
+
+          const ux = load.Fx / mag
+          const uy = -load.Fy / mag
+          const length = 48
+          const px = toScreenX(joint.x)
+          const py = toScreenY(joint.y)
+
+          const tailX = px - ux * length
+          const tailY = py - uy * length
+          const headX = px - ux * 11
+          const headY = py - uy * 11
+
+          return (
+            <g key={load.id}>
+              <line
+                x1={tailX}
+                y1={tailY}
+                x2={headX}
+                y2={headY}
+                stroke="#f97316"
+                strokeWidth="3.5"
+                markerEnd="url(#loadArrow)"
+              />
+              <text
+                x={tailX - ux * 10}
+                y={tailY - uy * 10}
+                fill="#fed7aa"
+                fontSize="12"
+                fontWeight="800"
+                textAnchor="middle"
+              >
+                {fmt(mag)} kN
+              </text>
+            </g>
+          )
+        })}
+
+        {/* Support Reactions */}
+        {reactionMap.map((reaction) => {
+          if (Math.abs(reaction.value) < 0.001) return null
+          const px = toScreenX(reaction.joint.x)
+          const py = toScreenY(reaction.joint.y)
+          const dir = reaction.value >= 0 ? 1 : -1
+          const x2 = reaction.component === 'Rx' ? px + dir * 42 : px
+          const y2 = reaction.component === 'Ry' ? py - dir * 42 : py
+
+          return (
+            <g key={`${reaction.joint.id}-${reaction.component}`}>
+              <line
+                x1={px}
+                y1={py}
+                x2={x2}
+                y2={y2}
+                stroke="#22c55e"
+                strokeWidth="3"
+                markerEnd="url(#reactionArrow)"
+              />
+              <text x={x2 + 6} y={y2 - 4} fill="#bbf7d0" fontSize="11" fontWeight="800">
+                {reaction.component} {fmt(reaction.value)}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* Joints & Supports */}
+        {result.joints.map((joint) => {
+          const px = toScreenX(joint.x)
+          const py = toScreenY(joint.y)
+          const isSelected = selectedEntity?.type === 'joint' && selectedEntity.id === joint.id
+          const isMemberStart = memberStartJoint === joint.id
+
+          return (
+            <g
+              key={joint.id}
+              onPointerDown={(e) => {
+                if (toolMode === 'select') {
+                  e.stopPropagation()
+                  setSelectedEntity({ type: 'joint', id: joint.id })
+                  setDraggingJointId(joint.id)
+                }
+              }}
+              onClick={(e) => handleJointClick(e, joint)}
+              className="cursor-pointer"
+            >
+              {joint.support === 'pin' && (
+                <>
+                  <polygon
+                    points={`${px - 15},${py + 28} ${px + 15},${py + 28} ${px},${py + 8}`}
+                    fill="#22c55e"
+                    opacity="0.9"
+                  />
+                  <line x1={px - 22} y1={py + 30} x2={px + 22} y2={py + 30} stroke="#22c55e" strokeWidth="3" />
+                </>
+              )}
+
+              {joint.support === 'rollerY' && (
+                <>
+                  <circle cx={px} cy={py + 19} r="9" fill="none" stroke="#22c55e" strokeWidth="3" />
+                  <line x1={px - 22} y1={py + 30} x2={px + 22} y2={py + 30} stroke="#22c55e" strokeWidth="3" />
+                </>
+              )}
+
+              {joint.support === 'rollerX' && (
+                <>
+                  <circle cx={px - 19} cy={py} r="9" fill="none" stroke="#22c55e" strokeWidth="3" />
+                  <line x1={px - 30} y1={py - 22} x2={px - 30} y2={py + 22} stroke="#22c55e" strokeWidth="3" />
+                </>
+              )}
+
+              {(isSelected || isMemberStart) && (
+                <circle
+                  cx={px}
+                  cy={py}
+                  r="14"
+                  fill="none"
+                  stroke={isMemberStart ? '#fb923c' : '#facc15'}
+                  strokeWidth="2.5"
+                  strokeDasharray={isMemberStart ? '3 2' : 'none'}
+                />
+              )}
+
+              <circle cx={px} cy={py} r="8" fill="#0f172a" stroke="#e2e8f0" strokeWidth="3" />
+              <text x={px + 11} y={py - 10} fill="#ffffff" fontSize="14" fontWeight="900">
+                {joint.name}
+              </text>
+            </g>
+          )
+        })}
+
+        <text x="16" y={height - 4} fill="#94a3b8" fontSize="11">
+          Blue = Tension | Orange = Compression | Gray = Zero-Force | Green = Supports & Reactions
+        </text>
+      </svg>
     </div>
-
-    <h2>Determinacy Check</h2>
-    <table>
-      <tr><td>Members m</td><td>${result.determinacy?.m}</td></tr>
-      <tr><td>Reaction components r</td><td>${result.determinacy?.r}</td></tr>
-      <tr><td>Joints j</td><td>${result.determinacy?.j}</td></tr>
-      <tr><td>m + r - 2j</td><td>${result.determinacy?.value}</td></tr>
-      <tr><td>Status</td><td>${cleanHtml(result.determinacy?.status)}</td></tr>
-    </table>
-
-    <h2>Support Reactions</h2>
-    <table>
-      <thead>
-        <tr><th>Joint</th><th>Component</th><th>Reaction</th></tr>
-      </thead>
-      <tbody>${reactionRows}</tbody>
-    </table>
-
-    <h2>Member Forces</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Member</th><th>Length</th><th>Force</th><th>Type</th><th>Stress</th><th>Elongation</th>
-        </tr>
-      </thead>
-      <tbody>${memberRows}</tbody>
-    </table>
-
-    <h2>Joint Displacements</h2>
-    <table>
-      <thead>
-        <tr><th>Joint</th><th>Ux</th><th>Uy</th><th>Total</th></tr>
-      </thead>
-      <tbody>${displacementRows}</tbody>
-    </table>
-
-    <h2>Step-by-Step Solution</h2>
-    <ol>${steps}</ol>
-
-    <h2>Final Answer</h2>
-    <div class="answer">${cleanHtml(result.finalAnswer)}</div>
-
-    <div class="footer">Generated using CivilCalc Pro.</div>
-  </div>
-</body>
-</html>
-`
+  )
 }
 
-function printReport(result, form) {
-  if (typeof window === 'undefined') return
-
-  const reportWindow = window.open('', '_blank', 'width=1000,height=800')
-
-  if (!reportWindow) {
-    alert('Popup blocked. Please allow popups for this site and try again.')
-    return
-  }
-
-  reportWindow.document.open()
-  reportWindow.document.write(buildReportHtml(result, form))
-  reportWindow.document.close()
-
-  setTimeout(() => {
-    reportWindow.focus()
-    reportWindow.print()
-  }, 500)
-}
+/* ---------------- FORM FIELDS & EDITORS ---------------- */
 
 function TextField({ label, value, onChange, helper, placeholder }) {
   return (
@@ -852,7 +1134,6 @@ function NumberField({ label, value, onChange, suffix, helper, min = undefined }
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
-
       <div className="flex overflow-hidden rounded-xl border border-slate-700 bg-slate-950 focus-within:border-orange-400">
         <input
           type="number"
@@ -868,7 +1149,6 @@ function NumberField({ label, value, onChange, suffix, helper, min = undefined }
           </span>
         )}
       </div>
-
       {helper && <p className="mt-2 text-xs leading-5 text-slate-500">{helper}</p>}
     </label>
   )
@@ -890,9 +1170,13 @@ function SelectField({ label, value, onChange, children, helper }) {
   )
 }
 
-function JointEditor({ joint, onChange, onDelete }) {
+function JointEditor({ joint, onChange, onDelete, isHighlighted }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+    <div
+      className={`rounded-2xl border p-4 transition ${
+        isHighlighted ? 'border-yellow-400 bg-slate-900' : 'border-slate-800 bg-slate-950'
+      }`}
+    >
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="font-black text-white">Joint {joint.name}</h3>
         <button
@@ -903,47 +1187,28 @@ function JointEditor({ joint, onChange, onDelete }) {
           Delete
         </button>
       </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
-          label="Joint Name"
-          value={joint.name}
-          onChange={(value) => onChange(joint.id, 'name', value)}
-          placeholder="A"
-        />
-
-        <SelectField
-          label="Support Type"
-          value={joint.support}
-          onChange={(value) => onChange(joint.id, 'support', value)}
-        >
+        <TextField label="Joint Name" value={joint.name} onChange={(v) => onChange(joint.id, 'name', v)} placeholder="A" />
+        <SelectField label="Support Type" value={joint.support} onChange={(v) => onChange(joint.id, 'support', v)}>
           <option value="none">No Support</option>
-          <option value="pin">Pin Support</option>
-          <option value="rollerY">Roller Support Vertical</option>
-          <option value="rollerX">Roller Support Horizontal</option>
+          <option value="pin">Pin Support (Rx, Ry)</option>
+          <option value="rollerY">Roller Vertical (Ry)</option>
+          <option value="rollerX">Roller Horizontal (Rx)</option>
         </SelectField>
-
-        <NumberField
-          label="x Coordinate"
-          value={joint.x}
-          onChange={(value) => onChange(joint.id, 'x', value)}
-          suffix="m"
-        />
-
-        <NumberField
-          label="y Coordinate"
-          value={joint.y}
-          onChange={(value) => onChange(joint.id, 'y', value)}
-          suffix="m"
-        />
+        <NumberField label="x Coordinate" value={joint.x} onChange={(v) => onChange(joint.id, 'x', v)} suffix="m" />
+        <NumberField label="y Coordinate" value={joint.y} onChange={(v) => onChange(joint.id, 'y', v)} suffix="m" />
       </div>
     </div>
   )
 }
 
-function MemberEditor({ member, joints, onChange, onDelete }) {
+function MemberEditor({ member, joints, onChange, onDelete, isHighlighted }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+    <div
+      className={`rounded-2xl border p-4 transition ${
+        isHighlighted ? 'border-yellow-400 bg-slate-900' : 'border-slate-800 bg-slate-950'
+      }`}
+    >
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="font-black text-white">Member {memberName(member, joints)}</h3>
         <button
@@ -954,47 +1219,19 @@ function MemberEditor({ member, joints, onChange, onDelete }) {
           Delete
         </button>
       </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField
-          label="Start Joint"
-          value={member.start}
-          onChange={(value) => onChange(member.id, 'start', value)}
-        >
-          {joints.map((joint) => (
-            <option key={joint.id} value={joint.id}>
-              {joint.name}
-            </option>
+        <SelectField label="Start Joint" value={member.start} onChange={(v) => onChange(member.id, 'start', v)}>
+          {joints.map((j) => (
+            <option key={j.id} value={j.id}>{j.name}</option>
           ))}
         </SelectField>
-
-        <SelectField
-          label="End Joint"
-          value={member.end}
-          onChange={(value) => onChange(member.id, 'end', value)}
-        >
-          {joints.map((joint) => (
-            <option key={joint.id} value={joint.id}>
-              {joint.name}
-            </option>
+        <SelectField label="End Joint" value={member.end} onChange={(v) => onChange(member.id, 'end', v)}>
+          {joints.map((j) => (
+            <option key={j.id} value={j.id}>{j.name}</option>
           ))}
         </SelectField>
-
-        <NumberField
-          label="Area A"
-          value={member.area}
-          onChange={(value) => onChange(member.id, 'area', value)}
-          suffix="mm²"
-          min="0.001"
-        />
-
-        <NumberField
-          label="Modulus E"
-          value={member.E}
-          onChange={(value) => onChange(member.id, 'E', value)}
-          suffix="GPa"
-          min="0.001"
-        />
+        <NumberField label="Area A" value={member.area} onChange={(v) => onChange(member.id, 'area', v)} suffix="mm²" min="0.001" />
+        <NumberField label="Modulus E" value={member.E} onChange={(v) => onChange(member.id, 'E', v)} suffix="GPa" min="0.001" />
       </div>
     </div>
   )
@@ -1013,272 +1250,69 @@ function LoadEditor({ load, joints, onChange, onDelete }) {
           Delete
         </button>
       </div>
-
       <div className="grid gap-4 sm:grid-cols-3">
-        <SelectField
-          label="Load Joint"
-          value={load.joint}
-          onChange={(value) => onChange(load.id, 'joint', value)}
-        >
-          {joints.map((joint) => (
-            <option key={joint.id} value={joint.id}>
-              {joint.name}
-            </option>
+        <SelectField label="Load Joint" value={load.joint} onChange={(v) => onChange(load.id, 'joint', v)}>
+          {joints.map((j) => (
+            <option key={j.id} value={j.id}>{j.name}</option>
           ))}
         </SelectField>
-
-        <NumberField
-          label="Fx"
-          value={load.Fx}
-          onChange={(value) => onChange(load.id, 'Fx', value)}
-          suffix="kN"
-          helper="+ve right, -ve left"
-        />
-
-        <NumberField
-          label="Fy"
-          value={load.Fy}
-          onChange={(value) => onChange(load.id, 'Fy', value)}
-          suffix="kN"
-          helper="+ve upward, -ve downward"
-        />
+        <NumberField label="Fx" value={load.Fx} onChange={(v) => onChange(load.id, 'Fx', v)} suffix="kN" helper="+ve right" />
+        <NumberField label="Fy" value={load.Fy} onChange={(v) => onChange(load.id, 'Fy', v)} suffix="kN" helper="-ve down" />
       </div>
     </div>
   )
 }
 
-function TrussDiagram({ result }) {
-  const width = 720
-  const height = 460
-  const pad = 80
+/* ---------------- EXPORT & TABLES ---------------- */
 
-  if (!result.joints || result.joints.length === 0) {
-    return (
-      <div className="rounded-3xl border border-slate-800 bg-slate-950 p-6 text-center text-slate-400">
-        Add joints to see the truss diagram.
-      </div>
-    )
-  }
+function buildPlainReport(result, form) {
+  const reactionText = result.reactions
+    .map((r) => `${r.joint.name}${r.component} = ${fmt(r.value)} kN`)
+    .join('\n')
 
-  const xs = result.joints.map((joint) => joint.x)
-  const ys = result.joints.map((joint) => joint.y)
+  const memberText = result.memberResults
+    .map((m) => `${m.name}: ${fmt(m.force)} kN (${m.type}), Stress = ${fmt(m.stress)} MPa, Elongation = ${fmt(m.elongationMm)} mm`)
+    .join('\n')
 
-  const minX = Math.min(...xs, 0)
-  const maxX = Math.max(...xs, 1)
-  const minY = Math.min(...ys, 0)
-  const maxY = Math.max(...ys, 1)
+  return `${form.reportTitle || 'Truss Analysis Report'}
+Prepared By: ${form.preparedBy || '-'}
 
-  const dx = Math.max(maxX - minX, 1)
-  const dy = Math.max(maxY - minY, 1)
-  const scale = Math.min((width - 2 * pad) / dx, (height - 2 * pad) / dy)
+DETERMINACY CHECK
+m = ${result.determinacy?.m}, r = ${result.determinacy?.r}, j = ${result.determinacy?.j}
+m + r - 2j = ${result.determinacy?.value} (${result.determinacy?.status})
 
-  const sx = (x) => pad + (x - minX) * scale
-  const sy = (y) => height - pad - (y - minY) * scale
+SUPPORT REACTIONS
+${reactionText || '-'}
 
-  const memberMap = new Map(result.memberResults.map((item) => [item.member.id, item]))
-  const reactionMap = result.reactions || []
+MEMBER FORCES
+${memberText || '-'}
 
-  return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-black text-white">Truss Diagram</h3>
-        <span className="rounded-full bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-300">
-          Tension / Compression Visual
-        </span>
-      </div>
+FINAL ANSWER
+${result.finalAnswer}`.trim()
+}
 
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full">
-        <defs>
-          <marker id="loadArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L9,3 z" fill="#f97316" />
-          </marker>
-          <marker id="reactionArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L9,3 z" fill="#22c55e" />
-          </marker>
-        </defs>
+function copyToClipboard(text, message) {
+  if (typeof window === 'undefined') return
+  navigator.clipboard?.writeText(text).then(() => alert(message)).catch(() => alert('Copy failed.'))
+}
 
-        {result.members.map((member) => {
-          const a = result.joints.find((joint) => joint.id === member.start)
-          const b = result.joints.find((joint) => joint.id === member.end)
-          const res = memberMap.get(member.id)
-
-          if (!a || !b) return null
-
-          let color = '#64748b'
-          let strokeWidth = 4
-
-          if (res) {
-            if (Math.abs(res.force) < 0.001) {
-              color = '#64748b'
-              strokeWidth = 3
-            } else if (res.force > 0) {
-              color = '#38bdf8'
-              strokeWidth = 5
-            } else {
-              color = '#f97316'
-              strokeWidth = 5
-            }
-          }
-
-          const mx = (sx(a.x) + sx(b.x)) / 2
-          const my = (sy(a.y) + sy(b.y)) / 2
-
-          return (
-            <g key={member.id}>
-              <line
-                x1={sx(a.x)}
-                y1={sy(a.y)}
-                x2={sx(b.x)}
-                y2={sy(b.y)}
-                stroke={color}
-                strokeWidth={strokeWidth}
-                strokeLinecap="round"
-              />
-              <text x={mx + 6} y={my - 6} fill="#e2e8f0" fontSize="13" fontWeight="800">
-                {memberName(member, result.joints)}
-              </text>
-              {res && Math.abs(res.force) >= 0.001 && (
-                <text x={mx + 6} y={my + 12} fill={color} fontSize="11" fontWeight="700">
-                  {fmt(res.force, 2)} kN
-                </text>
-              )}
-            </g>
-          )
-        })}
-
-        {result.loads.map((load) => {
-          const joint = result.joints.find((j) => j.id === load.joint)
-          if (!joint) return null
-
-          const mag = Math.sqrt(load.Fx ** 2 + load.Fy ** 2)
-          if (mag < 1e-9) return null
-
-          // Screen direction: Fx +ve => right, Fy +ve => up (screen y flipped)
-          const ux = load.Fx / mag
-          const uy = -load.Fy / mag
-          const length = 50
-          const px = sx(joint.x)
-          const py = sy(joint.y)
-
-          // Arrow points TOWARDS the joint (load applied)
-          const tailX = px - ux * length
-          const tailY = py - uy * length
-          const headX = px - ux * 10
-          const headY = py - uy * 10
-
-          return (
-            <g key={load.id}>
-              <line
-                x1={tailX}
-                y1={tailY}
-                x2={headX}
-                y2={headY}
-                stroke="#f97316"
-                strokeWidth="4"
-                markerEnd="url(#loadArrow)"
-              />
-              <text
-                x={tailX - ux * 8}
-                y={tailY - uy * 8}
-                fill="#fed7aa"
-                fontSize="13"
-                fontWeight="800"
-                textAnchor="middle"
-              >
-                {fmt(mag)} kN
-              </text>
-            </g>
-          )
-        })}
-
-        {reactionMap.map((reaction) => {
-          if (Math.abs(reaction.value) < 0.001) return null
-
-          const px = sx(reaction.joint.x)
-          const py = sy(reaction.joint.y)
-          const dir = reaction.value >= 0 ? 1 : -1
-
-          const x2 = reaction.component === 'Rx' ? px + dir * 44 : px
-          const y2 = reaction.component === 'Ry' ? py - dir * 44 : py
-
-          return (
-            <g key={`${reaction.joint.id}-${reaction.component}`}>
-              <line
-                x1={px}
-                y1={py}
-                x2={x2}
-                y2={y2}
-                stroke="#22c55e"
-                strokeWidth="3"
-                markerEnd="url(#reactionArrow)"
-              />
-              <text x={x2 + 6} y={y2 - 4} fill="#bbf7d0" fontSize="12" fontWeight="800">
-                {reaction.component} {fmt(reaction.value)}
-              </text>
-            </g>
-          )
-        })}
-
-        {result.joints.map((joint) => {
-          const px = sx(joint.x)
-          const py = sy(joint.y)
-
-          return (
-            <g key={joint.id}>
-              {joint.support === 'pin' && (
-                <>
-                  <polygon
-                    points={`${px - 17},${py + 32} ${px + 17},${py + 32} ${px},${py + 8}`}
-                    fill="#22c55e"
-                    opacity="0.9"
-                  />
-                  <line x1={px - 26} y1={py + 34} x2={px + 26} y2={py + 34} stroke="#22c55e" strokeWidth="3" />
-                </>
-              )}
-
-              {joint.support === 'rollerY' && (
-                <>
-                  <circle cx={px} cy={py + 22} r="10" fill="none" stroke="#22c55e" strokeWidth="3" />
-                  <line x1={px - 26} y1={py + 34} x2={px + 26} y2={py + 34} stroke="#22c55e" strokeWidth="3" />
-                </>
-              )}
-
-              {joint.support === 'rollerX' && (
-                <>
-                  <circle cx={px - 22} cy={py} r="10" fill="none" stroke="#22c55e" strokeWidth="3" />
-                  <line x1={px - 34} y1={py - 26} x2={px - 34} y2={py + 26} stroke="#22c55e" strokeWidth="3" />
-                </>
-              )}
-
-              <circle cx={px} cy={py} r="8" fill="#0f172a" stroke="#e2e8f0" strokeWidth="3" />
-              <text x={px + 10} y={py - 10} fill="#ffffff" fontSize="15" fontWeight="900">
-                {joint.name}
-              </text>
-            </g>
-          )
-        })}
-
-        <text x="18" y="440" fill="#94a3b8" fontSize="12">
-          Blue = tension, Orange = compression, Gray = zero-force. Green = supports & reactions.
-        </text>
-      </svg>
-    </div>
-  )
+function printReport(result, form) {
+  if (typeof window === 'undefined') return
+  const win = window.open('', '_blank', 'width=1000,height=800')
+  if (!win) return alert('Popup blocked. Please allow popups.')
+  win.document.write(`<pre style="font-family:sans-serif;white-space:pre-wrap;padding:24px;">${cleanHtml(buildPlainReport(result, form))}</pre>`)
+  win.document.close()
+  setTimeout(() => { win.focus(); win.print() }, 300)
 }
 
 function ActionButtons({ result, form }) {
-  const plainReport = buildPlainReport(result, form)
-
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-black text-white">Export & Share</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            Copy final answer, copy full solution or print/save the report as PDF.
-          </p>
+          <p className="mt-1 text-sm text-slate-400">Copy final answer, full solution, or print PDF report.</p>
         </div>
-
         <div className="grid gap-3 sm:grid-cols-3">
           <button
             type="button"
@@ -1287,15 +1321,13 @@ function ActionButtons({ result, form }) {
           >
             Copy Answer
           </button>
-
           <button
             type="button"
-            onClick={() => copyToClipboard(plainReport, 'Full solution copied.')}
+            onClick={() => copyToClipboard(buildPlainReport(result, form), 'Full solution copied.')}
             className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm font-black text-orange-200 hover:bg-orange-500/20"
           >
             Copy Solution
           </button>
-
           <button
             type="button"
             onClick={() => printReport(result, form)}
@@ -1310,15 +1342,12 @@ function ActionButtons({ result, form }) {
 }
 
 function ResultTables({ result, form }) {
-  const selected =
-    result.memberResults.find((item) => item.member.id === form.selectedMember) ||
-    result.memberResults[0]
+  const selected = result.memberResults.find((item) => item.member.id === form.selectedMember) || result.memberResults[0]
 
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
         <h2 className="text-2xl font-black text-white">Support Reactions</h2>
-
         <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-800">
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="bg-slate-950">
@@ -1329,20 +1358,17 @@ function ResultTables({ result, form }) {
               </tr>
             </thead>
             <tbody>
-              {result.reactions.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-slate-400">
-                    No support reactions.
-                  </td>
-                </tr>
+              {result.reactions.length === 0 ? (
+                <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-400">No support reactions calculated.</td></tr>
+              ) : (
+                result.reactions.map((r) => (
+                  <tr key={`${r.joint.id}-${r.component}`} className="bg-slate-900/50">
+                    <td className="border-b border-slate-800 px-4 py-3 text-slate-200">{r.joint.name}</td>
+                    <td className="border-b border-slate-800 px-4 py-3 text-orange-300">{r.component}</td>
+                    <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{fmt(r.value)} kN</td>
+                  </tr>
+                ))
               )}
-              {result.reactions.map((reaction) => (
-                <tr key={`${reaction.joint.id}-${reaction.component}`} className="bg-slate-900/50">
-                  <td className="border-b border-slate-800 px-4 py-3 text-slate-200">{reaction.joint.name}</td>
-                  <td className="border-b border-slate-800 px-4 py-3 text-orange-300">{reaction.component}</td>
-                  <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{fmt(reaction.value)} kN</td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
@@ -1350,9 +1376,8 @@ function ResultTables({ result, form }) {
 
       <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
         <h2 className="text-2xl font-black text-white">Member Force Results</h2>
-
         <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-800">
-          <table className="w-full min-w-[820px] text-left text-sm">
+          <table className="w-full min-w-[780px] text-left text-sm">
             <thead className="bg-slate-950">
               <tr>
                 <th className="border-b border-slate-800 px-4 py-3 text-white">Member</th>
@@ -1364,23 +1389,20 @@ function ResultTables({ result, form }) {
               </tr>
             </thead>
             <tbody>
-              {result.memberResults.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-slate-400">
-                    No member results.
-                  </td>
-                </tr>
+              {result.memberResults.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">No member results available.</td></tr>
+              ) : (
+                result.memberResults.map((item) => (
+                  <tr key={item.member.id} className="bg-slate-900/50">
+                    <td className="border-b border-slate-800 px-4 py-3 font-bold text-slate-200">{item.name}</td>
+                    <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{fmt(item.length)} m</td>
+                    <td className="border-b border-slate-800 px-4 py-3 text-orange-300">{fmt(item.force)} kN</td>
+                    <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{item.type}</td>
+                    <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{fmt(item.stress)} MPa</td>
+                    <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{fmt(item.elongationMm)} mm</td>
+                  </tr>
+                ))
               )}
-              {result.memberResults.map((item) => (
-                <tr key={item.member.id} className="bg-slate-900/50">
-                  <td className="border-b border-slate-800 px-4 py-3 font-bold text-slate-200">{item.name}</td>
-                  <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{fmt(item.length)} m</td>
-                  <td className="border-b border-slate-800 px-4 py-3 text-orange-300">{fmt(item.force)} kN</td>
-                  <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{item.type}</td>
-                  <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{fmt(item.stress)} MPa</td>
-                  <td className="border-b border-slate-800 px-4 py-3 text-slate-300">{fmt(item.elongationMm)} mm</td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
@@ -1389,38 +1411,29 @@ function ResultTables({ result, form }) {
       {selected && (
         <div className="rounded-3xl border border-sky-500/30 bg-sky-500/10 p-6">
           <h2 className="text-2xl font-black text-white">Selected Member Detail</h2>
-
           <div className="mt-5 grid gap-4 md:grid-cols-4">
             <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
               <p className="text-sm text-slate-400">Member</p>
               <p className="mt-2 text-xl font-black text-sky-300">{selected.name}</p>
             </div>
-
             <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
               <p className="text-sm text-slate-400">Force</p>
               <p className="mt-2 text-xl font-black text-sky-300">{fmt(selected.force)} kN</p>
             </div>
-
             <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
               <p className="text-sm text-slate-400">Nature</p>
               <p className="mt-2 text-xl font-black text-sky-300">{selected.type}</p>
             </div>
-
             <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
               <p className="text-sm text-slate-400">Stress</p>
               <p className="mt-2 text-xl font-black text-sky-300">{fmt(selected.stress)} MPa</p>
             </div>
           </div>
-
-          <p className="mt-5 leading-8 text-slate-300">
-            Positive axial force means tension. Negative axial force means compression. This selected member result can be used directly in method of sections type questions.
-          </p>
         </div>
       )}
 
       <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
         <h2 className="text-2xl font-black text-white">Joint Displacements</h2>
-
         <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-800">
           <table className="w-full min-w-[620px] text-left text-sm">
             <thead className="bg-slate-950">
@@ -1452,7 +1465,6 @@ function ZeroForcePanel({ result }) {
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
       <h2 className="text-2xl font-black text-white">Zero Force Members</h2>
-
       {result.zeroForceMembers.length === 0 ? (
         <p className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-slate-300">
           No zero-force member detected for the current truss.
@@ -1461,13 +1473,12 @@ function ZeroForcePanel({ result }) {
         <div className="mt-5 space-y-3">
           {result.zeroForceMembers.map((item) => {
             const member = result.members.find((m) => m.id === item.memberId)
-
             return (
               <div key={item.memberId} className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
                 <p className="font-black text-orange-300">
                   {member ? memberName(member, result.joints) : item.memberId}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{item.reason}</p>
+                <p className="mt-1 text-sm text-slate-300">{item.reason}</p>
               </div>
             )
           })}
@@ -1477,11 +1488,13 @@ function ZeroForcePanel({ result }) {
   )
 }
 
+/* ---------------- MAIN PAGE ---------------- */
+
 export default function TrussAnalysisPage() {
   const [form, setForm] = useState(getTemplate('triangular'))
+  const [selectedEntity, setSelectedEntity] = useState(null)
   const result = useMemo(() => analyzeTruss(form), [form])
 
-  // Auto-fix selectedMember if it no longer exists
   useEffect(() => {
     if (form.members.length === 0) return
     const exists = form.members.some((m) => m.id === form.selectedMember)
@@ -1490,18 +1503,32 @@ export default function TrussAnalysisPage() {
     }
   }, [form.members, form.selectedMember])
 
-  const updateForm = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }))
+  const updateForm = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
+  const applyTemplate = (key) => {
+    setSelectedEntity(null)
+    setForm(getTemplate(key))
   }
 
-  const applyTemplate = (key) => {
-    setForm(getTemplate(key))
+  const getNextJointName = (existingJoints) => {
+    const used = new Set(existingJoints.map((j) => j.name))
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    for (const ch of alphabet) {
+      if (!used.has(ch)) return ch
+    }
+    return `J${existingJoints.length + 1}`
   }
 
   const updateJoint = (id, key, value) => {
     setForm((prev) => ({
       ...prev,
       joints: prev.joints.map((joint) => (joint.id === id ? { ...joint, [key]: value } : joint)),
+    }))
+  }
+
+  const moveJoint = (id, x, y) => {
+    setForm((prev) => ({
+      ...prev,
+      joints: prev.joints.map((joint) => (joint.id === id ? { ...joint, x, y } : joint)),
     }))
   }
 
@@ -1513,7 +1540,7 @@ export default function TrussAnalysisPage() {
         ...prev.joints,
         {
           id,
-          name: `J${prev.joints.length + 1}`,
+          name: getNextJointName(prev.joints),
           x: prev.joints.length + 1,
           y: 0,
           support: 'none',
@@ -1522,10 +1549,39 @@ export default function TrussAnalysisPage() {
     }))
   }
 
+  const addJointAt = (x, y) => {
+    const id = uid('J')
+    setForm((prev) => ({
+      ...prev,
+      joints: [
+        ...prev.joints,
+        {
+          id,
+          name: getNextJointName(prev.joints),
+          x,
+          y,
+          support: 'none',
+        },
+      ],
+    }))
+    setSelectedEntity({ type: 'joint', id })
+  }
+
+  const toggleSupport = (jointId) => {
+    const cycle = ['none', 'pin', 'rollerY', 'rollerX']
+    setForm((prev) => ({
+      ...prev,
+      joints: prev.joints.map((j) => {
+        if (j.id !== jointId) return j
+        const nextSupport = cycle[(cycle.indexOf(j.support) + 1) % cycle.length]
+        return { ...j, support: nextSupport }
+      }),
+    }))
+  }
+
   const deleteJoint = (id) => {
     setForm((prev) => {
       if (prev.joints.length <= 2) return prev
-
       return {
         ...prev,
         joints: prev.joints.filter((joint) => joint.id !== id),
@@ -1533,6 +1589,7 @@ export default function TrussAnalysisPage() {
         loads: prev.loads.filter((load) => load.joint !== id),
       }
     })
+    if (selectedEntity?.id === id) setSelectedEntity(null)
   }
 
   const updateMember = (id, key, value) => {
@@ -1546,24 +1603,29 @@ export default function TrussAnalysisPage() {
     setForm((prev) => {
       const start = prev.joints[0]?.id
       const end = prev.joints[1]?.id
-
       if (!start || !end) return prev
-
       const id = uid('M')
-
       return {
         ...prev,
         selectedMember: prev.selectedMember || id,
-        members: [
-          ...prev.members,
-          {
-            id,
-            start,
-            end,
-            area: 500,
-            E: 200,
-          },
-        ],
+        members: [...prev.members, { id, start, end, area: 500, E: 200 }],
+      }
+    })
+  }
+
+  const addMemberBetween = (startId, endId) => {
+    if (startId === endId) return
+    setForm((prev) => {
+      // Prevent duplicate members between same two joints
+      const exists = prev.members.some(
+        (m) => (m.start === startId && m.end === endId) || (m.start === endId && m.end === startId)
+      )
+      if (exists) return prev
+      const id = uid('M')
+      return {
+        ...prev,
+        selectedMember: id,
+        members: [...prev.members, { id, start: startId, end: endId, area: 500, E: 200 }],
       }
     })
   }
@@ -1572,10 +1634,16 @@ export default function TrussAnalysisPage() {
     setForm((prev) => ({
       ...prev,
       members: prev.members.length > 1 ? prev.members.filter((member) => member.id !== id) : prev.members,
-      selectedMember: prev.selectedMember === id
-        ? (prev.members.find((m) => m.id !== id)?.id || '')
-        : prev.selectedMember,
+      selectedMember:
+        prev.selectedMember === id ? prev.members.find((m) => m.id !== id)?.id || '' : prev.selectedMember,
     }))
+    if (selectedEntity?.id === id) setSelectedEntity(null)
+  }
+
+  const deleteSelected = (entity) => {
+    if (!entity) return
+    if (entity.type === 'joint') deleteJoint(entity.id)
+    if (entity.type === 'member') deleteMember(entity.id)
   }
 
   const updateLoad = (id, key, value) => {
@@ -1592,7 +1660,7 @@ export default function TrussAnalysisPage() {
         ...prev.loads,
         {
           id: uid('L'),
-          joint: prev.joints[0]?.id || '',
+          joint: selectedEntity?.type === 'joint' ? selectedEntity.id : prev.joints[0]?.id || '',
           Fx: 0,
           Fy: -10,
         },
@@ -1607,20 +1675,32 @@ export default function TrussAnalysisPage() {
     }))
   }
 
+  const startFreshTruss = () => {
+    setSelectedEntity(null)
+    setForm({
+      reportTitle: 'Custom Truss Analysis',
+      preparedBy: form.preparedBy,
+      template: 'custom',
+      selectedMember: 'M1',
+      joints: [
+        { id: 'A', name: 'A', x: 0, y: 0, support: 'pin' },
+        { id: 'B', name: 'B', x: 4, y: 0, support: 'rollerY' },
+      ],
+      members: [{ id: 'M1', start: 'A', end: 'B', area: 500, E: 200 }],
+      loads: [],
+    })
+  }
+
   return (
     <main className="min-h-screen bg-[#050B1F] px-4 py-8 text-white md:px-8">
       <section className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 md:p-8">
           <p className="mb-3 text-sm font-extrabold uppercase tracking-widest text-orange-400">
-            Civil Engineering Truss Solver
+            CivilCalc Pro • Interactive Structural Solver
           </p>
-
-          <h1 className="text-3xl font-black leading-tight md:text-5xl">
-            Truss Analysis Solver
-          </h1>
-
+          <h1 className="text-3xl font-black leading-tight md:text-5xl">2D Truss Analysis Solver</h1>
           <p className="mt-4 max-w-4xl text-base leading-8 text-slate-300 md:text-lg">
-            Analyze 2D pin-jointed trusses with templates, custom joints, members, supports, joint loads, member forces, tension/compression results, zero-force members, stress, strain and displacement.
+            Build or edit any 2D pin-jointed truss directly on the interactive CAD diagram using your mouse and keyboard, or configure exact coordinates and loads in the inspector.
           </p>
         </div>
 
@@ -1633,45 +1713,19 @@ export default function TrussAnalysisPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[430px_1fr]">
+          {/* LEFT SIDEBAR */}
           <aside className="space-y-6">
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">Report Setup</h2>
-
-              <div className="mt-6 space-y-5">
-                <TextField
-                  label="Report Title"
-                  value={form.reportTitle}
-                  onChange={(value) => updateForm('reportTitle', value)}
-                  placeholder="Example: Roof Truss Analysis"
-                  helper="This title appears in print/PDF report."
-                />
-
-                <TextField
-                  label="Prepared By"
-                  value={form.preparedBy}
-                  onChange={(value) => updateForm('preparedBy', value)}
-                  placeholder="Your name"
-                  helper="Optional."
-                />
-
-                <SelectField
-                  label="Focus Member"
-                  value={form.selectedMember}
-                  onChange={(value) => updateForm('selectedMember', value)}
-                  helper="Selected member detail is shown separately for exam-style member force questions."
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-black text-white">Templates</h2>
+                <button
+                  type="button"
+                  onClick={startFreshTruss}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-bold text-orange-300 hover:border-orange-400"
                 >
-                  {form.members.length === 0 && <option value="">No members</option>}
-                  {form.members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {memberName(member, form.joints)}
-                    </option>
-                  ))}
-                </SelectField>
+                  + Blank Base
+                </button>
               </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-2xl font-black text-white">Quick Templates</h2>
 
               <div className="mt-5 grid grid-cols-2 gap-3">
                 {templates.map((template) => (
@@ -1692,6 +1746,36 @@ export default function TrussAnalysisPage() {
             </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 className="text-2xl font-black text-white">Report Setup</h2>
+              <div className="mt-5 space-y-4">
+                <TextField
+                  label="Report Title"
+                  value={form.reportTitle}
+                  onChange={(value) => updateForm('reportTitle', value)}
+                  placeholder="Example: Roof Truss Analysis"
+                />
+                <TextField
+                  label="Prepared By"
+                  value={form.preparedBy}
+                  onChange={(value) => updateForm('preparedBy', value)}
+                  placeholder="Your name"
+                />
+                <SelectField
+                  label="Focus Member"
+                  value={form.selectedMember}
+                  onChange={(value) => updateForm('selectedMember', value)}
+                >
+                  {form.members.length === 0 && <option value="">No members</option>}
+                  {form.members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {memberName(member, form.joints)}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-2xl font-black text-white">Joints ({form.joints.length})</h2>
                 <button
@@ -1702,14 +1786,14 @@ export default function TrussAnalysisPage() {
                   + Joint
                 </button>
               </div>
-
-              <div className="mt-5 space-y-5">
+              <div className="mt-5 space-y-4">
                 {form.joints.map((joint) => (
                   <JointEditor
                     key={joint.id}
                     joint={joint}
                     onChange={updateJoint}
                     onDelete={deleteJoint}
+                    isHighlighted={selectedEntity?.type === 'joint' && selectedEntity.id === joint.id}
                   />
                 ))}
               </div>
@@ -1726,8 +1810,7 @@ export default function TrussAnalysisPage() {
                   + Member
                 </button>
               </div>
-
-              <div className="mt-5 space-y-5">
+              <div className="mt-5 space-y-4">
                 {form.members.map((member) => (
                   <MemberEditor
                     key={member.id}
@@ -1735,6 +1818,7 @@ export default function TrussAnalysisPage() {
                     joints={form.joints}
                     onChange={updateMember}
                     onDelete={deleteMember}
+                    isHighlighted={selectedEntity?.type === 'member' && selectedEntity.id === member.id}
                   />
                 ))}
               </div>
@@ -1751,11 +1835,10 @@ export default function TrussAnalysisPage() {
                   + Load
                 </button>
               </div>
-
-              <div className="mt-5 space-y-5">
+              <div className="mt-5 space-y-4">
                 {form.loads.length === 0 && (
                   <p className="rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">
-                    No loads added. Add joint loads to see reactions and forces.
+                    No loads added. Click "+ Load" to apply forces to a joint.
                   </p>
                 )}
                 {form.loads.map((load) => (
@@ -1771,10 +1854,23 @@ export default function TrussAnalysisPage() {
             </div>
           </aside>
 
+          {/* RIGHT RESULTS & CAD VIEWPORT */}
           <section className="space-y-6">
+            <InteractiveTrussDiagram
+              result={result}
+              form={form}
+              selectedEntity={selectedEntity}
+              setSelectedEntity={setSelectedEntity}
+              onMoveJoint={moveJoint}
+              onAddJointAt={addJointAt}
+              onToggleSupport={toggleSupport}
+              onAddMemberBetween={addMemberBetween}
+              onDeleteSelected={deleteSelected}
+              onSelectMember={(memberId) => updateForm('selectedMember', memberId)}
+            />
+
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
               <h2 className="text-2xl font-black text-white">Truss Result Summary</h2>
-
               <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {result.summary.map((item) => (
                   <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
@@ -1783,6 +1879,12 @@ export default function TrussAnalysisPage() {
                   </div>
                 ))}
               </div>
+
+              {result.warning && (
+                <div className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+                  {result.warning}
+                </div>
+              )}
 
               {result.error && (
                 <div className="mt-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm leading-7 text-red-100">
@@ -1795,44 +1897,35 @@ export default function TrussAnalysisPage() {
 
             <div className="rounded-3xl border border-orange-500/20 bg-orange-500/10 p-6">
               <h2 className="text-2xl font-black text-white">Determinacy & Stability Check</h2>
-
               <div className="mt-5 grid gap-4 md:grid-cols-4">
                 <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
                   <p className="text-sm text-slate-400">Members m</p>
                   <p className="mt-2 text-xl font-black text-orange-300">{result.determinacy?.m}</p>
                 </div>
-
                 <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
                   <p className="text-sm text-slate-400">Reactions r</p>
                   <p className="mt-2 text-xl font-black text-orange-300">{result.determinacy?.r}</p>
                 </div>
-
                 <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
                   <p className="text-sm text-slate-400">Joints j</p>
                   <p className="mt-2 text-xl font-black text-orange-300">{result.determinacy?.j}</p>
                 </div>
-
                 <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
                   <p className="text-sm text-slate-400">m + r - 2j</p>
                   <p className="mt-2 text-xl font-black text-orange-300">{result.determinacy?.value}</p>
                 </div>
               </div>
-
               <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-4 leading-7 text-slate-300">
                 {result.determinacy?.status}
               </p>
             </div>
 
-            <TrussDiagram result={result} />
-
-            {/* ALWAYS show tables — even if error, show what we have */}
             <ResultTables result={result} form={form} />
             <ZeroForcePanel result={result} />
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
                 <h2 className="text-2xl font-black text-white">Step-by-Step Solution</h2>
-
                 <div className="mt-6 space-y-4">
                   {result.steps.map((step, index) => (
                     <div key={`step-${index}`} className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
@@ -1847,14 +1940,9 @@ export default function TrussAnalysisPage() {
 
               <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
                 <h2 className="text-2xl font-black text-white">Exam-Style Final Answer</h2>
-
                 <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-5 leading-8 text-slate-200">
                   {result.finalAnswer}
                 </p>
-
-                <div className="mt-5 rounded-2xl border border-sky-500/20 bg-sky-500/10 p-4 text-sm leading-7 text-slate-300">
-                  Internal calculation uses the 2D truss stiffness method, while the output is shown in student-friendly member force format.
-                </div>
               </div>
             </div>
           </section>
